@@ -612,7 +612,7 @@ bxrig assets list
 
 ### `bxrig launchers` {#bxrig-launchers}
 
-Application-menu entries for the Control Center pages (opt-in): on, off, status.
+A BxRig submenu in your application menu (opt-in): the setup wizard, the runner menu, the Control Center and its pages.
 
 ```text
 bxrig launchers on|off|status [--yes] [--dry-run] [--json]
