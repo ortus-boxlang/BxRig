@@ -1,10 +1,9 @@
 // ThemeColors and ThemeData: parse, light/dark, Noctalia palette, terminal and btop files. Run from src/: (cd src && matchbox ../tests/theme_colors_test.bxs)
-failures = 0;
-function check( label, ok ) { if ( ok ) println( "ok   " & label ); else { println( "FAIL " & label ); failures++; } }
+testkit = new lib.Check( "theme colors" );
 tc = new bxrig.ThemeColors();
 td = new bxrig.ThemeData();
 names = td.names();
-check( "data: 15 themes (10 omarchy + 5 bxrig)", names.len() == 15 && names.filter( function( n ) { return td.origin( n ) == "bxrig"; } ).len() == 5 );
+testkit.check( "data: 15 themes (10 omarchy + 5 bxrig)", names.len() == 15 && names.filter( function( n ) { return td.origin( n ) == "bxrig"; } ).len() == 5 );
 allOk = true; badRoles = [];
 roleNames = [ "primary", "on_primary", "secondary", "on_secondary", "tertiary", "on_tertiary", "error", "on_error", "surface", "on_surface", "surface_container", "on_surface_variant", "outline_variant", "shadow", "hover", "on_hover" ];
 for ( n in names ) {
@@ -16,36 +15,35 @@ for ( n in names ) {
     if ( structCount( p.dark.terminal.normal ) != 8 || structCount( p.dark.terminal.bright ) != 8 ) badRoles.append( n & " terminal" );
     if ( tc.contrast( p.dark.primary, p.dark.on_primary ) < 3 ) badRoles.append( n & " on_primary contrast " & tc.contrast( p.dark.primary, p.dark.on_primary ) );
 }
-check( "every bundled theme parses and maps to a complete palette (" & badRoles.toList( "; " ) & ")", allOk && !badRoles.len() );
+testkit.check( "every bundled theme parses and maps to a complete palette (" & badRoles.toList( "; " ) & ")", allOk && !badRoles.len() );
 light = [];
 for ( n in names ) if ( tc.isLight( tc.parse( td.colors( n ) ).colors ) ) light.append( n );
-check( "light themes are detected by luminance: " & light.toList( "," ), light.len() == 4 && arrayFind( light, "catppuccin-latte" ) > 0 && arrayFind( light, "rose-pine" ) > 0 && arrayFind( light, "flexoki-light" ) > 0 && arrayFind( light, "bxrig-light" ) > 0 );
-check( "maths: mix endpoints and middle", tc.mix( "##000000", "##ffffff", 0 ) == "##000000" && tc.mix( "##000000", "##ffffff", 1 ) == "##ffffff" && tc.mix( "##000000", "##ffffff", 0.5 ) == "##808080" );
-check( "maths: luminance of black and white, contrast 21", tc.lum( "##000000" ) == 0 && abs( tc.lum( "##ffffff" ) - 1 ) < 0.001 && round( tc.contrast( "##000000", "##ffffff" ) ) == 21 );
+testkit.check( "light themes are detected by luminance: " & light.toList( "," ), light.len() == 4 && arrayFind( light, "catppuccin-latte" ) > 0 && arrayFind( light, "rose-pine" ) > 0 && arrayFind( light, "flexoki-light" ) > 0 && arrayFind( light, "bxrig-light" ) > 0 );
+testkit.check( "maths: mix endpoints and middle", tc.mix( "##000000", "##ffffff", 0 ) == "##000000" && tc.mix( "##000000", "##ffffff", 1 ) == "##ffffff" && tc.mix( "##000000", "##ffffff", 0.5 ) == "##808080" );
+testkit.check( "maths: luminance of black and white, contrast 21", tc.lum( "##000000" ) == 0 && abs( tc.lum( "##ffffff" ) - 1 ) < 0.001 && round( tc.contrast( "##000000", "##ffffff" ) ) == 21 );
 bad = tc.parse( 'accent = "#zzz"' & chr( 10 ) & 'foreground = "#ffffff"' );
-check( "parse: a bad colour and missing keys are errors, not a half theme", !bad.ok && bad.errors.len() > 3 );
+testkit.check( "parse: a bad colour and missing keys are errors, not a half theme", !bad.ok && bad.errors.len() > 3 );
 c = tc.parse( td.colors( "bxrig" ) ).colors;
 g = tc.ghostty( c );
-check( "ghostty: 16 palette lines, background, header", reFind( "palette = 15=##[0-9a-f]{6}", g ) && find( "palette = 0=", g ) > 0 && find( "background = ##303446", g ) > 0 && left( g, 1 ) == "##" );
+testkit.check( "ghostty: 16 palette lines, background, header", reFind( "palette = 15=##[0-9a-f]{6}", g ) && find( "palette = 0=", g ) > 0 && find( "background = ##303446", g ) > 0 && left( g, 1 ) == "##" );
 k = tc.kitty( c );
-check( "kitty: colors 0..15 and the selection", find( "color15 ##c6d0f5", k ) > 0 && find( "color0 ##51576d", k ) > 0 && find( "selection_background ##51576d", k ) > 0 );
+testkit.check( "kitty: colors 0..15 and the selection", find( "color15 ##c6d0f5", k ) > 0 && find( "color0 ##51576d", k ) > 0 && find( "selection_background ##51576d", k ) > 0 );
 a = tc.alacritty( c );
-check( "alacritty: primary, normal and bright tables", find( "[colors.primary]", a ) > 0 && find( "[colors.normal]", a ) > 0 && find( "[colors.bright]", a ) > 0 && find( 'white = "##c6d0f5"', a ) > 0 );
+testkit.check( "alacritty: primary, normal and bright tables", find( "[colors.primary]", a ) > 0 && find( "[colors.normal]", a ) > 0 && find( "[colors.bright]", a ) > 0 && find( 'white = "##c6d0f5"', a ) > 0 );
 f = tc.foot( c );
-check( "foot: colors-dark without hashes", find( "[colors-dark]", f ) > 0 && find( "background=303446", f ) > 0 && find( "regular7=b5bfe2", f ) > 0 && find( "bright7=c6d0f5", f ) > 0 && !reFind( "=##", f ) );
+testkit.check( "foot: colors-dark without hashes", find( "[colors-dark]", f ) > 0 && find( "background=303446", f ) > 0 && find( "regular7=b5bfe2", f ) > 0 && find( "bright7=c6d0f5", f ) > 0 && !reFind( "=##", f ) );
 b = tc.btop( c );
-check( "btop: main_bg, the box colours and the 8 gradient steps", find( 'theme[main_bg] = "##303446"', b ) > 0 && find( "theme[gradient_color_7]", b ) > 0 && find( "theme[proc_box]", b ) > 0 );
-check( "hyprland: rgba border colour", tc.rgba( "##00ff78" ) == "rgba(00ff78ee)" );
+testkit.check( "btop: main_bg, the box colours and the 8 gradient steps", find( 'theme[main_bg] = "##303446"', b ) > 0 && find( "theme[gradient_color_7]", b ) > 0 && find( "theme[proc_box]", b ) > 0 );
+testkit.check( "hyprland: rgba border colour", tc.rgba( "##00ff78" ) == "rgba(00ff78ee)" );
 g4 = tc.gtk( c );
-check( "gtk: define-color list with accent and window colours", find( "@define-color accent_bg_color ##", g4 ) > 0 && find( "@define-color window_bg_color ##303446", g4 ) > 0 && find( "@define-color sidebar_bg_color", g4 ) > 0 );
+testkit.check( "gtk: define-color list with accent and window colours", find( "@define-color accent_bg_color ##", g4 ) > 0 && find( "@define-color window_bg_color ##303446", g4 ) > 0 && find( "@define-color sidebar_bg_color", g4 ) > 0 );
 q = tc.qtct( c );
-check( "qtct: three schemes of 21 ARGB roles", listLen( listGetAt( q, 2, chr( 10 ) ), "," ) == 21 && find( "disabled_colors=", q ) > 0 && find( "inactive_colors=", q ) > 0 );
-check( "tmux: status, pane border and mode styles", find( "set -g status-style", tc.tmux( c ) ) > 0 && find( "pane-active-border-style", tc.tmux( c ) ) > 0 );
-check( "fzf: FZF_DEFAULT_OPTS with the colours", find( "FZF_DEFAULT_OPTS", tc.fzf( c ) ) > 0 && find( "bg:##303446", tc.fzf( c ) ) > 0 );
-check( "rofi: window and element selected", find( "window {", tc.rofi( c ) ) > 0 && find( "element selected.normal", tc.rofi( c ) ) > 0 );
-check( "fuzzel: colours are 8 hex digits", reFind( "background=[0-9a-f]{8}", tc.fuzzel( c ) ) && reFind( "selection=[0-9a-f]{8}", tc.fuzzel( c ) ) );
-check( "wofi: entry selected uses the accent", find( "##entry:selected", tc.wofi( c ) ) > 0 );
+testkit.check( "qtct: three schemes of 21 ARGB roles", listLen( listGetAt( q, 2, chr( 10 ) ), "," ) == 21 && find( "disabled_colors=", q ) > 0 && find( "inactive_colors=", q ) > 0 );
+testkit.check( "tmux: status, pane border and mode styles", find( "set -g status-style", tc.tmux( c ) ) > 0 && find( "pane-active-border-style", tc.tmux( c ) ) > 0 );
+testkit.check( "fzf: FZF_DEFAULT_OPTS with the colours", find( "FZF_DEFAULT_OPTS", tc.fzf( c ) ) > 0 && find( "bg:##303446", tc.fzf( c ) ) > 0 );
+testkit.check( "rofi: window and element selected", find( "window {", tc.rofi( c ) ) > 0 && find( "element selected.normal", tc.rofi( c ) ) > 0 );
+testkit.check( "fuzzel: colours are 8 hex digits", reFind( "background=[0-9a-f]{8}", tc.fuzzel( c ) ) && reFind( "selection=[0-9a-f]{8}", tc.fuzzel( c ) ) );
+testkit.check( "wofi: entry selected uses the accent", find( "##entry:selected", tc.wofi( c ) ) > 0 );
 vs = tc.vscode( c );
-check( "vscode: editor, status bar and 16 terminal colours", vs[ "editor.background" ] == "##303446" && structKeyExists( vs, "statusBar.background" ) && structKeyExists( vs, "terminal.ansiBrightWhite" ) && structKeyExists( vs, "terminal.ansiBlack" ) );
-if ( failures > 0 ) { println( failures & " failed" ); exit( 1 ); }
-println( "all passed" );
+testkit.check( "vscode: editor, status bar and 16 terminal colours", vs[ "editor.background" ] == "##303446" && structKeyExists( vs, "statusBar.background" ) && structKeyExists( vs, "terminal.ansiBrightWhite" ) && structKeyExists( vs, "terminal.ansiBlack" ) );
+testkit.done( "all passed" );

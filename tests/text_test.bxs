@@ -1,20 +1,18 @@
 // Text: merge, pad, padLeft, lines.
 // Run from src/: (cd src && matchbox ../tests/text_test.bxs)
-failures = 0;
-function check( label, ok ) { if ( ok ) println( "ok   " & label ); else { println( "FAIL " & label ); failures++; } }
+testkit = new lib.Check( "text" );
 t = new bxrig.Text();
 m = t.merge( { a: 1, b: 2 }, { b: 3, c: 4 } );
-check( "merge: extra wins, both kept", m.a == 1 && m.b == 3 && m.c == 4 );
+testkit.check( "merge: extra wins, both kept", m.a == 1 && m.b == 3 && m.c == 4 );
 base = { a: 1 }; t.merge( base, { a: 9 } );
-check( "merge does not change its input", base.a == 1 );
-check( "pad fills", t.pad( "ab", 5 ) == "ab   " );
-check( "pad cuts and ends in a space", t.pad( "abcdef", 4 ) == "abc " );
-check( "pad exact width", t.pad( "abcd", 4 ) == "abc " );
-check( "padLeft aligns right", t.padLeft( "7", 3 ) == "  7" );
-check( "padLeft never cuts", t.padLeft( "12345", 3 ) == "12345" );
-check( "pad accepts numbers", t.pad( 5, 3 ) == "5  " );
+testkit.check( "merge does not change its input", base.a == 1 );
+testkit.check( "pad fills", t.pad( "ab", 5 ) == "ab   " );
+testkit.check( "pad cuts and ends in a space", t.pad( "abcdef", 4 ) == "abc " );
+testkit.check( "pad exact width", t.pad( "abcd", 4 ) == "abc " );
+testkit.check( "padLeft aligns right", t.padLeft( "7", 3 ) == "  7" );
+testkit.check( "padLeft never cuts", t.padLeft( "12345", 3 ) == "12345" );
+testkit.check( "pad accepts numbers", t.pad( 5, 3 ) == "5  " );
 l = t.lines( "a" & chr( 10 ) & "" & chr( 10 ) & "b" & chr( 13 ) & chr( 10 ) & "c" );
-check( "lines keeps empty lines and drops a trailing CR", l.len() == 4 && l[ 2 ] == "" && l[ 3 ] == "b" && l[ 4 ] == "c" );
-check( "nl", t.nl() == chr( 10 ) );
-if ( failures > 0 ) { println( failures & " failed" ); exit( 1 ); }
-println( "text tests passed" );
+testkit.check( "lines keeps empty lines and drops a trailing CR", l.len() == 4 && l[ 2 ] == "" && l[ 3 ] == "b" && l[ 4 ] == "c" );
+testkit.check( "nl", t.nl() == chr( 10 ) );
+testkit.done( "text tests passed" );

@@ -1,32 +1,31 @@
 // Runner: providers, defaults, argv resolution (pure parts). Run from src/: (cd src && matchbox ../tests/runner_test.bxs)
-failures = 0;
-function check( label, ok ) { if ( ok ) println( "ok   " & label ); else { println( "FAIL " & label ); failures++; } }
+testkit = new lib.Check( "runner" );
 r = new bxrig.Runner();
-check( "legacy launcher providers are all there", r.launcherProviders().toList( "," ) == "system,noctalia,walker,rofi,fuzzel,wofi,krunner,vicinae,custom" );
-check( "menu providers", r.menuProviders().toList( "," ) == "walker,rofi,fuzzel,wofi,vicinae" );
-check( "default launcher on Hyprland is Noctalia", r.defaults( "Hyprland" ).provider == "noctalia" );
-check( "default launcher on KDE is the system runner", r.defaults( "KDE" ).provider == "system" && r.defaults( "KDE" ).menu_provider == "rofi" );
+testkit.check( "legacy launcher providers are all there", r.launcherProviders().toList( "," ) == "system,noctalia,walker,rofi,fuzzel,wofi,krunner,vicinae,custom" );
+testkit.check( "menu providers", r.menuProviders().toList( "," ) == "walker,rofi,fuzzel,wofi,vicinae" );
+testkit.check( "default launcher on Hyprland is Noctalia", r.defaults( "Hyprland" ).provider == "noctalia" );
+testkit.check( "default launcher on KDE is the system runner", r.defaults( "KDE" ).provider == "system" && r.defaults( "KDE" ).menu_provider == "rofi" );
 cfg = r.defaults( "Hyprland" );
-check( "noctalia resolves to its panel command", r.resolve( "noctalia", cfg ).toList( " " ) == "noctalia msg panel-toggle launcher" );
-check( "vicinae resolves to toggle", r.resolve( "vicinae", cfg ).toList( " " ) == "vicinae toggle" );
-check( "system has no command, the desktop owns it", r.resolve( "system", cfg ).len() == 0 );
+testkit.check( "noctalia resolves to its panel command", r.resolve( "noctalia", cfg ).toList( " " ) == "noctalia msg panel-toggle launcher" );
+testkit.check( "vicinae resolves to toggle", r.resolve( "vicinae", cfg ).toList( " " ) == "vicinae toggle" );
+testkit.check( "system has no command, the desktop owns it", r.resolve( "system", cfg ).len() == 0 );
 cfg.launcher_commands.rofi = [ "rofi", "-show", "run" ];
-check( "a configured launcher command wins", r.resolve( "rofi", cfg ).toList( " " ) == "rofi -show run" );
+testkit.check( "a configured launcher command wins", r.resolve( "rofi", cfg ).toList( " " ) == "rofi -show run" );
 cfg.custom_command = [ "my-launcher", "--fast" ];
-check( "custom uses custom_command", r.resolve( "custom", cfg ).toList( " " ) == "my-launcher --fast" );
+testkit.check( "custom uses custom_command", r.resolve( "custom", cfg ).toList( " " ) == "my-launcher --fast" );
 threw = false; try { r.resolve( "custom", r.defaults( "KDE" ) ); } catch ( any e ) { threw = true; }
-check( "custom without a command is an error", threw );
-check( "fuzzel and wofi launch and menu commands", r.resolve( "fuzzel", r.defaults( "KDE" ) ).toList( " " ) == "fuzzel" && r.resolve( "wofi", r.defaults( "KDE" ) ).toList( " " ) == "wofi --show drun" && r.menuCommand( "fuzzel", r.defaults( "KDE" ), "Apps" ).toList( " " ) == "fuzzel --dmenu --index --prompt Apps" && r.menuCommand( "wofi", r.defaults( "KDE" ), "Apps" ).toList( " " ) == "wofi --dmenu --insensitive --prompt Apps" );
-check( "hyprrunner is gone", !arrayFind( r.launcherProviders(), "hyprrunner" ) );
-check( "menu command fills {prompt}", r.menuCommand( "rofi", r.defaults( "KDE" ), "Apps" ).toList( " " ) == "rofi -dmenu -i -show-icons -format i -p Apps" );
+testkit.check( "custom without a command is an error", threw );
+testkit.check( "fuzzel and wofi launch and menu commands", r.resolve( "fuzzel", r.defaults( "KDE" ) ).toList( " " ) == "fuzzel" && r.resolve( "wofi", r.defaults( "KDE" ) ).toList( " " ) == "wofi --show drun" && r.menuCommand( "fuzzel", r.defaults( "KDE" ), "Apps" ).toList( " " ) == "fuzzel --dmenu --index --prompt Apps" && r.menuCommand( "wofi", r.defaults( "KDE" ), "Apps" ).toList( " " ) == "wofi --dmenu --insensitive --prompt Apps" );
+testkit.check( "hyprrunner is gone", !arrayFind( r.launcherProviders(), "hyprrunner" ) );
+testkit.check( "menu command fills {prompt}", r.menuCommand( "rofi", r.defaults( "KDE" ), "Apps" ).toList( " " ) == "rofi -dmenu -i -show-icons -format i -p Apps" );
 cfg = r.defaults( "KDE" ); cfg.menu_commands.vicinae = [ "test-menu", "--title", "{prompt}" ];
-check( "a menu override takes {prompt} too", r.menuCommand( "vicinae", cfg, "My Apps" ).toList( "|" ) == "test-menu|--title|My Apps" );
-check( "argv validation: arrays of non-empty strings only", r.validArgv( [ "a", "b" ] ) && !r.validArgv( [] ) && !r.validArgv( "rofi -show drun" ) && !r.validArgv( [ "a", "" ] ) );
-check( "every provider with a package maps to a catalog app", r.catalogId( "rofi" ) == "rofi" && r.catalogId( "walker" ) == "walker" && r.catalogId( "vicinae" ) == "vicinae" && r.catalogId( "fuzzel" ) == "fuzzel" && r.catalogId( "wofi" ) == "wofi" && r.catalogId( "noctalia" ) == "" && r.catalogId( "system" ) == "" );
+testkit.check( "a menu override takes {prompt} too", r.menuCommand( "vicinae", cfg, "My Apps" ).toList( "|" ) == "test-menu|--title|My Apps" );
+testkit.check( "argv validation: arrays of non-empty strings only", r.validArgv( [ "a", "b" ] ) && !r.validArgv( [] ) && !r.validArgv( "rofi -show drun" ) && !r.validArgv( [ "a", "" ] ) );
+testkit.check( "every provider with a package maps to a catalog app", r.catalogId( "rofi" ) == "rofi" && r.catalogId( "walker" ) == "walker" && r.catalogId( "vicinae" ) == "vicinae" && r.catalogId( "fuzzel" ) == "fuzzel" && r.catalogId( "wofi" ) == "wofi" && r.catalogId( "noctalia" ) == "" && r.catalogId( "system" ) == "" );
 // ---- the abstraction: one select() for every menu provider (a stub runner plays the launcher) ----
 reg = new bxrig.RunnerProviders();
-check( "the registry lists every provider once, and the menu ones have a dmenu protocol", reg.ids().len() == 9 && reg.menuIds().toList( "," ) == "walker,rofi,fuzzel,wofi,vicinae" && reg.get( "rofi" ).menu.returns == "index" && reg.get( "wofi" ).menu.returns == "text" );
-check( "providers without a dmenu mode have an empty menu", structIsEmpty( reg.get( "noctalia" ).menu ) && structIsEmpty( reg.get( "krunner" ).menu ) );
+testkit.check( "the registry lists every provider once, and the menu ones have a dmenu protocol", reg.ids().len() == 9 && reg.menuIds().toList( "," ) == "walker,rofi,fuzzel,wofi,vicinae" && reg.get( "rofi" ).menu.returns == "index" && reg.get( "wofi" ).menu.returns == "text" );
+testkit.check( "providers without a dmenu mode have an empty menu", structIsEmpty( reg.get( "noctalia" ).menu ) && structIsEmpty( reg.get( "krunner" ).menu ) );
 seen = { payload: "", argv: [] };
 function stub( answer ) {
     return function( argv, timeout ) {
@@ -40,18 +39,17 @@ function sel( provider, answer, entries ) {
     return new bxrig.Runner( "", stub( answer ) ).select( "Menu", entries, cfg );
 }
 entries = [ "Apps", { label: "Settings", icon: "gear" }, "Quit" ];
-check( "rofi: 0-based index in, 1-based position out; icon protocol sent", sel( "rofi", "1", entries ) == 2 && find( "Settings" & chr( 0 ) & "icon" & chr( 31 ) & "gear", seen.payload ) > 0 );
-check( "rofi gets the prompt and index format in its argv", seen.argv.toList( "|" ) contains "rofi|-dmenu|-i|-show-icons|-format|i|-p|Menu" );
-check( "fuzzel: index too, and it understands icons", sel( "fuzzel", "2", entries ) == 3 && find( chr( 31 ) & "gear", seen.payload ) > 0 );
-check( "wofi: the label comes back, no icon metadata is sent", sel( "wofi", "Quit", entries ) == 3 && find( chr( 0 ), seen.payload ) == 0 && find( "Settings", seen.payload ) > 0 );
-check( "walker: the label comes back", sel( "walker", "Apps", entries ) == 1 );
-check( "an unknown label or index is a cancel, not a wrong choice", sel( "wofi", "Nope", entries ) == 0 && sel( "rofi", "9", entries ) == 0 && sel( "rofi", "x", entries ) == 0 );
-check( "an empty answer or a non-zero exit is a cancel", sel( "rofi", "", entries ) == 0 && sel( "rofi", "CANCEL", entries ) == 0 );
-check( "the same call works on every provider (switching changes nothing for the caller)", sel( "rofi", "0", [ "A", "B" ] ) == 1 && sel( "fuzzel", "0", [ "A", "B" ] ) == 1 && sel( "wofi", "A", [ "A", "B" ] ) == 1 && sel( "walker", "A", [ "A", "B" ] ) == 1 );
-check( "a newline inside a label cannot split the entry", ( function() { sel( "wofi", "x", [ "Two" & chr( 10 ) & "lines" ] ); return listToArray( seen.payload, chr( 10 ) ).len() == 1; } )() );
+testkit.check( "rofi: 0-based index in, 1-based position out; icon protocol sent", sel( "rofi", "1", entries ) == 2 && find( "Settings" & chr( 0 ) & "icon" & chr( 31 ) & "gear", seen.payload ) > 0 );
+testkit.check( "rofi gets the prompt and index format in its argv", seen.argv.toList( "|" ) contains "rofi|-dmenu|-i|-show-icons|-format|i|-p|Menu" );
+testkit.check( "fuzzel: index too, and it understands icons", sel( "fuzzel", "2", entries ) == 3 && find( chr( 31 ) & "gear", seen.payload ) > 0 );
+testkit.check( "wofi: the label comes back, no icon metadata is sent", sel( "wofi", "Quit", entries ) == 3 && find( chr( 0 ), seen.payload ) == 0 && find( "Settings", seen.payload ) > 0 );
+testkit.check( "walker: the label comes back", sel( "walker", "Apps", entries ) == 1 );
+testkit.check( "an unknown label or index is a cancel, not a wrong choice", sel( "wofi", "Nope", entries ) == 0 && sel( "rofi", "9", entries ) == 0 && sel( "rofi", "x", entries ) == 0 );
+testkit.check( "an empty answer or a non-zero exit is a cancel", sel( "rofi", "", entries ) == 0 && sel( "rofi", "CANCEL", entries ) == 0 );
+testkit.check( "the same call works on every provider (switching changes nothing for the caller)", sel( "rofi", "0", [ "A", "B" ] ) == 1 && sel( "fuzzel", "0", [ "A", "B" ] ) == 1 && sel( "wofi", "A", [ "A", "B" ] ) == 1 && sel( "walker", "A", [ "A", "B" ] ) == 1 );
+testkit.check( "a newline inside a label cannot split the entry", ( function() { sel( "wofi", "x", [ "Two" & chr( 10 ) & "lines" ] ); return listToArray( seen.payload, chr( 10 ) ).len() == 1; } )() );
 
 inCfg = r.defaults( "Hyprland" ); inCfg.menu_provider = "rofi";
-check( "Rofi can take typed text, the others fall back to a terminal prompt", r.inputSupported( inCfg ) );
-for ( ip in [ "walker", "fuzzel", "wofi", "vicinae" ] ) { inCfg.menu_provider = ip; check( ip & " has no typed-text input", !r.inputSupported( inCfg ) ); }
-if ( failures > 0 ) { println( failures & " failed" ); exit( 1 ); }
-println( "all passed" );
+testkit.check( "Rofi can take typed text, the others fall back to a terminal prompt", r.inputSupported( inCfg ) );
+for ( ip in [ "walker", "fuzzel", "wofi", "vicinae" ] ) { inCfg.menu_provider = ip; testkit.check( ip & " has no typed-text input", !r.inputSupported( inCfg ) ); }
+testkit.done( "all passed" );

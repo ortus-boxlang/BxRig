@@ -1,24 +1,22 @@
 // CommandSpec: the registry from cli.json answers flags and usage. Run from src/: (cd src && matchbox ../tests/command_spec_test.bxs)
-failures = 0;
-function check( label, ok ) { if ( ok ) println( "ok   " & label ); else { println( "FAIL " & label ); failures++; } }
+testkit = new lib.Check( "command spec" );
 s = new bxrig.CommandSpec();
-check( "known and unknown commands", s.knows( "pkg" ) && s.knows( "backup" ) && !s.knows( "nope" ) );
-check( "globals", arrayFind( s.globals(), "yes" ) && arrayFind( s.globals(), "json" ) && arrayFind( s.globals(), "dry-run" ) );
-check( "a listed flag is accepted", s.unknownFlags( "pkg", [ "aur", "yes", "json" ] ).len() == 0 );
-check( "another command's flag is not", s.unknownFlags( "pkg", [ "keep-data" ] ).len() == 1 && s.unknownFlags( "db", [ "keep-data" ] ).len() == 0 );
-check( "a command that is not in the registry takes no flags", s.unknownFlags( "nope", [ "x" ] ).len() == 1 );
+testkit.check( "known and unknown commands", s.knows( "pkg" ) && s.knows( "backup" ) && !s.knows( "nope" ) );
+testkit.check( "globals", arrayFind( s.globals(), "yes" ) && arrayFind( s.globals(), "json" ) && arrayFind( s.globals(), "dry-run" ) );
+testkit.check( "a listed flag is accepted", s.unknownFlags( "pkg", [ "aur", "yes", "json" ] ).len() == 0 );
+testkit.check( "another command's flag is not", s.unknownFlags( "pkg", [ "keep-data" ] ).len() == 1 && s.unknownFlags( "db", [ "keep-data" ] ).len() == 0 );
+testkit.check( "a command that is not in the registry takes no flags", s.unknownFlags( "nope", [ "x" ] ).len() == 1 );
 v = s.variants( "pkg" );
-check( "variants split on the bar and add the command name", v.len() == 5 && v[ 2 ] == "pkg info NAME" && v[ 5 ] == "pkg remove NAME... [--yes] [--dry-run] [--json]" );
+testkit.check( "variants split on the bar and add the command name", v.len() == 5 && v[ 2 ] == "pkg info NAME" && v[ 5 ] == "pkg remove NAME... [--yes] [--dry-run] [--json]" );
 iv = s.variants( "init" );
-check( "a bar inside brackets does not split", iv.len() == 4 && find( "[--fresh | --rerun]", iv[ 1 ] ) > 0 );
-check( "usage for a verb", s.usage( "pkg remove" ) == "Usage: bxrig pkg remove NAME... [--yes] [--dry-run] [--json]" );
-check( "usage for a whole command", find( "pkg search", s.usage( "pkg" ) ) > 0 && find( "pkg remove", s.usage( "pkg" ) ) > 0 );
-check( "an unknown verb falls back to the command's usage", find( "pkg install", s.usage( "pkg nonsense" ) ) > 0 );
+testkit.check( "a bar inside brackets does not split", iv.len() == 4 && find( "[--fresh | --rerun]", iv[ 1 ] ) > 0 );
+testkit.check( "usage for a verb", s.usage( "pkg remove" ) == "Usage: bxrig pkg remove NAME... [--yes] [--dry-run] [--json]" );
+testkit.check( "usage for a whole command", find( "pkg search", s.usage( "pkg" ) ) > 0 && find( "pkg remove", s.usage( "pkg" ) ) > 0 );
+testkit.check( "an unknown verb falls back to the command's usage", find( "pkg install", s.usage( "pkg nonsense" ) ) > 0 );
 all = true;
 for ( g in deserializeJSON( new bxrig.HelpData().json() ).groups ) for ( c in g.commands ) {
     if ( !len( s.usage( c.name ) ) || left( s.usage( c.name ), 13 ) != "Usage: bxrig " || s.variants( c.name ).len() == 0 ) { all = false; println( "no usage for " & c.name ); }
     for ( f in c.flags ) if ( s.unknownFlags( c.name, [ f.name ] ).len() ) { all = false; println( "flag not accepted: " & c.name & " --" & f.name ); }
 }
-check( "every command has usage and accepts its own flags", all );
-if ( failures > 0 ) { println( failures & " failed" ); exit( 1 ); }
-println( "command spec tests passed" );
+testkit.check( "every command has usage and accepts its own flags", all );
+testkit.done( "command spec tests passed" );

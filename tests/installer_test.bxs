@@ -1,7 +1,6 @@
 // Installer: step building and running with a recording runner (nothing touches the system).
 // Run from src/: (cd src && matchbox ../tests/installer_test.bxs)
-failures = 0;
-function check( label, ok ) { if ( ok ) println( "ok   " & label ); else { println( "FAIL " & label ); failures++; } }
+testkit = new lib.Check( "installer" );
 function app( id, source, targets, extra = {} ) {
  a = { id: id, source: source, targets: targets };
  for ( k in extra ) a[k] = extra[k];
@@ -18,65 +17,64 @@ inst = new bxrig.Installer( runner );
 sel = [ app( "git", "pacman", [ "git" ] ), app( "podman", "pacman", [ "podman", "buildah", "skopeo" ] ),
         app( "vscode", "aur", [ "visual-studio-code-bin" ] ), app( "brave", "aur", [ "brave-bin" ] ) ];
 b = inst.steps( sel, false );
-check( "one pacman step for all pacman apps", b.steps[1].kind == "pacman" && b.steps[1].ids.toList() == "git,podman" );
-check( "pacman uses sudo and lists every target once", b.steps[1].commands[1].toList( " " ) == "sudo pacman -S --needed --noconfirm git podman buildah skopeo" );
-check( "aur apps are one step each, after pacman", b.steps.len() == 3 && b.steps[2].commands[1].toList( " " ) == "yay -S --needed --noconfirm visual-studio-code-bin" && b.steps[3].ids[1] == "brave" );
+testkit.check( "one pacman step for all pacman apps", b.steps[1].kind == "pacman" && b.steps[1].ids.toList() == "git,podman" );
+testkit.check( "pacman uses sudo and lists every target once", b.steps[1].commands[1].toList( " " ) == "sudo pacman -S --needed --noconfirm git podman buildah skopeo" );
+testkit.check( "aur apps are one step each, after pacman", b.steps.len() == 3 && b.steps[2].commands[1].toList( " " ) == "yay -S --needed --noconfirm visual-studio-code-bin" && b.steps[3].ids[1] == "brave" );
 b = inst.steps( [ app( "git", "pacman", [ "git" ] ) ], true );
-check( "root: no sudo", b.steps[1].commands[1][1] == "pacman" );
+testkit.check( "root: no sudo", b.steps[1].commands[1][1] == "pacman" );
 b = inst.steps( [ app( "omazed", "pkgbuild", [ "omazed" ], { pkgbuild: { repo: "omacom/omarchy-pkgs", path: "pkgbuilds/omazed", ref: "master" } } ),
                   app( "intellij", "unresolved", [ "x" ] ) ], false );
-check( "unpinned pkgbuild and unresolved are blocked, no steps", b.steps.len() == 0 && b.blocked.len() == 2 );
-check( "blocked reasons are explicit", find( "not a full commit", b.blocked[1].error ) && find( "no installable source", b.blocked[2].error ) );
+testkit.check( "unpinned pkgbuild and unresolved are blocked, no steps", b.steps.len() == 0 && b.blocked.len() == 2 );
+testkit.check( "blocked reasons are explicit", find( "not a full commit", b.blocked[1].error ) && find( "no installable source", b.blocked[2].error ) );
 b = inst.steps( [ app( "omazed", "pkgbuild", [ "omazed" ], { pkgbuild: { repo: "omacom/omarchy-pkgs", path: "pkgbuilds/omazed", ref: "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f" } } ) ], false );
 cmds = b.steps[1].commands;
 shortRef = inst.steps( [ app( "x", "pkgbuild", [ "x" ], { pkgbuild: { repo: "o/r", path: "p", ref: "abc1234" } } ) ], false );
-check( "a short ref is not built", shortRef.steps.len() == 0 && shortRef.blocked.len() == 1 );
-check( "pinned pkgbuild: clone, checkout the ref, makepkg in the path", b.steps.len() == 1 && find( "https://github.com/omacom/omarchy-pkgs.git", cmds[1].toList( " " ) ) && cmds[2][6] == "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f" && cmds[3][3] == b.steps[1].dir & "/pkgbuilds/omazed" && cmds[3][4] == "makepkg" );
+testkit.check( "a short ref is not built", shortRef.steps.len() == 0 && shortRef.blocked.len() == 1 );
+testkit.check( "pinned pkgbuild: clone, checkout the ref, makepkg in the path", b.steps.len() == 1 && find( "https://github.com/omacom/omarchy-pkgs.git", cmds[1].toList( " " ) ) && cmds[2][6] == "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f" && cmds[3][3] == b.steps[1].dir & "/pkgbuilds/omazed" && cmds[3][4] == "makepkg" );
 // web apps: a launcher file, written for real into a temporary home
 home = getTempDirectory() & "/bxrig-installer-" & left( createUUID(), 8 );
 web = { id: "gmail", name: "Gmail", description: "Google mail", source: "web", url: "https://mail.google.com/mail/u/0/#inbox?a=100%25" };
 b = inst.steps( [ web ], false, home );
-check( "web app: one step with a launcher file and no commands", b.steps.len() == 1 && b.steps[1].kind == "web" && b.steps[1].commands.len() == 0 && b.steps[1].files[1].path == home & "/.local/share/applications/bxrig-gmail.desktop" );
+testkit.check( "web app: one step with a launcher file and no commands", b.steps.len() == 1 && b.steps[1].kind == "web" && b.steps[1].commands.len() == 0 && b.steps[1].files[1].path == home & "/.local/share/applications/bxrig-gmail.desktop" );
 content = b.steps[1].files[1].content;
-check( "launcher runs brave in app mode, % is escaped", find( "Exec=brave --app=https://mail.google.com/mail/u/0/#inbox?a=100%%25", content ) && find( "Name=Gmail", content ) && find( "[Desktop Entry]", content ) );
+testkit.check( "launcher runs brave in app mode, % is escaped", find( "Exec=brave --app=https://mail.google.com/mail/u/0/#inbox?a=100%%25", content ) && find( "Name=Gmail", content ) && find( "[Desktop Entry]", content ) );
 r = inst.run( b.steps );
-check( "run: web launcher is written, nothing executed", r.done.len() == 1 && r.failed.len() == 0 && fileExists( b.steps[1].files[1].path ) && fileRead( b.steps[1].files[1].path ) == content );
-check( "run: no stray temp file left", directoryList( getDirectoryFromPath( b.steps[1].files[1].path ) ).len() == 1 );
+testkit.check( "run: web launcher is written, nothing executed", r.done.len() == 1 && r.failed.len() == 0 && fileExists( b.steps[1].files[1].path ) && fileRead( b.steps[1].files[1].path ) == content );
+testkit.check( "run: no stray temp file left", directoryList( getDirectoryFromPath( b.steps[1].files[1].path ) ).len() == 1 );
 r = inst.run( b.steps );
-check( "run: writing the launcher again is fine", r.done.len() == 1 && r.failed.len() == 0 );
+testkit.check( "run: writing the launcher again is fine", r.done.len() == 1 && r.failed.len() == 0 );
 directoryDelete( home, true );
 // running
 calls = [];
 b = inst.steps( sel, false );
 r = inst.run( b.steps );
-check( "run: every step executed in order", calls.len() == 3 && find( "sudo pacman", calls[1] ) && find( "visual-studio-code-bin", calls[2] ) );
-check( "run: all done, exit 0", r.done.len() == 4 && r.failed.len() == 0 && inst.exitCode( r ) == 0 );
+testkit.check( "run: every step executed in order", calls.len() == 3 && find( "sudo pacman", calls[1] ) && find( "visual-studio-code-bin", calls[2] ) );
+testkit.check( "run: all done, exit 0", r.done.len() == 4 && r.failed.len() == 0 && inst.exitCode( r ) == 0 );
 calls = []; failOn = "brave-bin";
 r = inst.run( b.steps );
-check( "run: a failing aur app fails alone, exit 7", r.failed.len() == 1 && r.failed[1].id == "brave" && r.done.len() == 3 && inst.exitCode( r ) == 7 );
+testkit.check( "run: a failing aur app fails alone, exit 7", r.failed.len() == 1 && r.failed[1].id == "brave" && r.done.len() == 3 && inst.exitCode( r ) == 7 );
 failOn = "sudo pacman";
 r = inst.run( b.steps );
-check( "run: pacman failing does not stop the aur steps", r.failed.len() == 2 && r.done.len() == 2 && inst.exitCode( r ) == 7 );
+testkit.check( "run: pacman failing does not stop the aur steps", r.failed.len() == 2 && r.done.len() == 2 && inst.exitCode( r ) == 7 );
 failOn = "pacman"; onlyPacman = inst.steps( [ app( "git", "pacman", [ "git" ] ) ], false );
 r = inst.run( onlyPacman.steps );
-check( "run: only pacman failed gives exit 5", inst.exitCode( r ) == 5 && find( "exit 1", r.failed[1].error ) );
+testkit.check( "run: only pacman failed gives exit 5", inst.exitCode( r ) == 5 && find( "exit 1", r.failed[1].error ) );
 failOn = "yay"; onlyAur = inst.steps( [ app( "vscode", "aur", [ "x" ] ) ], false );
 r = inst.run( onlyAur.steps );
-check( "run: only aur failed gives exit 6", inst.exitCode( r ) == 6 );
+testkit.check( "run: only aur failed gives exit 6", inst.exitCode( r ) == 6 );
 timeoutRunner = function( argv, timeout ) { return { exitCode: 0, timeout: true, output: "" }; };
 r = new bxrig.Installer( timeoutRunner ).run( onlyPacman.steps );
-check( "run: a timeout is a failure", r.failed.len() == 1 && find( "timed out", r.failed[1].error ) );
+testkit.check( "run: a timeout is a failure", r.failed.len() == 1 && find( "timed out", r.failed[1].error ) );
 // script source: the vendor installer, URL and arguments passed as arguments
 scriptApp = { id: "strata", name: "Strata", source: "script", script: { url: "https://example.com/install.sh", args: [ "--non-interactive" ], shell: "sh" } };
 sb = inst.steps( [ scriptApp ], false );
-check( "script: one script step, URL and args are separate arguments", sb.steps.len() == 1 && sb.steps[1].kind == "script" && sb.steps[1].commands[1][5] == "https://example.com/install.sh" && sb.steps[1].commands[1][6] == "--non-interactive" && find( "| sh -s --", sb.steps[1].commands[1][3] ) );
+testkit.check( "script: one script step, URL and args are separate arguments", sb.steps.len() == 1 && sb.steps[1].kind == "script" && sb.steps[1].commands[1][5] == "https://example.com/install.sh" && sb.steps[1].commands[1][6] == "--non-interactive" && find( "| sh -s --", sb.steps[1].commands[1][3] ) );
 // root detection
 rootRunner = function( argv, timeout ) { return { exitCode: 0, timeout: false, output: "0" + chr( 10 ) }; };
 userRunner = function( argv, timeout ) { return { exitCode: 0, timeout: false, output: "1000" }; };
-check( "isRoot", new bxrig.Installer( rootRunner ).isRoot() && !new bxrig.Installer( userRunner ).isRoot() );
+testkit.check( "isRoot", new bxrig.Installer( rootRunner ).isRoot() && !new bxrig.Installer( userRunner ).isRoot() );
 calls = [];
 h = inst.hasCommand( "sudo" );
-check( "hasCommand asks command -v (the tool is never run, so a tool without --version still counts as installed)", h && calls.len() == 1 && find( "command -v", calls[ 1 ] ) > 0 && !find( "--version", calls[ 1 ] ) );
-check( "hasCommand passes the name as an argument, not inside a shell string", find( "_ sudo", calls[ 1 ] ) > 0 );
-if ( failures > 0 ) { println( failures & " failed" ); CLIExit( 1 ); }
-println( "installer tests passed" );
+testkit.check( "hasCommand asks command -v (the tool is never run, so a tool without --version still counts as installed)", h && calls.len() == 1 && find( "command -v", calls[ 1 ] ) > 0 && !find( "--version", calls[ 1 ] ) );
+testkit.check( "hasCommand passes the name as an argument, not inside a shell string", find( "_ sudo", calls[ 1 ] ) > 0 );
+testkit.done( "installer tests passed" );

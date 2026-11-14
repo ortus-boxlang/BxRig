@@ -1,17 +1,15 @@
 // AppIcons: icon lookup in a fake /usr/share (desktop file, icon themes, pixmaps, AppStream icons), Dashboard Icons through ImageCache from a local server,
 // and AppStream screenshots from a fake compressed catalog. Run from src/: (cd src && matchbox ../tests/app_icons_test.bxs)
-failures = 0;
-function check( label, ok ) { if ( ok ) println( "ok   " & label ); else { println( "FAIL " & label ); failures++; } }
-function sh( cmd ) { return systemExecute( "sh", [ "-c", cmd ], 60, true ); }
-tmp = trim( sh( "mktemp -d" ).output );
+testkit = new lib.Check( "app icons" );
+tmp = trim( testkit.sh( "mktemp -d" ).output );
 portFile = tmp & "/port";
-sh( "nohup python3 ../tests/image_server.py " & portFile & " >/dev/null 2>&1 </dev/null & echo $! > " & tmp & "/pid" );
+testkit.sh( "nohup python3 ../tests/image_server.py " & portFile & " >/dev/null 2>&1 </dev/null & echo $! > " & tmp & "/pid" );
 port = "";
-for ( i = 1; i <= 60 && !len( port ); i++ ) { if ( fileExists( portFile ) ) port = trim( fileRead( portFile ) ); else sh( "sleep 0.1" ); }
+for ( i = 1; i <= 60 && !len( port ); i++ ) { if ( fileExists( portFile ) ) port = trim( fileRead( portFile ) ); else testkit.sh( "sleep 0.1" ); }
 base = "http://127.0.0.1:" & port;
 png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
-function put( rel, b64 ) { sh( "mkdir -p $(dirname " & tmp & "/" & rel & ") && echo " & b64 & " | base64 -d > " & tmp & "/" & rel ); }
-function text( rel, content ) { sh( "mkdir -p $(dirname " & tmp & "/" & rel & ")" ); fileWrite( tmp & "/" & rel, content ); }
+function put( rel, b64 ) { testkit.sh( "mkdir -p $(dirname " & tmp & "/" & rel & ") && echo " & b64 & " | base64 -d > " & tmp & "/" & rel ); }
+function text( rel, content ) { testkit.sh( "mkdir -p $(dirname " & tmp & "/" & rel & ")" ); fileWrite( tmp & "/" & rel, content ); }
 // the fake machine
 text( "share/applications/foo.desktop", "[Desktop Entry]" & chr( 10 ) & "Name=Foo" & chr( 10 ) & "Icon=foo-icon" & chr( 10 ) & "[Desktop Action x]" & chr( 10 ) & "Icon=wrong" & chr( 10 ) );
 put( "share/icons/hicolor/48x48/apps/foo-icon.png", png );
@@ -27,20 +25,20 @@ put( "home/.local/share/icons/hicolor/64x64/apps/mine.png", png );
 text( "home/.local/share/applications/mine.desktop", "[Desktop Entry]" & chr( 10 ) & "Icon=mine" & chr( 10 ) );
 
 icons = new bxrig.AppIcons( { share: tmp & "/share", home: tmp & "/home", iconBase: base & "/png", cache: { base: tmp & "/cache", allowHttp: true, maxTime: 3 } } );
-check( "slug: kebab case", icons.slug( "Visual Studio Code" ) == "visual-studio-code" && icons.slug( "  Foo__Bar!! " ) == "foo-bar" );
-check( "names: the packaging suffixes are tried without", icons.names( "slack-desktop" ).len() == 2 && icons.names( "slack-desktop" )[ 2 ] == "slack" && icons.names( "firefox" ).len() == 1 );
-check( "installed: the .desktop Icon is found, the biggest size of hicolor first", icons.iconFor( "foo" ) == tmp & "/share/icons/hicolor/128x128/apps/foo-icon.png" );
-check( "installed: only the [Desktop Entry] group counts", new bxrig.DesktopEntry().iconName( tmp & "/share/applications/foo.desktop" ) == "foo-icon" );
-check( "installed: an absolute Icon path", icons.iconFor( "abs" ) == tmp & "/share/elsewhere/abs.png" );
-check( "installed: other icon themes and the apps/SIZE layout", icons.themed( "brz" ) == tmp & "/share/icons/breeze/apps/48/brz.png" );
-check( "installed: pixmaps", icons.iconFor( "pix" ) == tmp & "/share/pixmaps/pix.png" );
-check( "installed: the user's own icon folder and desktop file", icons.iconFor( "mine" ) == tmp & "/home/.local/share/icons/hicolor/64x64/apps/mine.png" );
-check( "installed: an SVG-only icon is skipped, not returned", icons.themed( "svgonly" ) == "" );
+testkit.check( "slug: kebab case", icons.slug( "Visual Studio Code" ) == "visual-studio-code" && icons.slug( "  Foo__Bar!! " ) == "foo-bar" );
+testkit.check( "names: the packaging suffixes are tried without", icons.names( "slack-desktop" ).len() == 2 && icons.names( "slack-desktop" )[ 2 ] == "slack" && icons.names( "firefox" ).len() == 1 );
+testkit.check( "installed: the .desktop Icon is found, the biggest size of hicolor first", icons.iconFor( "foo" ) == tmp & "/share/icons/hicolor/128x128/apps/foo-icon.png" );
+testkit.check( "installed: only the [Desktop Entry] group counts", new bxrig.DesktopEntry().iconName( tmp & "/share/applications/foo.desktop" ) == "foo-icon" );
+testkit.check( "installed: an absolute Icon path", icons.iconFor( "abs" ) == tmp & "/share/elsewhere/abs.png" );
+testkit.check( "installed: other icon themes and the apps/SIZE layout", icons.themed( "brz" ) == tmp & "/share/icons/breeze/apps/48/brz.png" );
+testkit.check( "installed: pixmaps", icons.iconFor( "pix" ) == tmp & "/share/pixmaps/pix.png" );
+testkit.check( "installed: the user's own icon folder and desktop file", icons.iconFor( "mine" ) == tmp & "/home/.local/share/icons/hicolor/64x64/apps/mine.png" );
+testkit.check( "installed: an SVG-only icon is skipped, not returned", icons.themed( "svgonly" ) == "" );
 // an Icon= name with dots is used as it is (org.xfce.thunar), and the current theme and its Inherits come before hicolor
 put( "share/icons/hicolor/128x128/apps/org.example.Dotted.png", png );
-check( "installed: a dotted Icon= name is found as it is", icons.iconFor( "org.example.Dotted" ) == tmp & "/share/icons/hicolor/128x128/apps/org.example.Dotted.png" );
+testkit.check( "installed: a dotted Icon= name is found as it is", icons.iconFor( "org.example.Dotted" ) == tmp & "/share/icons/hicolor/128x128/apps/org.example.Dotted.png" );
 put( "share/icons/hicolor/32x32/apps/small-only.png", png );
-check( "installed: small sizes are the last resort", icons.themed( "small-only" ) == tmp & "/share/icons/hicolor/32x32/apps/small-only.png" );
+testkit.check( "installed: small sizes are the last resort", icons.themed( "small-only" ) == tmp & "/share/icons/hicolor/32x32/apps/small-only.png" );
 put( "share/icons/Fancy/128x128/apps/themed-app.png", png );
 put( "share/icons/hicolor/128x128/apps/themed-app.png", png );
 put( "share/icons/Base/128x128/apps/inherited-app.png", png );
@@ -48,43 +46,43 @@ put( "share/icons/hicolor/128x128/apps/inherited-app.png", png );
 text( "share/icons/Fancy/index.theme", "[Icon Theme]" & chr( 10 ) & "Name=Fancy" & chr( 10 ) & "Inherits=Base,hicolor" & chr( 10 ) );
 text( "home/.config/gtk-3.0/settings.ini", "[Settings]" & chr( 10 ) & "gtk-icon-theme-name=Fancy" & chr( 10 ) );
 themedIcons = new bxrig.AppIcons( { share: tmp & "/share", home: tmp & "/home", cache: { base: tmp & "/cache3" } } );
-check( "theme: the current GTK icon theme wins over hicolor", themedIcons.themed( "themed-app" ) == tmp & "/share/icons/Fancy/128x128/apps/themed-app.png" );
-check( "theme: a theme it Inherits comes before hicolor", themedIcons.themed( "inherited-app" ) == tmp & "/share/icons/Base/128x128/apps/inherited-app.png" );
-check( "theme: names are Fancy, Base, hicolor in that order", themedIcons.themeNames( tmp & "/share/icons" )[ 1 ] == "Fancy" && themedIcons.themeNames( tmp & "/share/icons" )[ 2 ] == "Base" && themedIcons.themeNames( tmp & "/share/icons" )[ 3 ] == "hicolor" );
+testkit.check( "theme: the current GTK icon theme wins over hicolor", themedIcons.themed( "themed-app" ) == tmp & "/share/icons/Fancy/128x128/apps/themed-app.png" );
+testkit.check( "theme: a theme it Inherits comes before hicolor", themedIcons.themed( "inherited-app" ) == tmp & "/share/icons/Base/128x128/apps/inherited-app.png" );
+testkit.check( "theme: names are Fancy, Base, hicolor in that order", themedIcons.themeNames( tmp & "/share/icons" )[ 1 ] == "Fancy" && themedIcons.themeNames( tmp & "/share/icons" )[ 2 ] == "Base" && themedIcons.themeNames( tmp & "/share/icons" )[ 3 ] == "hicolor" );
 // SVG only: a fake rsvg-convert on PATH writes a PNG; without any tool the icon stays empty and nothing throws
 text( "share/icons/hicolor/scalable/apps/vector-app.svg", "<svg xmlns=" & chr( 34 ) & "http://www.w3.org/2000/svg" & chr( 34 ) & "/>" );
 text( "share/applications/vector-app.desktop", "[Desktop Entry]" & chr( 10 ) & "Icon=vector-app" & chr( 10 ) );
-check( "svg: without a rasterizer the icon is empty, not an error", new bxrig.AppIcons( { share: tmp & "/share", home: tmp & "/home", cache: { base: tmp & "/cache4" } } ).rasterize( tmp & "/share/icons/hicolor/scalable/apps/vector-app.svg" ) == "" || len( trim( sh( "command -v rsvg-convert || command -v magick || command -v convert || true" ).output ) ) > 0 );
+testkit.check( "svg: without a rasterizer the icon is empty, not an error", new bxrig.AppIcons( { share: tmp & "/share", home: tmp & "/home", cache: { base: tmp & "/cache4" } } ).rasterize( tmp & "/share/icons/hicolor/scalable/apps/vector-app.svg" ) == "" || len( trim( testkit.sh( "command -v rsvg-convert || command -v magick || command -v convert || true" ).output ) ) > 0 );
 text( "bin/rsvg-convert", "#!/bin/sh" & chr( 10 ) & "out=; while [ $# -gt 0 ]; do case $1 in -o) out=$2; shift;; esac; shift; done" & chr( 10 ) & "echo " & png & " | base64 -d > $out" & chr( 10 ) );
-sh( "chmod +x " & tmp & "/bin/rsvg-convert" );
+testkit.sh( "chmod +x " & tmp & "/bin/rsvg-convert" );
 oldPath = getSystemSetting( "PATH", "" );
-sh( "true" );
+testkit.sh( "true" );
 svgIcons = new bxrig.AppIcons( { share: tmp & "/share", home: tmp & "/home", cache: { base: tmp & "/cache5" } } );
 svgIcons.useTool( tmp & "/bin/rsvg-convert" );
 got1 = svgIcons.iconFor( "vector-app" );
-check( "svg: an SVG-only icon is rasterized to a cached PNG", len( got1 ) > 0 && fileExists( got1 ) && right( got1, 4 ) == ".png" && find( "/images/svg/", got1 ) > 0 );
-check( "svg: asked again it is the same file (cached)", svgIcons.rasterize( svgIcons.svgOf( "vector-app" ) ) == got1 );
+testkit.check( "svg: an SVG-only icon is rasterized to a cached PNG", len( got1 ) > 0 && fileExists( got1 ) && right( got1, 4 ) == ".png" && find( "/images/svg/", got1 ) > 0 );
+testkit.check( "svg: asked again it is the same file (cached)", svgIcons.rasterize( svgIcons.svgOf( "vector-app" ) ) == got1 );
 text( "bin/bad-convert", "#!/bin/sh" & chr( 10 ) & "exit 1" & chr( 10 ) );
-sh( "chmod +x " & tmp & "/bin/bad-convert" );
+testkit.sh( "chmod +x " & tmp & "/bin/bad-convert" );
 text( "share/icons/hicolor/scalable/apps/broken-app.svg", "<svg/>" );
 badIcons = new bxrig.AppIcons( { share: tmp & "/share", home: tmp & "/home", cache: { base: tmp & "/cache6" } } );
 badIcons.useTool( tmp & "/bin/bad-convert" );
-check( "svg: a tool that fails gives empty and is remembered", badIcons.rasterize( badIcons.svgOf( "broken-app" ) ) == "" && len( sh( "ls " & tmp & "/cache6/images/svg/*.fail 2>/dev/null" ).output ) > 0 );
-check( "appstream: *_name.png in the catalog icons", icons.appstream( "astool" ) == tmp & "/share/swcatalog/icons/extra/64x64/ascat_astool.png" && icons.iconFor( "astool" ) == tmp & "/share/swcatalog/icons/extra/64x64/ascat_astool.png" );
-check( "junk names do not throw", icons.iconFor( "" ) == "" && icons.iconFor( "../../etc/passwd" ) == "" );
+testkit.check( "svg: a tool that fails gives empty and is remembered", badIcons.rasterize( badIcons.svgOf( "broken-app" ) ) == "" && len( testkit.sh( "ls " & tmp & "/cache6/images/svg/*.fail 2>/dev/null" ).output ) > 0 );
+testkit.check( "appstream: *_name.png in the catalog icons", icons.appstream( "astool" ) == tmp & "/share/swcatalog/icons/extra/64x64/ascat_astool.png" && icons.iconFor( "astool" ) == tmp & "/share/swcatalog/icons/extra/64x64/ascat_astool.png" );
+testkit.check( "junk names do not throw", icons.iconFor( "" ) == "" && icons.iconFor( "../../etc/passwd" ) == "" );
 
 // Dashboard Icons through the cache: first answer is "", the file arrives in the background
 first = icons.iconFor( "Thunderbird", "dark" );
-check( "dashboard: the first call answers at once with nothing", first == "" );
+testkit.check( "dashboard: the first call answers at once with nothing", first == "" );
 got = "";
-for ( i = 1; i <= 80 && !len( got ); i++ ) { got = icons.iconFor( "Thunderbird", "dark" ); if ( !len( got ) ) sh( "sleep 0.1" ); }
-check( "dashboard: the picture arrives and is returned", len( got ) > 0 && fileExists( got ) );
-slack = ""; for ( i = 1; i <= 120 && !len( slack ); i++ ) { slack = icons.iconFor( "slack", "dark" ); if ( !len( slack ) ) sh( "sleep 0.1" ); }
-check( "dashboard: when the plain name is missing the -light variant is used on a dark theme", len( slack ) > 0 && find( "slack-light", fileExists( tmp & "/cache/images/icons/x" ) ? "" : "slack-light" ) > 0 );
-vs = ""; for ( i = 1; i <= 120 && !len( vs ); i++ ) { vs = icons.iconFor( "vscode", "light" ); if ( !len( vs ) ) sh( "sleep 0.1" ); }
-check( "dashboard: and -dark on a light theme", len( vs ) > 0 );
-nothing = ""; for ( i = 1; i <= 40; i++ ) { nothing = icons.iconFor( "no-such-app-anywhere", "dark" ); sh( "sleep 0.05" ); }
-check( "dashboard: an app Dashboard Icons does not have stays empty (and is not hammered)", nothing == "" );
+for ( i = 1; i <= 80 && !len( got ); i++ ) { got = icons.iconFor( "Thunderbird", "dark" ); if ( !len( got ) ) testkit.sh( "sleep 0.1" ); }
+testkit.check( "dashboard: the picture arrives and is returned", len( got ) > 0 && fileExists( got ) );
+slack = ""; for ( i = 1; i <= 120 && !len( slack ); i++ ) { slack = icons.iconFor( "slack", "dark" ); if ( !len( slack ) ) testkit.sh( "sleep 0.1" ); }
+testkit.check( "dashboard: when the plain name is missing the -light variant is used on a dark theme", len( slack ) > 0 && find( "slack-light", fileExists( tmp & "/cache/images/icons/x" ) ? "" : "slack-light" ) > 0 );
+vs = ""; for ( i = 1; i <= 120 && !len( vs ); i++ ) { vs = icons.iconFor( "vscode", "light" ); if ( !len( vs ) ) testkit.sh( "sleep 0.1" ); }
+testkit.check( "dashboard: and -dark on a light theme", len( vs ) > 0 );
+nothing = ""; for ( i = 1; i <= 40; i++ ) { nothing = icons.iconFor( "no-such-app-anywhere", "dark" ); testkit.sh( "sleep 0.05" ); }
+testkit.check( "dashboard: an app Dashboard Icons does not have stays empty (and is not hammered)", nothing == "" );
 
 // screenshots from a fake compressed AppStream catalog
 xml = "<components>" & chr( 10 ) & "<component type=" & chr( 34 ) & "desktop-application" & chr( 34 ) & ">" & chr( 10 ) & "<id>org.example.app</id>" & chr( 10 ) & "<screenshots>" & chr( 10 ) & "<screenshot type=" & chr( 34 ) & "default" & chr( 34 ) & ">" & chr( 10 )
@@ -92,23 +90,22 @@ xml = "<components>" & chr( 10 ) & "<component type=" & chr( 34 ) & "desktop-app
     & "<image type=" & chr( 34 ) & "thumbnail" & chr( 34 ) & " width=" & chr( 34 ) & "752" & chr( 34 ) & ">" & base & "/good.png</image>" & chr( 10 )
     & "</screenshot>" & chr( 10 ) & "</screenshots>" & chr( 10 ) & "</component>" & chr( 10 ) & "<component type=" & chr( 34 ) & "desktop-application" & chr( 34 ) & ">" & chr( 10 ) & "<id>org.example.other</id>" & chr( 10 ) & "<screenshots><screenshot><image type=" & chr( 34 ) & "source" & chr( 34 ) & ">" & base & "/good.gif</image></screenshot></screenshots>" & chr( 10 ) & "</component>" & chr( 10 ) & "</components>" & chr( 10 );
 text( "catalog.xml", xml );
-sh( "mkdir -p " & tmp & "/share/swcatalog/xml && gzip -c " & tmp & "/catalog.xml > " & tmp & "/share/swcatalog/xml/extra.xml.gz" );
-check( "screenshots: an unknown or unsafe id gives nothing", icons.screenshotsFor( "" ).len() == 0 && icons.screenshotsFor( "a b;rm" ).len() == 0 );
+testkit.sh( "mkdir -p " & tmp & "/share/swcatalog/xml && gzip -c " & tmp & "/catalog.xml > " & tmp & "/share/swcatalog/xml/extra.xml.gz" );
+testkit.check( "screenshots: an unknown or unsafe id gives nothing", icons.screenshotsFor( "" ).len() == 0 && icons.screenshotsFor( "a b;rm" ).len() == 0 );
 r0 = icons.screenshotsFor( "org.example.app" );
-check( "screenshots: the first call answers at once, empty, and starts the scan", r0.len() == 0 );
+testkit.check( "screenshots: the first call answers at once, empty, and starts the scan", r0.len() == 0 );
 shots = [];
-for ( i = 1; i <= 120 && !shots.len(); i++ ) { shots = icons.screenshotsFor( "org.example.app" ); if ( !shots.len() ) sh( "sleep 0.1" ); }
-check( "screenshots: the index holds the component's URLs, thumbnails preferred", icons.screenshotUrls( "org.example.app" ).len() == 1 && find( "good.png", icons.screenshotUrls( "org.example.app" )[ 1 ] ) > 0 );
-check( "screenshots: the picture is downloaded and returned as a local path", shots.len() == 1 && fileExists( shots[ 1 ] ) && right( shots[ 1 ], 4 ) == ".png" );
+for ( i = 1; i <= 120 && !shots.len(); i++ ) { shots = icons.screenshotsFor( "org.example.app" ); if ( !shots.len() ) testkit.sh( "sleep 0.1" ); }
+testkit.check( "screenshots: the index holds the component's URLs, thumbnails preferred", icons.screenshotUrls( "org.example.app" ).len() == 1 && find( "good.png", icons.screenshotUrls( "org.example.app" )[ 1 ] ) > 0 );
+testkit.check( "screenshots: the picture is downloaded and returned as a local path", shots.len() == 1 && fileExists( shots[ 1 ] ) && right( shots[ 1 ], 4 ) == ".png" );
 o = [];
-for ( i = 1; i <= 120 && !o.len(); i++ ) { o = icons.screenshotsFor( "org.example.other" ); if ( !o.len() ) sh( "sleep 0.1" ); }
-check( "screenshots: another component, source image when there is no thumbnail", o.len() == 1 && right( o[ 1 ], 4 ) == ".gif" );
+for ( i = 1; i <= 120 && !o.len(); i++ ) { o = icons.screenshotsFor( "org.example.other" ); if ( !o.len() ) testkit.sh( "sleep 0.1" ); }
+testkit.check( "screenshots: another component, source image when there is no thumbnail", o.len() == 1 && right( o[ 1 ], 4 ) == ".gif" );
 none = icons.screenshotsFor( "org.example.missing" );
-for ( i = 1; i <= 30 && !fileExists( tmp & "/cache/appstream/org.example.missing.urls" ); i++ ) sh( "sleep 0.1" );
-check( "screenshots: a component that is not in the catalog ends with an empty index and no pictures", fileExists( tmp & "/cache/appstream/org.example.missing.urls" ) && icons.screenshotsFor( "org.example.missing" ).len() == 0 );
+for ( i = 1; i <= 30 && !fileExists( tmp & "/cache/appstream/org.example.missing.urls" ); i++ ) testkit.sh( "sleep 0.1" );
+testkit.check( "screenshots: a component that is not in the catalog ends with an empty index and no pictures", fileExists( tmp & "/cache/appstream/org.example.missing.urls" ) && icons.screenshotsFor( "org.example.missing" ).len() == 0 );
 bare = new bxrig.AppIcons( { share: tmp & "/empty", home: tmp & "/emptyhome", cache: { base: tmp & "/cache2" } } );
-check( "screenshots: no catalog installed gives nothing and no error", bare.screenshotsFor( "org.example.app" ).len() == 0 );
+testkit.check( "screenshots: no catalog installed gives nothing and no error", bare.screenshotsFor( "org.example.app" ).len() == 0 );
 
-sh( "kill $(cat " & tmp & "/pid) 2>/dev/null; rm -rf " & tmp );
-if ( failures > 0 ) { println( failures & " failed" ); exit( 1 ); }
-println( "all passed" );
+testkit.sh( "kill $(cat " & tmp & "/pid) 2>/dev/null; rm -rf " & tmp );
+testkit.done( "all passed" );

@@ -1,19 +1,17 @@
 // Cli.say / Cli.fail / Out: return codes and scoping. (Printing is covered by the --json | jq assertions of the shell tests.)
 // Run from src/: (cd src && matchbox ../tests/out_test.bxs)
-failures = 0;
-function check( label, ok ) { if ( ok ) println( "ok   " & label ); else { println( "FAIL " & label ); failures++; } }
+testkit = new lib.Check( "out" );
 cli = new bxrig.Cli( "0.0.0" );
-check( "say returns the code (lines)", cli.say( "demo", 0, {}, false, [] ) == 0 );
-check( "say returns the code (json)", cli.say( "demo", 4, { a: 1 }, true ) == 4 );
-check( "fail returns the code", cli.fail( "demo", 6, "boom", false ) == 6 );
+testkit.check( "say returns the code (lines)", cli.say( "demo", 0, {}, false, [] ) == 0 );
+testkit.check( "say returns the code (json)", cli.say( "demo", 4, { a: 1 }, true ) == 4 );
+testkit.check( "fail returns the code", cli.fail( "demo", 6, "boom", false ) == 6 );
 out = cli.scoped( "demo" );
-check( "Out.say", out.say( 0, {}, false, [] ) == 0 );
-check( "Out.fail", out.fail( 7, "x", false ) == 7 );
-check( "Out.usage is 2", out.usage( "bad", false ) == 2 );
-check( "Out.precondition is 4", out.precondition( "no tool", false ) == 4 );
-check( "Out.failed is 6", out.failed( "write failed", false ) == 6 );
-check( "Out.sub keeps the codes", out.sub( "demo two" ).usage( "bad", false ) == 2 );
+testkit.check( "Out.say", out.say( 0, {}, false, [] ) == 0 );
+testkit.check( "Out.fail", out.fail( 7, "x", false ) == 7 );
+testkit.check( "Out.usage is 2", out.usage( "bad", false ) == 2 );
+testkit.check( "Out.precondition is 4", out.precondition( "no tool", false ) == 4 );
+testkit.check( "Out.failed is 6", out.failed( "write failed", false ) == 6 );
+testkit.check( "Out.sub keeps the codes", out.sub( "demo two" ).usage( "bad", false ) == 2 );
 env = cli.envelope( "demo", 4, { error: "x" } );
-check( "envelope: ok false and exit 4", find( '"EXIT":4', ucase( env ) ) > 0 && find( '"OK":FALSE', ucase( env ) ) > 0 );
-if ( failures > 0 ) { println( failures & " failed" ); exit( 1 ); }
-println( "out tests passed" );
+testkit.check( "envelope: ok false and exit 4", find( '"EXIT":4', ucase( env ) ) > 0 && find( '"OK":FALSE', ucase( env ) ) > 0 );
+testkit.done( "out tests passed" );

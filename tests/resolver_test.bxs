@@ -1,10 +1,7 @@
 // Resolver rules on a small fixed catalog and on the real one. Run from src/:
 //   (cd src && matchbox ../tests/resolver_test.bxs)
 resolverClass = new bxrig.Resolver();
-failures = 0;
-function check( label, ok ) {
- if ( ok ) println( "ok   " & label ); else { println( "FAIL " & label ); failures++; }
-}
+testkit = new lib.Check( "resolver" );
 function idsOf( r ) { return r.selected.map( function( a ) { return a.id; } ).toList( "," ); }
 function reasonOf( r, id ) {
  for ( s in r.skipped ) if ( s.id == id ) return s.reason;
@@ -24,83 +21,82 @@ fixture = {
 };
 // default set
 r = resolverClass.resolve( fixture, {} );
-check( "default: default-tier apps, no shell filter", idsOf( r ) == "git,hyprsunset,dolphin,btop" );
-check( "default: optional is skipped with a reason", reasonOf( r, "zed" ) == "optional" );
-check( "default: unresolved is skipped", reasonOf( r, "intellij" ) == "unresolved" );
+testkit.check( "default: default-tier apps, no shell filter", idsOf( r ) == "git,hyprsunset,dolphin,btop" );
+testkit.check( "default: optional is skipped with a reason", reasonOf( r, "zed" ) == "optional" );
+testkit.check( "default: unresolved is skipped", reasonOf( r, "intellij" ) == "unresolved" );
 r = resolverClass.resolve( fixture, { shell: "hyprland" } );
-check( "shell hyprland drops plasma-only apps", idsOf( r ) == "git,hyprsunset,btop" && reasonOf( r, "dolphin" ) == "wrong_shell" );
+testkit.check( "shell hyprland drops plasma-only apps", idsOf( r ) == "git,hyprsunset,btop" && reasonOf( r, "dolphin" ) == "wrong_shell" );
 r = resolverClass.resolve( fixture, { shell: "plasma" } );
-check( "shell plasma drops hyprland-only apps", idsOf( r ) == "git,dolphin,btop" && reasonOf( r, "hyprsunset" ) == "wrong_shell" );
+testkit.check( "shell plasma drops hyprland-only apps", idsOf( r ) == "git,dolphin,btop" && reasonOf( r, "hyprsunset" ) == "wrong_shell" );
 withWalker = jsonDeserialize( jsonSerialize( fixture ) );
 withWalker.apps.append( { id: "walker", tier: "optional", source: "pacman", shells: [ "hyprland" ] } );
 r = resolverClass.resolve( withWalker, { shell: "plasma" } );
-check( "wrong_shell is reported even for an optional app", reasonOf( r, "walker" ) == "wrong_shell" );
+testkit.check( "wrong_shell is reported even for an optional app", reasonOf( r, "walker" ) == "wrong_shell" );
 r = resolverClass.resolve( withWalker, { shell: "hyprland" } );
-check( "optional app on its own shell is reported optional", reasonOf( r, "walker" ) == "optional" );
+testkit.check( "optional app on its own shell is reported optional", reasonOf( r, "walker" ) == "optional" );
 r = resolverClass.resolve( fixture, { shell: "all" } );
-check( "shell all keeps both", idsOf( r ) == "git,hyprsunset,dolphin,btop" );
+testkit.check( "shell all keeps both", idsOf( r ) == "git,hyprsunset,dolphin,btop" );
 r = resolverClass.resolve( fixture, { optional: true } );
-check( "--optional adds the optional tier", idsOf( r ) == "git,jq,hyprsunset,dolphin,btop,zed" );
+testkit.check( "--optional adds the optional tier", idsOf( r ) == "git,jq,hyprsunset,dolphin,btop,zed" );
 r = resolverClass.resolve( fixture, { installed: function( a ) { return a.id == "git"; } } );
-check( "installed apps are skipped", reasonOf( r, "git" ) == "installed" && !find( "git", idsOf( r ) ) );
+testkit.check( "installed apps are skipped", reasonOf( r, "git" ) == "installed" && !find( "git", idsOf( r ) ) );
 // profile
 r = resolverClass.resolve( fixture, { profile: "dev" } );
-check( "profile: default members only", idsOf( r ) == "git" && reasonOf( r, "jq" ) == "optional" && reasonOf( r, "intellij" ) == "unresolved" );
-check( "profile: non-members are not mentioned", reasonOf( r, "btop" ) == "" );
+testkit.check( "profile: default members only", idsOf( r ) == "git" && reasonOf( r, "jq" ) == "optional" && reasonOf( r, "intellij" ) == "unresolved" );
+testkit.check( "profile: non-members are not mentioned", reasonOf( r, "btop" ) == "" );
 r = resolverClass.resolve( fixture, { profile: "dev", optional: true } );
-check( "profile --optional adds optional members", idsOf( r ) == "git,jq" );
+testkit.check( "profile --optional adds optional members", idsOf( r ) == "git,jq" );
 r = resolverClass.resolve( fixture, { profile: "nope" } );
-check( "unknown profile is an error", r.errors.len() == 1 && r.selected.len() == 0 );
+testkit.check( "unknown profile is an error", r.errors.len() == 1 && r.selected.len() == 0 );
 // named apps
 r = resolverClass.resolve( fixture, { ids: [ "zed", "dolphin", "zed" ], shell: "hyprland" } );
-check( "named apps ignore tier and shell, order kept, duplicates dropped", r.mode == "ids" && idsOf( r ) == "zed,dolphin" );
+testkit.check( "named apps ignore tier and shell, order kept, duplicates dropped", r.mode == "ids" && idsOf( r ) == "zed,dolphin" );
 r = resolverClass.resolve( fixture, { ids: [ "intellij" ] } );
-check( "named unresolved app fails", r.failed.len() == 1 && r.failed[1].id == "intellij" && r.selected.len() == 0 );
+testkit.check( "named unresolved app fails", r.failed.len() == 1 && r.failed[1].id == "intellij" && r.selected.len() == 0 );
 r = resolverClass.resolve( fixture, { ids: [ "git" ], installed: function( a ) { return true; } } );
-check( "named installed app is skipped", reasonOf( r, "git" ) == "installed" );
+testkit.check( "named installed app is skipped", reasonOf( r, "git" ) == "installed" );
 r = resolverClass.resolve( fixture, { ids: [ "nope", "git" ] } );
-check( "unknown app is an error and nothing is selected", r.errors.len() == 1 && r.selected.len() == 0 );
+testkit.check( "unknown app is an error and nothing is selected", r.errors.len() == 1 && r.selected.len() == 0 );
 r = resolverClass.resolve( fixture, { ids: [ "git" ], profile: "dev" } );
-check( "ids with a profile is an error", r.errors.len() == 1 );
+testkit.check( "ids with a profile is an error", r.errors.len() == 1 );
 r = resolverClass.resolve( fixture, { shell: "gnome" } );
-check( "unknown shell is an error", r.errors.len() == 1 );
+testkit.check( "unknown shell is an error", r.errors.len() == 1 );
 // web apps pull in the browser
 webCat = { profiles: [], apps: [ { id: "brave", tier: "default", source: "pacman", targets: [ "brave-bin" ] }, { id: "gmail", tier: "default", source: "web", url: "https://x.test" }, { id: "git", tier: "default", source: "pacman" } ] };
 r = resolverClass.resolve( webCat, { ids: [ "gmail" ] } );
-check( "named web app: brave is added first", idsOf( r ) == "brave,gmail" );
+testkit.check( "named web app: brave is added first", idsOf( r ) == "brave,gmail" );
 r = resolverClass.resolve( webCat, {} );
-check( "default set with a web app: brave appears once, first", idsOf( r ) == "brave,gmail,git" || idsOf( r ) == "brave,git,gmail" );
+testkit.check( "default set with a web app: brave appears once, first", idsOf( r ) == "brave,gmail,git" || idsOf( r ) == "brave,git,gmail" );
 r = resolverClass.resolve( webCat, { ids: [ "gmail" ], installed: function( a ) { return a.id == "brave"; } } );
-check( "brave already installed: not added", idsOf( r ) == "gmail" );
+testkit.check( "brave already installed: not added", idsOf( r ) == "gmail" );
 r = resolverClass.resolve( webCat, { ids: [ "brave", "gmail" ] } );
-check( "brave named too: not duplicated", idsOf( r ) == "brave,gmail" );
+testkit.check( "brave named too: not duplicated", idsOf( r ) == "brave,gmail" );
 r = resolverClass.resolve( webCat, { ids: [ "git" ] } );
-check( "no web app: no browser", idsOf( r ) == "git" );
+testkit.check( "no web app: no browser", idsOf( r ) == "git" );
 // shell detection
-check( "detect Hyprland", resolverClass.detectShell( "Hyprland" ) == "hyprland" );
-check( "detect KDE", resolverClass.detectShell( "KDE" ) == "plasma" );
-check( "detect unknown", resolverClass.detectShell( "GNOME" ) == "" && resolverClass.detectShell( "" ) == "" );
+testkit.check( "detect Hyprland", resolverClass.detectShell( "Hyprland" ) == "hyprland" );
+testkit.check( "detect KDE", resolverClass.detectShell( "KDE" ) == "plasma" );
+testkit.check( "detect unknown", resolverClass.detectShell( "GNOME" ) == "" && resolverClass.detectShell( "" ) == "" );
 // real catalog
 real = new bxrig.Catalog().load();
 r = resolverClass.resolve( real, { profile: "core" } );
-check( "real: core profile is git, curl, jq, unzip", listSort( idsOf( r ), "text", "asc" ) == "curl,git,jq,unzip" );
+testkit.check( "real: core profile is git, curl, jq, unzip", listSort( idsOf( r ), "text", "asc" ) == "curl,git,jq,unzip" );
 r = resolverClass.resolve( real, { profile: "jvm" } );
-check( "real: jvm profile", listSort( idsOf( r ), "text", "asc" ) == "gradle,jdk21,maven" );
+testkit.check( "real: jvm profile", listSort( idsOf( r ), "text", "asc" ) == "gradle,jdk21,maven" );
 r = resolverClass.resolve( real, { shell: "plasma" } );
-check( "real: no hyprland-only app is selected on plasma", r.selected.filter( function( a ) { return structKeyExists( a, "shells" ) && !arrayFind( a.shells, "plasma" ); } ).len() == 0 );
+testkit.check( "real: no hyprland-only app is selected on plasma", r.selected.filter( function( a ) { return structKeyExists( a, "shells" ) && !arrayFind( a.shells, "plasma" ); } ).len() == 0 );
 // filesystem rule: an app that names filesystems is in the default set only on them
 fsFix = { profiles: [], apps: [ { id: "btop", tier: "default", source: "pacman" }, { id: "btrfs-assistant", tier: "default", source: "pacman", filesystems: [ "btrfs" ] } ] };
 r = resolverClass.resolve( fsFix, { rootFs: "btrfs" } );
-check( "fs: on Btrfs the Btrfs-only app is selected", idsOf( r ) == "btop,btrfs-assistant" );
+testkit.check( "fs: on Btrfs the Btrfs-only app is selected", idsOf( r ) == "btop,btrfs-assistant" );
 r = resolverClass.resolve( fsFix, { rootFs: "ext4" } );
-check( "fs: on ext4 it is skipped as wrong_filesystem", idsOf( r ) == "btop" && reasonOf( r, "btrfs-assistant" ) == "wrong_filesystem" );
+testkit.check( "fs: on ext4 it is skipped as wrong_filesystem", idsOf( r ) == "btop" && reasonOf( r, "btrfs-assistant" ) == "wrong_filesystem" );
 r = resolverClass.resolve( fsFix, {} );
-check( "fs: an unknown filesystem counts as not Btrfs", idsOf( r ) == "btop" );
+testkit.check( "fs: an unknown filesystem counts as not Btrfs", idsOf( r ) == "btop" );
 r = resolverClass.resolve( fsFix, { ids: [ "btrfs-assistant" ], rootFs: "ext4" } );
-check( "fs: naming the app installs it anyway", idsOf( r ) == "btrfs-assistant" );
+testkit.check( "fs: naming the app installs it anyway", idsOf( r ) == "btrfs-assistant" );
 r = resolverClass.resolve( real, { rootFs: "ext4" } );
-check( "real: Btrfs Assistant is not in the default set on ext4, Timeshift is", !arrayFind( r.selected.map( function( a ) { return a.id; } ), "btrfs-assistant" ) && arrayFind( r.selected.map( function( a ) { return a.id; } ), "timeshift" ) );
+testkit.check( "real: Btrfs Assistant is not in the default set on ext4, Timeshift is", !arrayFind( r.selected.map( function( a ) { return a.id; } ), "btrfs-assistant" ) && arrayFind( r.selected.map( function( a ) { return a.id; } ), "timeshift" ) );
 r = resolverClass.resolve( real, { rootFs: "btrfs" } );
-check( "real: on Btrfs both are", arrayFind( r.selected.map( function( a ) { return a.id; } ), "btrfs-assistant" ) && arrayFind( r.selected.map( function( a ) { return a.id; } ), "timeshift" ) );
-if ( failures > 0 ) { println( failures & " failed" ); CLIExit( 1 ); }
-println( "resolver tests passed" );
+testkit.check( "real: on Btrfs both are", arrayFind( r.selected.map( function( a ) { return a.id; } ), "btrfs-assistant" ) && arrayFind( r.selected.map( function( a ) { return a.id; } ), "timeshift" ) );
+testkit.done( "resolver tests passed" );

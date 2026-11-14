@@ -1,106 +1,105 @@
 // WizardApp: state and key handling, no terminal. Run from src/: (cd src && matchbox ../tests/wizard_app_test.bxs)
-failures = 0;
-function check( label, ok ) { if ( ok ) println( "ok   " & label ); else { println( "FAIL " & label ); failures++; } }
+testkit = new lib.Check( "wizard app" );
 function mk( preset = {} ) { return new bxrig.WizardApp( jsonDeserialize( new bxrig.WizardData().demoPages() ), preset ); }
 function started() { var a = mk(); a.onKey( "Enter" ); return a; }
 
 a = mk();
-check( "defaults come from the pages", a.answerString( "desktops" ) == "hyprland" && a.answerNumber( "workspaces" ) == 4 && !a.answerBool( "natural_scroll" ) && a.answerList( "layouts" ).toList() == "us-intl,es" );
+testkit.check( "defaults come from the pages", a.answerString( "desktops" ) == "hyprland" && a.answerNumber( "workspaces" ) == 4 && !a.answerBool( "natural_scroll" ) && a.answerList( "layouts" ).toList() == "us-intl,es" );
 b = mk( { desktops: "plasma", not_a_question: "x" } );
-check( "presets override defaults, unknown ids are ignored", b.answerString( "desktops" ) == "plasma" && !b.answers().keyExists( "not_a_question" ) );
+testkit.check( "presets override defaults, unknown ids are ignored", b.answerString( "desktops" ) == "plasma" && !b.answers().keyExists( "not_a_question" ) );
 
 a = started();
-check( "enter leaves the welcome screen and focuses the first option", a.screen() == "page" && a.pageIndex() == 1 && a.isFocusable( a.rows()[ a.focus() ] ) );
+testkit.check( "enter leaves the welcome screen and focuses the first option", a.screen() == "page" && a.pageIndex() == 1 && a.isFocusable( a.rows()[ a.focus() ] ) );
 
 a = started();
 a.onKey( "Down" ); a.onKey( " " );
-check( "space selects a choice", a.answerString( "desktops" ) == "both" );
+testkit.check( "space selects a choice", a.answerString( "desktops" ) == "both" );
 before = a.focus();
 a.onKey( "Enter" );
-check( "enter moves to the next question", a.focus() > before && a.rows()[ a.focus() ].q == 2 );
+testkit.check( "enter moves to the next question", a.focus() > before && a.rows()[ a.focus() ].q == 2 );
 
 a = started(); a.gotoPage( 3 );
 a.onKey( "Down" ); a.onKey( " " );
-check( "a multi choice toggles on", arrayFind( a.answerList( "layouts" ), "us" ) > 0 );
+testkit.check( "a multi choice toggles on", arrayFind( a.answerList( "layouts" ), "us" ) > 0 );
 a.onKey( " " );
-check( "and off again", arrayFind( a.answerList( "layouts" ), "us" ) == 0 );
+testkit.check( "and off again", arrayFind( a.answerList( "layouts" ), "us" ) == 0 );
 
 a = started();
 for ( i = 1; i <= a.rows().len(); i++ ) if ( a.rows()[ i ].kind == "field" ) { a.gotoPage( 1 ); break; }
 idx = 0; rs = a.rows(); for ( i = 1; i <= rs.len(); i++ ) if ( rs[ i ].kind == "field" ) { idx = i; break; }
 a.act( { kind: "focus", n: idx } );
 for ( i = 1; i <= 30; i++ ) a.onKey( "Right" );
-check( "numbers stop at their maximum", a.answerNumber( "workspaces" ) == 10 );
+testkit.check( "numbers stop at their maximum", a.answerNumber( "workspaces" ) == 10 );
 for ( i = 1; i <= 30; i++ ) a.onKey( "Left" );
-check( "and at their minimum", a.answerNumber( "workspaces" ) == 1 );
+testkit.check( "and at their minimum", a.answerNumber( "workspaces" ) == 1 );
 
 a = started(); a.gotoPage( 4 );
 for ( c in [ "L", "u", "i", "s" ] ) a.onKey( c );
-check( "text fields take typing", a.answerString( "git_name" ) == "Luis" );
+testkit.check( "text fields take typing", a.answerString( "git_name" ) == "Luis" );
 a.onKey( "Backspace" );
-check( "backspace deletes", a.answerString( "git_name" ) == "Lui" );
+testkit.check( "backspace deletes", a.answerString( "git_name" ) == "Lui" );
 a.onKey( "j" );
-check( "j is typed, not a move", a.answerString( "git_name" ) == "Luij" );
+testkit.check( "j is typed, not a move", a.answerString( "git_name" ) == "Luij" );
 a.onKey( "Ctrl+u" );
-check( "ctrl-u clears", a.answerString( "git_name" ) == "" );
+testkit.check( "ctrl-u clears", a.answerString( "git_name" ) == "" );
 
 a = started(); a.gotoPage( a.pageCount() ); a.nextPage();
-check( "the last page leads to review", a.screen() == "review" && a.furthest() == a.pageCount() + 1 );
+testkit.check( "the last page leads to review", a.screen() == "review" && a.furthest() == a.pageCount() + 1 );
 a.onKey( "Enter" );
-check( "enter on review finishes with answers as JSON", a.outcome() == "done" && jsonDeserialize( a.answersJson() ).desktops == "hyprland" );
+testkit.check( "enter on review finishes with answers as JSON", a.outcome() == "done" && jsonDeserialize( a.answersJson() ).desktops == "hyprland" );
 
 a = started(); a.onKey( "Ctrl+c" );
-check( "ctrl-c cancels", a.outcome() == "cancelled" );
+testkit.check( "ctrl-c cancels", a.outcome() == "cancelled" );
 a = mk(); a.onKey( "q" );
-check( "q cancels on the welcome screen", a.outcome() == "cancelled" );
+testkit.check( "q cancels on the welcome screen", a.outcome() == "cancelled" );
 a = started(); a.onKey( "Escape" );
-check( "escape on the first page returns to the welcome screen", a.screen() == "welcome" );
+testkit.check( "escape on the first page returns to the welcome screen", a.screen() == "welcome" );
 
 a = started();
-check( "review shows readable values", a.display( a.spec().pages[ 1 ].questions[ 1 ] ) == "Hyprland + Noctalia (recommended)" );
+testkit.check( "review shows readable values", a.display( a.spec().pages[ 1 ].questions[ 1 ] ) == "Hyprland + Noctalia (recommended)" );
 
 a = started(); a.act( { kind: "page", n: 5 } );
-check( "sidebar clicks only reach pages already visited", a.pageIndex() == 1 );
+testkit.check( "sidebar clicks only reach pages already visited", a.pageIndex() == 1 );
 a.gotoPage( 3 ); a.gotoPage( 1 ); a.act( { kind: "page", n: 3 } );
-check( "and work for visited ones", a.pageIndex() == 3 );
+testkit.check( "and work for visited ones", a.pageIndex() == 3 );
 
 a = mk();
-check( "the shell defaults to zsh and the terminal to Ghostty, no extra terminals", a.answerString( "shell" ) == "zsh" && a.answerString( "terminal" ) == "ghostty" && a.answerList( "terminals_extra" ).len() == 0 );
+testkit.check( "the shell defaults to zsh and the terminal to Ghostty, no extra terminals", a.answerString( "shell" ) == "zsh" && a.answerString( "terminal" ) == "ghostty" && a.answerList( "terminals_extra" ).len() == 0 );
 
-check( "AI orchestration defaults to Pane", a.answerList( "ai_orchestrators" ).toList() == "pane" );
+testkit.check( "AI orchestration defaults to Pane", a.answerList( "ai_orchestrators" ).toList() == "pane" );
 
 a = started();
 hasLogin = function( app ) { for ( var r in app.rows() ) if ( r.kind == "heading" && app.spec().pages[ 1 ].questions[ r.q ].id == "login_session" ) return true; return false; };
-check( "login session is not asked for Hyprland only", !hasLogin( a ) && !a.finalAnswers().keyExists( "login_session" ) && a.answers().keyExists( "login_session" ) );
+testkit.check( "login session is not asked for Hyprland only", !hasLogin( a ) && !a.finalAnswers().keyExists( "login_session" ) && a.answers().keyExists( "login_session" ) );
 a.onKey( "Down" ); a.onKey( " " );
-check( "choosing Both asks which session starts at login", a.answerString( "desktops" ) == "both" && hasLogin( a ) && a.finalAnswers().keyExists( "login_session" ) );
+testkit.check( "choosing Both asks which session starts at login", a.answerString( "desktops" ) == "both" && hasLogin( a ) && a.finalAnswers().keyExists( "login_session" ) );
 a.onKey( "Up" ); a.onKey( " " );
-check( "and not again once Hyprland only is chosen", !hasLogin( a ) && !a.finalAnswers().keyExists( "login_session" ) );
+testkit.check( "and not again once Hyprland only is chosen", !hasLogin( a ) && !a.finalAnswers().keyExists( "login_session" ) );
 a = mk( { desktops: "plasma" } );
-check( "KDE only does not ask either", !a.finalAnswers().keyExists( "login_session" ) && a.finalAnswers().desktops == "plasma" );
+testkit.check( "KDE only does not ask either", !a.finalAnswers().keyExists( "login_session" ) && a.finalAnswers().desktops == "plasma" );
 a = started(); a.onKey( "Down" ); a.onKey( " " ); a.gotoReview();
-check( "answers JSON for Both includes the login session", jsonDeserialize( a.answersJson() ).login_session == "hyprland" );
+testkit.check( "answers JSON for Both includes the login session", jsonDeserialize( a.answersJson() ).login_session == "hyprland" );
 
 a = started();
 hasLayout = function( app ) { for ( var r in app.rows() ) if ( r.kind == "heading" && app.spec().pages[ 1 ].questions[ r.q ].id == "layout" ) return true; return false; };
-check( "the window layout defaults to tiling (dwindle) and is asked for Hyprland", a.answerString( "layout" ) == "dwindle" && hasLayout( a ) );
+testkit.check( "the window layout defaults to tiling (dwindle) and is asked for Hyprland", a.answerString( "layout" ) == "dwindle" && hasLayout( a ) );
 a = mk( { desktops: "plasma" } );
-check( "KDE only is not asked for a Hyprland layout", !a.finalAnswers().keyExists( "layout" ) );
+testkit.check( "KDE only is not asked for a Hyprland layout", !a.finalAnswers().keyExists( "layout" ) );
 
 a = mk();
-check( "JavaScript runtimes are hidden until JavaScript is chosen, and default to Node", !a.finalAnswers().keyExists( "js_runtimes" ) && a.answerList( "js_runtimes" ).toList() == "node" );
+testkit.check( "JavaScript runtimes are hidden until JavaScript is chosen, and default to Node", !a.finalAnswers().keyExists( "js_runtimes" ) && a.answerList( "js_runtimes" ).toList() == "node" );
 a = mk( { toolchains: [ "java", "javascript" ] } );
-check( "and asked once it is", a.finalAnswers().keyExists( "js_runtimes" ) );
-check( "the toolchains page says BoxLang is always installed", find( "BoxLang", a.spec().pages[ 5 ].intro ) > 0 && a.spec().pages[ 5 ].questions[ 1 ].type == "info" );
+testkit.check( "and asked once it is", a.finalAnswers().keyExists( "js_runtimes" ) );
+testkit.check( "the toolchains page says BoxLang is always installed", find( "BoxLang", a.spec().pages[ 5 ].intro ) > 0 && a.spec().pages[ 5 ].questions[ 1 ].type == "info" );
 
 a = mk();
-check( "the launcher defaults to Noctalia and the menu to Rofi; the launcher is for Hyprland only", a.answerString( "launcher" ) == "noctalia" && a.answerString( "menu" ) == "rofi" && a.finalAnswers().keyExists( "launcher" ) && !mk( { desktops: "plasma" } ).finalAnswers().keyExists( "launcher" ) );
+testkit.check( "the launcher defaults to Noctalia and the menu to Rofi; the launcher is for Hyprland only", a.answerString( "launcher" ) == "noctalia" && a.answerString( "menu" ) == "rofi" && a.finalAnswers().keyExists( "launcher" ) && !mk( { desktops: "plasma" } ).finalAnswers().keyExists( "launcher" ) );
 
 a = mk();
-check( "no database is preselected", a.answerList( "databases" ).len() == 0 );
+testkit.check( "no database is preselected", a.answerList( "databases" ).len() == 0 );
 
 a = mk();
-check( "the password question appears only once a database is picked", !a.finalAnswers().keyExists( "database_passwords" ) && mk( { databases: [ "postgres" ] } ).finalAnswers().keyExists( "database_passwords" ) && mk().answerString( "database_passwords" ) == "generate" );
+testkit.check( "the password question appears only once a database is picked", !a.finalAnswers().keyExists( "database_passwords" ) && mk( { databases: [ "postgres" ] } ).finalAnswers().keyExists( "database_passwords" ) && mk().answerString( "database_passwords" ) == "generate" );
 
 // ---- pages that appear only for some answers ----
 function withPages() {
@@ -112,16 +111,15 @@ function withPages() {
     return spec;
 }
 a = new bxrig.WizardApp( withPages() );
-check( "a page with `when` is hidden until its answer matches", !a.pageVisible( 2 ) && a.visiblePages().len() == a.pageCount() - 1 && a.stepCount() == a.pageCount() );
-check( "answers on a hidden page are not in the result", !a.finalAnswers().keyExists( "extra_pick" ) );
+testkit.check( "a page with `when` is hidden until its answer matches", !a.pageVisible( 2 ) && a.visiblePages().len() == a.pageCount() - 1 && a.stepCount() == a.pageCount() );
+testkit.check( "answers on a hidden page are not in the result", !a.finalAnswers().keyExists( "extra_pick" ) );
 a.onKey( "Enter" ); a.gotoPage( 1 ); a.nextPage();
-check( "next skips the hidden page", a.pageIndex() == 3 );
+testkit.check( "next skips the hidden page", a.pageIndex() == 3 );
 a.prevPage();
-check( "and so does back", a.pageIndex() == 1 );
+testkit.check( "and so does back", a.pageIndex() == 1 );
 a = new bxrig.WizardApp( withPages(), { app_mode: "custom" } );
-check( "the page shows once the answer matches, counts as a step and its answers are returned", a.pageVisible( 2 ) && a.stepCount() == a.pageCount() + 1 && a.finalAnswers().keyExists( "extra_pick" ) );
+testkit.check( "the page shows once the answer matches, counts as a step and its answers are returned", a.pageVisible( 2 ) && a.stepCount() == a.pageCount() + 1 && a.finalAnswers().keyExists( "extra_pick" ) );
 a.onKey( "Enter" ); a.gotoPage( 1 ); a.nextPage();
-check( "next lands on it", a.pageIndex() == 2 && a.stepOf( 2 ) == 2 );
+testkit.check( "next lands on it", a.pageIndex() == 2 && a.stepOf( 2 ) == 2 );
 
-if ( failures > 0 ) { println( failures & " failed" ); exit( 1 ); }
-println( "all passed" );
+testkit.done( "all passed" );

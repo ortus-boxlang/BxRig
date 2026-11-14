@@ -1,65 +1,62 @@
 // IconTheme: which icon theme the runner uses (saved setting, GTK setting, fallbacks) and which icon names exist in it, in a fake /usr/share.
 // Run from src/: (cd src && matchbox ../tests/icon_theme_test.bxs)
-failures = 0;
-function check( label, ok ) { if ( ok ) println( "ok   " & label ); else { println( "FAIL " & label ); failures++; } }
-function sh( cmd ) { return systemExecute( "sh", [ "-c", cmd ], 60, true ); }
-tmp = trim( sh( "mktemp -d" ).output );
-function touch( rel ) { sh( "mkdir -p $(dirname " & tmp & "/" & rel & ") && : > " & tmp & "/" & rel ); }
-function text( rel, content ) { sh( "mkdir -p $(dirname " & tmp & "/" & rel & ")" ); fileWrite( tmp & "/" & rel, content ); }
+testkit = new lib.Check( "icon theme" );
+tmp = trim( testkit.sh( "mktemp -d" ).output );
+function touch( rel ) { testkit.sh( "mkdir -p $(dirname " & tmp & "/" & rel & ") && : > " & tmp & "/" & rel ); }
+function text( rel, content ) { testkit.sh( "mkdir -p $(dirname " & tmp & "/" & rel & ")" ); fileWrite( tmp & "/" & rel, content ); }
 function make() { return new bxrig.IconTheme( { share: tmp & "/share", home: tmp & "/home", noGsettings: true } ); }
 
 // nothing installed: hicolor, and nothing resolves
-check( "no theme installed: hicolor", make().name() == "hicolor" );
-check( "no theme installed: nothing resolves", make().resolve( [ "edit-delete" ] )[ "edit-delete" ] == "" );
+testkit.check( "no theme installed: hicolor", make().name() == "hicolor" );
+testkit.check( "no theme installed: nothing resolves", make().resolve( [ "edit-delete" ] )[ "edit-delete" ] == "" );
 
 // Adwaita only (symbolic actions, as on a stock GNOME), then Papirus too: the fallback order is Papirus first
 text( "share/icons/Adwaita/index.theme", "[Icon Theme]" & chr( 10 ) & "Inherits=hicolor" & chr( 10 ) );
 touch( "share/icons/Adwaita/symbolic/actions/edit-delete-symbolic.svg" );
 touch( "share/icons/Adwaita/symbolic/legacy/input-keyboard-symbolic.svg" );
 touch( "share/icons/Adwaita/scalable/places/folder.svg" );
-check( "Adwaita only: Adwaita", make().name() == "Adwaita" );
+testkit.check( "Adwaita only: Adwaita", make().name() == "Adwaita" );
 r = make().resolve( [ "edit-delete", "input-keyboard", "applications-other" ] );
-check( "a symbolic twin is used when the plain name is missing", r[ "edit-delete" ] == "edit-delete-symbolic" && r[ "input-keyboard" ] == "input-keyboard-symbolic" );
-check( "a missing icon falls back to a generic one (never a gap)", r[ "applications-other" ] == "folder" );
+testkit.check( "a symbolic twin is used when the plain name is missing", r[ "edit-delete" ] == "edit-delete-symbolic" && r[ "input-keyboard" ] == "input-keyboard-symbolic" );
+testkit.check( "a missing icon falls back to a generic one (never a gap)", r[ "applications-other" ] == "folder" );
 touch( "share/icons/Papirus/apps/48/applications-other.svg" );
 touch( "share/icons/Papirus/actions/22/edit-delete.svg" );
 text( "share/icons/Papirus/index.theme", "[Icon Theme]" & chr( 10 ) & "Inherits=breeze,hicolor" & chr( 10 ) );
-check( "Papirus beats Adwaita when nothing else is set", make().name() == "Papirus" );
+testkit.check( "Papirus beats Adwaita when nothing else is set", make().name() == "Papirus" );
 r = make().resolve( [ "edit-delete", "applications-other" ] );
-check( "the plain name wins over the symbolic one", r[ "edit-delete" ] == "edit-delete" && r[ "applications-other" ] == "applications-other" );
+testkit.check( "the plain name wins over the symbolic one", r[ "edit-delete" ] == "edit-delete" && r[ "applications-other" ] == "applications-other" );
 
 // the GTK setting wins when installed
 text( "home/.config/gtk-3.0/settings.ini", "[Settings]" & chr( 10 ) & "gtk-icon-theme-name=Adwaita" & chr( 10 ) );
-check( "the GTK icon theme, when installed, wins over the fallbacks", make().name() == "Adwaita" );
+testkit.check( "the GTK icon theme, when installed, wins over the fallbacks", make().name() == "Adwaita" );
 text( "home/.config/gtk-3.0/settings.ini", "[Settings]" & chr( 10 ) & "gtk-icon-theme-name = NotInstalled" & chr( 10 ) );
-check( "a GTK theme that is not installed is ignored", make().name() == "Papirus" );
+testkit.check( "a GTK theme that is not installed is ignored", make().name() == "Papirus" );
 
 // the saved setting (runner.json icon_theme) wins over GTK; auto goes back to following it
 text( "home/.config/gtk-3.0/settings.ini", "[Settings]" & chr( 10 ) & "gtk-icon-theme-name=Adwaita" & chr( 10 ) );
 text( "home/.config/bxrig/runner.json", '{"icon_theme":"Papirus"}' );
-check( "icon_theme of runner.json wins over GTK", make().name() == "Papirus" );
+testkit.check( "icon_theme of runner.json wins over GTK", make().name() == "Papirus" );
 text( "home/.config/bxrig/runner.json", '{"icon_theme":"auto"}' );
-check( "icon_theme auto follows GTK again", make().name() == "Adwaita" );
+testkit.check( "icon_theme auto follows GTK again", make().name() == "Adwaita" );
 text( "home/.config/bxrig/runner.json", '{"icon_theme":"../etc"}' );
-check( "an invalid theme name is ignored", make().name() == "Adwaita" );
+testkit.check( "an invalid theme name is ignored", make().name() == "Adwaita" );
 
 // the chain: the theme, what it Inherits, hicolor; an icon only in an inherited theme or in the user's hicolor is found
 touch( "share/icons/breeze/actions/22/go-previous.svg" );
 text( "share/icons/breeze/index.theme", "[Icon Theme]" & chr( 10 ) );
 touch( "home/.local/share/icons/hicolor/48x48/apps/bxrig.png" );
 text( "home/.config/bxrig/runner.json", '{"icon_theme":"Papirus"}' );
-check( "chain: theme, Inherits, hicolor", make().chain().toList( "," ) == "Papirus,breeze,hicolor" );
+testkit.check( "chain: theme, Inherits, hicolor", make().chain().toList( "," ) == "Papirus,breeze,hicolor" );
 r = make().resolve( [ "go-previous", "system-run" ] );
-check( "icons are looked up in the theme named and hicolor only (Rofi does not follow Inherits)", r[ "go-previous" ] != "go-previous" );
-check( "the last resort is the BxRig icon in the user's hicolor", r[ "system-run" ] == "bxrig" );
+testkit.check( "icons are looked up in the theme named and hicolor only (Rofi does not follow Inherits)", r[ "go-previous" ] != "go-previous" );
+testkit.check( "the last resort is the BxRig icon in the user's hicolor", r[ "system-run" ] == "bxrig" );
 // a theme that is only an index.theme inheriting another (elementary-xfce-dark) hops to the one that holds the icons
 text( "share/icons/Papirus-Dark/index.theme", "[Icon Theme]" & chr( 10 ) & "Inherits=Papirus" & chr( 10 ) );
 text( "home/.config/gtk-3.0/settings.ini", "[Settings]" & chr( 10 ) & "gtk-icon-theme-name=Papirus-Dark" & chr( 10 ) );
 text( "home/.config/bxrig/runner.json", "{}" );
-check( "an index-only theme hops to the theme it Inherits that holds icons", make().name() == "Papirus" );
-check( "an unsafe wanted name is skipped", make().resolve( [ "a b", "x/y" ] ).len() == 0 );
-check( "installed(): only real theme folders", make().installed( "Papirus" ) && !make().installed( "Nope" ) && !make().installed( "../x" ) );
+testkit.check( "an index-only theme hops to the theme it Inherits that holds icons", make().name() == "Papirus" );
+testkit.check( "an unsafe wanted name is skipped", make().resolve( [ "a b", "x/y" ] ).len() == 0 );
+testkit.check( "installed(): only real theme folders", make().installed( "Papirus" ) && !make().installed( "Nope" ) && !make().installed( "../x" ) );
 
-sh( "rm -rf " & tmp );
-if ( failures > 0 ) { println( failures & " failed" ); exit( 1 ); }
-println( "icon theme tests passed" );
+testkit.sh( "rm -rf " & tmp );
+testkit.done( "icon theme tests passed" );

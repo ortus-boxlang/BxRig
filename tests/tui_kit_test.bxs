@@ -1,31 +1,30 @@
 // The shared TUI kit: TuiList (pure) and TuiKit widgets read back with render_to_string. Run from src/: (cd src && matchbox ../tests/tui_kit_test.bxs)
-failures = 0;
-function check( label, ok ) { if ( ok ) println( "ok   " & label ); else { println( "FAIL " & label ); failures++; } }
+testkit = new lib.Check( "tui kit" );
 
 // ---- TuiList
 l = new bxrig.TuiList( [ "alpha", "beta", "gamma", "delta", "epsilon" ] );
-check( "list: starts on the first item", l.cursor() == 1 && l.selected() == "alpha" && l.count() == 5 );
-l.move( 2 ); check( "list: move down", l.selected() == "gamma" );
-l.move( 99 ); check( "list: move stops at the end", l.selected() == "epsilon" );
-l.move( -99 ); check( "list: move stops at the start", l.cursor() == 1 );
+testkit.check( "list: starts on the first item", l.cursor() == 1 && l.selected() == "alpha" && l.count() == 5 );
+l.move( 2 ); testkit.check( "list: move down", l.selected() == "gamma" );
+l.move( 99 ); testkit.check( "list: move stops at the end", l.selected() == "epsilon" );
+l.move( -99 ); testkit.check( "list: move stops at the start", l.cursor() == 1 );
 l.end(); l.fit( 2 ); w = l.window( 2 );
-check( "list: window scrolls to the cursor", w.len() == 2 && w[ 2 ].item == "epsilon" && w[ 1 ].index == 4 );
-l.home(); l.fit( 2 ); check( "list: home scrolls back", l.window( 2 )[ 1 ].item == "alpha" );
-l.page( 1, 3 ); check( "list: page moves rows-1", l.cursor() == 3 );
-l.filter( "A" ); check( "list: filter is case-insensitive", l.count() == 4 );
-l.filter( "ta" ); check( "list: filter narrows", l.count() == 2 && l.selected() == "beta" );
-l.filter( "zzz" ); check( "list: empty result has no selection", l.count() == 0 && l.selected() == "" && l.window( 5 ).len() == 0 );
-l.filter( "" ); check( "list: clearing the filter restores", l.count() == 5 && l.total() == 5 );
+testkit.check( "list: window scrolls to the cursor", w.len() == 2 && w[ 2 ].item == "epsilon" && w[ 1 ].index == 4 );
+l.home(); l.fit( 2 ); testkit.check( "list: home scrolls back", l.window( 2 )[ 1 ].item == "alpha" );
+l.page( 1, 3 ); testkit.check( "list: page moves rows-1", l.cursor() == 3 );
+l.filter( "A" ); testkit.check( "list: filter is case-insensitive", l.count() == 4 );
+l.filter( "ta" ); testkit.check( "list: filter narrows", l.count() == 2 && l.selected() == "beta" );
+l.filter( "zzz" ); testkit.check( "list: empty result has no selection", l.count() == 0 && l.selected() == "" && l.window( 5 ).len() == 0 );
+l.filter( "" ); testkit.check( "list: clearing the filter restores", l.count() == 5 && l.total() == 5 );
 sl = new bxrig.TuiList( [ { n: "web" }, { n: "db" } ], function( x ) { return x.n; } );
-sl.filter( "db" ); check( "list: filter with a text function", sl.count() == 1 && sl.selected().n == "db" );
-l.setItems( [ "x", "y" ] ); check( "list: setItems keeps the cursor in range", l.count() == 2 && l.cursor() <= 2 );
+sl.filter( "db" ); testkit.check( "list: filter with a text function", sl.count() == 1 && sl.selected().n == "db" );
+l.setItems( [ "x", "y" ] ); testkit.check( "list: setItems keeps the cursor in range", l.count() == 2 && l.cursor() <= 2 );
 
 // ---- TuiKit
 tui = createObject( "rust", "tui.TUI" );
 kit = new bxrig.TuiKit( tui );
-check( "kit: mix and brand", kit.mix( "##000000", "##ffffff", 0.5 ) == "##7f7f7f" || kit.mix( "##000000", "##ffffff", 0.5 ) == "##808080" );
-check( "kit: trunc and wrap", kit.trunc( "abcdefgh", 5 ) == "abcd…" && kit.wrap( "one two three", 7 ).len() == 2 );
-check( "kit: size", kit.size( 900 ) == "900 B" && kit.size( 1048576 ) == "1 MB" && find( "GB", kit.size( 3221225472 ) ) > 0 );
+testkit.check( "kit: mix and brand", kit.mix( "##000000", "##ffffff", 0.5 ) == "##7f7f7f" || kit.mix( "##000000", "##ffffff", 0.5 ) == "##808080" );
+testkit.check( "kit: trunc and wrap", kit.trunc( "abcdefgh", 5 ) == "abcd…" && kit.wrap( "one two three", 7 ).len() == 2 );
+testkit.check( "kit: size", kit.size( 900 ) == "900 B" && kit.size( 1048576 ) == "1 MB" && find( "GB", kit.size( 3221225472 ) ) > 0 );
 
 function shot( w = 80, h = 24 ) { return tui.render_to_string( w, h ); }
 kit.clearHits();
@@ -37,45 +36,44 @@ kit.meter( 1, 6, 20, 0.5 ); kit.badge( 1, 7, "running", kit.color( "GREEN" ) );
 kit.keybar( 0, 23, 80, [ [ "q", "quit" ], [ "/", "filter" ] ] );
 kit.toast( 80, 22, "Saved", "ok" );
 s = shot();
-check( "kit: tabs show their names", find( "Dashboard", s ) > 0 && find( "Packages", s ) > 0 && find( "Logs", s ) > 0 );
-check( "kit: listView marks the cursor row", find( "▸ item two", s ) > 0 && find( "item one", s ) > 0 );
-check( "kit: meter, badge, keybar and toast", find( "━", s ) > 0 && find( " running ", s ) > 0 && find( "quit", s ) > 0 && find( " Saved ", s ) > 0 );
-check( "kit: a click on a tab and a row is recorded", kit.hitAt( 13, 0 ).kind == "tab" && kit.hitAt( 13, 0 ).n == 2 && kit.hitAt( 3, 3 ).kind == "row" && kit.hitAt( 3, 3 ).n == 2 && kit.hitAt( 70, 10 ).kind == "" );
-kit.clearHits(); check( "kit: clearHits forgets them", kit.hitAt( 13, 0 ).kind == "" );
+testkit.check( "kit: tabs show their names", find( "Dashboard", s ) > 0 && find( "Packages", s ) > 0 && find( "Logs", s ) > 0 );
+testkit.check( "kit: listView marks the cursor row", find( "▸ item two", s ) > 0 && find( "item one", s ) > 0 );
+testkit.check( "kit: meter, badge, keybar and toast", find( "━", s ) > 0 && find( " running ", s ) > 0 && find( "quit", s ) > 0 && find( " Saved ", s ) > 0 );
+testkit.check( "kit: a click on a tab and a row is recorded", kit.hitAt( 13, 0 ).kind == "tab" && kit.hitAt( 13, 0 ).n == 2 && kit.hitAt( 3, 3 ).kind == "row" && kit.hitAt( 3, 3 ).n == 2 && kit.hitAt( 70, 10 ).kind == "" );
+kit.clearHits(); testkit.check( "kit: clearHits forgets them", kit.hitAt( 13, 0 ).kind == "" );
 kit.confirmModal( 80, 24, "Restore?", [ "Plan line one", "Plan line two" ] );
 s = shot();
-check( "kit: confirm modal shows the plan and both buttons", find( "Restore?", s ) > 0 && find( "Plan line two", s ) > 0 && find( "do it", s ) > 0 && find( "not now", s ) > 0 );
-check( "kit: modal buttons are click regions", kit.hitAt( 14, 16 ).kind == "yes" || kit.hitAt( 14, 15 ).kind == "yes" || kit.hitAt( 14, 14 ).kind == "yes" || kit.hitAt( 14, 17 ).kind == "yes" );
+testkit.check( "kit: confirm modal shows the plan and both buttons", find( "Restore?", s ) > 0 && find( "Plan line two", s ) > 0 && find( "do it", s ) > 0 && find( "not now", s ) > 0 );
+testkit.check( "kit: modal buttons are click regions", kit.hitAt( 14, 16 ).kind == "yes" || kit.hitAt( 14, 15 ).kind == "yes" || kit.hitAt( 14, 14 ).kind == "yes" || kit.hitAt( 14, 17 ).kind == "yes" );
 kit.setFade( 0.5 ); kit.put( 1, 1, "faded", kit.color( "GREEN" ) ); kit.setFade( 1 );
-check( "kit: fade draws without failing", find( "faded", shot() ) > 0 );
+testkit.check( "kit: fade draws without failing", find( "faded", shot() ) > 0 );
 ik = new bxrig.TuiKit( tui );
-check( "icons: off by default, an empty string", ik.icon( "home" ) == "" && !ik.hasIcons() );
+testkit.check( "icons: off by default, an empty string", ik.icon( "home" ) == "" && !ik.hasIcons() );
 ik.setIcons( true );
-check( "icons: on gives one Nerd Font character, unknown names give nothing", len( ik.icon( "home" ) ) == 1 && ik.icon( "home" ) == chr( 61461 ) && ik.icon( "java" ) == chr( 59192 ) && ik.icon( "nope" ) == "" );
+testkit.check( "icons: on gives one Nerd Font character, unknown names give nothing", len( ik.icon( "home" ) ) == 1 && ik.icon( "home" ) == chr( 61461 ) && ik.icon( "java" ) == chr( 59192 ) && ik.icon( "nope" ) == "" );
 // ---- pixel art
 pk = new bxrig.TuiKit( tui );
 pk.fillRect( 0, 0, 80, 24, pk.color( "BASE" ) );
 art = { w: 4, h: 4, palette: [ "##ff0000", "##00ff00" ], rows: [ "0011", "0011", "1...", "...." ] };
-check( "pixelArt: returns its height in text rows", pk.pixelArt( 2, 1, art, pk.color( "BASE" ) ) == 2 );
+testkit.check( "pixelArt: returns its height in text rows", pk.pixelArt( 2, 1, art, pk.color( "BASE" ) ) == 2 );
 ps = tui.render_to_string( 80, 24 );
-check( "pixelArt: two same-colour pixels are a full block, a lone top pixel is an upper half block", find( "██", ps ) > 0 && find( "▀", ps ) > 0 );
+testkit.check( "pixelArt: two same-colour pixels are a full block, a lone top pixel is an upper half block", find( "██", ps ) > 0 && find( "▀", ps ) > 0 );
 laptop = new bxrig.Brand().laptop( "large" );
-check( "brand: the laptop comes in three sizes, 48, 32 and 20 pixels wide", laptop.w == 48 && laptop.rows.len() == 34 && new bxrig.Brand().laptop( "medium" ).w == 32 && new bxrig.Brand().laptop( "small" ).w == 20 && len( laptop.palette ) > 10 );
+testkit.check( "brand: the laptop comes in three sizes, 48, 32 and 20 pixels wide", laptop.w == 48 && laptop.rows.len() == 34 && new bxrig.Brand().laptop( "medium" ).w == 32 && new bxrig.Brand().laptop( "small" ).w == 20 && len( laptop.palette ) > 10 );
 // ---- pictures: never throw, fall back to a letter tile
 imgdir = trim( systemExecute( "mktemp", [ "-d" ], 10, true ).output );
 systemExecute( "sh", [ "-c", "echo iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg== | base64 -d > " & imgdir & "/ok.png; echo not a picture > " & imgdir & "/bad.png" ], 10, true );
 mk = new bxrig.TuiKit( tui );
 mk.setImages( true );
 mk.fillRect( 0, 0, 80, 24, mk.color( "BASE" ) );
-check( "image: a real PNG draws and answers true", mk.image( 2, 1, 8, 4, imgdir & "/ok.png" ) == true );
-check( "image: missing file, junk file, empty path and zero size answer false and do not throw", mk.image( 2, 1, 8, 4, imgdir & "/none.png" ) == false && mk.image( 2, 1, 8, 4, imgdir & "/bad.png" ) == false && mk.image( 2, 1, 8, 4, "" ) == false && mk.image( 2, 1, 0, 4, imgdir & "/ok.png" ) == false );
+testkit.check( "image: a real PNG draws and answers true", mk.image( 2, 1, 8, 4, imgdir & "/ok.png" ) == true );
+testkit.check( "image: missing file, junk file, empty path and zero size answer false and do not throw", mk.image( 2, 1, 8, 4, imgdir & "/none.png" ) == false && mk.image( 2, 1, 8, 4, imgdir & "/bad.png" ) == false && mk.image( 2, 1, 8, 4, "" ) == false && mk.image( 2, 1, 0, 4, imgdir & "/ok.png" ) == false );
 mk.setImages( false );
-check( "image: off means nothing is drawn", mk.image( 2, 1, 8, 4, imgdir & "/ok.png" ) == false && !mk.hasImages() );
+testkit.check( "image: off means nothing is drawn", mk.image( 2, 1, 8, 4, imgdir & "/ok.png" ) == false && !mk.hasImages() );
 mk.setImages( true );
 mk.fillRect( 0, 0, 80, 24, mk.color( "BASE" ) );
-check( "imageOrTile: a bad picture becomes a tile with the capital letter of the name", mk.imageOrTile( 2, 1, 6, 3, imgdir & "/bad.png", "thunderbird" ) == false );
+testkit.check( "imageOrTile: a bad picture becomes a tile with the capital letter of the name", mk.imageOrTile( 2, 1, 6, 3, imgdir & "/bad.png", "thunderbird" ) == false );
 ts = tui.render_to_string( 80, 24 );
-check( "iconTile: the first letter is drawn upper case", find( "T", ts ) > 0 );
+testkit.check( "iconTile: the first letter is drawn upper case", find( "T", ts ) > 0 );
 systemExecute( "rm", [ "-rf", imgdir ], 10, true );
-if ( failures > 0 ) { println( failures & " failed" ); exit( 1 ); }
-println( "all passed" );
+testkit.done( "all passed" );

@@ -2,17 +2,16 @@
 // Run from src/ so that bxrig.Catalog resolves: (cd src && matchbox ../tests/catalog_check.bxs)
 catalogClass = new bxrig.Catalog();
 good = catalogClass.load();
-failures = 0;
+testkit = new lib.Check( "catalog check negative" );
 function copyOf( c ) { return jsonDeserialize( jsonSerialize( c ) ); }
 function expect( label, c, needle ) {
  r = catalogClass.check( c );
  hit = false;
  for ( e in r.errors ) if ( findNoCase( needle, e ) ) hit = true;
- if ( hit ) println( "ok   " & label );
- else { println( "FAIL " & label & " (wanted '" & needle & "', got " & r.errors.len() & " errors)" ); failures++; }
+ testkit.check( hit ? label : label & " (wanted '" & needle & "', got " & r.errors.len() & " errors)", hit );
 }
 r = catalogClass.check( good );
-if ( r.errors.len() == 0 ) println( "ok   real catalog has no errors" ); else { println( "FAIL real catalog: " & r.errors.toList( "; " ) ); failures++; }
+testkit.check( r.errors.len() == 0 ? "real catalog has no errors" : "real catalog: " & r.errors.toList( "; " ), r.errors.len() == 0 );
 
 c = copyOf( good ); c.delete( "profiles" );
 expect( "missing profiles", c, "profiles are missing" );
@@ -50,5 +49,4 @@ expect( "unsafe script argument", c, "unsafe script argument" );
 c = copyOf( good ); c.apps[1].source = "script"; c.apps[1].script = { url: "https://x.com/i.sh", shell: "zsh" };
 expect( "unknown script shell", c, "script shell must be sh or bash" );
 
-if ( failures > 0 ) { println( failures & " failed" ); CLIExit( 1 ); }
-println( "catalog check negative tests passed" );
+testkit.done( "catalog check negative tests passed" );
