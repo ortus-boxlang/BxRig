@@ -52,6 +52,8 @@ bxrig <group> <verb> [args...] [--yes] [--dry-run] [--json] [--quiet]
 
 Codes 0 to 6 match what the native CLI returns today (2, 3, 4, 5, 6 are already used). 1 is already used for check-negative. 7 to 9 are new. Codes are frozen once published and covered by a contract snapshot test.
 
+**Names in code.** `src/bxrig/Exit.bx` names every code: `ok` 0, `negative` 1, `usage` and `plan` 2, `timeout` 3, `precondition` 4, `official` 5, `failed` 6, `partial` 7, `conflict` 8, `internal` 9, `update` 10. `Cli.say`, `Cli.fail`, `Out.say` and `Out.fail` take a name or a number; an unknown name throws. Command classes write the name (`variables.out.say( "precondition", ... )`, `CLIExit( xit.usage() )`, `return new bxrig.Exit().ok();`), so a typo cannot turn into a wrong exit code. The numbers on the wire are the table above. `tests/dry-test.sh` fails on a bare number as the code argument of `say`/`fail` and on `CLIExit( N )` in `Main.bx` (130, Ctrl+C, is the exception).
+
 ## 4. `--json`
 
 One JSON object on stdout, nothing else on stdout. Human text goes to stderr.
