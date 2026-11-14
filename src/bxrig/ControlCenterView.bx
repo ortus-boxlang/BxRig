@@ -13,6 +13,7 @@ class ControlCenterView {
 
     function paint( app, tick, width, height ) {
         var k = variables.kit;
+        k.tui().begin_frame();
         var C = function( n ) { return k.color( n ); };
         var phase = ( arguments.tick mod 120 ) / 120;
         k.clearHits();
