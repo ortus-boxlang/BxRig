@@ -13,7 +13,7 @@ code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 apps="$tmp/data/applications"; icon="$tmp/data/icons/hicolor/256x256/apps/bxrig.png"
 
 # nothing exists until you ask
-run "$binary" launchers status --json | jq -e '.data.enabled == false and .data.present == 0 and .data.total == 17' >/dev/null || fail 'status before'
+run "$binary" launchers status --json | jq -e '.data.enabled == false and .data.present == 0 and .data.total == 20' >/dev/null || fail 'status before'
 [[ "$(code "$binary" launchers on)" == 2 ]] || fail 'on without --yes is a plan (exit 2)'
 [[ "$(code "$binary" launchers on --dry-run)" == 0 ]] || fail 'dry run exits 0'
 [[ ! -e "$apps" && ! -e "$icon" ]] || fail 'a plan or dry run wrote files'
@@ -29,17 +29,33 @@ run "$binary" launchers on --dry-run | grep -q "write $apps/bxrig-tui-databases.
 f="$apps/bxrig-tui-databases.desktop"
 grep -qx 'Name=BxRig Databases' "$f" || fail "name: $(cat "$f")"
 grep -qx 'Icon=bxrig' "$f" || fail 'icon name'
-grep -qx 'Categories=X-BxRig;' "$f" || fail 'categories'
+grep -qx 'Categories=X-BxRig-Develop;' "$f" || fail 'categories'
 dirf="$tmp/data/desktop-directories/bxrig.directory"; menuf="$tmp/home/.config/menus/applications-merged/bxrig.menu"
 grep -qx 'Name=BxRig' "$dirf" || fail 'the submenu folder'
 grep -q '<Category>X-BxRig</Category>' "$menuf" || fail 'the menu merge'
 run "$binary" launchers status --json | jq -e '.data.submenu == true' >/dev/null || fail 'status submenu'
+# the wizard, the runner menu and the Control Center are at the top; pages sit at the top or in a folder with its own icon
+dd="$tmp/data/desktop-directories"
+grep -qx 'Exec=ghostty -e /opt/bxrig/bxrig init' "$apps/bxrig-wizard.desktop" || fail "wizard exec: $(grep '^Exec' "$apps/bxrig-wizard.desktop")"
+grep -qx 'Exec=/opt/bxrig/bxrig menu' "$apps/bxrig-runner.desktop" || fail "runner exec: $(grep '^Exec' "$apps/bxrig-runner.desktop")"
+grep -qx 'Exec=ghostty -e /opt/bxrig/bxrig tui' "$apps/bxrig-controlcenter.desktop" || fail 'control center exec'
+for e in wizard runner controlcenter; do grep -qx 'Categories=X-BxRig;' "$apps/bxrig-$e.desktop" || fail "$e is not at the top"; done
+grep -qx 'Categories=X-BxRig;' "$apps/bxrig-tui-apps.desktop" || fail 'apps at the top'
+grep -qx 'Categories=X-BxRig;' "$apps/bxrig-tui-dashboard.desktop" || fail 'dashboard at the top'
+for pg in boxlang java maven gradle versions databases mail ports; do grep -qx 'Categories=X-BxRig-Develop;' "$apps/bxrig-tui-$pg.desktop" || fail "$pg is not in Develop"; done
+for pg in machines storage secrets logs packages shortcuts; do grep -qx 'Categories=X-BxRig-System;' "$apps/bxrig-tui-$pg.desktop" || fail "$pg is not in System"; done
+grep -qx 'Categories=X-BxRig-Look;' "$apps/bxrig-tui-themes.desktop" || fail 'themes are not in Look'
+[[ "$(ls "$dd"/*.directory | wc -l)" == 4 ]] || fail 'one .directory per folder'
+[[ "$(grep -h '^Icon=' "$dd"/*.directory | sort -u | wc -l)" == 4 ]] || fail 'every folder has its own icon'
+grep -qx 'Icon=applications-development' "$dd/bxrig-develop.directory" || fail 'Develop icon'
+grep -q '<Directory>bxrig-system.directory</Directory>' "$menuf" || fail 'the System folder is in the menu merge'
+grep -q '<Category>X-BxRig-Look</Category>' "$menuf" || fail 'the Look folder is in the menu merge'
 grep -qx 'Exec=ghostty -e /opt/bxrig/bxrig tui databases' "$f" || fail "exec: $(grep '^Exec' "$f")"
 ! grep -q StartupWMClass "$f" || fail 'no StartupWMClass is written'
 [[ "$(stat -c %a "$f")" == 644 ]] || fail 'mode 644'
 cmp "$icon" "$root/assets/icon.png" || fail 'the icon is the embedded one'
-run "$binary" launchers status --json | jq -e '.data.enabled and .data.present == 17 and .data.icon and .data.terminal == "ghostty"' >/dev/null || fail 'status after'
-run "$binary" launchers status | grep -q '17 of 17 launchers' || fail 'status text'
+run "$binary" launchers status --json | jq -e '.data.enabled and .data.present == 20 and .data.icon and .data.terminal == "ghostty"' >/dev/null || fail 'status after'
+run "$binary" launchers status | grep -q '20 of 20 launchers' || fail 'status text'
 
 # again: nothing to do
 [[ "$(code "$binary" launchers on --yes)" == 0 ]] || fail 'on twice is fine'

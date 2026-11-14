@@ -24,7 +24,7 @@ Open and close the page list with the backslash key or `Ctrl+b` (while a page is
 You can open any page without a terminal open first:
 
 - **Menu:** `bxrig menu` has a Control Center section at the end. The first entry opens everything, then one entry per page. Each opens in your default terminal.
-- **Application menu (optional):** `bxrig launchers on --yes` adds one entry per page ("BxRig Databases", with the BxRig icon) to a "BxRig" submenu of your application menu (menus without folders, like rofi, list them flat). `bxrig launchers status` shows them and `bxrig launchers off --yes` (or `bxrig remove launchers --yes`) takes them away. Entries you edited are kept. Nothing is added unless you ask.
+- **Application menu (optional):** `bxrig launchers on --yes` adds a "BxRig" submenu to your application menu: the Setup Wizard, the Runner Menu and the Control Center at the top, then Apps and Dashboard, then folders with their own icon (Develop, System, Look) holding one entry per page (menus without folders, like rofi, list them flat). `bxrig launchers status` shows them and `bxrig launchers off --yes` (or `bxrig remove launchers --yes`) takes them away. Entries you edited are kept. Nothing is added unless you ask.
 - **Shortcuts:** every page has an unbound shortcut (`tui-databases`, ...). Give it keys with `bxrig keys set tui-databases Super+Alt+D --yes`, then `bxrig keys apply --yes`.
 
 ## Icons
@@ -81,3 +81,7 @@ In a table, `/` filters the rows (or searches, on Packages), Enter keeps it and 
 ## How the pages fit together
 
 Every screen shares one kit for lists, tabs, plan boxes and meters, so they look and behave the same. A page is a small class, which is also how new pages are added. A page can send you to a full screen such as BxTimeMachine and bring you back.
+
+## Back into the wizard
+
+The setup wizard is one entry away from anywhere: "Setup wizard (re-run, prefilled)" in the runner menu (second row, after Apps), "BxRig Setup Wizard" in the application menu, `w` on the Control Center Dashboard, or `bxrig init`. It starts from your saved answers merged with what this machine already has, shows the review, and changes nothing until you confirm.

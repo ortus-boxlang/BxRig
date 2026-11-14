@@ -1,5 +1,7 @@
 // `bxrig launchers`: one application-menu entry per Control Center page (opt-in), each opening that page solo in your terminal,
-// grouped in a "BxRig" submenu (Categories=X-BxRig plus a menu merge file and a .directory file; flat launchers like rofi ignore the folder).
+// grouped in a "BxRig" submenu: Setup Wizard, Runner menu and Control Center at the top, then Apps and Dashboard, then the folders
+// Develop, System and Look, each with its own icon (a .directory file per folder plus one menu merge file with nested <Menu>;
+// flat launchers like rofi ignore the folders).
 //   on [--yes] [--dry-run]    writes ~/.local/share/applications/bxrig-tui-PAGE.desktop for every page ("BxRig Databases", Icon=bxrig,
 //                             Exec = your terminal + bxrig tui PAGE) and puts the BxRig icon in ~/.local/share/icons/hicolor/256x256/apps/bxrig.png
 //   off [--yes] [--dry-run]   removes the entries BxRig wrote and the icon when it is still the one BxRig wrote
@@ -25,6 +27,37 @@ class Launchers {
     function directoryFile() { return dataHome() & "/desktop-directories/bxrig.directory"; }
     function menuFile() { return configHome() & "/menus/applications-merged/bxrig.menu"; }
     function fileFor( id ) { return appsDir() & "/bxrig-tui-" & arguments.id & ".desktop"; }
+    function extraFile( id ) { return appsDir() & "/bxrig-" & arguments.id & ".desktop"; }
+    function directoryDir() { return dataHome() & "/desktop-directories"; }
+
+    // The folders of the submenu: id, title, comment, icon (a freedesktop theme name), the pages in it. Anything not listed is at the top.
+    function folders() {
+        return [
+            { id: "develop", title: "Develop", comment: "BoxLang, Java, Maven, Gradle, versions, databases, mail and ports", icon: "applications-development", pages: [ "boxlang", "java", "maven", "gradle", "versions", "databases", "mail", "ports" ] },
+            { id: "system", title: "System", comment: "Machines, storage, secrets, logs, packages and shortcuts", icon: "applications-system", pages: [ "machines", "storage", "secrets", "logs", "packages", "shortcuts" ] },
+            { id: "look", title: "Look", comment: "Themes", icon: "preferences-desktop-theme", pages: [ "themes" ] }
+        ];
+    }
+
+    // The category of a page: X-BxRig at the top, X-BxRig-Develop and so on inside a folder.
+    function categoryFor( pageId ) {
+        for ( var f in folders() ) if ( arrayFind( f.pages, arguments.pageId ) ) return "X-BxRig-" & f.title;
+        return "X-BxRig";
+    }
+
+    // Everything that gets an entry: the wizard, the runner menu and the Control Center first, then one per page.
+    // { id, title, comment, argv (after the terminal, or the whole command when term is false), term, icon, category, file }
+    function items() {
+        var out = [
+            { id: "wizard", title: "Setup Wizard", comment: "BxRig Setup Wizard: change any answer again, review, then apply (bxrig init)", argv: [ "init" ], term: true, icon: "system-run", category: "X-BxRig", file: extraFile( "wizard" ) },
+            { id: "runner", title: "Runner Menu", comment: "The BxRig menu on your launcher", argv: [ "menu" ], term: false, icon: "system-search", category: "X-BxRig", file: extraFile( "runner" ) },
+            { id: "controlcenter", title: "Control Center", comment: "BxRig Control Center, every page", argv: [ "tui" ], term: true, icon: "bxrig", category: "X-BxRig", file: extraFile( "controlcenter" ) }
+        ];
+        for ( var p in new bxrig.ControlCenterPages().list() ) {
+            out.append( { id: p.id, title: p.title, comment: "BxRig " & p.title & " in a terminal", argv: [ "tui", p.id ], term: true, icon: "bxrig", category: categoryFor( p.id ), file: fileFor( p.id ) } );
+        }
+        return out;
+    }
 
     function say( command, code, data, asJson, lines = [] ) {
         if ( arguments.asJson ) println( variables.cli.envelope( arguments.command, arguments.code, arguments.data, false ) );
@@ -38,35 +71,43 @@ class Launchers {
         return """" & replace( replace( arguments.w, chr( 92 ), chr( 92 ) & chr( 92 ), "all" ), """", chr( 92 ) & """", "all" ) & """";
     }
 
-    // The entry text for one page and a terminal argv.
-    function entryText( page, termArgv ) {
+    // The entry text for one item and a terminal argv.
+    function entryText( item, termArgv ) {
         var words = [];
-        for ( var t in arguments.termArgv ) words.append( word( t ) );
-        words.append( word( self() ) ); words.append( "tui" ); words.append( arguments.page.id );
-        return "[Desktop Entry]" & chr( 10 ) & "Type=Application" & chr( 10 ) & "Name=BxRig " & arguments.page.title & chr( 10 )
-            & "Comment=BxRig " & arguments.page.title & " in a terminal" & chr( 10 )
-            & "Exec=" & words.toList( " " ) & chr( 10 ) & "Icon=bxrig" & chr( 10 ) & "Terminal=false" & chr( 10 )
-            & "Categories=X-BxRig;" & chr( 10 ) & "X-BxRig-Launcher=tui" & chr( 10 );
+        if ( arguments.item.term ) for ( var t in arguments.termArgv ) words.append( word( t ) );
+        words.append( word( self() ) );
+        for ( var a in arguments.item.argv ) words.append( word( a ) );
+        return "[Desktop Entry]" & chr( 10 ) & "Type=Application" & chr( 10 ) & "Name=BxRig " & arguments.item.title & chr( 10 )
+            & "Comment=" & arguments.item.comment & chr( 10 )
+            & "Exec=" & words.toList( " " ) & chr( 10 ) & "Icon=" & arguments.item.icon & chr( 10 ) & "Terminal=false" & chr( 10 )
+            & "Categories=" & arguments.item.category & ";" & chr( 10 ) & "X-BxRig-Launcher=tui" & chr( 10 );
     }
 
-    // The two files that make the "BxRig" submenu: the folder (name and icon) and the menu merge that fills it with the X-BxRig entries.
+    // The files that make the "BxRig" submenu: one folder file per folder (name and icon) and the menu merge with the nested <Menu>.
     function extras() {
         var nl = chr( 10 );
-        var dir = "[Desktop Entry]" & nl & "Type=Directory" & nl & "Name=BxRig" & nl & "Comment=Your dev rig" & nl & "Icon=bxrig" & nl & "X-BxRig-Launcher=tui" & nl;
+        var dirText = function( title, comment, icon ) {
+            return "[Desktop Entry]" & nl & "Type=Directory" & nl & "Name=" & title & nl & "Comment=" & comment & nl & "Icon=" & icon & nl & "X-BxRig-Launcher=tui" & nl;
+        };
+        var out = [ { name: "bxrig-directory", target: directoryDir() & "/bxrig.directory", mode: "644", content: dirText( "BxRig", "Your dev rig", "bxrig" ) } ];
+        var inner = "";
+        for ( var f in folders() ) {
+            out.append( { name: "bxrig-directory-" & f.id, target: directoryDir() & "/bxrig-" & f.id & ".directory", mode: "644", content: dirText( f.title, f.comment, f.icon ) } );
+            inner &= "    <Menu>" & nl & "      <Name>BxRig " & f.title & "</Name>" & nl & "      <Directory>bxrig-" & f.id & ".directory</Directory>" & nl
+                & "      <Include><Category>X-BxRig-" & f.title & "</Category></Include>" & nl & "    </Menu>" & nl;
+        }
         var menu = "<!DOCTYPE Menu PUBLIC ""-//freedesktop//DTD Menu 1.0//EN"" ""http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd"">" & nl
             & "<!-- X-BxRig-Launcher=tui -->" & nl & "<Menu>" & nl & "  <Name>Applications</Name>" & nl & "  <Menu>" & nl & "    <Name>BxRig</Name>" & nl
-            & "    <Directory>bxrig.directory</Directory>" & nl & "    <Include><Category>X-BxRig</Category></Include>" & nl & "  </Menu>" & nl & "</Menu>" & nl;
-        return [
-            { name: "bxrig-directory", target: directoryFile(), mode: "644", content: dir },
-            { name: "bxrig-menu", target: menuFile(), mode: "644", content: menu }
-        ];
+            & "    <Directory>bxrig.directory</Directory>" & nl & "    <Include><Category>X-BxRig</Category></Include>" & nl & inner & "  </Menu>" & nl & "</Menu>" & nl;
+        out.append( { name: "bxrig-menu", target: menuFile(), mode: "644", content: menu } );
+        return out;
     }
 
     // [ { id, title, file, state } ] for the terminal argv (state: missing, clean, outdated, drifted, blocked).
     function rows( termArgv ) {
         var out = [];
-        for ( var p in new bxrig.ControlCenterPages().list() ) {
-            var entry = { name: "tui-" & p.id, target: fileFor( p.id ), mode: "644", content: len( arguments.termArgv ) ? entryText( p, arguments.termArgv ) : "" };
+        for ( var p in items() ) {
+            var entry = { name: "tui-" & p.id, target: p.file, mode: "644", content: len( arguments.termArgv ) ? entryText( p, arguments.termArgv ) : "" };
             var st = fileExists( entry.target ) || directoryExists( entry.target ) ? ( len( arguments.termArgv ) ? variables.config.configState( entry ) : "present" ) : "missing";
             out.append( { id: p.id, title: p.title, file: entry.target, state: st, entry: entry } );
         }
@@ -107,8 +148,8 @@ class Launchers {
         var lines = [ present & " of " & rs.len() & " launchers in the application menu" & ( structKeyExists( term, "id" ) ? " (terminal: " & term.id & ")" : " (no terminal found)" ) ];
         for ( var r in rs ) lines.append( ( r.state == "missing" ? "  -  " : "  +  " ) & "BxRig " & r.title & ( r.state == "drifted" ? "   (edited by you)" : "" ) );
         var sub = extras().filter( function( e ) { return fileExists( e.target ); } ).len();
-        data.submenu = sub == 2;
-        lines.append( "Submenu BxRig: " & ( sub == 2 ? "yes" : "no" ) );
+        data.submenu = sub == extras().len();
+        lines.append( "Submenu BxRig: " & ( sub == extras().len() ? "yes" : "no" ) );
         if ( !present ) lines.append( "Turn them on: bxrig launchers on --yes" );
         return say( "launchers status", 0, data, arguments.asJson, lines );
     }

@@ -142,6 +142,7 @@ class ControlCenter {
             if ( left( out, 7 ) != "launch:" ) break;
             var target = mid( out, 8, 40 );
             if ( target == "timemachine" ) new bxrig.TimeMachine( variables.cli, variables.runner ).run( arguments.demo ? { demo: true } : { local: true } );
+            else if ( target == "wizard" ) new bxrig.Init( variables.cli ).wizard( false, false );
             else break;
         }
         return 0;

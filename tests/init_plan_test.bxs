@@ -38,6 +38,10 @@ check( "launcher and menu: install what is needed, then record the choice", ids(
 p = ip.plan( { launcher: "noctalia", menu: "rofi" } );
 p = ip.plan( { launcher: "fuzzel", menu: "wofi" } );
 check( "Fuzzel and Wofi are installed from the catalog", cmd( p, "apps" ) == "bxrig install fuzzel wofi" );
+p = ip.plan( { launcher: "rofi", menu: "rofi", theme_name: "bxrig" } );
+check( "a chosen runner gets the BxRig theme even with the default theme", ids( p ) == "theme,apps,launcher,menu" && cmd( p, "theme" ) == "bxrig theme set bxrig" );
+p = ip.plan( { theme_name: "bxrig" } );
+check( "the default theme alone adds no step without a desktop or a runner", ids( p ) == "" );
 p = ip.plan( { launcher: "noctalia", menu: "rofi" } );
 check( "Noctalia needs no package of its own", cmd( p, "apps" ) == "bxrig install rofi" && cmd( p, "launcher" ) == "bxrig runner set noctalia" );
 

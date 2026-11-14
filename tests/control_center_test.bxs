@@ -25,6 +25,8 @@ check( "app: y returns the confirmed intent", yes.confirmed == true && app.mode(
 app.showPlan( it.title, [ "Plan" ], it ); app.onKey( "n" );
 check( "app: n drops the plan", app.mode() == "main" );
 check( "app: b leaves for BxTimeMachine", structCount( app.onKey( "b" ) ) == 0 && app.outcome() == "launch:timemachine" );
+app3 = new bxrig.ControlCenterApp( [ new bxrig.DashboardPage( new bxrig.DashboardDemo( dd ) ) ], "dashboard" );
+check( "app: w leaves for the setup wizard", structCount( app3.onKey( "w" ) ) == 0 && app3.outcome() == "launch:wizard" );
 
 app2 = new bxrig.ControlCenterApp( [ new bxrig.DashboardPage( new bxrig.DashboardDemo( dd ) ) ], "dashboard" );
 app2.onKey( "Down" ); check( "page: Down moves the attention cursor", app2.page().state().cursor == 2 );

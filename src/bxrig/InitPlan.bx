@@ -78,7 +78,10 @@ class InitPlan {
         // of Light with the default theme picks the light BxRig theme. Optional: the desktop may not be running during the install.
         var themeName = pick( a, "theme_name" );
         if ( themeName == "bxrig" && pick( a, "theme" ) == "light" ) themeName = "bxrig-light";
-        if ( ( wantsHypr || wantsPlasma ) && len( themeName ) && themeName != "bxrig" ) {
+        // a chosen launcher or menu program is themed too (the rofi, fuzzel and wofi files are part of `theme set`), so it is never stock after setup,
+        // even with the default BxRig theme
+        var runnerChosen = len( pick( a, "launcher" ) ) > 0 || len( pick( a, "menu" ) ) > 0;
+        if ( ( wantsHypr || wantsPlasma || runnerChosen ) && len( themeName ) && ( themeName != "bxrig" || runnerChosen ) ) {
             var thargv = [ "bxrig", "theme", "set", themeName ];
             if ( pick( a, "theme" ) == "auto" ) thargv.append( "--mode=auto" );
             out.steps.append( { id: "theme", title: "apply the " & themeName & " colour theme", argv: thargv, optional: true } );

@@ -265,7 +265,8 @@ class ThemeColors {
             & "inputbar { padding: 8px; background-color: @bg-alt; border-radius: 8px; children: [ prompt, entry ]; }" & nl()
             & "prompt { text-color: @accent; padding: 0 8px 0 0; }" & nl()
             & "listview { lines: 10; spacing: 2px; padding: 6px 0 0 0; }" & nl()
-            & "element { padding: 6px 8px; border-radius: 6px; }" & nl()
+            & "element { padding: 6px 8px; border-radius: 6px; spacing: 10px; }" & nl()
+            & "element-icon { size: 1.3em; }" & nl()
             & "element selected.normal { background-color: @accent; text-color: @on-accent; }" & nl()
             & "element-text { text-color: inherit; }" & nl();
     }

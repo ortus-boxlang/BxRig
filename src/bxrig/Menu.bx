@@ -45,6 +45,7 @@ class Menu {
         switch ( e.kind ) {
             case "spawn": return "opens: " & c;
             case "run": return "shows in a terminal: " & c;
+            case "term": return "opens in a terminal: " & c;
             case "tui": return "opens in a terminal: " & c & ( structKeyExists( e, "icon" ) ? " (icon: " & e.icon & ")" : "" );
             case "open": return "opens " & e.url;
             case "pick": return "choose from " & e.source & ", then: " & c;
@@ -195,6 +196,18 @@ class Menu {
         return 0;
     }
 
+    // A command in its own terminal window that closes when it ends (the wizard).
+    function startTerm( entry ) {
+        var term = terminalArgv();
+        if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return 4; }
+        var argv = [];
+        for ( var t in term ) argv.append( t );
+        argv.append( self() );
+        for ( var a in arguments.entry.argv ) argv.append( a );
+        detach( argv );
+        return 0;
+    }
+
     function sub( argv, value ) {
         return arguments.argv.map( function( a ) { return replace( a, "{}", value, "all" ); } );
     }
@@ -297,6 +310,7 @@ class Menu {
             case "catalog": return catalogFlow( arguments.runner, e );
             case "open": detach( [ "xdg-open", e.url ] ); return 0;
             case "tui": return startTui( e );
+            case "term": return startTerm( e );
         }
         if ( structKeyExists( e, "confirm" ) && !confirm( arguments.runner, e.confirm ) ) return 0;
         return start( e );
@@ -313,10 +327,10 @@ class Menu {
     // Shows one level and follows the choice. Returns when the user goes back or cancels. The top level starts with Search.
     function level( runner, title, entries, top = false ) {
         while ( true ) {
-            var labels = arguments.entries.map( function( e ) { return e.label; } );
+            var labels = arguments.entries.map( function( e ) { return structKeyExists( e, "themeIcon" ) ? { label: e.label, icon: e.themeIcon } : e.label; } );
             var off = 0;
-            if ( arguments.top ) { labels.prepend( "Search…" ); off = 1; }
-            labels.append( arguments.top ? "Exit" : "Back" );
+            if ( arguments.top ) { labels.prepend( { label: "Search…", icon: "system-search" } ); off = 1; }
+            labels.append( arguments.top ? { label: "Exit", icon: "application-exit" } : { label: "Back", icon: "go-previous" } );
             var pick = arguments.runner.select( arguments.title, labels );
             if ( pick == 0 || pick == labels.len() ) return 0;
             if ( arguments.top && pick == 1 ) { var sc = searchAll( arguments.runner, arguments.entries ); if ( sc != 0 ) return sc; continue; }

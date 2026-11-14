@@ -505,7 +505,7 @@
     },
     {
      "name": "launchers",
-     "summary": "Application-menu entries for the Control Center pages (opt-in): on, off, status.",
+     "summary": "A BxRig submenu in your application menu (opt-in): the setup wizard, the runner menu, the Control Center and its pages.",
      "usage": [
       "launchers on|off|status [--yes] [--dry-run] [--json]"
      ],

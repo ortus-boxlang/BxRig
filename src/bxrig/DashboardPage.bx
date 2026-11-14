@@ -1,7 +1,7 @@
 // The Dashboard page of the Control Center: a summary first (what needs attention), then system meters, what runs and how fresh your backups are.
 // A page is any class with the same five methods, so the Control Center can host it:
 //   id() title() load() keys() paint( kit, x, y, w, h, tick, phase ) onKey( key ) -> intent  act( hit ) -> intent  onScroll( dir ) -> intent
-// An intent is a struct: {} (nothing), { action: "goto", page }, { action: "launch", target } (leave the Control Center and run that screen), { action: "cli", title, args } (plan first).
+// An intent is a struct: {} (nothing), { action: "goto", page }, { action: "launch", target } (leave the Control Center and run that screen: "timemachine", or "wizard" for the setup wizard, prefilled from this machine), { action: "cli", title, args } (plan first).
 class DashboardPage {
     function init( data ) {
         variables.provider = arguments.data;
@@ -26,7 +26,7 @@ class DashboardPage {
     }
 
     function state() { return { data: variables.data, attention: variables.att, cursor: variables.cursor }; }
-    function keys() { return [ [ "↑↓", "move" ], [ "Enter", "fix it" ], [ "r", "refresh" ], [ "b", "backups" ] ]; }
+    function keys() { return [ [ "↑↓", "move" ], [ "Enter", "fix it" ], [ "r", "refresh" ], [ "b", "backups" ], [ "w", "wizard" ] ]; }
 
     function onKey( key ) {
         var k = arguments.key;
@@ -34,6 +34,7 @@ class DashboardPage {
         if ( k == "Down" || compare( k, "j" ) == 0 ) { variables.cursor = min( max( 1, variables.att.len() ), variables.cursor + 1 ); return {}; }
         if ( compare( k, "r" ) == 0 ) { load(); return {}; }
         if ( compare( k, "b" ) == 0 ) return { action: "launch", target: "timemachine" };
+        if ( compare( k, "w" ) == 0 ) return { action: "launch", target: "wizard" };
         if ( k == "Enter" && variables.att.len() ) return variables.att[ variables.cursor ].action;
         for ( var a in variables.att ) if ( len( a.key ) && compare( a.key, k ) == 0 ) return a.action;
         return {};

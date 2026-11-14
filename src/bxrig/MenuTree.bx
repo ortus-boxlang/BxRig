@@ -5,12 +5,15 @@
 //   spawn      starts `bxrig ARGV` detached (no window)
 //   run        runs `bxrig ARGV` in a terminal window and waits for Enter (for output and for sudo prompts)
 //   tui        runs `bxrig tui ARGV` in a terminal window that closes when you leave it (`icon` names the page's icon)
+//   term       runs `bxrig ARGV` in a terminal window that closes when the command ends (a TUI that is not a Control Center page, the wizard)
 //   open       opens a URL with xdg-open
 //   pick       asks you to choose from `source` (see Menu.choices), then runs argv with {} replaced by the choice (mode spawn or run)
 //   pkgsearch  asks for text, lists matching packages (source all, repo or aur), asks, then runs `pkg install`
 //   ask        asks for one line of text, then runs argv with {} replaced by it
 //   catalog    lists the catalog apps of one group (`group`), asks, then runs `install ID --yes`
 //   db, webcreate, webrm   the existing special flows
+// `themeIcon` is a freedesktop icon name for providers that draw icons (Rofi, Fuzzel); each top-level section has a different one.
+// (`icon` on a tui entry is something else: the Nerd Font name the Control Center sidebar uses for that page.)
 // `confirm` on an entry asks "Are you sure?" first ({} is the choice). Every entry is a command you can run by hand: the menu mirrors the CLI.
 class MenuTree {
     function init() {
@@ -25,6 +28,7 @@ class MenuTree {
 
     function run( label, argv ) { return { label: arguments.label, kind: "run", argv: arguments.argv }; }
     function tui( label, argv, icon = "" ) { var e = { label: arguments.label, kind: "tui", argv: [ "tui" ] }; for ( var a in arguments.argv ) e.argv.append( a ); if ( len( arguments.icon ) ) e.icon = arguments.icon; return e; }
+    function term( label, argv ) { return { label: arguments.label, kind: "term", argv: arguments.argv }; }
     function link( label, url ) { return { label: arguments.label, kind: "open", url: arguments.url }; }
     function sub( label, children ) { return { label: arguments.label, kind: "sub", children: arguments.children }; }
 
@@ -44,8 +48,9 @@ class MenuTree {
     // catalogGroups: [ { id, title } ] from the catalog, in order.
     function sections( catalogGroups = [] ) {
         var groupEntries = arguments.catalogGroups.map( function( g ) { return { label: g.title, kind: "catalog", group: g.id }; } );
-        return [
+        var top = [
             { label: "Apps", kind: "spawn", argv: [ "apps" ] },
+            term( "Setup wizard (re-run, prefilled)", [ "init" ] ),
             sub( "Install", [
                 { label: "Package (repos and AUR)", kind: "pkgsearch", source: "all" },
                 { label: "AUR package", kind: "pkgsearch", source: "aur" },
@@ -358,5 +363,18 @@ class MenuTree {
             ] ),
             sub( "Control Center", controlCenterEntries() )
         ];
+        var icons = sectionIcons();
+        for ( var e in top ) if ( structKeyExists( icons, e.label ) ) e.themeIcon = icons[ e.label ];
+        return top;
+    }
+
+    // One freedesktop icon name per top-level section (every provider that draws icons falls back to none when the theme has no such icon).
+    function sectionIcons() {
+        return {
+            "Apps": "applications-other", "Setup wizard (re-run, prefilled)": "system-run", "Install": "system-software-install", "Remove": "edit-delete",
+            "Appearance": "preferences-desktop-theme", "Trigger": "input-keyboard", "Setup": "preferences-system", "Update": "system-software-update",
+            "Develop": "applications-development", "Agent": "applications-science", "Learn": "help-browser", "About": "help-about",
+            "System": "system-shutdown", "Control Center": "utilities-system-monitor"
+        };
     }
 }
