@@ -1,0 +1,33 @@
+// Proc: exec never throws, has uses command -v, works uses --version, a runner replaces the process.
+// Run from src/: (cd src && matchbox ../tests/proc_test.bxs)
+failures = 0;
+function check( label, ok ) { if ( ok ) println( "ok   " & label ); else { println( "FAIL " & label ); failures++; } }
+p = new bxrig.Proc();
+r = p.exec( [ "sh", "-c", "echo hi; exit 3" ], 10 );
+check( "exec gives exit code and output", r.exitCode == 3 && trim( r.output ) == "hi" );
+r = p.exec( [ "definitely-not-a-program-xyz" ], 10 );
+check( "exec of a missing program does not throw and is not 0", r.exitCode != 0 );
+check( "has: a real command", p.has( "sh" ) );
+check( "has: a missing command", !p.has( "definitely-not-a-program-xyz" ) );
+check( "has does not run the tool (a name with a quote is just not found)", !p.has( "a'b; echo pwned" ) );
+check( "works: sh has no --version but exists, so works is false and has is true", p.has( "sh" ) && !p.works( "definitely-not-a-program-xyz" ) );
+calls = [];
+fake = function( argv, timeout ) { calls.append( argv.toList( " " ) & "@" & timeout ); return { exitCode: 0, timeout: false, output: "0" }; };
+q = new bxrig.Proc( fake );
+check( "a runner replaces the process", q.exec( [ "echo", "x" ], 5 ).exitCode == 0 && calls[ 1 ] == "echo x@5" );
+check( "has through a runner uses sh -c with the name as an argument", q.has( "foo" ) && find( "sh -c command -v ""$1"" _ foo@10", calls[ 2 ] ) > 0 );
+check( "isRoot reads id -u through the runner", q.isRoot() && calls[ 3 ] == "id -u@10" );
+check( "runner() hands the same runner to a collaborator", !isSimpleValue( q.runner() ) );
+bad = function( argv, timeout ) { throw( type = "x", message = "cannot start" ); };
+b = new bxrig.Proc( bad );
+r = b.exec( [ "x" ], 1 );
+check( "a throwing runner gives 127 and the reason", r.exitCode == 127 && find( "cannot start", r.output ) > 0 );
+caught = false;
+try { b.raw( [ "x" ], 1 ); } catch ( any e ) { caught = true; }
+check( "raw may throw", caught );
+n = 0;
+q2 = new bxrig.Proc( function( argv, timeout ) { calls.append( argv.toList( " " ) ); return { exitCode: 0, timeout: false, output: "" }; } );
+q2.self( [ "tui", "list" ], 7 );
+check( "self runs BXRIG_SELF with the arguments", calls[ calls.len() ] == q2.selfPath() & " tui list" );
+if ( failures > 0 ) { println( failures & " failed" ); exit( 1 ); }
+println( "proc tests passed" );

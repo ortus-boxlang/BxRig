@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig keys show|render`: pure output, no files written. Usage: keys-test.sh [binary]
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 out="$("$binary" keys show)"
 [[ "$out" == *"Super+C"* && "$out" == *"Super+Shift+Q"* ]] || fail 'show lists the shortcuts'
 "$binary" keys show --json | jq -e '.command == "keys show" and .ok and (.data.shortcuts | length) == 55' >/dev/null || fail 'show --json envelope'

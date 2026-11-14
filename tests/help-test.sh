@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 # `bxrig help` and `bxrig help COMMAND`: the list, one command, JSON, unknown. Usage: help-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
+. "$(dirname "$0")/lib/harness.sh"
 root="$(cd "$(dirname "$binary")/.." && pwd)"
-fail() { echo "FAIL: $*" >&2; exit 1; }
 out="$("$binary" help)"
 for g in "Start here" "Install and remove" "Desktop setup" "Look and feel" "System and security" "Develop" "Everyday tools"; do grep -q "^$g:" <<<"$out" || fail "the list has no group: $g"; done
 grep -q '^  appearance ' <<<"$out" && grep -q '^  time ' <<<"$out" && grep -q '^  security ' <<<"$out" || fail 'new commands are listed'

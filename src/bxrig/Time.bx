@@ -14,30 +14,16 @@
 // Exit: 0 ok, 2 bad usage or a plan without --yes, 4 precondition (unknown zone, no tool), 5 and 6 and 7 from the install steps.
 class Time {
     function init( cli, runner = "" ) {
+        variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
+        variables.out = variables.cli.scoped( "time" );
         variables.inst = new bxrig.Installer( arguments.runner );
+        variables.proc = variables.inst.proc();
         return this;
     }
 
-    function env( name, fallback ) {
-        var v = getSystemSetting( arguments.name, "" );
-        return len( v ) ? v : arguments.fallback;
-    }
-
-    function tryExec( argv, timeout = 30 ) {
-        try { return variables.inst.exec( arguments.argv, arguments.timeout ); } catch ( any e ) { return { exitCode: 127, output: e.message }; }
-    }
-
-    function has( name ) { return tryExec( [ "sh", "-c", 'command -v "$1"', "_", arguments.name ], 10 ).exitCode == 0; }
-    function say( code, data, asJson, lines = [], dry = false ) {
-        if ( arguments.asJson ) println( variables.cli.envelope( "time", arguments.code, arguments.data, arguments.dry ) );
-        else for ( var l in arguments.lines ) println( l );
-        return arguments.code;
-    }
-    function fail( code, msg, asJson ) { return say( arguments.code, { error: arguments.msg }, arguments.asJson, [ "error: " & arguments.msg ] ); }
-
-    function unitFile() { return env( "BXRIG_SYSTEMD_DIR", "/etc/systemd/system" ) & "/automatic-timezoned.service"; }
-    function geoclueFile() { return env( "BXRIG_GEOCLUE_DIR", "/etc/geoclue/conf.d" ) & "/90-bxrig-timezone.conf"; }
+    function unitFile() { return variables.environ.get( "BXRIG_SYSTEMD_DIR", "/etc/systemd/system" ) & "/automatic-timezoned.service"; }
+    function geoclueFile() { return variables.environ.get( "BXRIG_GEOCLUE_DIR", "/etc/geoclue/conf.d" ) & "/90-bxrig-timezone.conf"; }
 
     function unitText() {
         return "# Written by `bxrig time auto on`. Remove with `bxrig time auto off`." & chr( 10 )
@@ -56,7 +42,7 @@ class Time {
     // key=value lines of `timedatectl show`.
     function facts() {
         var f = { timezone: "", ntp: false, synchronized: false, rtc_local: false, time: "" };
-        var r = tryExec( [ "timedatectl", "show" ], 10 );
+        var r = variables.proc.exec( [ "timedatectl", "show" ], 10 );
         if ( r.exitCode == 0 ) {
             for ( var line in listToArray( r.output, chr( 10 ) ) ) {
                 var k = listFirst( line, "=" );
@@ -72,11 +58,11 @@ class Time {
     }
 
     function zones() {
-        var r = tryExec( [ "timedatectl", "list-timezones" ], 15 );
+        var r = variables.proc.exec( [ "timedatectl", "list-timezones" ], 15 );
         return r.exitCode == 0 ? listToArray( trim( r.output ), chr( 10 ) ) : [];
     }
 
-    function autoActive() { return tryExec( [ "systemctl", "is-active", "--quiet", "automatic-timezoned.service" ], 10 ).exitCode == 0; }
+    function autoActive() { return variables.proc.exec( [ "systemctl", "is-active", "--quiet", "automatic-timezoned.service" ], 10 ).exitCode == 0; }
 
     // ---- commands ----
     function statusCmd( asJson ) {
@@ -86,7 +72,7 @@ class Time {
         var lines = [ "zone: " & ( len( f.timezone ) ? f.timezone : "unknown" ), "network time: " & ( f.ntp ? "on" : "off" ) & ( f.synchronized ? ", synchronized" : "" ),
             "automatic zone: " & ( auto ? "on (follows your location)" : "off (bxrig time auto on, or bxrig time sync after you travel)" ) ];
         if ( f.rtc_local ) lines.append( "note: the hardware clock is in local time (usual with Windows dual boot)" );
-        return say( 0, data, arguments.asJson, lines );
+        return variables.out.say( 0, data, arguments.asJson, lines );
     }
 
     // Shows the plan, or runs the commands. cmds: [ argv ], title for the plan.
@@ -97,23 +83,23 @@ class Time {
             var lines = [ ( arguments.dry ? "Dry run: " : "Plan: " ) & arguments.title ];
             for ( var c in arguments.cmds ) lines.append( "  " & c.toList( " " ) );
             lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return say( arguments.dry ? 0 : 2, d, arguments.asJson, lines, arguments.dry );
+            return variables.out.say( arguments.dry ? 0 : 2, d, arguments.asJson, lines, arguments.dry );
         }
         for ( var cmd in arguments.cmds ) {
-            var r = tryExec( cmd, 600 );
-            if ( r.exitCode != 0 ) return say( 6, { error: trim( r.output ), step: cmd.toList( " " ) }, arguments.asJson, [ "error: " & cmd.toList( " " ) & ": " & trim( r.output ) ] );
+            var r = variables.proc.exec( cmd, 600 );
+            if ( r.exitCode != 0 ) return variables.out.say( 6, { error: trim( r.output ), step: cmd.toList( " " ) }, arguments.asJson, [ "error: " & cmd.toList( " " ) & ": " & trim( r.output ) ] );
         }
-        return say( 0, d, arguments.asJson, [ arguments.title & ": done" ] );
+        return variables.out.say( 0, d, arguments.asJson, [ arguments.title & ": done" ] );
     }
 
     function zoneCmd( args, yes, dry, asJson ) {
-        if ( !arguments.args.len() ) return say( 0, { timezone: facts().timezone }, arguments.asJson, [ facts().timezone ] );
-        if ( arguments.args[ 1 ] == "--list" || arguments.args[ 1 ] == "list" ) { var z = zones(); return say( 0, { zones: z }, arguments.asJson, z ); }
-        if ( arguments.args.len() != 1 ) return fail( 2, "Usage: bxrig time zone [--list | ZONE]", arguments.asJson );
+        if ( !arguments.args.len() ) return variables.out.say( 0, { timezone: facts().timezone }, arguments.asJson, [ facts().timezone ] );
+        if ( arguments.args[ 1 ] == "--list" || arguments.args[ 1 ] == "list" ) { var z = zones(); return variables.out.say( 0, { zones: z }, arguments.asJson, z ); }
+        if ( arguments.args.len() != 1 ) return variables.out.fail( 2, "Usage: bxrig time zone [--list | ZONE]", arguments.asJson );
         var want = arguments.args[ 1 ];
         var all = zones();
-        if ( all.len() && !arrayFind( all, want ) ) return fail( 4, want & " is not a time zone (bxrig time zone --list)", arguments.asJson );
-        if ( !all.len() && !reFind( "^[A-Za-z0-9_+/-]+$", want ) ) return fail( 4, want & " is not a time zone", arguments.asJson );
+        if ( all.len() && !arrayFind( all, want ) ) return variables.out.fail( 4, want & " is not a time zone (bxrig time zone --list)", arguments.asJson );
+        if ( !all.len() && !reFind( "^[A-Za-z0-9_+/-]+$", want ) ) return variables.out.fail( 4, want & " is not a time zone", arguments.asJson );
         return runPlan( "set the time zone to " & want, [ [ "sudo", "timedatectl", "set-timezone", want ] ], arguments.yes, arguments.dry, arguments.asJson, { timezone: want } );
     }
 
@@ -121,12 +107,12 @@ class Time {
         var steps = [];
         var before = facts().timezone;
         var d = { was: before };
-        if ( !has( "tzupdate" ) ) {
+        if ( !variables.proc.has( "tzupdate" ) ) {
             var built = variables.inst.steps( [ { id: "tzupdate", source: "aur", targets: [ "tzupdate" ] } ], variables.inst.isRoot() );
             d.install = built.steps;
-            if ( !arguments.yes || arguments.dry ) return say( arguments.dry ? 0 : 2, d, arguments.asJson, [ ( arguments.dry ? "Dry run" : "Plan" ) & ": install tzupdate (AUR), then set the time zone from your IP address", "Nothing was changed." & ( arguments.dry ? "" : " Add --yes to apply." ) ], arguments.dry );
+            if ( !arguments.yes || arguments.dry ) return variables.out.say( arguments.dry ? 0 : 2, d, arguments.asJson, [ ( arguments.dry ? "Dry run" : "Plan" ) & ": install tzupdate (AUR), then set the time zone from your IP address", "Nothing was changed." & ( arguments.dry ? "" : " Add --yes to apply." ) ], arguments.dry );
             var res = variables.inst.run( built.steps );
-            if ( variables.inst.exitCode( res ) != 0 ) return say( variables.inst.exitCode( res ), { failed: res.failed }, arguments.asJson, res.failed.map( function( f ) { return "Failed: " & f.id & ": " & f.error; } ) );
+            if ( variables.inst.exitCode( res ) != 0 ) return variables.out.say( variables.inst.exitCode( res ), { failed: res.failed }, arguments.asJson, res.failed.map( function( f ) { return "Failed: " & f.id & ": " & f.error; } ) );
         }
         var code = runPlan( "set the time zone from your IP address (tzupdate)", [ [ "sudo", "tzupdate" ] ], arguments.yes, arguments.dry, arguments.asJson, d );
         if ( code == 0 && arguments.yes && !arguments.dry && !arguments.asJson ) println( "zone: " & before & " -> " & facts().timezone );
@@ -135,8 +121,8 @@ class Time {
 
     function autoCmd( args, yes, dry, asJson ) {
         var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
-        if ( v == "status" ) return say( 0, { automatic_zone: autoActive() }, arguments.asJson, [ "automatic zone: " & ( autoActive() ? "on" : "off" ) ] );
-        if ( v != "on" && v != "off" ) return fail( 2, "Usage: bxrig time auto on|off|status", arguments.asJson );
+        if ( v == "status" ) return variables.out.say( 0, { automatic_zone: autoActive() }, arguments.asJson, [ "automatic zone: " & ( autoActive() ? "on" : "off" ) ] );
+        if ( v != "on" && v != "off" ) return variables.out.fail( 2, "Usage: bxrig time auto on|off|status", arguments.asJson );
         var tmpU = getTempDirectory() & "/bxrig-tz-unit-" & createUUID();
         var tmpG = getTempDirectory() & "/bxrig-tz-geoclue-" & createUUID();
         var d = { unit: unitFile(), geoclue: geoclueFile() };
@@ -145,7 +131,7 @@ class Time {
             return runPlan( "turn the automatic time zone off", [ [ "sudo", "systemctl", "disable", "--now", "automatic-timezoned.service" ], [ "sudo", "rm", "-f", unitFile(), geoclueFile() ], [ "sudo", "systemctl", "daemon-reload" ] ], arguments.yes, arguments.dry, arguments.asJson, d );
         }
         var apps = [ { id: "geoclue", source: "pacman", targets: [ "geoclue" ] } ];
-        if ( !has( "automatic-timezoned" ) ) apps.append( { id: "automatic-timezoned", source: "aur", targets: [ "automatic-timezoned" ] } );
+        if ( !variables.proc.has( "automatic-timezoned" ) ) apps.append( { id: "automatic-timezoned", source: "aur", targets: [ "automatic-timezoned" ] } );
         var built = variables.inst.steps( apps, variables.inst.isRoot() );
         d.install = built.steps;
         var after = [ [ "sudo", "install", "-Dm644", tmpU, unitFile() ], [ "sudo", "install", "-Dm644", tmpG, geoclueFile() ], [ "sudo", "systemctl", "daemon-reload" ], [ "sudo", "systemctl", "enable", "--now", "automatic-timezoned.service" ] ];
@@ -155,11 +141,11 @@ class Time {
             for ( var a in after ) lines.append( "  " & a.toList( " " ) );
             lines.append( "Nothing was changed." & ( arguments.dry ? "" : " Add --yes to apply." ) );
             d.commands = after.map( function( c ) { return c.toList( " " ); } );
-            return say( arguments.dry ? 0 : 2, d, arguments.asJson, lines, arguments.dry );
+            return variables.out.say( arguments.dry ? 0 : 2, d, arguments.asJson, lines, arguments.dry );
         }
-        if ( variables.inst.isRoot() ) return fail( 4, "run as a regular user: AUR packages are never built as root", arguments.asJson );
+        if ( variables.inst.isRoot() ) return variables.out.fail( 4, "run as a regular user: AUR packages are never built as root", arguments.asJson );
         var res = variables.inst.run( built.steps );
-        if ( variables.inst.exitCode( res ) != 0 ) return say( variables.inst.exitCode( res ), { failed: res.failed }, arguments.asJson, res.failed.map( function( f ) { return "Failed: " & f.id & ": " & f.error; } ) );
+        if ( variables.inst.exitCode( res ) != 0 ) return variables.out.say( variables.inst.exitCode( res ), { failed: res.failed }, arguments.asJson, res.failed.map( function( f ) { return "Failed: " & f.id & ": " & f.error; } ) );
         fileWrite( tmpU, unitText() );
         fileWrite( tmpG, geoclueText() );
         var code = runPlan( "follow your location with the time zone", after, true, false, arguments.asJson, d );
@@ -170,7 +156,7 @@ class Time {
 
     function ntpCmd( args, yes, dry, asJson ) {
         var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
-        if ( v != "on" && v != "off" ) return fail( 2, "Usage: bxrig time ntp on|off", arguments.asJson );
+        if ( v != "on" && v != "off" ) return variables.out.fail( 2, "Usage: bxrig time ntp on|off", arguments.asJson );
         return runPlan( "turn network time " & v, [ [ "sudo", "timedatectl", "set-ntp", v == "on" ? "true" : "false" ] ], arguments.yes, arguments.dry, arguments.asJson, { ntp: v == "on" } );
     }
 
@@ -183,6 +169,6 @@ class Time {
         if ( verb == "sync" ) return syncCmd( arguments.yes, arguments.dry, arguments.asJson );
         if ( verb == "auto" ) return autoCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
         if ( verb == "ntp" ) return ntpCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
-        return fail( 2, "Usage: bxrig time status | zone [--list|ZONE] | sync | auto on|off|status | ntp on|off", arguments.asJson );
+        return variables.out.fail( 2, "Usage: bxrig time status | zone [--list|ZONE] | sync | auto on|off|status | ntp on|off", arguments.asJson );
     }
 }

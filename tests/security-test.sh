@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig security ...` with a fake /etc/pam.d, /etc/sudoers.d, sudo, pacman, visudo, systemctl. Usage: security-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home/.config" "$tmp/pam" "$tmp/sudoers"; export LOG="$tmp/log"; : > "$LOG"
 cat > "$tmp/pam/sudo" <<'P'
 #%PAM-1.0
@@ -22,7 +19,6 @@ printf '#!/usr/bin/env bash\necho "pamu2fcfg $*" >> "$LOG"\necho "mykey" \n' > "
 printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo 1000; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
 chmod +x "$tmp/bin"/* "$tmp"/*.real
 run() { env HOME="$tmp/home" USER="${SUSER:-dev}" BXRIG_PAM_DIR="$tmp/pam" BXRIG_SUDOERS_DIR="$tmp/sudoers" PATH="$tmp/bin:$PATH" LOG="$LOG" ACTIVE="${ACTIVE:-3}" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 has() { grep -qF -- "$1" "$LOG"; }
 
 run "$binary" security status --json | jq -e '(.data.fingerprint.sudo | not) and (.data.passwordless_sudo | not) and (.data.fido2.key_registered | not)' >/dev/null || fail 'status'

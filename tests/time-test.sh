@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig time ...` with fake timedatectl, systemctl, sudo, pacman, yay, tzupdate. Usage: time-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/sd" "$tmp/gc" "$tmp/fake"; export LOG="$tmp/log"; : > "$LOG"
 echo UTC > "$tmp/fake/zone"
 cat > "$tmp/bin/timedatectl" <<'F'
@@ -30,7 +27,6 @@ printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo 1000; else /usr/bin/
 printf '#!/usr/bin/env bash\necho x86_64\n' > "$tmp/bin/uname"; printf 'ID=cachyos\n' > "$tmp/os"
 chmod +x "$tmp/bin"/* "$tmp/tzupdate.real"
 run() { env HOME="$tmp/home" USER=dev BXRIG_OS_RELEASE="$tmp/os" BXRIG_STATE_HOME="$tmp/state" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_SYSTEMD_DIR="$tmp/sd" BXRIG_GEOCLUE_DIR="$tmp/gc" PATH="$tmp/bin:$PATH" LOG="$LOG" FAKE="$tmp/fake" ACTIVE="${ACTIVE:-3}" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 has() { grep -qF -- "$1" "$LOG"; }
 
 run "$binary" time status --json | jq -e '.data.timezone == "UTC" and .data.ntp and (.data.automatic_zone | not)' >/dev/null || fail 'status'

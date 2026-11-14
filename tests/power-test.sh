@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig power ...` with fake powerprofilesctl, systemctl, sudo and a fake /sys and /proc. Usage: power-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/sys/BAT0" "$tmp/sys/AC" "$tmp/logind"; export LOG="$tmp/log"; : > "$LOG"
 echo 82 > "$tmp/sys/BAT0/capacity"; echo Discharging > "$tmp/sys/BAT0/status"
 printf 'MemTotal:       16000000 kB\nSwapTotal:       8000000 kB\n' > "$tmp/meminfo"
@@ -18,7 +15,6 @@ printf '#!/usr/bin/env bash\necho "sudo $*" >> "$LOG"\nexec "$@"\n' > "$tmp/bin/
 printf '#!/usr/bin/env bash\necho "pacman $*" >> "$LOG"\n' > "$tmp/bin/pacman"
 chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" BXRIG_POWER_DIR="${POWER_DIR:-$tmp/sys}" BXRIG_LOGIND_DIR="$tmp/logind" BXRIG_MEMINFO="$tmp/meminfo" PATH="$tmp/bin:$PATH" LOG="$LOG" ACTIVE="${ACTIVE:-0}" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 has() { grep -qF -- "$1" "$LOG"; }
 
 run "$binary" power status --json | jq -e '(.data.battery[0].percent == 82) and .data.profile == "balanced" and .data.lid == "default"' >/dev/null || fail 'status'

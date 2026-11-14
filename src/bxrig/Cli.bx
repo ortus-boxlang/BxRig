@@ -10,6 +10,23 @@ class Cli {
         return jsonSerialize( { schema: 1, command: command, version: variables.version, ok: exitCode == 0, exit: exitCode, dry_run: dryRun, data: data, warnings: [] } );
     }
 
+    // Prints one command result: the JSON envelope with --json, else the human lines. Returns the exit code (so a command ends with `return cli.say( ... )`).
+    function say( command, code, data, asJson, lines = [], dry = false ) {
+        if ( arguments.asJson ) println( envelope( arguments.command, arguments.code, arguments.data, arguments.dry ) );
+        else for ( var l in arguments.lines ) println( l );
+        return arguments.code;
+    }
+
+    // An error result: { error: msg } in JSON, "error: msg" for people. Returns the exit code.
+    function fail( command, code, msg, asJson ) {
+        return say( arguments.command, arguments.code, { error: arguments.msg }, arguments.asJson, [ "error: " & arguments.msg ] );
+    }
+
+    // The same helpers bound to one command name: `variables.out = variables.cli.scoped( "time" )`.
+    function scoped( command ) {
+        return new bxrig.Out( this, arguments.command );
+    }
+
     // Prints a key/value listing as lines, or as the JSON envelope with --json.
     function emitMap( command, asJson, map, suffix ) {
         if ( asJson ) {
