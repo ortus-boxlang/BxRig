@@ -12,6 +12,7 @@ d "$tmp/desk/code.desktop" $'Type=Application\nName=Visual Studio Code\nExec=cod
 d "$tmp/desk/strata.desktop" $'Type=Application\nName=Strata\nExec=strata\nIcon=strata'
 d "$tmp/desk/firefox-private.desktop" $'Type=Application\nName=Firefox Private\nExec=firefox --private-window\nIcon=firefox'
 d "$tmp/desk/hidden.desktop" $'Type=Application\nName=Hidden thing\nExec=hidden\nNoDisplay=true'
+d "$tmp/desk/bxrig-tui-apps.desktop" $'Type=Application\nName=BxRig Apps\nExec=bxrig tui apps\nX-BxRig-Launcher=tui'
 d "$tmp/desk/orphan.desktop" $'Type=Application\nName=Orphan\nExec=orphan'
 # fake pacman: every call is logged
 cat > "$tmp/bin/pacman" <<'PACMAN'

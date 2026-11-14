@@ -70,6 +70,8 @@ class AppsData {
                 else if ( compare( key, "Categories" ) == 0 ) e.categories = val;
                 else if ( compare( key, "Type" ) == 0 ) e.type = val;
                 else if ( ( compare( key, "NoDisplay" ) == 0 || compare( key, "Hidden" ) == 0 ) && lCase( val ) == "true" ) e.hidden = true;
+                // BxRig's own launchers (`launchers on`) are shortcuts to its pages, not apps you installed
+                else if ( compare( key, "X-BxRig-Launcher" ) == 0 ) e.hidden = true;
             }
         } catch ( any x ) {}
         return e;
