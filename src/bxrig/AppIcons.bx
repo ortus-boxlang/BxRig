@@ -5,11 +5,14 @@
 //   icons.screenshotsFor( "org.mozilla.thunderbird" ) -> [ local paths ] (empty until the lookup and the downloads are done)
 // Where an icon comes from, first match wins:
 //   1. the app is installed: its .desktop file names an icon (Icon=), found as a PNG in the icon themes (hicolor first, sizes 128 to 48) or /usr/share/pixmaps,
-//      or given as an absolute path;
+//      or given as an absolute path; the current icon theme (and the themes it Inherits) is looked at before hicolor and the rest, and an Icon= name is
+//      used as it is (org.xfce.thunar keeps its dots);
+//   1b. only an SVG exists: it is rasterized once to a 128 px PNG in <cache>/images/svg with rsvg-convert (librsvg), else ImageMagick (magick or convert);
+//      with neither installed, or when the tool fails or takes more than 4 seconds, the icon is skipped and remembered as failed (a letter tile shows);
 //   2. AppStream icons of the repositories (archlinux-appstream-data): <share>/swcatalog/icons/ORIGIN/SIZE/*_NAME.png (or app-info/icons);
 //   3. Dashboard Icons (https://dashboardicons.com, Apache-2.0): PNG by kebab-case name from the jsDelivr CDN, with -light or -dark as the second try;
 //   4. "": the caller draws a letter tile.
-// SVG icons are skipped (no rasterizer is shipped). Screenshots come from the AppStream collection XML (<share>/swcatalog/xml/*.xml.gz or
+// Screenshots come from the AppStream collection XML (<share>/swcatalog/xml/*.xml.gz or
 // app-info/xmls/*.xml.gz) by component id: a background job scans the compressed XML with zcat and awk (it is never loaded whole) and writes the URLs to
 // <cache>/appstream/ID.urls; the pictures themselves are fetched by ImageCache (kind "shots").
 // opts (tests): { share, home, iconBase, cache: {ImageCache opts} }. Environment: BXRIG_SHARE_DIR replaces /usr/share.
@@ -18,7 +21,9 @@ class AppIcons {
         variables.opts = arguments.opts;
         variables.cache = new bxrig.ImageCache( arguments.opts.cache ?: {} );
         variables.seen = {};
-        variables.sizes = [ "128x128", "256x256", "96x96", "64x64", "48x48", "72x72", "512x512" ];
+        variables.sizes = [ "128x128", "256x256", "96x96", "64x64", "48x48", "72x72", "512x512", "32x32", "24x24", "22x22", "16x16" ];
+        variables.themeList = [];
+        variables.rasterTool = "?";
         return this;
     }
 
@@ -60,18 +65,46 @@ class AppIcons {
 
     function isPicture( path ) { var e = lCase( listLast( arguments.path, "." ) ); return arrayFind( [ "png", "jpg", "jpeg", "webp", "gif" ], e ) > 0; }
 
+    // The icon theme names to look in, in this order: the current theme and what it Inherits, hicolor, then every other theme folder.
+    function themeNames( root ) {
+        var names = [];
+        var cur = env( "BXRIG_ICON_THEME", "" );
+        if ( !len( cur ) ) {
+            for ( var f in [ home() & "/.config/gtk-3.0/settings.ini", home() & "/.config/gtk-4.0/settings.ini" ] ) {
+                if ( len( cur ) || !fileExists( f ) ) continue;
+                try { for ( var line in listToArray( fileRead( f ), chr( 10 ) ) ) if ( left( trim( line ), 20 ) == "gtk-icon-theme-name=" || left( trim( line ), 21 ) == "gtk-icon-theme-name =" ) cur = trim( listLast( trim( line ), "=" ) ); } catch ( any e ) {}
+            }
+        }
+        var add = function( n ) { if ( len( n ) && reFind( "^[A-Za-z0-9_.-]+$", n ) && !arrayFindNoCase( names, n ) ) names.append( n ); };
+        var queue = len( cur ) ? [ cur ] : [];
+        var guard = 0;
+        while ( queue.len() && guard++ < 12 ) {
+            var t = queue[ 1 ]; queue.deleteAt( 1 );
+            if ( arrayFindNoCase( names, t ) ) continue;
+            add( t );
+            for ( var r in [ userShare() & "/icons", share() & "/icons" ] ) {
+                var idx = r & "/" & t & "/index.theme";
+                if ( !fileExists( idx ) ) continue;
+                try { for ( var line in listToArray( fileRead( idx ), chr( 10 ) ) ) if ( left( trim( line ), 9 ) == "Inherits=" ) for ( var inh in listToArray( mid( trim( line ), 10, 300 ), "," ) ) queue.append( trim( inh ) ); } catch ( any e ) {}
+                break;
+            }
+        }
+        add( "hicolor" );
+        try { for ( var t2 in directoryList( arguments.root, false, "name" ) ) if ( directoryExists( arguments.root & "/" & t2 ) ) add( t2 ); } catch ( any e ) {}
+        return names;
+    }
+
+    function themeRoots() { return [ userShare() & "/icons", share() & "/icons" ]; }
+
     // A picture of the named icon in the icon themes or pixmaps, or "".
     function themed( iconName ) {
         var ic = arguments.iconName;
         if ( !len( ic ) ) return "";
         if ( left( ic, 1 ) == "/" ) return fileExists( ic ) && isPicture( ic ) ? ic : "";
         if ( find( "/", ic ) || find( "..", ic ) ) return "";
-        var roots = [ userShare() & "/icons", share() & "/icons" ];
-        for ( var root in roots ) {
+        for ( var root in themeRoots() ) {
             if ( !directoryExists( root ) ) continue;
-            var themes = [ "hicolor" ];
-            try { for ( var t in directoryList( root, false, "name" ) ) if ( t != "hicolor" && directoryExists( root & "/" & t ) ) themes.append( t ); } catch ( any e ) {}
-            for ( var th in themes ) for ( var sz in variables.sizes ) {
+            for ( var th in themeNames( root ) ) for ( var sz in variables.sizes ) {
                 var n = listFirst( sz, "x" );
                 for ( var f in [ root & "/" & th & "/" & sz & "/apps/" & ic & ".png", root & "/" & th & "/apps/" & n & "/" & ic & ".png", root & "/" & th & "/" & sz & "/" & ic & ".png" ] ) if ( fileExists( f ) ) return f;
             }
@@ -80,11 +113,63 @@ class AppIcons {
         return "";
     }
 
+    // The SVG of an icon name (scalable folders first), or "".
+    function svgOf( iconName ) {
+        var ic = arguments.iconName;
+        if ( !len( ic ) || left( ic, 1 ) == "/" || find( "/", ic ) || find( "..", ic ) ) return left( ic, 1 ) == "/" && lCase( right( ic, 4 ) ) == ".svg" && fileExists( ic ) ? ic : "";
+        for ( var root in themeRoots() ) {
+            if ( !directoryExists( root ) ) continue;
+            for ( var th in themeNames( root ) ) for ( var f in [ root & "/" & th & "/scalable/apps/" & ic & ".svg", root & "/" & th & "/apps/scalable/" & ic & ".svg", root & "/" & th & "/scalable/" & ic & ".svg" ] ) if ( fileExists( f ) ) return f;
+        }
+        for ( var px in [ share() & "/pixmaps/" & ic & ".svg", userShare() & "/pixmaps/" & ic & ".svg" ] ) if ( fileExists( px ) ) return px;
+        return "";
+    }
+
+    // Tests: use this program (a path) to rasterize.
+    function useTool( path ) { variables.rasterTool = arguments.path; return this; }
+
+    // Which tool turns an SVG into a PNG: rsvg-convert (librsvg), magick or convert (ImageMagick), or "" when none is installed. Asked once.
+    function rasterTool() {
+        if ( variables.rasterTool == "?" ) {
+            variables.rasterTool = "";
+            try {
+                var r = systemExecute( "sh", [ "-c", "command -v rsvg-convert || command -v magick || command -v convert" ], 5, true );
+                if ( r.exitCode == 0 ) variables.rasterTool = getFileFromPath( trim( listFirst( r.output, chr( 10 ) ) ) );
+            } catch ( any e ) {}
+        }
+        return variables.rasterTool;
+    }
+
+    // The SVG as a 128 px PNG in the cache ("" when there is no tool, the tool fails or takes too long; a failure is remembered by a marker file).
+    function rasterize( svg ) {
+        try {
+            var src = arguments.svg;
+            if ( !len( src ) || !fileExists( src ) ) return "";
+            var dir = variables.cache.dir( "svg" );
+            var k = variables.cache.key( src );
+            var out = dir & "/" & k & ".png";
+            if ( fileExists( out ) ) return out;
+            if ( fileExists( dir & "/" & k & ".fail" ) ) return "";
+            var tool = rasterTool();
+            if ( !len( tool ) ) return "";
+            directoryCreate( dir, true );
+            var tool2 = getFileFromPath( tool );
+            var args = tool2 == "rsvg-convert" ? [ "-w", "128", "-h", "128", "-o", out & ".tmp", src ] : ( tool2 == "magick" ? [ "-background", "none", "-density", "384", src, "-resize", "128x128", "PNG32:" & out & ".tmp" ] : [ "-background", "none", "-density", "384", src, "-resize", "128x128", "PNG32:" & out & ".tmp" ] );
+            var r = systemExecute( tool, args, 4, true );
+            if ( r.exitCode == 0 && fileExists( out & ".tmp" ) ) { fileMove( out & ".tmp", out ); return out; }
+            try { fileDelete( out & ".tmp" ); } catch ( any e2 ) {}
+            fileWrite( dir & "/" & k & ".fail", "failed" );
+        } catch ( any e ) {}
+        return "";
+    }
+
     function installed( name ) {
         for ( var nm in names( arguments.name ) ) {
             for ( var d in [ userShare() & "/applications/" & nm & ".desktop", share() & "/applications/" & nm & ".desktop" ] ) {
                 if ( !fileExists( d ) ) continue;
-                var hit = themed( readIconName( d ) );
+                var iname = readIconName( d );
+                var hit = themed( iname );
+                if ( !len( hit ) ) hit = rasterize( svgOf( iname ) );
                 if ( len( hit ) ) return hit;
             }
             var direct = themed( nm );
@@ -131,7 +216,9 @@ class AppIcons {
         try {
             var key = lCase( arguments.name );
             if ( !structKeyExists( variables.seen, key ) ) {
-                var local = installed( arguments.name );
+                var local = themed( arguments.name );
+                if ( !len( local ) ) local = installed( arguments.name );
+                if ( !len( local ) ) local = rasterize( svgOf( arguments.name ) );
                 if ( !len( local ) ) local = appstream( arguments.name );
                 variables.seen[ key ] = local;
             }

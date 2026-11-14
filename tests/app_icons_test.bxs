@@ -36,6 +36,40 @@ check( "installed: other icon themes and the apps/SIZE layout", icons.themed( "b
 check( "installed: pixmaps", icons.iconFor( "pix" ) == tmp & "/share/pixmaps/pix.png" );
 check( "installed: the user's own icon folder and desktop file", icons.iconFor( "mine" ) == tmp & "/home/.local/share/icons/hicolor/64x64/apps/mine.png" );
 check( "installed: an SVG-only icon is skipped, not returned", icons.themed( "svgonly" ) == "" );
+// an Icon= name with dots is used as it is (org.xfce.thunar), and the current theme and its Inherits come before hicolor
+put( "share/icons/hicolor/128x128/apps/org.example.Dotted.png", png );
+check( "installed: a dotted Icon= name is found as it is", icons.iconFor( "org.example.Dotted" ) == tmp & "/share/icons/hicolor/128x128/apps/org.example.Dotted.png" );
+put( "share/icons/hicolor/32x32/apps/small-only.png", png );
+check( "installed: small sizes are the last resort", icons.themed( "small-only" ) == tmp & "/share/icons/hicolor/32x32/apps/small-only.png" );
+put( "share/icons/Fancy/128x128/apps/themed-app.png", png );
+put( "share/icons/hicolor/128x128/apps/themed-app.png", png );
+put( "share/icons/Base/128x128/apps/inherited-app.png", png );
+put( "share/icons/hicolor/128x128/apps/inherited-app.png", png );
+text( "share/icons/Fancy/index.theme", "[Icon Theme]" & chr( 10 ) & "Name=Fancy" & chr( 10 ) & "Inherits=Base,hicolor" & chr( 10 ) );
+text( "home/.config/gtk-3.0/settings.ini", "[Settings]" & chr( 10 ) & "gtk-icon-theme-name=Fancy" & chr( 10 ) );
+themedIcons = new bxrig.AppIcons( { share: tmp & "/share", home: tmp & "/home", cache: { base: tmp & "/cache3" } } );
+check( "theme: the current GTK icon theme wins over hicolor", themedIcons.themed( "themed-app" ) == tmp & "/share/icons/Fancy/128x128/apps/themed-app.png" );
+check( "theme: a theme it Inherits comes before hicolor", themedIcons.themed( "inherited-app" ) == tmp & "/share/icons/Base/128x128/apps/inherited-app.png" );
+check( "theme: names are Fancy, Base, hicolor in that order", themedIcons.themeNames( tmp & "/share/icons" )[ 1 ] == "Fancy" && themedIcons.themeNames( tmp & "/share/icons" )[ 2 ] == "Base" && themedIcons.themeNames( tmp & "/share/icons" )[ 3 ] == "hicolor" );
+// SVG only: a fake rsvg-convert on PATH writes a PNG; without any tool the icon stays empty and nothing throws
+text( "share/icons/hicolor/scalable/apps/vector-app.svg", "<svg xmlns=" & chr( 34 ) & "http://www.w3.org/2000/svg" & chr( 34 ) & "/>" );
+text( "share/applications/vector-app.desktop", "[Desktop Entry]" & chr( 10 ) & "Icon=vector-app" & chr( 10 ) );
+check( "svg: without a rasterizer the icon is empty, not an error", new bxrig.AppIcons( { share: tmp & "/share", home: tmp & "/home", cache: { base: tmp & "/cache4" } } ).rasterize( tmp & "/share/icons/hicolor/scalable/apps/vector-app.svg" ) == "" || len( trim( sh( "command -v rsvg-convert || command -v magick || command -v convert || true" ).output ) ) > 0 );
+text( "bin/rsvg-convert", "#!/bin/sh" & chr( 10 ) & "out=; while [ $# -gt 0 ]; do case $1 in -o) out=$2; shift;; esac; shift; done" & chr( 10 ) & "echo " & png & " | base64 -d > $out" & chr( 10 ) );
+sh( "chmod +x " & tmp & "/bin/rsvg-convert" );
+oldPath = getSystemSetting( "PATH", "" );
+sh( "true" );
+svgIcons = new bxrig.AppIcons( { share: tmp & "/share", home: tmp & "/home", cache: { base: tmp & "/cache5" } } );
+svgIcons.useTool( tmp & "/bin/rsvg-convert" );
+got1 = svgIcons.iconFor( "vector-app" );
+check( "svg: an SVG-only icon is rasterized to a cached PNG", len( got1 ) > 0 && fileExists( got1 ) && right( got1, 4 ) == ".png" && find( "/images/svg/", got1 ) > 0 );
+check( "svg: asked again it is the same file (cached)", svgIcons.rasterize( svgIcons.svgOf( "vector-app" ) ) == got1 );
+text( "bin/bad-convert", "#!/bin/sh" & chr( 10 ) & "exit 1" & chr( 10 ) );
+sh( "chmod +x " & tmp & "/bin/bad-convert" );
+text( "share/icons/hicolor/scalable/apps/broken-app.svg", "<svg/>" );
+badIcons = new bxrig.AppIcons( { share: tmp & "/share", home: tmp & "/home", cache: { base: tmp & "/cache6" } } );
+badIcons.useTool( tmp & "/bin/bad-convert" );
+check( "svg: a tool that fails gives empty and is remembered", badIcons.rasterize( badIcons.svgOf( "broken-app" ) ) == "" && len( sh( "ls " & tmp & "/cache6/images/svg/*.fail 2>/dev/null" ).output ) > 0 );
 check( "appstream: *_name.png in the catalog icons", icons.appstream( "astool" ) == tmp & "/share/swcatalog/icons/extra/64x64/ascat_astool.png" && icons.iconFor( "astool" ) == tmp & "/share/swcatalog/icons/extra/64x64/ascat_astool.png" );
 check( "junk names do not throw", icons.iconFor( "" ) == "" && icons.iconFor( "../../etc/passwd" ) == "" );
 

@@ -864,7 +864,7 @@ W1 this section; W2 native TUI in MatchBox; W3 `install.sh` (done); W4 init engi
 ### 13.51 Pictures in the TUIs (decided with the owner 2026-11-14)
 
 - **Optional, never fatal.** A picture that is missing, slow, too big or broken becomes a letter tile; no picture call blocks a frame or throws. Details and limits are in `docs/guides/images.md`.
-- **Pieces:** `TuiKit.image` and `imageOrTile` (drawing, via MatchBox `tui.image`), `ImageCache` (background https downloads, magic byte check, size and time caps, failures remembered 6 hours, 200 MB cache at `~/.cache/bxrig/images`), `AppIcons` (installed icon theme, AppStream icons, Dashboard Icons by name, AppStream screenshots).
+- **Pieces:** `TuiKit.image` and `imageOrTile` (drawing, via MatchBox `tui.image`), `ImageCache` (background https downloads, magic byte check, size and time caps, failures remembered 6 hours, 200 MB cache at `~/.cache/bxrig/images`), `AppIcons` (installed icon theme with the GTK theme and its `Inherits` before hicolor, an `Icon=` name used as it is, SVG-only icons rasterized once to `~/.cache/bxrig/images/svg` by `rsvg-convert` or ImageMagick with a 4 second limit and a remembered failure, AppStream icons, Dashboard Icons by name, AppStream screenshots).
 - **Sources and attribution:** Dashboard Icons (Apache-2.0, logos remain their owners' trademarks, used to identify the app); AppStream data from `archlinux-appstream-data`. No web image search.
 - **Settings:** `BXRIG_IMAGES=on|off`, `BXRIG_CACHE_HOME`, `BXRIG_IMAGE_CAP_KB`, `BXRIG_IMAGE_MAX_TIME`, `BXRIG_SHARE_DIR`.
 - **Build:** the compiler needs MatchBox built with `--features bif-tui`.

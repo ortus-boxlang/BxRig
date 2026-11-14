@@ -31,7 +31,7 @@ def svg(w, h, body):
 
 W, H = 2560, 1440
 # app icon: the BxRig laptop on a rounded dark tile
-open('icon.svg', 'w').write(svg(256, 256, f'<rect width="256" height="256" rx="56" fill="{BASE}"/>{mark(48, 48, 160)}'))
+open('icon.svg', 'w').write(svg(256, 256, f'<rect width="256" height="256" rx="48" fill="{BASE}"/>{mark(18, 18, 220)}'))
 # logo: icon + wordmark, for dark backgrounds
 open('logo.svg', 'w').write(svg(720, 200, f'{mark(14, 20, 160)}{word(200, 124, 96, "start")}'))
 # 1 icon: centered icon, wordmark and tagline
