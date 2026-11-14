@@ -562,12 +562,13 @@ bxrig keys conflicts
 Which launcher and which menu program BxRig uses (Rofi, Walker, Wofi, Fuzzel, Vicinae).
 
 ```text
-bxrig runner list | show | doctor | launch | select JSON_ENTRIES [--prompt=TEXT] | set PROVIDER | menu-set PROVIDER | launcher-command PROVIDER JSON_ARGV | menu-command PROVIDER JSON_ARGV [--json]
+bxrig runner list | show | doctor | launch | select JSON_ENTRIES [--prompt=TEXT] | set PROVIDER | menu-set PROVIDER | icon-theme NAME|auto | launcher-command PROVIDER JSON_ARGV | menu-command PROVIDER JSON_ARGV [--json]
 ```
 
 ```bash
 bxrig runner list
 bxrig runner set rofi
+bxrig runner icon-theme Papirus
 bxrig runner doctor
 ```
 
@@ -627,7 +628,7 @@ bxrig launchers on --yes
 bxrig launchers off --yes
 ```
 
-> `on` writes one entry per page to ~/.local/share/applications (BxRig Databases, ...), each opening `bxrig tui PAGE` in your terminal, and the BxRig icon to ~/.local/share/icons/hicolor/256x256/apps/bxrig.png. An entry you edited is kept, never overwritten or removed. `off` (or `bxrig remove launchers`) takes them out again. Nothing is added unless you ask.
+> `on` writes one entry per page to ~/.local/share/applications (BxRig Databases, ...), each opening `bxrig tui PAGE` in your terminal, and the BxRig icon (16 to 256 px PNGs and the scalable SVG) to ~/.local/share/icons/hicolor/SIZExSIZE/apps/bxrig.png. An entry you edited is kept, never overwritten or removed. `off` (or `bxrig remove launchers`) takes them out again. Nothing is added unless you ask.
 
 ### `bxrig config` {#bxrig-config}
 

@@ -561,10 +561,11 @@ bxrig keys conflicts
 </code></pre>
 <h3 id="bxrig-runner-bxrig-runner"><a href="#bxrig-runner-bxrig-runner" id="bxrig-runner-bxrig-runner" name="bxrig-runner-bxrig-runner" class="anchor"></a><code>bxrig runner</code> {#bxrig-runner}</h3>
 <p>Which launcher and which menu program BxRig uses (Rofi, Walker, Wofi, Fuzzel, Vicinae).</p>
-<pre><code class="language-text">bxrig runner list | show | doctor | launch | select JSON_ENTRIES [--prompt=TEXT] | set PROVIDER | menu-set PROVIDER | launcher-command PROVIDER JSON_ARGV | menu-command PROVIDER JSON_ARGV [--json]
+<pre><code class="language-text">bxrig runner list | show | doctor | launch | select JSON_ENTRIES [--prompt=TEXT] | set PROVIDER | menu-set PROVIDER | icon-theme NAME|auto | launcher-command PROVIDER JSON_ARGV | menu-command PROVIDER JSON_ARGV [--json]
 </code></pre>
 <pre><code class="language-bash">bxrig runner list
 bxrig runner set rofi
+bxrig runner icon-theme Papirus
 bxrig runner doctor
 </code></pre>
 <h3 id="bxrig-default-bxrig-default"><a href="#bxrig-default-bxrig-default" id="bxrig-default-bxrig-default" name="bxrig-default-bxrig-default" class="anchor"></a><code>bxrig default</code> {#bxrig-default}</h3>
@@ -598,7 +599,7 @@ bxrig launchers on --yes
 bxrig launchers off --yes
 </code></pre>
 <blockquote>
-<p><code>on</code> writes one entry per page to ~/.local/share/applications (BxRig Databases, ...), each opening <code>bxrig tui PAGE</code> in your terminal, and the BxRig icon to ~/.local/share/icons/hicolor/256x256/apps/bxrig.png. An entry you edited is kept, never overwritten or removed. <code>off</code> (or <code>bxrig remove launchers</code>) takes them out again. Nothing is added unless you ask.</p>
+<p><code>on</code> writes one entry per page to ~/.local/share/applications (BxRig Databases, ...), each opening <code>bxrig tui PAGE</code> in your terminal, and the BxRig icon (16 to 256 px PNGs and the scalable SVG) to ~/.local/share/icons/hicolor/SIZExSIZE/apps/bxrig.png. An entry you edited is kept, never overwritten or removed. <code>off</code> (or <code>bxrig remove launchers</code>) takes them out again. Nothing is added unless you ask.</p>
 </blockquote>
 <h3 id="bxrig-config-bxrig-config"><a href="#bxrig-config-bxrig-config" id="bxrig-config-bxrig-config" name="bxrig-config-bxrig-config" class="anchor"></a><code>bxrig config</code> {#bxrig-config}</h3>
 <p>The managed config files: list, diff, apply, restore a backup, history. A file you edited is never overwritten.</p>
@@ -1123,7 +1124,7 @@ bxrig dictation status
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/reference/commands.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/reference/commands.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 14, 2026, 4&#x3a;50&#x3a;00 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Command%20reference&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Freference%2Fcommands%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/reference/commands.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/reference/commands.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 14, 2026, 5&#x3a;15&#x3a;30 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Command%20reference&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Freference%2Fcommands%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
