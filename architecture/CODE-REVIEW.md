@@ -56,7 +56,7 @@ Phases 0 to 5 and the first slice of phase 6 are done and pushed to `development
 
 ### Test results
 
-Full run of `tests/run-all.sh` on the final build: 98 of 100 pass. `bootstrap-test.sh` fails in this sandbox (no pacman, unrelated to this work: it fails the same way without the refactor) and `wizard-test.sh` fails here with the same answers (it types before the 1.4 s native start finishes; it failed identically on the build from before the refactor). Six tests first failed only because `run-all.sh` gave them no binary argument; fixed and rerun green. Startup of the native binary went from about 1.4 to 1.7 seconds per run (extra classes loaded at start: `Env`, `Proc`, `Out`); not investigated further.
+Full run of `tests/run-all.sh` on the final build: 97 of 99 pass. `bootstrap-test.sh` fails in this sandbox (no pacman, unrelated to this work: it fails the same way without the refactor) and `wizard-test.sh` fails here with the same answers (it types before the 1.4 s native start finishes; it failed identically on the build from before the refactor). Six tests first failed only because `run-all.sh` gave them no binary argument; fixed and rerun green. Startup of the native binary went from about 1.4 to 1.7 seconds per run (extra classes loaded at start: `Env`, `Proc`, `Out`); not investigated further.
 
 ### Verified (the three "verify" items of this review)
 
