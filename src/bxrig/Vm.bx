@@ -160,7 +160,7 @@ class Vm {
             wl.append( "You need your own Windows license; the install uses generic trial keys, which do not activate Windows." );
             return variables.cli.say( cmd, 0, { kind: "windows", image: variables.data.windowsImage(), default: variables.data.defaultWindows(), versions: w }, arguments.asJson, wl );
         }
-        return variables.cli.fail( cmd, 2, "Usage: bxrig vm versions linux|windows", arguments.asJson );
+        return variables.cli.fail( cmd, 2, new bxrig.CommandSpec().usage( "vm versions" ), arguments.asJson );
     }
 
     // ---- doctor ----
@@ -298,7 +298,7 @@ class Vm {
         var cmd = "vm create";
         var o = arguments.opts;
         var nm = len( arguments.name ) ? arguments.name : ( arguments.kind == "windows" ? "windows" : "" );
-        if ( !arrayFind( [ "windows", "linux" ], arguments.kind ) ) return variables.cli.fail( cmd, 2, "Usage: bxrig vm create windows [NAME] | linux NAME", arguments.asJson );
+        if ( !arrayFind( [ "windows", "linux" ], arguments.kind ) ) return variables.cli.fail( cmd, 2, new bxrig.CommandSpec().usage( "vm" ), arguments.asJson );
         if ( !len( nm ) ) return variables.cli.fail( cmd, 2, "A Linux desktop needs a name: bxrig vm create linux NAME [--tag=ubuntu-xfce]", arguments.asJson );
         if ( !validName( nm ) ) return variables.cli.fail( cmd, 4, "The name may only contain lower case letters, digits and hyphens (up to 31 characters)", arguments.asJson );
         if ( structKeyExists( readRecord( nm ), "name" ) ) return variables.cli.fail( cmd, 4, "A VM named " & nm & " already exists (bxrig vm list)", arguments.asJson );

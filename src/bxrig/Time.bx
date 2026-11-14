@@ -95,7 +95,7 @@ class Time {
     function zoneCmd( args, yes, dry, asJson ) {
         if ( !arguments.args.len() ) return variables.out.say( 0, { timezone: facts().timezone }, arguments.asJson, [ facts().timezone ] );
         if ( arguments.args[ 1 ] == "--list" || arguments.args[ 1 ] == "list" ) { var z = zones(); return variables.out.say( 0, { zones: z }, arguments.asJson, z ); }
-        if ( arguments.args.len() != 1 ) return variables.out.fail( 2, "Usage: bxrig time zone [--list | ZONE]", arguments.asJson );
+        if ( arguments.args.len() != 1 ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "time" ), arguments.asJson );
         var want = arguments.args[ 1 ];
         var all = zones();
         if ( all.len() && !arrayFind( all, want ) ) return variables.out.fail( 4, want & " is not a time zone (bxrig time zone --list)", arguments.asJson );
@@ -122,7 +122,7 @@ class Time {
     function autoCmd( args, yes, dry, asJson ) {
         var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
         if ( v == "status" ) return variables.out.say( 0, { automatic_zone: autoActive() }, arguments.asJson, [ "automatic zone: " & ( autoActive() ? "on" : "off" ) ] );
-        if ( v != "on" && v != "off" ) return variables.out.fail( 2, "Usage: bxrig time auto on|off|status", arguments.asJson );
+        if ( v != "on" && v != "off" ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "time auto" ), arguments.asJson );
         var tmpU = getTempDirectory() & "/bxrig-tz-unit-" & createUUID();
         var tmpG = getTempDirectory() & "/bxrig-tz-geoclue-" & createUUID();
         var d = { unit: unitFile(), geoclue: geoclueFile() };
@@ -156,7 +156,7 @@ class Time {
 
     function ntpCmd( args, yes, dry, asJson ) {
         var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
-        if ( v != "on" && v != "off" ) return variables.out.fail( 2, "Usage: bxrig time ntp on|off", arguments.asJson );
+        if ( v != "on" && v != "off" ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "time ntp" ), arguments.asJson );
         return runPlan( "turn network time " & v, [ [ "sudo", "timedatectl", "set-ntp", v == "on" ? "true" : "false" ] ], arguments.yes, arguments.dry, arguments.asJson, { ntp: v == "on" } );
     }
 
@@ -169,6 +169,6 @@ class Time {
         if ( verb == "sync" ) return syncCmd( arguments.yes, arguments.dry, arguments.asJson );
         if ( verb == "auto" ) return autoCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
         if ( verb == "ntp" ) return ntpCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
-        return variables.out.fail( 2, "Usage: bxrig time status | zone [--list|ZONE] | sync | auto on|off|status | ntp on|off", arguments.asJson );
+        return variables.out.fail( 2, new bxrig.CommandSpec().usage( "time" ), arguments.asJson );
     }
 }

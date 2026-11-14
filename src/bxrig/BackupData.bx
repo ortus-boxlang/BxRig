@@ -300,7 +300,7 @@ class BackupData {
 
     function filesCmd( args, opts, asJson ) {
         var nr = needRestic( arguments.asJson ); if ( structKeyExists( nr, "code" ) ) return nr.code;
-        if ( !arguments.args.len() || !reFind( "^[a-f0-9]{4,64}$|^latest$", arguments.args[ 1 ] ) ) return variables.out.fail( 2, "Usage: bxrig backup data files ID [PATH] [--target=NAME]", arguments.asJson );
+        if ( !arguments.args.len() || !reFind( "^[a-f0-9]{4,64}$|^latest$", arguments.args[ 1 ] ) ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "backup data files" ), arguments.asJson );
         var s = readAll();
         var pt = pickTarget( s, arguments.opts );
         if ( structKeyExists( pt, "error" ) ) return variables.out.fail( 4, pt.error, arguments.asJson );
@@ -315,7 +315,7 @@ class BackupData {
 
     function restoreCmd( args, opts, yes, dry, asJson ) {
         var nr = needRestic( arguments.asJson ); if ( structKeyExists( nr, "code" ) ) return nr.code;
-        if ( arguments.args.len() != 1 || !reFind( "^[a-f0-9]{4,64}$|^latest$", arguments.args[ 1 ] ) || !structKeyExists( arguments.opts, "to" ) ) return variables.out.fail( 2, "Usage: bxrig backup data restore ID --to=DIR [--include=PATH] [--target=NAME] [--yes]", arguments.asJson );
+        if ( arguments.args.len() != 1 || !reFind( "^[a-f0-9]{4,64}$|^latest$", arguments.args[ 1 ] ) || !structKeyExists( arguments.opts, "to" ) ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "backup data restore" ), arguments.asJson );
         var to = arguments.opts.to;
         if ( left( to, 1 ) != "/" && left( to, 1 ) != "~" ) to = variables.environ.home() & "/" & to;
         if ( left( to, 1 ) == "~" ) to = variables.environ.home() & mid( to, 2, len( to ) );
@@ -368,7 +368,7 @@ class BackupData {
         var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "status";
         var s = readAll();
         if ( v == "status" ) return variables.out.say( 0, { schedule: s.data.schedule }, arguments.asJson, [ "schedule: " & s.data.schedule ] );
-        if ( !arrayFind( [ "hourly", "daily", "off" ], v ) ) return variables.out.fail( 2, "Usage: bxrig backup data schedule hourly|daily|off|status", arguments.asJson );
+        if ( !arrayFind( [ "hourly", "daily", "off" ], v ) ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "backup data schedule" ), arguments.asJson );
         var svcFile = unitDir() & "/bxrig-backup.service";
         var timFile = unitDir() & "/bxrig-backup.timer";
         var cmds = v == "off" ? [ [ "systemctl", "--user", "disable", "--now", "bxrig-backup.timer" ] ] : [ [ "systemctl", "--user", "daemon-reload" ], [ "systemctl", "--user", "enable", "--now", "bxrig-backup.timer" ] ];
@@ -449,6 +449,6 @@ class BackupData {
         if ( verb == "schedule" ) return scheduleCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
         if ( verb == "retention" ) return retentionCmd( arguments.opts, arguments.asJson );
         if ( verb == "include" || verb == "exclude" ) return listEdit( verb, rest, arguments.asJson );
-        return variables.out.fail( 2, "Usage: bxrig backup data status | targets | target add NAME --type=T ... | target remove NAME | init NAME | run | list | files ID [PATH] | restore ID --to=DIR | verify | forget | schedule hourly|daily|off | include|exclude add|remove X", arguments.asJson );
+        return variables.out.fail( 2, new bxrig.CommandSpec().usage( "backup" ), arguments.asJson );
     }
 }

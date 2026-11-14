@@ -2,6 +2,7 @@
 # `bxrig init`: answers file in, ordinary commands out (a fake bxrig and git record them), plus the wizard in a pty. Usage: init-test.sh BINARY
 set -euo pipefail
 binary="$(realpath "${1:?native executable required}")"
+export BXRIG_TEST_LIB="$(cd "$(dirname "$0")" && pwd)/lib"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 fail() { echo "FAIL: $*" >&2; exit 1; }
 mkdir -p "$tmp/bin" "$tmp/home"
@@ -85,6 +86,8 @@ rm -f "$tmp/cfg/bxrig/answers.json"
 : > "$LOG"
 python3 - "$binary" "$tmp" <<'PY'
 import os, pty, select, sys, time, struct, fcntl, termios
+sys.path.insert(0, os.environ['BXRIG_TEST_LIB'])
+from pty_ready import ready
 binary, tmp = sys.argv[1:3]
 env = dict(os.environ, BXRIG_CONFIG_HOME=tmp + '/cfg', BXRIG_STATE_HOME=tmp + '/state', BXRIG_SELF=tmp + '/self', HOME=tmp + '/home', PATH=tmp + '/bin:' + os.environ['PATH'], LOG=tmp + '/log')
 pid, fd = pty.fork()
@@ -99,7 +102,7 @@ def pump(t):
             try:
                 if not os.read(fd, 65536): return
             except OSError: return
-pump(1.5)
+ready(fd)
 for k in [b'\r'] + [b'\t'] * 13 + [b'\r']:
     os.write(fd, k); pump(0.3)
 pump(1.5)

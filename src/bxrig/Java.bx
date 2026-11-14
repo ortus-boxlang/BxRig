@@ -132,7 +132,7 @@ class Java {
             return sdk.act( "install", "java", id, arguments.yes, arguments.dry, arguments.asJson );
         }
         if ( len( arguments.major ) && !isNumeric( arguments.major ) ) return variables.out.fail( 4, "An identifier like " & arguments.major & " needs SDKMAN. Install it with: bxrig sdk setup --yes", arguments.asJson );
-        if ( !isNumeric( arguments.major ) ) return variables.out.say( 2, { error: "usage" }, arguments.asJson, [ "Usage: bxrig java install MAJOR [--yes] [--dry-run]" ] );
+        if ( !isNumeric( arguments.major ) ) return variables.out.say( 2, { error: "usage" }, arguments.asJson, [ new bxrig.CommandSpec().usage( "java install" ) ] );
         var m = int( val( arguments.major ) );
         var rel = releases();
         if ( rel.ok && !arrayFind( rel.releases, m ) ) return variables.out.fail( 4, "Temurin has no Java " & m & " release. See: bxrig java available", arguments.asJson );
@@ -216,8 +216,8 @@ class Java {
             if ( !len( ref ) ) return variables.out.say( 2, { error: "usage" }, arguments.asJson, [ "Usage: bxrig java default ID|MAJOR [--yes]   or   --unset" ] );
             return setDefault( ref, false, arguments.yes, arguments.dry, arguments.asJson );
         }
-        if ( sub == "remove" ) { if ( !len( ref ) ) return variables.out.say( 2, { error: "usage" }, arguments.asJson, [ "Usage: bxrig java remove ID [--yes]" ] ); return remove( ref, arguments.yes, arguments.dry, arguments.asJson ); }
+        if ( sub == "remove" ) { if ( !len( ref ) ) return variables.out.say( 2, { error: "usage" }, arguments.asJson, [ new bxrig.CommandSpec().usage( "java remove" ) ] ); return remove( ref, arguments.yes, arguments.dry, arguments.asJson ); }
         if ( sub == "env" ) return envLines( ref, arguments.asJson );
-        return variables.out.say( 2, { error: "usage" }, arguments.asJson, [ "Usage: bxrig java list|available|install MAJOR|default ID|remove ID|env [ID] [--yes] [--dry-run] [--json]" ] );
+        return variables.out.say( 2, { error: "usage" }, arguments.asJson, [ new bxrig.CommandSpec().usage( "java" ) ] );
     }
 }

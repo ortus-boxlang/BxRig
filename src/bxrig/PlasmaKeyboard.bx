@@ -14,7 +14,7 @@ class PlasmaKeyboard {
         var cmd = "setup keyboard";
         var kb = new bxrig.StarterOptions().keyboards();
         var list = listToArray( arguments.layouts, "," ).map( function( x ) { return trim( x ); } ).filter( function( x ) { return len( x ) > 0; } );
-        if ( !list.len() ) return variables.cli.say( cmd, 2, {}, arguments.asJson, [ "Usage: bxrig setup keyboard --layouts=us-intl,es [--yes] [--dry-run]" ] );
+        if ( !list.len() ) return variables.cli.say( cmd, 2, {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "setup keyboard" ) ] );
         for ( var k in list ) if ( !structKeyExists( kb, k ) ) return variables.cli.say( cmd, 4, { error: "Unknown layout" }, arguments.asJson, [ "error: unknown layout " & k & " (use " & structKeyArray( kb ).sort( "text" ).toList( ", " ) & ")" ] );
         var codes = list.map( function( k ) { return kb[ k ].layout; } );
         var variants = list.map( function( k ) { return kb[ k ].variant; } );

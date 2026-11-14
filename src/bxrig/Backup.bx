@@ -21,7 +21,7 @@ class Backup {
         if ( layer == "export" ) return new bxrig.BackupMove( variables.cli, variables.runner ).exportCmd( rest, arguments.opts, arguments.yes, arguments.dry, arguments.asJson );
         if ( layer == "data" ) return new bxrig.BackupData( variables.cli, variables.runner ).run( rest, arguments.opts, arguments.yes, arguments.dry, arguments.asJson );
         if ( layer == "snapshots" ) return new bxrig.BackupSnapshots( variables.cli, variables.runner ).run( rest, arguments.opts, arguments.yes, arguments.dry, arguments.asJson );
-        var msg = "Usage: bxrig backup config ... | snapshots ... | data ... | send ... | export ... | timeline";
+        var msg = new bxrig.CommandSpec().usage( "backup" );
         if ( arguments.asJson ) println( variables.cli.envelope( "backup", 2, { error: msg } ) ); else println( msg );
         return 2;
     }

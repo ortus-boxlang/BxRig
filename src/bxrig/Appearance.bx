@@ -186,7 +186,7 @@ class Appearance {
             if ( !arguments.dry ) writeState( s );
             return result( "bar battery percent", arguments.args[ 2 ], { noctalia: bt }, [], arguments.asJson, arguments.dry );
         }
-        return variables.out.fail( 2, "Usage: bxrig appearance bar show|hide|toggle | position top|bottom|left|right | style opaque|glassy|clear | clock ID | battery on|off", arguments.asJson );
+        return variables.out.fail( 2, new bxrig.CommandSpec().usage( "appearance" ), arguments.asJson );
     }
 
     function dockCmd( args, dry, asJson ) {
@@ -210,7 +210,7 @@ class Appearance {
             if ( !arguments.dry ) writeState( s );
             return result( "dock position", arguments.args[ 2 ], { noctalia: p }, [], arguments.asJson, arguments.dry );
         }
-        return variables.out.fail( 2, "Usage: bxrig appearance dock show|hide|toggle | mode autohide|always|off | position top|bottom|left|right", arguments.asJson );
+        return variables.out.fail( 2, new bxrig.CommandSpec().usage( "appearance" ), arguments.asJson );
     }
 
     function windowsCmd( args, dry, asJson ) {
@@ -228,7 +228,7 @@ class Appearance {
         }
         else if ( v == "opacity" && structKeyExists( opacities(), x ) ) { s.windows.opacity = x; label = "window opacity"; }
         else if ( v == "one-window-ratio" && arrayFind( [ "on", "off" ], x ) ) { s.windows.one_window_ratio = x; label = "one-window ratio"; }
-        else return variables.out.fail( 2, "Usage: bxrig appearance windows gaps on|off | corners theme|sharp|rounded | opacity opaque|transparent|glassy | one-window-ratio on|off", arguments.asJson );
+        else return variables.out.fail( 2, new bxrig.CommandSpec().usage( "appearance" ), arguments.asJson );
         if ( arguments.dry ) { applied.hyprland = "would write " & lookFile() & " and run hyprctl reload"; return result( label, x, applied, notes, arguments.asJson, true ); }
         writeState( s );
         applied.hyprland = applyLook( s );
@@ -237,7 +237,7 @@ class Appearance {
     }
 
     function animationsCmd( args, dry, asJson ) {
-        if ( arguments.args.len() != 1 || !arrayFind( [ "on", "off" ], arguments.args[ 1 ] ) ) return variables.out.fail( 2, "Usage: bxrig appearance animations on|off", arguments.asJson );
+        if ( arguments.args.len() != 1 || !arrayFind( [ "on", "off" ], arguments.args[ 1 ] ) ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "appearance animations" ), arguments.asJson );
         var on = arguments.args[ 1 ] == "on";
         var s = readState();
         s.animations = arguments.args[ 1 ];
@@ -249,7 +249,7 @@ class Appearance {
     }
 
     function layoutCmd( args, dry, asJson ) {
-        if ( arguments.args.len() != 1 || !arrayFind( [ "dwindle", "scrolling", "floating" ], arguments.args[ 1 ] ) ) return variables.out.fail( 2, "Usage: bxrig appearance layout dwindle|scrolling|floating", arguments.asJson );
+        if ( arguments.args.len() != 1 || !arrayFind( [ "dwindle", "scrolling", "floating" ], arguments.args[ 1 ] ) ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "appearance layout" ), arguments.asJson );
         var l = arguments.args[ 1 ];
         var applied = {};
         if ( l == "floating" ) {
@@ -286,7 +286,7 @@ class Appearance {
         }
         var family = v;
         for ( var f in fonts() ) if ( f.id == v ) family = f.family;
-        if ( arguments.args.len() != 1 ) return variables.out.fail( 2, "Usage: bxrig appearance font list | install ID [--yes] | ID_OR_FAMILY", arguments.asJson );
+        if ( arguments.args.len() != 1 ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "appearance" ), arguments.asJson );
         if ( !installedFamily( family ) ) return variables.out.fail( 4, family & " is not installed" & ( arrayFind( fonts().map( function( f ) { return f.id; } ), v ) ? " (bxrig appearance font install " & v & " --yes)" : " (see: fc-list : family)" ), arguments.asJson );
         var s = readState();
         s.font = family;
@@ -356,7 +356,7 @@ class Appearance {
             var w = arguments.dry ? { exitCode: 0, output: "" } : noctalia( [ "wallpaper-set", path ] );
             return result( "background", path, { noctalia: w.exitCode == 0 ? ( arguments.dry ? "noctalia msg wallpaper-set " & path : "applied" ) : "failed: " & trim( w.output ) }, [], arguments.asJson, arguments.dry );
         }
-        return variables.out.fail( 2, "Usage: bxrig appearance background list | set NAME_OR_PATH | next | random", arguments.asJson );
+        return variables.out.fail( 2, new bxrig.CommandSpec().usage( "appearance" ), arguments.asJson );
     }
 
     function status( asJson ) {
@@ -391,7 +391,7 @@ class Appearance {
 
     // The entry point: appearance GROUP ARGS...
     function run( words, dry, yes, asJson ) {
-        if ( !arguments.words.len() ) return variables.out.fail( 2, "Usage: bxrig appearance status | bar ... | dock ... | windows ... | animations on|off | layout ... | font ... | background ...", arguments.asJson );
+        if ( !arguments.words.len() ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "appearance" ), arguments.asJson );
         var g = arguments.words[ 1 ];
         var rest = arguments.words.slice( 2 );
         if ( g == "status" && !rest.len() ) return status( arguments.asJson );

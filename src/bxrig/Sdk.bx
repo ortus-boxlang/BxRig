@@ -216,6 +216,6 @@ class Sdk {
             return sub == "list" ? list( cand, arguments.asJson ) : listAvailable( cand, arguments.asJson );
         }
         if ( sub == "install" || sub == "default" || sub == "remove" ) return act( sub, cand, ver, arguments.yes, arguments.dry, arguments.asJson );
-        return variables.out.say( 2, { error: "usage" }, arguments.asJson, [ "Usage: bxrig sdk status|setup|list C|available C|install C V|default C V|remove C V [--yes] [--dry-run] [--json]" ] );
+        return variables.out.say( 2, { error: "usage" }, arguments.asJson, [ new bxrig.CommandSpec().usage( "sdk" ) ] );
     }
 }

@@ -36,9 +36,9 @@ class Tweaks {
     // ---- toggle ----
     function toggle( words, dry, asJson ) {
         var what = arguments.words.len() ? arguments.words[ 1 ] : "";
-        if ( what != "stay-awake" ) return variables.cli.fail( "toggle", 2, "Usage: bxrig toggle stay-awake [on|off]", arguments.asJson );
+        if ( what != "stay-awake" ) return variables.cli.fail( "toggle", 2, new bxrig.CommandSpec().usage( "toggle stay-awake" ), arguments.asJson );
         var state = arguments.words.len() > 1 ? arguments.words[ 2 ] : "toggle";
-        if ( !arrayFind( [ "on", "off", "toggle" ], state ) || arguments.words.len() > 2 ) return variables.cli.fail( "toggle", 2, "Usage: bxrig toggle stay-awake [on|off]", arguments.asJson );
+        if ( !arrayFind( [ "on", "off", "toggle" ], state ) || arguments.words.len() > 2 ) return variables.cli.fail( "toggle", 2, new bxrig.CommandSpec().usage( "toggle stay-awake" ), arguments.asJson );
         var verb = state == "on" ? "caffeine-enable" : state == "off" ? "caffeine-disable" : "caffeine-toggle";
         if ( arguments.dry ) return variables.cli.say( "toggle", 0, { toggle: what, command: "noctalia msg " & verb }, arguments.asJson, [ "would run: noctalia msg " & verb ], true );
         if ( !variables.proc.has( "noctalia" ) ) return variables.cli.fail( "toggle", 4, "stay awake needs Noctalia (Hyprland); on Plasma use System Settings > Power Management", arguments.asJson );
@@ -92,7 +92,7 @@ class Tweaks {
             for ( var ip in ips ) if ( !validIp( ip ) ) return variables.cli.fail( "dns", 2, ip & " is not an IP address", arguments.asJson );
             for ( var i2 in ips ) { if ( find( ":", i2 ) ) v6 = trim( v6 & " " & i2 ); else v4 = trim( v4 & " " & i2 ); }
             if ( !ips.len() ) return variables.cli.fail( "dns", 2, "give at least one IP address", arguments.asJson );
-        } else return variables.cli.fail( "dns", 2, "Usage: bxrig dns [cloudflare|google|quad9|dhcp|custom IP[,IP...]]", arguments.asJson );
+        } else return variables.cli.fail( "dns", 2, new bxrig.CommandSpec().usage( "dns" ), arguments.asJson );
         if ( !conns.len() ) return variables.cli.fail( "dns", 4, "no active network connection", arguments.asJson );
         var auto = what == "dhcp" ? "no" : "yes";
         var cmds = [];
@@ -134,7 +134,7 @@ class Tweaks {
             lines.append( "available: " & ( avail.len() ? avail.toList( ", " ) : "none found" ) );
             return variables.cli.say( "kernel", 0, { running: running, installed: inst, available: avail }, arguments.asJson, lines );
         }
-        if ( ( verb != "install" && verb != "remove" ) || arguments.words.len() != 2 ) return variables.cli.fail( "kernel", 2, "Usage: bxrig kernel list | install NAME | remove NAME", arguments.asJson );
+        if ( ( verb != "install" && verb != "remove" ) || arguments.words.len() != 2 ) return variables.cli.fail( "kernel", 2, new bxrig.CommandSpec().usage( "kernel" ), arguments.asJson );
         var name = arguments.words[ 2 ];
         if ( !kernelName( name ) ) return variables.cli.fail( "kernel", 2, name & " is not a kernel package name (for example linux-cachyos-lts)", arguments.asJson );
         var pkgs = [ name, name & "-headers" ];

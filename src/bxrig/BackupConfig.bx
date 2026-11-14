@@ -265,7 +265,7 @@ class BackupConfig {
         var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "status";
         var s = readSettings();
         if ( v == "on" || v == "off" ) { s.config.auto = v == "on"; writeSettings( s ); }
-        else if ( v != "status" ) return variables.out.fail( 2, "Usage: bxrig backup config auto on|off|status", arguments.asJson );
+        else if ( v != "status" ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "backup config auto" ), arguments.asJson );
         return variables.out.say( 0, { auto: s.config.auto }, arguments.asJson, [ "automatic config snapshots: " & ( s.config.auto ? "on (before updates, init, refresh and system update)" : "off" ) ] );
     }
 
@@ -290,7 +290,7 @@ class BackupConfig {
         if ( reFind( "^\.ssh/(id_|.*key)", p ) || findNoCase( "gnupg", p ) ) return variables.out.fail( 2, "keys are never added to a config snapshot (use backup data for ~/.ssh)", arguments.asJson );
         if ( v == "add" ) { if ( !arrayFind( s.config.paths, p ) ) s.config.paths.append( p ); s.config.removed = s.config.removed.filter( function( x ) { return x != p; } ); }
         else if ( v == "remove" ) { s.config.paths = s.config.paths.filter( function( x ) { return x != p; } ); if ( arrayFind( defaultPaths(), p ) && !arrayFind( s.config.removed, p ) ) s.config.removed.append( p ); }
-        else return variables.out.fail( 2, "Usage: bxrig backup config paths | add PATH | remove PATH", arguments.asJson );
+        else return variables.out.fail( 2, new bxrig.CommandSpec().usage( "backup" ), arguments.asJson );
         writeSettings( s );
         return variables.out.say( 0, { paths: trackedPaths() }, arguments.asJson, [ v == "add" ? "Added ~/" & p : "Removed ~/" & p ] );
     }
@@ -307,6 +307,6 @@ class BackupConfig {
         if ( verb == "auto" ) return autoCmd( rest, arguments.asJson );
         if ( verb == "prune" ) return pruneCmd( arguments.opts, arguments.yes, arguments.dry, arguments.asJson );
         if ( verb == "paths" || verb == "add" || verb == "remove" ) return pathsCmd( verb == "paths" ? rest : arguments.words, arguments.asJson );
-        return variables.out.fail( 2, "Usage: bxrig backup config now | list | show ID | diff ID | restore ID [--only=PATH] [--packages] | auto on|off|status | prune [--keep=N] | paths | add PATH | remove PATH", arguments.asJson );
+        return variables.out.fail( 2, new bxrig.CommandSpec().usage( "backup" ), arguments.asJson );
     }
 }

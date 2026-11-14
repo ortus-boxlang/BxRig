@@ -2,7 +2,7 @@
 # `bxrig wizard` end to end in a real pseudo-terminal: pages in, keys typed, answers out (and cancel writes nothing).
 # Needs the native bxrig built with MatchBox's TUI. Usage: wizard-test.sh BXRIG_BINARY
 set -euo pipefail
-root="$(cd "$(dirname "$0")/.." && pwd)"
+root="$(cd "$(dirname "$0")/.." && pwd)"; export BXRIG_TEST_LIB="$root/tests/lib"
 bin="$(realpath "${1:?native bxrig executable required}")"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 fail() { echo "FAIL: $*" >&2; exit 1; }
@@ -17,6 +17,8 @@ JSON
 run_keys() {  # OUT KEYS... : runs the wizard in a pty and sends the keys (python escapes), returns its exit code
   python3 - "$bin" "$tmp/pages.json" "$1" "$2" <<'PY'
 import os, pty, select, sys, time, struct, fcntl, termios
+sys.path.insert(0, os.environ['BXRIG_TEST_LIB'])
+from pty_ready import ready
 bin, pages, out, keys = sys.argv[1:5]
 keys = keys.encode().decode('unicode_escape').encode('latin-1')
 pid, fd = pty.fork()
@@ -31,7 +33,7 @@ def pump(t):
             try:
                 if not os.read(fd, 65536): return
             except OSError: return
-pump(1.2)
+ready(fd)
 for k in keys.split(b'|'):
     os.write(fd, k); pump(0.25)
 pump(0.5)

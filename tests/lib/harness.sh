@@ -4,6 +4,7 @@
 set -euo pipefail
 binary="$(realpath "${1:?native executable required}")"
 root="$(cd "$(dirname "${BASH_SOURCE[1]}")/.." && pwd)"
+export BXRIG_TEST_LIB="$root/tests/lib"
 tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
 fail() { echo "FAIL: $*" >&2; exit 1; }
 # stub NAME 'bash body': an executable $tmp/bin/NAME (put $tmp/bin first on PATH in run()).

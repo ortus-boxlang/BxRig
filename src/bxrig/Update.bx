@@ -162,7 +162,7 @@ class Update {
             d.notify = false; save( d );
             return variables.out.say( 0, { enabled: false }, arguments.asJson, [ "Update notifications are off." ] );
         }
-        if ( arguments.action != "on" ) return variables.out.say( 2, {}, arguments.asJson, [ "Usage: bxrig update notifications on|off|status" ] );
+        if ( arguments.action != "on" ) return variables.out.say( 2, {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "update notifications" ) ] );
         var svc = { name: "update-service", target: unit( "service" ), mode: "644", content: "[Unit]" & chr( 10 ) & "Description=BxRig update check" & chr( 10 ) & chr( 10 ) & "[Service]" & chr( 10 ) & "Type=oneshot" & chr( 10 ) & "ExecStart=sh -c 'PATH=$HOME/.local/bin:$PATH bxrig update check --notify; true'" & chr( 10 ) };
         var tim = { name: "update-timer", target: unit( "timer" ), mode: "644", content: "[Unit]" & chr( 10 ) & "Description=BxRig daily update check" & chr( 10 ) & chr( 10 ) & "[Timer]" & chr( 10 ) & "OnCalendar=daily" & chr( 10 ) & "RandomizedDelaySec=1h" & chr( 10 ) & "Persistent=true" & chr( 10 ) & chr( 10 ) & "[Install]" & chr( 10 ) & "WantedBy=timers.target" & chr( 10 ) };
         for ( var e in [ svc, tim ] ) { var st = variables.config.configState( e ); if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( e, e.content, "apply", true, false ); }

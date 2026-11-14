@@ -183,7 +183,7 @@ class Display {
 
     function mirrorCmd( args, dry, asJson ) {
         var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
-        if ( v != "on" && v != "off" ) return variables.out.fail( 2, "Usage: bxrig display mirror on|off", arguments.asJson );
+        if ( v != "on" && v != "off" ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "display mirror" ), arguments.asJson );
         var s = readState();
         if ( v == "on" ) {
             var src = "";
@@ -201,7 +201,7 @@ class Display {
 
     function laptopCmd( args, dry, asJson ) {
         var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
-        if ( v != "on" && v != "off" ) return variables.out.fail( 2, "Usage: bxrig display laptop on|off", arguments.asJson );
+        if ( v != "on" && v != "off" ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "display laptop" ), arguments.asJson );
         var s = readState();
         var panels = monitors().filter( function( m ) { return m.internal; } ).map( function( m ) { return m.name; } );
         if ( !panels.len() ) for ( var n in s.monitors ) if ( internal( n ) ) panels.append( n );
@@ -223,7 +223,7 @@ class Display {
         if ( ( v == "up" || v == "down" ) && arguments.args.len() == 1 && variables.proc.has( "noctalia" ) ) { argv = [ "noctalia", "msg", "brightness-" & v ]; how = "noctalia"; }
         else if ( v == "up" || v == "down" ) { argv = [ "brightnessctl", "set", v == "up" ? "5%+" : "5%-" ]; how = "brightnessctl"; }
         else if ( v == "set" && arguments.args.len() == 2 && isNumeric( arguments.args[ 2 ] ) && val( arguments.args[ 2 ] ) >= 1 && val( arguments.args[ 2 ] ) <= 100 ) { argv = [ "brightnessctl", "set", int( val( arguments.args[ 2 ] ) ) & "%" ]; how = "brightnessctl"; }
-        else return variables.out.fail( 2, "Usage: bxrig display brightness up|down | set 1..100", arguments.asJson );
+        else return variables.out.fail( 2, new bxrig.CommandSpec().usage( "display" ), arguments.asJson );
         if ( how == "brightnessctl" && !variables.proc.has( "brightnessctl" ) ) return variables.out.fail( 4, "brightnessctl is not installed (bxrig install brightnessctl)", arguments.asJson );
         if ( arguments.dry ) return result( "brightness", v, { command: argv.toList( " " ) }, [], arguments.asJson, true );
         var r = variables.proc.exec( argv, 20 );
@@ -248,6 +248,6 @@ class Display {
             if ( !arguments.dry ) writeState( empty );
             return result( "reset", "forgot the saved display settings", { desktop: applyAll( empty, arguments.dry ) }, [], arguments.asJson, arguments.dry );
         }
-        return variables.out.fail( 2, "Usage: bxrig display list | scale NAME V | rotate NAME DEG | mode NAME M | position NAME XxY | mirror on|off | laptop on|off | brightness up|down|set N | apply | reset", arguments.asJson );
+        return variables.out.fail( 2, new bxrig.CommandSpec().usage( "display" ), arguments.asJson );
     }
 }

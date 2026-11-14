@@ -120,7 +120,7 @@ class Security {
 
     function sshCmd( args, yes, dry, asJson ) {
         var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
-        if ( v != "on" && v != "off" ) return variables.out.fail( 2, "Usage: bxrig security ssh-server on|off", arguments.asJson );
+        if ( v != "on" && v != "off" ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "security ssh-server" ), arguments.asJson );
         var cmds = [];
         if ( v == "on" ) {
             if ( !variables.proc.has( "sshd" ) ) cmds.append( [ "sudo", "pacman", "-S", "--needed", "--noconfirm", "openssh" ] );
@@ -131,7 +131,7 @@ class Security {
 
     function sudoCmd( args, yes, dry, asJson ) {
         var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
-        if ( v != "on" && v != "off" ) return variables.out.fail( 2, "Usage: bxrig security passwordless-sudo on|off", arguments.asJson );
+        if ( v != "on" && v != "off" ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "security passwordless-sudo" ), arguments.asJson );
         var u = user();
         if ( !reFind( "^[a-z_][a-z0-9_-]*$", u ) ) return variables.out.fail( 4, "could not read a safe user name from $USER", arguments.asJson );
         if ( v == "off" ) return finish( "turn passwordless sudo off", [ "removes " & sudoersFile() ], [ [ "sudo", "rm", "-f", sudoersFile() ] ], arguments.yes, arguments.dry, arguments.asJson, { passwordless_sudo: false } );
@@ -171,6 +171,6 @@ class Security {
         if ( verb == "fido2" ) return pamCmd( "fido2", rest, arguments.yes, arguments.dry, arguments.asJson );
         if ( verb == "ssh-server" ) return sshCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
         if ( verb == "passwordless-sudo" ) return sudoCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
-        return variables.out.fail( 2, "Usage: bxrig security status | fingerprint on|off|enroll | fido2 on|off|register | ssh-server on|off | passwordless-sudo on|off", arguments.asJson );
+        return variables.out.fail( 2, new bxrig.CommandSpec().usage( "security" ), arguments.asJson );
     }
 }

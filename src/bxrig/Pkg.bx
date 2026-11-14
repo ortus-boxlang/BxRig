@@ -127,7 +127,7 @@ class Pkg {
 
     function info( name, asJson ) {
         var cmd = "pkg info";
-        if ( !validName( arguments.name ) ) return variables.cli.fail( cmd, 2, "Usage: bxrig pkg info NAME", arguments.asJson );
+        if ( !validName( arguments.name ) ) return variables.cli.fail( cmd, 2, new bxrig.CommandSpec().usage( "pkg info" ), arguments.asJson );
         var inst = installedSet();
         var o = origin( arguments.name );
         if ( !len( o ) ) return variables.cli.fail( cmd, 4, arguments.name & " was not found in the repos or the AUR", arguments.asJson );
@@ -148,7 +148,7 @@ class Pkg {
     // ---- install ----
     function install( names, forceAur, yes, dryRun, asJson ) {
         var cmd = "pkg install";
-        if ( !arguments.names.len() ) return variables.cli.fail( cmd, 2, "Usage: bxrig pkg install NAME... [--aur] [--yes] [--dry-run]", arguments.asJson );
+        if ( !arguments.names.len() ) return variables.cli.fail( cmd, 2, new bxrig.CommandSpec().usage( "pkg install" ), arguments.asJson );
         for ( var n in arguments.names ) if ( !validName( n ) ) return variables.cli.fail( cmd, 2, "Bad package name: " & n, arguments.asJson );
         var inst = installedSet();
         var apps = [];
@@ -225,7 +225,7 @@ class Pkg {
     }
 
     function remove( names, yes, dryRun, asJson ) {
-        if ( !arguments.names.len() ) return variables.cli.fail( "pkg remove", 2, "Usage: bxrig pkg remove NAME... [--yes] [--dry-run]", arguments.asJson );
+        if ( !arguments.names.len() ) return variables.cli.fail( "pkg remove", 2, new bxrig.CommandSpec().usage( "pkg remove" ), arguments.asJson );
         return removeNames( arguments.names, arguments.yes, arguments.dryRun, arguments.asJson );
     }
 
@@ -233,7 +233,7 @@ class Pkg {
     // anything else is taken as a package name.
     function removeApps( ids, yes, dryRun, asJson ) {
         var cmd = "remove";
-        if ( !arguments.ids.len() ) return variables.cli.fail( cmd, 2, "Usage: bxrig remove ID_OR_PACKAGE... [--yes] [--dry-run]", arguments.asJson );
+        if ( !arguments.ids.len() ) return variables.cli.fail( cmd, 2, new bxrig.CommandSpec().usage( "remove" ), arguments.asJson );
         var cat = new bxrig.Catalog();
         var data = cat.load();
         var pk = new bxrig.Packages( variables.cli, data );

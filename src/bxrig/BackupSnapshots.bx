@@ -149,7 +149,7 @@ class BackupSnapshots {
         if ( verb == "status" ) return statusCmd( arguments.asJson );
         if ( verb == "setup" ) return setupCmd( arguments.opts, arguments.yes, arguments.dry, arguments.asJson );
         if ( verb == "list" ) return listCmd( arguments.asJson );
-        if ( !arrayFind( [ "create", "delete", "changes", "restore" ], verb ) ) return variables.out.fail( 2, "Usage: bxrig backup snapshots status | setup [--home] | list | create [--description=T] | delete ID | changes ID | restore ID PATH", arguments.asJson );
+        if ( !arrayFind( [ "create", "delete", "changes", "restore" ], verb ) ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "backup" ), arguments.asJson );
         var t = tool();
         if ( !len( t ) ) return variables.out.fail( 4, "no snapshot tool is set up (bxrig backup snapshots setup)", arguments.asJson );
         if ( verb == "create" ) {
@@ -170,6 +170,6 @@ class BackupSnapshots {
             if ( left( path, 1 ) != "/" || find( "..", path ) > 0 || !reFind( "^[A-Za-z0-9._/ +@-]+$", path ) ) return variables.out.fail( 2, "PATH is an absolute path without .. (for example /home/me/projects/app)", arguments.asJson );
             return pending( "bring " & path & " back as it was in snapshot " & rest[ 1 ] & " (files changed since are replaced; files that did not exist then are removed)", [ [ "sudo", "snapper", "-c", snapperConfigFor( int( val( rest[ 1 ] ) ) ), "undochange", rest[ 1 ] & "..0", path ] ], arguments.yes, arguments.dry, arguments.asJson, { number: int( val( rest[ 1 ] ) ), path: path } );
         }
-        return variables.out.fail( 2, "Usage: bxrig backup snapshots status | setup [--home] | list | create [--description=T] | delete ID | changes ID | restore ID PATH", arguments.asJson );
+        return variables.out.fail( 2, new bxrig.CommandSpec().usage( "backup" ), arguments.asJson );
     }
 }

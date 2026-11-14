@@ -30,7 +30,7 @@ class SystemActions {
     }
 
     function run( verb, yes, dryRun, asJson ) {
-        if ( !arrayFind( verbs(), arguments.verb ) ) return variables.out.say( 2, { error: "unknown action " & arguments.verb }, arguments.asJson, [ "Usage: bxrig system lock|suspend|logout|reboot|shutdown [--yes] [--dry-run] | update [--yes]" ] );
+        if ( !arrayFind( verbs(), arguments.verb ) ) return variables.out.say( 2, { error: "unknown action " & arguments.verb }, arguments.asJson, [ new bxrig.CommandSpec().usage( "system" ) ] );
         var c = command( arguments.verb );
         if ( structIsEmpty( c ) ) return variables.out.say( 4, { error: "nothing here can do " & arguments.verb }, arguments.asJson, [ "error: " & arguments.verb & " needs Noctalia (in Hyprland) or systemd (loginctl, systemctl), and neither was found" ] );
         var data = { action: arguments.verb, via: c.via, command: c.argv.toList( " " ) };

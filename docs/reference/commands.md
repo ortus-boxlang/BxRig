@@ -530,7 +530,10 @@ bxrig tiling layout dwindle
 Plasma extras: panel layouts (apply, undo, status) and the islands preset.
 
 ```text
-bxrig plasma panels apply [--agenda] [--without-weather] [--desktops=N] [--preset=NAME] | undo | status [--yes] [--dry-run] [--json]  |  plasma desktops N [--yes]
+bxrig plasma panels apply [--agenda] [--without-weather] [--desktops=N] [--preset=NAME] [--yes] [--dry-run]
+bxrig plasma panels undo [--yes]
+bxrig plasma panels status [--json]
+bxrig plasma desktops N [--yes]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
@@ -675,13 +678,27 @@ Bar, dock, windows, animations, layout, fonts and backgrounds, one setting at a 
 
 ```text
 bxrig appearance status|apply [--json]
-bxrig appearance bar show|hide|toggle | position top|bottom|left|right | style opaque|glassy|clear | clock ID | battery on|off
-bxrig appearance dock show|hide|toggle | mode always|autohide|off | position bottom|left|right
-bxrig appearance windows gaps on|off | corners theme|rounded|sharp | opacity opaque|glassy | one-window-ratio on|off
+bxrig appearance bar show|hide|toggle
+bxrig appearance bar position top|bottom|left|right
+bxrig appearance bar style opaque|glassy|clear
+bxrig appearance bar clock ID
+bxrig appearance bar battery on|off
+bxrig appearance dock show|hide|toggle
+bxrig appearance dock mode always|autohide|off
+bxrig appearance dock position bottom|left|right
+bxrig appearance windows gaps on|off
+bxrig appearance windows corners theme|rounded|sharp
+bxrig appearance windows opacity opaque|glassy
+bxrig appearance windows one-window-ratio on|off
 bxrig appearance animations on|off
 bxrig appearance layout dwindle|scrolling|floating
-bxrig appearance font list | ID | install ID [--yes]
-bxrig appearance background list | set NAME_OR_PATH | next | random
+bxrig appearance font list
+bxrig appearance font ID
+bxrig appearance font install ID [--yes]
+bxrig appearance background list
+bxrig appearance background set NAME_OR_PATH
+bxrig appearance background next
+bxrig appearance background random
 ```
 
 ```bash
@@ -998,21 +1015,34 @@ Backups of your BxRig setup, of the system and of your files, and a way to move 
 
 ```text
 bxrig backup config now [--reason=TEXT] [--with-secrets]
-bxrig backup config list | show ID | diff ID
+bxrig backup config list
+bxrig backup config show ID
+bxrig backup config diff ID
 bxrig backup config restore ID [--only=PATH] [--packages] [--yes] [--dry-run]
-bxrig backup config auto on|off|status | prune [--keep=N] [--yes]
-bxrig backup config paths | add PATH | remove PATH
-bxrig backup snapshots status | list [--json]
+bxrig backup config auto on|off|status
+bxrig backup config prune [--keep=N] [--yes]
+bxrig backup config paths
+bxrig backup config add PATH
+bxrig backup config remove PATH
+bxrig backup snapshots status
+bxrig backup snapshots list [--json]
 bxrig backup snapshots setup [--home] [--yes]
 bxrig backup snapshots create [--description=TEXT] [--yes]
-bxrig backup snapshots delete ID | changes ID | restore ID PATH [--yes]
-bxrig backup data status | targets [--json]
+bxrig backup snapshots delete ID
+bxrig backup snapshots changes ID
+bxrig backup snapshots restore ID PATH [--yes]
+bxrig backup data status
+bxrig backup data targets [--json]
 bxrig backup data target add NAME --type=local|sftp|rest|s3|b2|azure|gs|rclone [--path=P --host=H --user=U --url=U --bucket=B --endpoint=URL --region=R --container=C --project=ID --credentials=FILE --remote=R] [--ask-keys | --keys-file=F]
 bxrig backup data target remove NAME [--yes]
 bxrig backup data init NAME [--yes]
 bxrig backup data run [--target=NAME] [--yes]
-bxrig backup data list [--target=NAME] | files ID [PATH] | restore ID --to=DIR [--include=PATH] [--yes]
-bxrig backup data verify [--deep] | forget [--yes] | retention [--daily=N --weekly=N --monthly=N]
+bxrig backup data list [--target=NAME]
+bxrig backup data files ID [PATH]
+bxrig backup data restore ID --to=DIR [--include=PATH] [--yes]
+bxrig backup data verify [--deep]
+bxrig backup data forget [--yes]
+bxrig backup data retention [--daily=N --weekly=N --monthly=N]
 bxrig backup data schedule hourly|daily|off|status [--yes]
 bxrig backup data include|exclude add|remove PATH_OR_PATTERN
 bxrig backup send ID|all --to=TARGET [--from=TARGET] [--yes]
@@ -1235,9 +1265,20 @@ bxrig vm open dev
 AI agents: list, default, launch, tmux sessions, local models, the pull-down AI shell.
 
 ```text
-bxrig ai session start [ID] [--name=N] [--dir=PATH] [--dry-run] | list | attach NAME | stop NAME --yes [--json]
-bxrig ai models list | ps | pull NAME | rm NAME --yes | status | enable [--yes] [--json]
-bxrig ai list | default [ID] [--yes] | launch [ID] [--dry-run] | session ... | models ... | shell [toggle|status] [--backend=hyprland|yakuake] [--dry-run] [--json]
+bxrig ai session start [ID] [--name=N] [--dir=PATH] [--dry-run]
+bxrig ai session list
+bxrig ai session attach NAME
+bxrig ai session stop NAME --yes [--json]
+bxrig ai models list
+bxrig ai models ps
+bxrig ai models pull NAME
+bxrig ai models rm NAME --yes
+bxrig ai models status
+bxrig ai models enable [--yes] [--json]
+bxrig ai list
+bxrig ai default [ID] [--yes]
+bxrig ai launch [ID] [--dry-run]
+bxrig ai shell [toggle|status] [--backend=hyprland|yakuake] [--dry-run] [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.

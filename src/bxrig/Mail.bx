@@ -249,7 +249,7 @@ class Mail {
 
     function deleteOne( id, yes, dry, asJson ) {
         var cmd = "mail delete";
-        if ( !validId( arguments.id ) ) return variables.cli.say( cmd, 2, { error: "usage" }, arguments.asJson, [ "Usage: bxrig mail delete ID [--yes] [--dry-run]" ] );
+        if ( !validId( arguments.id ) ) return variables.cli.say( cmd, 2, { error: "usage" }, arguments.asJson, [ new bxrig.CommandSpec().usage( "mail delete" ) ] );
         var m = message( arguments.id );
         if ( !structCount( m ) ) return structKeyExists( messages( 1 ), "error" ) ? notRunning( cmd, arguments.asJson ) : variables.cli.fail( cmd, 4, "There is no message " & arguments.id, arguments.asJson );
         var plan = [ ( arguments.dry ? "Dry run" : "Plan" ) & ": would delete the message " & chr( 34 ) & m.subject_line & chr( 34 ) & " from " & m.sender & ".", arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ];
@@ -265,7 +265,7 @@ class Mail {
 
     function openUi( id, asJson ) {
         var cmd = "mail open";
-        if ( len( arguments.id ) && !validId( arguments.id ) ) return variables.cli.say( cmd, 2, { error: "usage" }, arguments.asJson, [ "Usage: bxrig mail open [ID]" ] );
+        if ( len( arguments.id ) && !validId( arguments.id ) ) return variables.cli.say( cmd, 2, { error: "usage" }, arguments.asJson, [ new bxrig.CommandSpec().usage( "mail open" ) ] );
         var url = len( arguments.id ) ? viewUrl( arguments.id ) : base();
         var code = 1;
         try { code = systemExecute( "xdg-open", [ url ], 10, true ).exitCode; } catch ( any e ) {}
@@ -316,6 +316,6 @@ class Mail {
         if ( sub == "open" ) return openUi( arg, arguments.asJson );
         if ( sub == "test" ) return test( o.to ?: "", o.subject ?: "", arguments.asJson );
         if ( sub == "env" ) return envLines( arguments.asJson );
-        return variables.cli.say( "mail", 2, { error: "usage" }, arguments.asJson, [ "Usage: bxrig mail start [--keep] [--smtp-port=N] [--ui-port=N] | stop | status | remove [--keep-data] | list [--limit=N] | show ID | delete ID | clear | open [ID] | test [--to=ADDR] | env [--yes] [--dry-run] [--json]" ] );
+        return variables.cli.say( "mail", 2, { error: "usage" }, arguments.asJson, [ new bxrig.CommandSpec().usage( "mail" ) ] );
     }
 }

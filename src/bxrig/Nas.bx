@@ -258,7 +258,7 @@ class Nas {
     }
 
     function autoCmd( args, yes, dry, asJson ) {
-        if ( arguments.args.len() != 3 || !arrayFind( [ "on", "off" ], arguments.args[ 1 ] ) ) return variables.out.fail( 2, "Usage: bxrig nas auto on|off NAME SHARE", arguments.asJson );
+        if ( arguments.args.len() != 3 || !arrayFind( [ "on", "off" ], arguments.args[ 1 ] ) ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "nas auto" ), arguments.asJson );
         var v = arguments.args[ 1 ];
         var nm = arguments.args[ 2 ];
         var share = arguments.args[ 3 ];
@@ -355,7 +355,7 @@ class Nas {
 
     // ---- sync (plain mirror) ----
     function syncCmd( args, opts, yes, dry, asJson ) {
-        if ( arguments.args.len() != 2 || !structKeyExists( arguments.opts, "to" ) ) return variables.out.fail( 2, "Usage: bxrig nas sync NAME SRC --to=SHARE[/PATH] [--delete] [--yes]", arguments.asJson );
+        if ( arguments.args.len() != 2 || !structKeyExists( arguments.opts, "to" ) ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "nas sync" ), arguments.asJson );
         var nm = arguments.args[ 1 ];
         var src = arguments.args[ 2 ];
         var r = get( nm );
@@ -380,7 +380,7 @@ class Nas {
 
     // ---- use as a backup target ----
     function useCmd( args, opts, yes, dry, asJson ) {
-        if ( arguments.args.len() != 2 ) return variables.out.fail( 2, "Usage: bxrig nas use NAME SHARE [--path=bxrig-backup]", arguments.asJson );
+        if ( arguments.args.len() != 2 ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "nas use" ), arguments.asJson );
         var nm = arguments.args[ 1 ];
         var share = arguments.args[ 2 ];
         var r = get( nm );
@@ -416,6 +416,6 @@ class Nas {
         if ( verb == "test" && rest.len() >= 1 && rest.len() <= 2 ) return testCmd( rest[ 1 ], rest.len() == 2 ? rest[ 2 ] : "", arguments.asJson );
         if ( verb == "sync" ) return syncCmd( rest, arguments.opts, arguments.yes, arguments.dry, arguments.asJson );
         if ( verb == "use" ) return useCmd( rest, arguments.opts, arguments.yes, arguments.dry, arguments.asJson );
-        return variables.out.fail( 2, "Usage: bxrig nas setup | discover | add NAME --host=H [--protocol=smb|nfs] [--user=U] [--ask-password] | list | show NAME | remove NAME | shares NAME | mount|unmount NAME SHARE | auto on|off NAME SHARE | test NAME [SHARE] | sync NAME SRC --to=SHARE[/PATH] | use NAME SHARE", arguments.asJson );
+        return variables.out.fail( 2, new bxrig.CommandSpec().usage( "nas" ), arguments.asJson );
     }
 }

@@ -16,7 +16,57 @@
       "bxrig init --answers=answers.json --yes",
       "bxrig init --print-answers --from-system --json"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": [
+      {
+       "name": "answers",
+       "type": "value"
+      },
+      {
+       "name": "bucket",
+       "type": "any"
+      },
+      {
+       "name": "container",
+       "type": "any"
+      },
+      {
+       "name": "defaults",
+       "type": "any"
+      },
+      {
+       "name": "export",
+       "type": "value"
+      },
+      {
+       "name": "fresh",
+       "type": "bool"
+      },
+      {
+       "name": "from",
+       "type": "value"
+      },
+      {
+       "name": "from-system",
+       "type": "bool"
+      },
+      {
+       "name": "print-answers",
+       "type": "bool"
+      },
+      {
+       "name": "remote",
+       "type": "any"
+      },
+      {
+       "name": "rerun",
+       "type": "bool"
+      },
+      {
+       "name": "workspaces",
+       "type": "any"
+      }
+     ]
     },
     {
      "name": "refresh",
@@ -32,7 +82,13 @@
       "bxrig refresh shell --yes --force"
      ],
      "mutates": true,
-     "note": "A file you edited is kept and reported; --force overwrites it after a backup (see config history and config restore). --starter also rewrites the starter hyprland.lua or Noctalia config.toml, which are yours."
+     "note": "A file you edited is kept and reported; --force overwrites it after a backup (see config history and config restore). --starter also rewrites the starter hyprland.lua or Noctalia config.toml, which are yours.",
+     "flags": [
+      {
+       "name": "starter",
+       "type": "bool"
+      }
+     ]
     },
     {
      "name": "reinstall",
@@ -44,7 +100,57 @@
       "bxrig reinstall"
      ],
      "mutates": false,
-     "note": "This is the way to install packages again. refresh only puts config files back."
+     "note": "This is the way to install packages again. refresh only puts config files back.",
+     "flags": [
+      {
+       "name": "answers",
+       "type": "any"
+      },
+      {
+       "name": "bucket",
+       "type": "any"
+      },
+      {
+       "name": "container",
+       "type": "any"
+      },
+      {
+       "name": "defaults",
+       "type": "any"
+      },
+      {
+       "name": "export",
+       "type": "any"
+      },
+      {
+       "name": "fresh",
+       "type": "any"
+      },
+      {
+       "name": "from",
+       "type": "any"
+      },
+      {
+       "name": "from-system",
+       "type": "any"
+      },
+      {
+       "name": "print-answers",
+       "type": "any"
+      },
+      {
+       "name": "remote",
+       "type": "any"
+      },
+      {
+       "name": "rerun",
+       "type": "any"
+      },
+      {
+       "name": "workspaces",
+       "type": "any"
+      }
+     ]
     },
     {
      "name": "wizard",
@@ -55,7 +161,25 @@
      "examples": [
       "bxrig wizard --demo"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "answers",
+       "type": "value"
+      },
+      {
+       "name": "demo",
+       "type": "bool"
+      },
+      {
+       "name": "out",
+       "type": "value"
+      },
+      {
+       "name": "pages",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "status",
@@ -67,7 +191,8 @@
       "bxrig status",
       "bxrig status --json"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "doctor",
@@ -78,7 +203,8 @@
      "examples": [
       "bxrig doctor"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "update",
@@ -93,7 +219,13 @@
       "bxrig update notifications on"
      ],
      "mutates": true,
-     "note": "Exit 10 from `update check` means an update is available."
+     "note": "Exit 10 from `update check` means an update is available.",
+     "flags": [
+      {
+       "name": "notify",
+       "type": "bool"
+      }
+     ]
     },
     {
      "name": "version",
@@ -104,7 +236,8 @@
      "examples": [
       "bxrig version"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "menu",
@@ -117,7 +250,8 @@
       "bxrig menu search 'time zone'"
      ],
      "mutates": false,
-     "note": "Bind it to a key; the first entry, Search, lists every entry as one flat list."
+     "note": "Bind it to a key; the first entry, Search, lists every entry as one flat list.",
+     "flags": []
     },
     {
      "name": "apps",
@@ -128,7 +262,13 @@
      "examples": [
       "bxrig apps list"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "name",
+       "type": "any"
+      }
+     ]
     },
     {
      "name": "help",
@@ -140,7 +280,8 @@
       "bxrig help",
       "bxrig help appearance"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     }
    ]
   },
@@ -160,7 +301,25 @@
       "bxrig install --yes"
      ],
      "mutates": true,
-     "note": "With no name it installs the default set; without --yes it prints the plan and changes nothing."
+     "note": "With no name it installs the default set; without --yes it prints the plan and changes nothing.",
+     "flags": [
+      {
+       "name": "default",
+       "type": "any"
+      },
+      {
+       "name": "optional",
+       "type": "bool"
+      },
+      {
+       "name": "profile",
+       "type": "any"
+      },
+      {
+       "name": "shell",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "remove",
@@ -172,7 +331,13 @@
       "bxrig remove lazygit --yes"
      ],
      "mutates": true,
-     "note": "Protected packages (the base system, the kernel, bxrig itself) are refused."
+     "note": "Protected packages (the base system, the kernel, bxrig itself) are refused.",
+     "flags": [
+      {
+       "name": "name",
+       "type": "any"
+      }
+     ]
     },
     {
      "name": "pkg",
@@ -185,7 +350,29 @@
       "bxrig pkg install ripgrep --yes",
       "bxrig pkg remove htop --yes"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": [
+      {
+       "name": "aur",
+       "type": "bool"
+      },
+      {
+       "name": "explicit",
+       "type": "bool"
+      },
+      {
+       "name": "limit",
+       "type": "value"
+      },
+      {
+       "name": "name",
+       "type": "any"
+      },
+      {
+       "name": "source",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "catalog",
@@ -198,7 +385,33 @@
       "bxrig catalog list --group=ai --tier=default",
       "bxrig catalog show lazygit"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "category",
+       "type": "value"
+      },
+      {
+       "name": "group",
+       "type": "value"
+      },
+      {
+       "name": "kind",
+       "type": "value"
+      },
+      {
+       "name": "source",
+       "type": "value"
+      },
+      {
+       "name": "tier",
+       "type": "value"
+      },
+      {
+       "name": "url",
+       "type": "any"
+      }
+     ]
     },
     {
      "name": "plan",
@@ -210,7 +423,25 @@
       "bxrig plan",
       "bxrig plan --shell=hyprland --json"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "default",
+       "type": "any"
+      },
+      {
+       "name": "optional",
+       "type": "bool"
+      },
+      {
+       "name": "profile",
+       "type": "any"
+      },
+      {
+       "name": "shell",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "install-plan",
@@ -219,7 +450,25 @@
       "install-plan [NAME] [--optional] [--shell=hyprland|plasma|all] [--json]"
      ],
      "examples": [],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "default",
+       "type": "any"
+      },
+      {
+       "name": "optional",
+       "type": "bool"
+      },
+      {
+       "name": "profile",
+       "type": "any"
+      },
+      {
+       "name": "shell",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "optional-plan",
@@ -228,7 +477,25 @@
       "optional-plan [--shell=hyprland|plasma|all] [--json]"
      ],
      "examples": [],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "default",
+       "type": "any"
+      },
+      {
+       "name": "optional",
+       "type": "any"
+      },
+      {
+       "name": "profile",
+       "type": "any"
+      },
+      {
+       "name": "shell",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "profile-plan",
@@ -239,7 +506,25 @@
      "examples": [
       "bxrig profile-plan jvm"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "default",
+       "type": "any"
+      },
+      {
+       "name": "optional",
+       "type": "bool"
+      },
+      {
+       "name": "profile",
+       "type": "any"
+      },
+      {
+       "name": "shell",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "profile-install-plan",
@@ -248,7 +533,25 @@
       "profile-install-plan NAME [--optional] [--shell=hyprland|plasma|all] [--json]"
      ],
      "examples": [],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "default",
+       "type": "any"
+      },
+      {
+       "name": "optional",
+       "type": "bool"
+      },
+      {
+       "name": "profile",
+       "type": "any"
+      },
+      {
+       "name": "shell",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "profile-install",
@@ -259,7 +562,25 @@
      "examples": [
       "bxrig profile-install terminal --yes"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": [
+      {
+       "name": "default",
+       "type": "any"
+      },
+      {
+       "name": "optional",
+       "type": "bool"
+      },
+      {
+       "name": "profile",
+       "type": "any"
+      },
+      {
+       "name": "shell",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "optional-install",
@@ -268,7 +589,25 @@
       "optional-install [--shell=hyprland|plasma|all] [--json] [--yes] [--dry-run]"
      ],
      "examples": [],
-     "mutates": true
+     "mutates": true,
+     "flags": [
+      {
+       "name": "default",
+       "type": "any"
+      },
+      {
+       "name": "optional",
+       "type": "any"
+      },
+      {
+       "name": "profile",
+       "type": "any"
+      },
+      {
+       "name": "shell",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "profile-list",
@@ -277,7 +616,25 @@
       "profile-list [--json]"
      ],
      "examples": [],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "default",
+       "type": "any"
+      },
+      {
+       "name": "optional",
+       "type": "any"
+      },
+      {
+       "name": "profile",
+       "type": "any"
+      },
+      {
+       "name": "shell",
+       "type": "any"
+      }
+     ]
     },
     {
      "name": "optional-list",
@@ -286,7 +643,25 @@
       "optional-list [--json]"
      ],
      "examples": [],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "default",
+       "type": "any"
+      },
+      {
+       "name": "optional",
+       "type": "any"
+      },
+      {
+       "name": "profile",
+       "type": "any"
+      },
+      {
+       "name": "shell",
+       "type": "any"
+      }
+     ]
     },
     {
      "name": "desktop-list",
@@ -295,7 +670,25 @@
       "desktop-list [--json]"
      ],
      "examples": [],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "default",
+       "type": "any"
+      },
+      {
+       "name": "optional",
+       "type": "any"
+      },
+      {
+       "name": "profile",
+       "type": "any"
+      },
+      {
+       "name": "shell",
+       "type": "any"
+      }
+     ]
     },
     {
      "name": "tui-list",
@@ -304,7 +697,25 @@
       "tui-list [--json]"
      ],
      "examples": [],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "default",
+       "type": "any"
+      },
+      {
+       "name": "optional",
+       "type": "any"
+      },
+      {
+       "name": "profile",
+       "type": "any"
+      },
+      {
+       "name": "shell",
+       "type": "any"
+      }
+     ]
     },
     {
      "name": "web-list",
@@ -313,7 +724,25 @@
       "web-list [--json]"
      ],
      "examples": [],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "default",
+       "type": "any"
+      },
+      {
+       "name": "optional",
+       "type": "any"
+      },
+      {
+       "name": "profile",
+       "type": "any"
+      },
+      {
+       "name": "shell",
+       "type": "any"
+      }
+     ]
     },
     {
      "name": "package-status",
@@ -324,7 +753,25 @@
      "examples": [
       "bxrig package-status lazygit"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "default",
+       "type": "any"
+      },
+      {
+       "name": "optional",
+       "type": "any"
+      },
+      {
+       "name": "profile",
+       "type": "any"
+      },
+      {
+       "name": "shell",
+       "type": "any"
+      }
+     ]
     },
     {
      "name": "package-source",
@@ -335,7 +782,25 @@
      "examples": [
       "bxrig package-source lazygit"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "default",
+       "type": "any"
+      },
+      {
+       "name": "optional",
+       "type": "any"
+      },
+      {
+       "name": "profile",
+       "type": "any"
+      },
+      {
+       "name": "shell",
+       "type": "any"
+      }
+     ]
     },
     {
      "name": "dev-plan",
@@ -344,7 +809,8 @@
       "dev-plan"
      ],
      "examples": [],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "prerequisites",
@@ -353,7 +819,8 @@
       "prerequisites [--json]"
      ],
      "examples": [],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "apps-doctor",
@@ -362,7 +829,8 @@
       "apps-doctor [--json]"
      ],
      "examples": [],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "web",
@@ -375,7 +843,13 @@
       "bxrig web install google --yes",
       "bxrig web rm Notes --yes"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": [
+      {
+       "name": "browser",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "toolchain",
@@ -386,7 +860,29 @@
      "examples": [
       "bxrig toolchain node --yes"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": [
+      {
+       "name": "also",
+       "type": "any"
+      },
+      {
+       "name": "build",
+       "type": "any"
+      },
+      {
+       "name": "default",
+       "type": "any"
+      },
+      {
+       "name": "keys",
+       "type": "any"
+      },
+      {
+       "name": "shell",
+       "type": "any"
+      }
+     ]
     }
    ]
   },
@@ -405,7 +901,61 @@
       "bxrig setup hyprland --yes",
       "bxrig setup terminal --default=ghostty --also=kitty --yes"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": [
+      {
+       "name": "also",
+       "type": "value"
+      },
+      {
+       "name": "build",
+       "type": "value"
+      },
+      {
+       "name": "default",
+       "type": "value"
+      },
+      {
+       "name": "keys",
+       "type": "bool"
+      },
+      {
+       "name": "layout",
+       "type": "value"
+      },
+      {
+       "name": "layouts",
+       "type": "value"
+      },
+      {
+       "name": "natural-scroll",
+       "type": "bool"
+      },
+      {
+       "name": "shell",
+       "type": "value"
+      },
+      {
+       "name": "terminal",
+       "type": "value"
+      },
+      {
+       "name": "theme",
+       "type": "value"
+      },
+      {
+       "name": "undo-keys",
+       "type": "bool"
+      },
+      {
+       "name": "wallpaper",
+       "type": "value"
+      },
+      {
+       "name": "workspaces",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "session",
@@ -416,7 +966,8 @@
      "examples": [
       "bxrig session show"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": []
     },
     {
      "name": "tiling",
@@ -428,19 +979,41 @@
       "bxrig tiling on",
       "bxrig tiling layout dwindle"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "plasma",
      "summary": "Plasma extras: panel layouts (apply, undo, status) and the islands preset.",
      "usage": [
-      "plasma panels apply [--agenda] [--without-weather] [--desktops=N] [--preset=NAME] | undo | status [--yes] [--dry-run] [--json]  |  plasma desktops N [--yes]"
+      "plasma panels apply [--agenda] [--without-weather] [--desktops=N] [--preset=NAME] [--yes] [--dry-run]",
+      "plasma panels undo [--yes]",
+      "plasma panels status [--json]",
+      "plasma desktops N [--yes]"
      ],
      "examples": [
       "bxrig plasma panels apply --preset=islands --yes",
       "bxrig plasma desktops 4 --yes"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": [
+      {
+       "name": "agenda",
+       "type": "bool"
+      },
+      {
+       "name": "desktops",
+       "type": "value"
+      },
+      {
+       "name": "preset",
+       "type": "value"
+      },
+      {
+       "name": "without-weather",
+       "type": "bool"
+      }
+     ]
     },
     {
      "name": "keys",
@@ -454,7 +1027,8 @@
       "bxrig keys mac on --yes",
       "bxrig keys conflicts"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": []
     },
     {
      "name": "runner",
@@ -468,7 +1042,13 @@
       "bxrig runner icon-theme Papirus",
       "bxrig runner doctor"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "prompt",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "default",
@@ -480,7 +1060,8 @@
       "bxrig default show",
       "bxrig default browser brave --yes"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": []
     },
     {
      "name": "layout",
@@ -491,7 +1072,8 @@
      "examples": [
       "bxrig layout toggle"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "assets",
@@ -502,7 +1084,8 @@
      "examples": [
       "bxrig assets list"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "launchers",
@@ -517,7 +1100,8 @@
       "bxrig launchers off --yes"
      ],
      "mutates": true,
-     "note": "`on` writes one entry per page to ~/.local/share/applications (BxRig Databases, ...), each opening `bxrig tui PAGE` in your terminal, and the BxRig icon (16 to 256 px PNGs and the scalable SVG) to ~/.local/share/icons/hicolor/SIZExSIZE/apps/bxrig.png. An entry you edited is kept, never overwritten or removed. `off` (or `bxrig remove launchers`) takes them out again. Nothing is added unless you ask."
+     "note": "`on` writes one entry per page to ~/.local/share/applications (BxRig Databases, ...), each opening `bxrig tui PAGE` in your terminal, and the BxRig icon (16 to 256 px PNGs and the scalable SVG) to ~/.local/share/icons/hicolor/SIZExSIZE/apps/bxrig.png. An entry you edited is kept, never overwritten or removed. `off` (or `bxrig remove launchers`) takes them out again. Nothing is added unless you ask.",
+     "flags": []
     },
     {
      "name": "config",
@@ -532,7 +1116,17 @@
       "bxrig config history"
      ],
      "mutates": false,
-     "note": "BxRig never overwrites a file you edited; `config status` shows which ones are yours."
+     "note": "BxRig never overwrites a file you edited; `config status` shows which ones are yours.",
+     "flags": [
+      {
+       "name": "theme",
+       "type": "any"
+      },
+      {
+       "name": "wallpaper",
+       "type": "any"
+      }
+     ]
     }
    ]
   },
@@ -555,20 +1149,48 @@
       "bxrig theme vscode --yes"
      ],
      "mutates": false,
-     "note": "A theme colours the bar, terminals, btop, Neovim, GTK and Qt apps, tmux, fzf, launchers and (on Plasma) the colour scheme. VS Code is opt-in."
+     "note": "A theme colours the bar, terminals, btop, Neovim, GTK and Qt apps, tmux, fzf, launchers and (on Plasma) the colour scheme. VS Code is opt-in.",
+     "flags": [
+      {
+       "name": "keep-wallpaper",
+       "type": "bool"
+      },
+      {
+       "name": "mode",
+       "type": "value"
+      },
+      {
+       "name": "name",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "appearance",
      "summary": "Bar, dock, windows, animations, layout, fonts and backgrounds, one setting at a time.",
      "usage": [
       "appearance status|apply [--json]",
-      "appearance bar show|hide|toggle | position top|bottom|left|right | style opaque|glassy|clear | clock ID | battery on|off",
-      "appearance dock show|hide|toggle | mode always|autohide|off | position bottom|left|right",
-      "appearance windows gaps on|off | corners theme|rounded|sharp | opacity opaque|glassy | one-window-ratio on|off",
+      "appearance bar show|hide|toggle",
+      "appearance bar position top|bottom|left|right",
+      "appearance bar style opaque|glassy|clear",
+      "appearance bar clock ID",
+      "appearance bar battery on|off",
+      "appearance dock show|hide|toggle",
+      "appearance dock mode always|autohide|off",
+      "appearance dock position bottom|left|right",
+      "appearance windows gaps on|off",
+      "appearance windows corners theme|rounded|sharp",
+      "appearance windows opacity opaque|glassy",
+      "appearance windows one-window-ratio on|off",
       "appearance animations on|off",
       "appearance layout dwindle|scrolling|floating",
-      "appearance font list | ID | install ID [--yes]",
-      "appearance background list | set NAME_OR_PATH | next | random"
+      "appearance font list",
+      "appearance font ID",
+      "appearance font install ID [--yes]",
+      "appearance background list",
+      "appearance background set NAME_OR_PATH",
+      "appearance background next",
+      "appearance background random"
      ],
      "examples": [
       "bxrig appearance bar position bottom",
@@ -577,7 +1199,13 @@
       "bxrig appearance background random"
      ],
      "mutates": false,
-     "note": "Settings act at once (no --yes); --dry-run shows the commands. What you choose is remembered, and `appearance apply` pushes it again."
+     "note": "Settings act at once (no --yes); --dry-run shows the commands. What you choose is remembered, and `appearance apply` pushes it again.",
+     "flags": [
+      {
+       "name": "mode",
+       "type": "any"
+      }
+     ]
     },
     {
      "name": "display",
@@ -600,7 +1228,8 @@
       "bxrig display brightness set 40"
      ],
      "mutates": false,
-     "note": "On Hyprland it writes theme/monitors.lua and reloads; on Plasma it uses kscreen-doctor."
+     "note": "On Hyprland it writes theme/monitors.lua and reloads; on Plasma it uses kscreen-doctor.",
+     "flags": []
     },
     {
      "name": "power",
@@ -618,7 +1247,8 @@
       "bxrig power doctor"
      ],
      "mutates": true,
-     "note": "`power setup` does nothing on a machine without a battery unless you add --force."
+     "note": "`power setup` does nothing on a machine without a battery unless you add --force.",
+     "flags": []
     },
     {
      "name": "time",
@@ -636,7 +1266,33 @@
       "bxrig time auto on --yes"
      ],
      "mutates": true,
-     "note": "`time auto on` sends your Wi-Fi networks or IP address to a location web service; the plan says so first."
+     "note": "`time auto on` sends your Wi-Fi networks or IP address to a location web service; the plan says so first.",
+     "flags": [
+      {
+       "name": "demo",
+       "type": "any"
+      },
+      {
+       "name": "host",
+       "type": "any"
+      },
+      {
+       "name": "list",
+       "type": "bool"
+      },
+      {
+       "name": "local",
+       "type": "any"
+      },
+      {
+       "name": "packages",
+       "type": "any"
+      },
+      {
+       "name": "path",
+       "type": "any"
+      }
+     ]
     },
     {
      "name": "toggle",
@@ -647,7 +1303,8 @@
      "examples": [
       "bxrig toggle stay-awake"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "nightshift",
@@ -659,7 +1316,13 @@
       "bxrig nightshift toggle",
       "bxrig nightshift on --location=40.4,-3.7"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "location",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "notify",
@@ -672,7 +1335,13 @@
       "bxrig notify snooze 2h",
       "bxrig notify clear --history"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "history",
+       "type": "bool"
+      }
+     ]
     }
    ]
   },
@@ -692,7 +1361,8 @@
       "bxrig system reboot --yes"
      ],
      "mutates": true,
-     "note": "lock and suspend act at once; logout, reboot and shutdown need --yes (the menu asks first)."
+     "note": "lock and suspend act at once; logout, reboot and shutdown need --yes (the menu asks first).",
+     "flags": []
     },
     {
      "name": "security",
@@ -710,7 +1380,8 @@
       "bxrig security passwordless-sudo on --yes"
      ],
      "mutates": true,
-     "note": "Only /etc/pam.d/sudo is ever changed, with a `sufficient` line and a backup; sudoers is checked with visudo first. `--dry-run` prints the exact line."
+     "note": "Only /etc/pam.d/sudo is ever changed, with a `sufficient` line and a backup; sudoers is checked with visudo first. `--dry-run` prints the exact line.",
+     "flags": []
     },
     {
      "name": "dns",
@@ -723,7 +1394,8 @@
       "bxrig dns cloudflare --yes",
       "bxrig dns custom 9.9.9.10 --yes"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": []
     },
     {
      "name": "kernel",
@@ -735,7 +1407,8 @@
       "bxrig kernel list",
       "bxrig kernel install linux-cachyos-lts --yes"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": []
     },
     {
      "name": "ssh",
@@ -746,7 +1419,13 @@
      "examples": [
       "bxrig ssh key --email=me@example.com --yes"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "email",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "secrets",
@@ -759,7 +1438,41 @@
       "bxrig secrets run ANTHROPIC_API_KEY -- claude",
       "bxrig secrets list"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": [
+      {
+       "name": "from-file",
+       "type": "value"
+      },
+      {
+       "name": "keyring",
+       "type": "value"
+      },
+      {
+       "name": "overwrite",
+       "type": "bool"
+      },
+      {
+       "name": "plain",
+       "type": "bool"
+      },
+      {
+       "name": "provider",
+       "type": "value"
+      },
+      {
+       "name": "show",
+       "type": "bool"
+      },
+      {
+       "name": "strict",
+       "type": "bool"
+      },
+      {
+       "name": "type",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "vpn",
@@ -770,7 +1483,8 @@
      "examples": [
       "bxrig vpn nordvpn setup --yes"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": []
     },
     {
      "name": "cloud",
@@ -782,7 +1496,13 @@
       "bxrig cloud remotes",
       "bxrig cloud mount gdrive --path=~/Drive --yes"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": [
+      {
+       "name": "path",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "settings",
@@ -794,7 +1514,8 @@
       "bxrig settings export my-settings.tar.gz",
       "bxrig settings import my-settings.tar.gz --yes"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": []
     },
     {
      "name": "dotfiles",
@@ -806,7 +1527,17 @@
       "bxrig dotfiles plan https://github.com/me/dotfiles",
       "bxrig dotfiles apply https://github.com/me/dotfiles --yes"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": [
+      {
+       "name": "method",
+       "type": "value"
+      },
+      {
+       "name": "overwrite",
+       "type": "bool"
+      }
+     ]
     },
     {
      "name": "nas",
@@ -832,28 +1563,79 @@
       "bxrig nas use synology backups"
      ],
      "mutates": true,
-     "note": "SMB mounts are made by root, so the password is also kept in /etc/bxrig/nas/NAME.cred (mode 600); the plan says so. The SMB version is negotiated unless you give --vers. Nothing on the NAS is deleted unless you add --delete to a sync."
+     "note": "SMB mounts are made by root, so the password is also kept in /etc/bxrig/nas/NAME.cred (mode 600); the plan says so. The SMB version is negotiated unless you give --vers. Nothing on the NAS is deleted unless you add --delete to a sync.",
+     "flags": [
+      {
+       "name": "ask-password",
+       "type": "bool"
+      },
+      {
+       "name": "delete",
+       "type": "bool"
+      },
+      {
+       "name": "host",
+       "type": "value"
+      },
+      {
+       "name": "password-file",
+       "type": "value"
+      },
+      {
+       "name": "path",
+       "type": "value"
+      },
+      {
+       "name": "protocol",
+       "type": "value"
+      },
+      {
+       "name": "to",
+       "type": "value"
+      },
+      {
+       "name": "user",
+       "type": "value"
+      },
+      {
+       "name": "vers",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "backup",
      "summary": "Backups of your BxRig setup, of the system and of your files, and a way to move them around.",
      "usage": [
       "backup config now [--reason=TEXT] [--with-secrets]",
-      "backup config list | show ID | diff ID",
+      "backup config list",
+      "backup config show ID",
+      "backup config diff ID",
       "backup config restore ID [--only=PATH] [--packages] [--yes] [--dry-run]",
-      "backup config auto on|off|status | prune [--keep=N] [--yes]",
-      "backup config paths | add PATH | remove PATH",
-      "backup snapshots status | list [--json]",
+      "backup config auto on|off|status",
+      "backup config prune [--keep=N] [--yes]",
+      "backup config paths",
+      "backup config add PATH",
+      "backup config remove PATH",
+      "backup snapshots status",
+      "backup snapshots list [--json]",
       "backup snapshots setup [--home] [--yes]",
       "backup snapshots create [--description=TEXT] [--yes]",
-      "backup snapshots delete ID | changes ID | restore ID PATH [--yes]",
-      "backup data status | targets [--json]",
+      "backup snapshots delete ID",
+      "backup snapshots changes ID",
+      "backup snapshots restore ID PATH [--yes]",
+      "backup data status",
+      "backup data targets [--json]",
       "backup data target add NAME --type=local|sftp|rest|s3|b2|azure|gs|rclone [--path=P --host=H --user=U --url=U --bucket=B --endpoint=URL --region=R --container=C --project=ID --credentials=FILE --remote=R] [--ask-keys | --keys-file=F]",
       "backup data target remove NAME [--yes]",
       "backup data init NAME [--yes]",
       "backup data run [--target=NAME] [--yes]",
-      "backup data list [--target=NAME] | files ID [PATH] | restore ID --to=DIR [--include=PATH] [--yes]",
-      "backup data verify [--deep] | forget [--yes] | retention [--daily=N --weekly=N --monthly=N]",
+      "backup data list [--target=NAME]",
+      "backup data files ID [PATH]",
+      "backup data restore ID --to=DIR [--include=PATH] [--yes]",
+      "backup data verify [--deep]",
+      "backup data forget [--yes]",
+      "backup data retention [--daily=N --weekly=N --monthly=N]",
       "backup data schedule hourly|daily|off|status [--yes]",
       "backup data include|exclude add|remove PATH_OR_PATTERN",
       "backup send ID|all --to=TARGET [--from=TARGET] [--yes]",
@@ -881,7 +1663,141 @@
       "bxrig backup timeline --local"
      ],
      "mutates": true,
-     "note": "A config snapshot is taken by itself before update, system update, init, reinstall and refresh (turn it off with backup config auto off). Secrets and SSH keys are never in it unless you add --with-secrets, which stores your secrets export, encrypted with a passphrase you type."
+     "note": "A config snapshot is taken by itself before update, system update, init, reinstall and refresh (turn it off with backup config auto off). Secrets and SSH keys are never in it unless you add --with-secrets, which stores your secrets export, encrypted with a passphrase you type.",
+     "flags": [
+      {
+       "name": "all",
+       "type": "any"
+      },
+      {
+       "name": "ask-keys",
+       "type": "bool"
+      },
+      {
+       "name": "bucket",
+       "type": "value"
+      },
+      {
+       "name": "container",
+       "type": "value"
+      },
+      {
+       "name": "credentials",
+       "type": "value"
+      },
+      {
+       "name": "daily",
+       "type": "value"
+      },
+      {
+       "name": "deep",
+       "type": "bool"
+      },
+      {
+       "name": "default",
+       "type": "any"
+      },
+      {
+       "name": "description",
+       "type": "value"
+      },
+      {
+       "name": "endpoint",
+       "type": "value"
+      },
+      {
+       "name": "from",
+       "type": "value"
+      },
+      {
+       "name": "home",
+       "type": "bool"
+      },
+      {
+       "name": "host",
+       "type": "value"
+      },
+      {
+       "name": "include",
+       "type": "value"
+      },
+      {
+       "name": "keep",
+       "type": "value"
+      },
+      {
+       "name": "keys-file",
+       "type": "value"
+      },
+      {
+       "name": "local",
+       "type": "bool"
+      },
+      {
+       "name": "monthly",
+       "type": "value"
+      },
+      {
+       "name": "only",
+       "type": "value"
+      },
+      {
+       "name": "packages",
+       "type": "bool"
+      },
+      {
+       "name": "path",
+       "type": "value"
+      },
+      {
+       "name": "project",
+       "type": "value"
+      },
+      {
+       "name": "reason",
+       "type": "value"
+      },
+      {
+       "name": "region",
+       "type": "value"
+      },
+      {
+       "name": "remote",
+       "type": "value"
+      },
+      {
+       "name": "scheduled",
+       "type": "any"
+      },
+      {
+       "name": "target",
+       "type": "value"
+      },
+      {
+       "name": "to",
+       "type": "value"
+      },
+      {
+       "name": "type",
+       "type": "value"
+      },
+      {
+       "name": "url",
+       "type": "value"
+      },
+      {
+       "name": "user",
+       "type": "value"
+      },
+      {
+       "name": "weekly",
+       "type": "value"
+      },
+      {
+       "name": "with-secrets",
+       "type": "bool"
+      }
+     ]
     },
     {
      "name": "timemachine",
@@ -895,7 +1811,29 @@
       "bxrig timemachine --demo"
      ],
      "mutates": false,
-     "note": "It needs a terminal (also available as bxtimemachine). Restore, export, send and back up now show the plan first and change nothing until you press y. --local skips the network targets so it opens at once; --demo shows made-up data and runs nothing."
+     "note": "It needs a terminal (also available as bxtimemachine). Restore, export, send and back up now show the plan first and change nothing until you press y. --local skips the network targets so it opens at once; --demo shows made-up data and runs nothing.",
+     "flags": [
+      {
+       "name": "demo",
+       "type": "bool"
+      },
+      {
+       "name": "host",
+       "type": "any"
+      },
+      {
+       "name": "local",
+       "type": "bool"
+      },
+      {
+       "name": "packages",
+       "type": "any"
+      },
+      {
+       "name": "path",
+       "type": "any"
+      }
+     ]
     },
     {
      "name": "java",
@@ -910,7 +1848,13 @@
       "bxrig java env 17"
      ],
      "mutates": true,
-     "note": "Homes come from SDKMAN, BxRig's own Temurin installs (~/.local/share/bxrig/java) and /usr/lib/jvm. With SDKMAN installed (bxrig sdk setup) installs and removals go through it: a major like 21 picks the newest Temurin, an identifier like 21.0.13.0+9-tem installs exactly that. Without it a Temurin JDK is downloaded straight from Adoptium. The system's own JDKs are never deleted. The default is written to java.sh and java.fish, which the shell starters source, so run bxrig refresh shell once on an existing setup."
+     "note": "Homes come from SDKMAN, BxRig's own Temurin installs (~/.local/share/bxrig/java) and /usr/lib/jvm. With SDKMAN installed (bxrig sdk setup) installs and removals go through it: a major like 21 picks the newest Temurin, an identifier like 21.0.13.0+9-tem installs exactly that. Without it a Temurin JDK is downloaded straight from Adoptium. The system's own JDKs are never deleted. The default is written to java.sh and java.fish, which the shell starters source, so run bxrig refresh shell once on an existing setup.",
+     "flags": [
+      {
+       "name": "unset",
+       "type": "bool"
+      }
+     ]
     },
     {
      "name": "sdk",
@@ -925,7 +1869,8 @@
       "bxrig sdk default gradle 8.10.2 --yes"
      ],
      "mutates": true,
-     "note": "setup installs SDKMAN into ~/.sdkman without touching your shell files. Maven and Gradle reach your shells through ~/.config/bxrig/sdk.sh and sdk.fish, which the shell starters source (bxrig refresh shell on an existing setup). Version lists come from api.sdkman.io."
+     "note": "setup installs SDKMAN into ~/.sdkman without touching your shell files. Maven and Gradle reach your shells through ~/.config/bxrig/sdk.sh and sdk.fish, which the shell starters source (bxrig refresh shell on an existing setup). Version lists come from api.sdkman.io.",
+     "flags": []
     },
     {
      "name": "mail",
@@ -941,7 +1886,37 @@
       "bxrig mail start --keep --yes"
      ],
      "mutates": true,
-     "note": "Runs Mailpit in a container (the engine bxrig db engine chose). SMTP is 127.0.0.1:1025 and the web inbox is http://127.0.0.1:8025, both local only. Mail is thrown away when the catcher stops unless you start it with --keep. The Control Center has a Mail page that refreshes by itself."
+     "note": "Runs Mailpit in a container (the engine bxrig db engine chose). SMTP is 127.0.0.1:1025 and the web inbox is http://127.0.0.1:8025, both local only. Mail is thrown away when the catcher stops unless you start it with --keep. The Control Center has a Mail page that refreshes by itself.",
+     "flags": [
+      {
+       "name": "keep",
+       "type": "bool"
+      },
+      {
+       "name": "keep-data",
+       "type": "bool"
+      },
+      {
+       "name": "limit",
+       "type": "value"
+      },
+      {
+       "name": "smtp-port",
+       "type": "value"
+      },
+      {
+       "name": "subject",
+       "type": "value"
+      },
+      {
+       "name": "to",
+       "type": "value"
+      },
+      {
+       "name": "ui-port",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "tui",
@@ -959,7 +1934,25 @@
       "bxrig tui --demo"
      ],
      "mutates": false,
-     "note": "It needs a terminal. `bxrig tui` opens the Control Center with the sidebar; `bxrig tui PAGE` opens that page alone with the sidebar collapsed, like an app of its own (an unknown page exits 2). The backslash key or Ctrl+b (or a click on the left strip or the breadcrumb) opens and closes the sidebar, Tab and Shift+Tab still change page, and Left opens a collapsed sidebar. --sidebar and --no-sidebar force it either way; below 90 columns it starts collapsed. Nothing is remembered. `tui list` prints the page ids and titles. Enter on a warning shows the plan of the fix before anything changes. --json prints a page's data without a terminal; --demo shows made-up data and runs nothing. Icons are Nerd Font glyphs: on when a Nerd Font is installed, or force them with --icons=on|off or BXRIG_ICONS. `tui apps` is the Apps manager: Installed, Discover and Updates tabs, a search box that is always there, install and remove with a plan first (see the Apps guide)."
+     "note": "It needs a terminal. `bxrig tui` opens the Control Center with the sidebar; `bxrig tui PAGE` opens that page alone with the sidebar collapsed, like an app of its own (an unknown page exits 2). The backslash key or Ctrl+b (or a click on the left strip or the breadcrumb) opens and closes the sidebar, Tab and Shift+Tab still change page, and Left opens a collapsed sidebar. --sidebar and --no-sidebar force it either way; below 90 columns it starts collapsed. Nothing is remembered. `tui list` prints the page ids and titles. Enter on a warning shows the plan of the fix before anything changes. --json prints a page's data without a terminal; --demo shows made-up data and runs nothing. Icons are Nerd Font glyphs: on when a Nerd Font is installed, or force them with --icons=on|off or BXRIG_ICONS. `tui apps` is the Apps manager: Installed, Discover and Updates tabs, a search box that is always there, install and remove with a plan first (see the Apps guide).",
+     "flags": [
+      {
+       "name": "demo",
+       "type": "bool"
+      },
+      {
+       "name": "icons",
+       "type": "value"
+      },
+      {
+       "name": "no-sidebar",
+       "type": "bool"
+      },
+      {
+       "name": "sidebar",
+       "type": "bool"
+      }
+     ]
     },
     {
      "name": "bxtimemachine",
@@ -970,7 +1963,29 @@
      "examples": [
       "bxrig bxtimemachine"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "demo",
+       "type": "bool"
+      },
+      {
+       "name": "host",
+       "type": "any"
+      },
+      {
+       "name": "local",
+       "type": "bool"
+      },
+      {
+       "name": "packages",
+       "type": "any"
+      },
+      {
+       "name": "path",
+       "type": "any"
+      }
+     ]
     }
    ]
   },
@@ -990,7 +2005,17 @@
       "bxrig boxlang modules list",
       "bxrig boxlang use 1.8.0"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "list",
+       "type": "any"
+      },
+      {
+       "name": "no-open",
+       "type": "any"
+      }
+     ]
     },
     {
      "name": "editor",
@@ -1002,7 +2027,8 @@
       "bxrig editor lazyvim --yes",
       "bxrig editor status"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": []
     },
     {
      "name": "db",
@@ -1015,7 +2041,33 @@
       "bxrig db start postgres --yes",
       "bxrig db info postgres"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": [
+      {
+       "name": "ask-password",
+       "type": "bool"
+      },
+      {
+       "name": "keep-data",
+       "type": "bool"
+      },
+      {
+       "name": "name",
+       "type": "bool"
+      },
+      {
+       "name": "password-file",
+       "type": "bool"
+      },
+      {
+       "name": "port",
+       "type": "bool"
+      },
+      {
+       "name": "show-password",
+       "type": "bool"
+      }
+     ]
     },
     {
      "name": "containers",
@@ -1026,7 +2078,8 @@
      "examples": [
       "bxrig containers doctor"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": []
     },
     {
      "name": "vm",
@@ -1039,15 +2092,80 @@
       "bxrig vm create linux dev --tag=ubuntu-xfce --yes",
       "bxrig vm open dev"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": [
+      {
+       "name": "cpus",
+       "type": "value"
+      },
+      {
+       "name": "disk",
+       "type": "value"
+      },
+      {
+       "name": "fullscreen",
+       "type": "bool"
+      },
+      {
+       "name": "gpu",
+       "type": "value"
+      },
+      {
+       "name": "keep-data",
+       "type": "bool"
+      },
+      {
+       "name": "memory",
+       "type": "value"
+      },
+      {
+       "name": "name",
+       "type": "any"
+      },
+      {
+       "name": "ram",
+       "type": "value"
+      },
+      {
+       "name": "share",
+       "type": "value"
+      },
+      {
+       "name": "show-password",
+       "type": "bool"
+      },
+      {
+       "name": "tag",
+       "type": "value"
+      },
+      {
+       "name": "version",
+       "type": "value"
+      },
+      {
+       "name": "web",
+       "type": "bool"
+      }
+     ]
     },
     {
      "name": "ai",
      "summary": "AI agents: list, default, launch, tmux sessions, local models, the pull-down AI shell.",
      "usage": [
-      "ai session start [ID] [--name=N] [--dir=PATH] [--dry-run] | list | attach NAME | stop NAME --yes [--json]",
-      "ai models list | ps | pull NAME | rm NAME --yes | status | enable [--yes] [--json]",
-      "ai list | default [ID] [--yes] | launch [ID] [--dry-run] | session ... | models ... | shell [toggle|status] [--backend=hyprland|yakuake] [--dry-run] [--json]"
+      "ai session start [ID] [--name=N] [--dir=PATH] [--dry-run]",
+      "ai session list",
+      "ai session attach NAME",
+      "ai session stop NAME --yes [--json]",
+      "ai models list",
+      "ai models ps",
+      "ai models pull NAME",
+      "ai models rm NAME --yes",
+      "ai models status",
+      "ai models enable [--yes] [--json]",
+      "ai list",
+      "ai default [ID] [--yes]",
+      "ai launch [ID] [--dry-run]",
+      "ai shell [toggle|status] [--backend=hyprland|yakuake] [--dry-run] [--json]"
      ],
      "examples": [
       "bxrig ai list",
@@ -1055,7 +2173,21 @@
       "bxrig ai models pull llama3.2",
       "bxrig ai session start --name=work"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": [
+      {
+       "name": "backend",
+       "type": "value"
+      },
+      {
+       "name": "dir",
+       "type": "value"
+      },
+      {
+       "name": "name",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "skills",
@@ -1068,7 +2200,13 @@
       "bxrig skills list",
       "bxrig skills status"
      ],
-     "mutates": true
+     "mutates": true,
+     "flags": [
+      {
+       "name": "tag",
+       "type": "value"
+      }
+     ]
     }
    ]
   },
@@ -1088,7 +2226,13 @@
       "bxrig screenshot screen --edit",
       "bxrig screenshot ocr"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "edit",
+       "type": "bool"
+      }
+     ]
     },
     {
      "name": "qr",
@@ -1100,7 +2244,13 @@
       "bxrig qr https://boxlang.io",
       "bxrig qr 'wifi text' --out=wifi.png"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "out",
+       "type": "value"
+      }
+     ]
     },
     {
      "name": "record",
@@ -1112,7 +2262,13 @@
       "bxrig record toggle",
       "bxrig record start --region"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "region",
+       "type": "bool"
+      }
+     ]
     },
     {
      "name": "clipboard",
@@ -1124,7 +2280,8 @@
       "bxrig clipboard pick",
       "bxrig clipboard status"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "emoji",
@@ -1135,7 +2292,8 @@
      "examples": [
       "bxrig emoji"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "forcequit",
@@ -1146,7 +2304,8 @@
      "examples": [
       "bxrig forcequit"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "window",
@@ -1158,7 +2317,8 @@
       "bxrig window minimize",
       "bxrig window restore"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "overview",
@@ -1169,7 +2329,8 @@
      "examples": [
       "bxrig overview"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "quicklook",
@@ -1180,7 +2341,8 @@
      "examples": [
       "bxrig quicklook photo.jpg"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "dolphin",
@@ -1192,7 +2354,13 @@
       "bxrig dolphin doctor",
       "bxrig dolphin doctor --fix"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": [
+      {
+       "name": "fix",
+       "type": "bool"
+      }
+     ]
     },
     {
      "name": "dictation",
@@ -1204,7 +2372,8 @@
       "bxrig dictation setup voxtype --yes",
       "bxrig dictation status"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "strata",
@@ -1215,7 +2384,8 @@
      "examples": [
       "bxrig strata integrations --dry-run"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "gpu",
@@ -1226,7 +2396,8 @@
      "examples": [
       "bxrig gpu doctor"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "input",
@@ -1237,7 +2408,8 @@
      "examples": [
       "bxrig input doctor"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     },
     {
      "name": "airplay",
@@ -1248,7 +2420,8 @@
      "examples": [
       "bxrig airplay on"
      ],
-     "mutates": false
+     "mutates": false,
+     "flags": []
     }
    ]
   }

@@ -82,7 +82,7 @@ class Power {
         if ( !arguments.args.len() ) return variables.out.say( 0, { profile: currentProfile() }, arguments.asJson, [ len( currentProfile() ) ? currentProfile() : "unknown" ] );
         var want = arguments.args[ 1 ];
         var map = profiles();
-        if ( arguments.args.len() != 1 || !structKeyExists( map, want ) ) return variables.out.fail( 2, "Usage: bxrig power profile [performance|balanced|saver]", arguments.asJson );
+        if ( arguments.args.len() != 1 || !structKeyExists( map, want ) ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "power profile" ), arguments.asJson );
         if ( !variables.proc.has( "powerprofilesctl" ) ) return variables.out.fail( 4, "power-profiles-daemon is not installed (bxrig power setup)", arguments.asJson );
         var argv = [ "powerprofilesctl", "set", map[ want ] ];
         if ( arguments.dry ) return variables.out.say( 0, { profile: want, command: argv.toList( " " ) }, arguments.asJson, [ "would run: " & argv.toList( " " ) ], true );
@@ -101,7 +101,7 @@ class Power {
 
     function lidCmd( args, yes, dry, asJson ) {
         var want = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
-        if ( !arrayFind( [ "suspend", "lock", "ignore" ], want ) ) return variables.out.fail( 2, "Usage: bxrig power lid suspend|lock|ignore [--yes]", arguments.asJson );
+        if ( !arrayFind( [ "suspend", "lock", "ignore" ], want ) ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "power lid" ), arguments.asJson );
         var tmp = getTempDirectory() & "/bxrig-lid-" & createUUID() & ".conf";
         var cmds = [ [ "sudo", "install", "-Dm644", tmp, lidFile() ] ];
         var plan = [ "Plan: closing the lid will " & want, "  write " & lidFile(), "  sudo install ...", "  note: logind reads it on the next login or reboot (it is not restarted here, that would end your session)" ];
@@ -163,6 +163,6 @@ class Power {
         if ( verb == "lid" ) return lidCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
         if ( verb == "setup" ) return setupCmd( arguments.yes, arguments.dry, arguments.force, arguments.asJson );
         if ( verb == "doctor" ) return doctorCmd( arguments.asJson );
-        return variables.out.fail( 2, "Usage: bxrig power status | profile [performance|balanced|saver] | lid suspend|lock|ignore | setup | doctor", arguments.asJson );
+        return variables.out.fail( 2, new bxrig.CommandSpec().usage( "power" ), arguments.asJson );
     }
 }

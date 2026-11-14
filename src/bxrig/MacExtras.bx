@@ -56,7 +56,7 @@ class MacExtras {
         if ( !variables.proc.has( "hyprctl" ) ) return need( "window", "hyprctl", "This needs Hyprland.", arguments.asJson );
         if ( arguments.action == "minimize" ) return run( "window", [ "hyprctl", "dispatch", "movetoworkspacesilent", "special:minimized" ], "", arguments.asJson );
         if ( arguments.action == "restore" ) return run( "window", [ "hyprctl", "dispatch", "togglespecialworkspace", "minimized" ], "", arguments.asJson );
-        return variables.cli.say( "window", 2, {}, arguments.asJson, [ "Usage: bxrig window minimize|restore" ] );
+        return variables.cli.say( "window", 2, {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "window" ) ] );
     }
 
     function overview( setup, asJson ) {
@@ -233,7 +233,7 @@ class MacExtras {
             variables.proc.exec( [ "systemctl", "--user", "disable", "--now", "bxrig-airplay.service" ], 30 );
             return variables.cli.say( cmd, 0, { active: false }, arguments.asJson, [ "AirPlay receiver is off." ] );
         }
-        if ( arguments.action != "on" ) return variables.cli.say( cmd, 2, {}, arguments.asJson, [ "Usage: bxrig airplay on|off|status" ] );
+        if ( arguments.action != "on" ) return variables.cli.say( cmd, 2, {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "airplay" ) ] );
         if ( !variables.proc.has( "uxplay" ) ) return need( cmd, "uxplay", "Install it: bxrig install uxplay", arguments.asJson );
         var entry = { name: "airplay-unit", target: airplayUnit(), mode: "644", content: "[Unit]" & chr( 10 ) & "Description=BxRig AirPlay receiver (UxPlay)" & chr( 10 ) & "After=graphical-session.target" & chr( 10 ) & chr( 10 ) & "[Service]" & chr( 10 ) & "ExecStart=uxplay -n BxRig" & chr( 10 ) & "Restart=on-failure" & chr( 10 ) & chr( 10 ) & "[Install]" & chr( 10 ) & "WantedBy=graphical-session.target" & chr( 10 ) };
         var st = variables.config.configState( entry );

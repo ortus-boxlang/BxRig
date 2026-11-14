@@ -21,7 +21,7 @@ class BackupMove {
     function validSnap( x ) { return reFind( "^[a-f0-9]{4,64}$|^latest$|^all$", arguments.x ) > 0; }
 
     function sendCmd( args, opts, yes, dry, asJson ) {
-        if ( arguments.args.len() != 1 || !validSnap( arguments.args[ 1 ] ) || !structKeyExists( arguments.opts, "to" ) ) return variables.out.fail( 2, "Usage: bxrig backup send ID|all --to=TARGET [--from=TARGET] [--yes]", arguments.asJson );
+        if ( arguments.args.len() != 1 || !validSnap( arguments.args[ 1 ] ) || !structKeyExists( arguments.opts, "to" ) ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "backup send" ), arguments.asJson );
         if ( !variables.proc.has( "restic" ) ) return variables.out.fail( 4, "restic was not found (bxrig install restic)", arguments.asJson );
         var s = variables.data.readAll();
         var src = variables.data.pickTarget( s, { target: arguments.opts.from ?: "" } );
@@ -53,7 +53,7 @@ class BackupMove {
 
     function exportCmd( args, opts, yes, dry, asJson ) {
         var kind = arguments.args.len() ? arguments.args[ 1 ] : "";
-        if ( arguments.args.len() != 2 || !arrayFind( [ "data", "config" ], kind ) || !structKeyExists( arguments.opts, "to" ) ) return variables.out.fail( 2, "Usage: bxrig backup export data|config ID --to=FILE [--path=/ABSOLUTE/PATH] [--target=NAME] [--yes]", arguments.asJson );
+        if ( arguments.args.len() != 2 || !arrayFind( [ "data", "config" ], kind ) || !structKeyExists( arguments.opts, "to" ) ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "backup export" ), arguments.asJson );
         var to = arguments.opts.to;
         if ( left( to, 1 ) != "/" ) to = variables.environ.home() & "/" & to;
         if ( find( "..", to ) > 0 || !reFind( "^[A-Za-z0-9._/ +@-]+$", to ) ) return variables.out.fail( 2, "--to is a file name without ..", arguments.asJson );

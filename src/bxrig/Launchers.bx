@@ -233,7 +233,7 @@ class Launchers {
         if ( sub == "on" ) return on( arguments.yes, arguments.dryRun, arguments.asJson );
         if ( sub == "off" ) return off( arguments.yes, arguments.dryRun, arguments.asJson );
         if ( sub == "status" ) return status( arguments.asJson );
-        println( "Usage: bxrig launchers on|off|status [--yes] [--dry-run] [--json]" );
+        println( new bxrig.CommandSpec().usage( "launchers" ) );
         return 2;
     }
 }

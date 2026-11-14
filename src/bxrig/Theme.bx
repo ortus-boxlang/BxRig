@@ -321,7 +321,7 @@ class Theme {
 
     // `mode`: how light or dark follows. theme = the theme's own; dark or light = pinned; auto = Noctalia switches by itself.
     function mode( value, dry = false, asJson = false ) {
-        if ( !arrayFind( modes(), arguments.value ) ) return variables.out.say( 2, { error: "bad mode " & arguments.value }, arguments.asJson, [ "Usage: bxrig theme mode theme|dark|light|auto" ] );
+        if ( !arrayFind( modes(), arguments.value ) ) return variables.out.say( 2, { error: "bad mode " & arguments.value }, arguments.asJson, [ new bxrig.CommandSpec().usage( "theme mode" ) ] );
         var st = readState();
         var t = len( st.name ) ? find( st.name ) : { found: false };
         var c = t.found ? variables.tc.parse( t.colorsText ) : { ok: false };
