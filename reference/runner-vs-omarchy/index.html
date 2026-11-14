@@ -1,0 +1,783 @@
+
+
+
+
+
+
+
+
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Runner Vs Omarchy - BxRig</title>
+	<meta property="og:type" content="website">
+	<meta property="og:site_name" content="BxRig">
+	<meta property="og:title" content="Runner Vs Omarchy">
+
+	
+	
+
+	
+	
+		<link rel="canonical" href="https&#x3a;&#x2f;&#x2f;bxcachy.boxlang.io&#x2f;reference&#x2f;runner-vs-omarchy&#x2f;index.html">
+	
+
+	
+	
+		<meta name="description" content="BxRig runner menu vs Omarchy quick-run menu One-to-one comparison of bxrig menu &#x28;the control center, shown on your runner&#x27;s menu provider&#x29; with omarchy-menu ,&hellip;">
+		<meta property="og:description" content="BxRig runner menu vs Omarchy quick-run menu One-to-one comparison of bxrig menu &#x28;the control center, shown on your runner&#x27;s menu provider&#x29; with omarchy-menu ,&hellip;">
+	
+
+	
+	
+
+	
+	
+		<link rel="icon" href="/assets/favicon.png">
+	
+
+	
+	<script>
+		( function () {
+			var configuredMode = "dark";
+			var stored = localStorage.getItem( "bxsites-theme" );
+			var prefersDark = window.matchMedia( "(prefers-color-scheme: dark)" ).matches;
+			var wantsDark = stored ? stored === "dark" : ( configuredMode === "dark" || ( configuredMode === "auto" && prefersDark ) );
+			if ( wantsDark ) {
+				document.documentElement.setAttribute( "data-theme", "dark" );
+			}
+		} )();
+	</script>
+
+	
+	<link rel="stylesheet" href="/assets/vendor/bootstrap/bootstrap.min.css">
+	<link rel="stylesheet" href="/assets/vendor/highlight/github.min.css">
+	<link rel="stylesheet" href="/assets/theme/style.a70338f7.css">
+
+	
+	
+
+	
+	
+		<style>
+			
+			
+				:root {
+					--bxsites-accent: #00C853;
+					--bxsites-link: #00C853;
+					--bxsites-link-hover: color-mix( in srgb, #00C853 85%, black );
+				}
+			
+			
+			
+				[data-theme="dark"] {
+					--bxsites-accent: #00FF78;
+					--bxsites-link: #00FF78;
+					--bxsites-link-hover: color-mix( in srgb, #00FF78 85%, white );
+				}
+			
+		</style>
+	
+
+	
+	
+		<style>
+			.bxsites-nav-nested {
+				border-inline-start: 2px solid var(--bxsites-accent, var(--bxsites-border));
+				margin-inline-start: 0.2rem;
+				padding-inline-start: 0.85rem;
+			}
+		</style>
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+		<script>window.__BXSITES_BASE_PATH__ = "/";</script>
+		<script>window.__BXSITES_SEARCH_NO_RESULTS__ = "No\x20results\x20found.";</script>
+		<script src="/assets/vendor/minisearch/minisearch.js"></script>
+		<script src="/assets/search.f14e08a2.js" defer></script>
+	
+
+	
+	
+
+	
+	
+
+	<script src="/assets/vendor/alpine/cdn.min.js" defer></script>
+</head>
+
+
+<body
+	x-data="{ dark: document.documentElement.getAttribute( 'data-theme' ) === 'dark', navOpen: window.matchMedia( '(min-width: 992px)' ).matches ? ( localStorage.getItem( 'bxsites-nav-open' ) !== null ? localStorage.getItem( 'bxsites-nav-open' ) === 'true' : true ) : false }"
+	x-init="$watch( 'dark', v => { document.documentElement.setAttribute( 'data-theme', v ? 'dark' : 'light' ); localStorage.setItem( 'bxsites-theme', v ? 'dark' : 'light' ) } ); $watch( 'navOpen', v => { if ( window.matchMedia( '(min-width: 992px)' ).matches ) localStorage.setItem( 'bxsites-nav-open', v ) } )">
+	
+	<nav class="navbar navbar-expand-lg brand-navbar">
+		<div class="container-fluid navbar-row">
+			
+			<button
+				class="navbar-toggler"
+				type="button"
+				@click="navOpen = !navOpen"
+				:aria-expanded="navOpen.toString()"
+				aria-controls="bxsites-sidebar"
+				aria-label="Toggle navigation">
+				<span class="navbar-toggler-icon"></span>
+			</button>
+
+			
+			<a class="navbar-brand brand-mark" href="/"><img class="brand-logo" src="/assets/bxrig-logo.svg" alt=""><span class="brand-name">BxRig</span></a>
+
+			
+			<div class="navbar-controls">
+				
+				
+					
+
+	<div class="bxsites-search position-relative">
+		<input
+			type="search"
+			id="bxsites-search-input"
+			class="form-control"
+			placeholder="Search..."
+			aria-label="Search">
+		<kbd class="bxsites-search-kbd" aria-hidden="true">Ctrl K</kbd>
+		<ul id="bxsites-search-results" class="bxsites-search-results list-unstyled"></ul>
+	</div>
+
+
+
+				
+
+				
+				
+
+				
+				
+					<a
+						class="repo-link"
+						href="https://github.com/ortus-boxlang/bxrig"
+						target="_blank"
+						rel="noopener noreferrer"
+						aria-label="Repository"
+						title="Repository">
+						<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.333-1.754-1.333-1.754-1.089-.744.083-.729.083-.729 1.205.084 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.303-5.467-1.332-5.467-5.93 0-1.31.468-2.38 1.235-3.22-.123-.303-.535-1.523.117-3.176 0 0 1.008-.322 3.301 1.23A11.5 11.5 0 0 1 12 5.803c1.02.005 2.045.138 3.003.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.118 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.625-5.48 5.92.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 21.795 24 17.298 24 12c0-6.63-5.37-12-12-12"/></svg>
+					</a>
+				
+
+				
+				<button
+					type="button"
+					class="theme-toggle"
+					@click="dark = !dark"
+					aria-label="Toggle dark mode">
+					<span x-show="!dark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg></span>
+					<span x-show="dark" x-cloak><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></span>
+				</button>
+			</div>
+			
+		</div>
+		
+	</nav>
+
+	
+	<div class="container-fluid">
+		
+		<div class="row" :class="{ 'bxsites-nav-collapsed' : !navOpen }">
+			
+			<aside class="col-lg-3 col-xl-2 sidebar" id="bxsites-sidebar" x-show="navOpen" x-cloak>
+				
+				
+				<ul class="nav flex-column"><li class="nav-item"><a class="nav-link" href="/index.html">Home</a></li><li class="nav-item"><a class="nav-link" href="/getting-started/index.html">Getting started</a></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/architecture/index.html">Architecture</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Architecture section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/architecture/COMMAND-CONTRACT/index.html">Command contract</a></li><li class="nav-item"><a class="nav-link" href="/architecture/MATCHBOX-PARITY/index.html">MatchBox parity</a></li><li class="nav-item"><a class="nav-link" href="/architecture/wizard/index.html">The wizard program</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><span class="nav-link disabled">guides</span><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle guides section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/guides/wizard/index.html">The setup wizard</a></li><li class="nav-item"><a class="nav-link" href="/guides/menu/index.html">The control center</a></li><li class="nav-item"><a class="nav-link" href="/guides/desktop/index.html">The desktop</a></li><li class="nav-item"><a class="nav-link" href="/guides/appearance/index.html">Appearance</a></li><li class="nav-item"><a class="nav-link" href="/guides/shortcuts/index.html">Shortcuts and Mac keys</a></li><li class="nav-item"><a class="nav-link" href="/guides/themes/index.html">Themes</a></li><li class="nav-item"><a class="nav-link" href="/guides/apps/index.html">Apps and web apps</a></li><li class="nav-item"><a class="nav-link" href="/guides/system/index.html">Displays, power and time</a></li><li class="nav-item"><a class="nav-link" href="/guides/vms/index.html">Virtual machines</a></li><li class="nav-item"><a class="nav-link" href="/guides/ai/index.html">AI agents and skills</a></li><li class="nav-item"><a class="nav-link" href="/guides/backups/index.html">Backups and BxTimeMachine</a></li><li class="nav-item"><a class="nav-link" href="/guides/nas/index.html">Your NAS</a></li><li class="nav-item"><a class="nav-link" href="/guides/boxlang/index.html">BoxLang and MatchBox</a></li><li class="nav-item"><a class="nav-link" href="/guides/updates/index.html">Updates and channels</a></li><li class="nav-item"><a class="nav-link" href="/guides/settings/index.html">Move to another machine</a></li><li class="nav-item"><a class="nav-link" href="/guides/security/index.html">Security</a></li><li class="nav-item"><a class="nav-link" href="/guides/troubleshooting/index.html">Troubleshooting</a></li><li class="nav-item"><a class="nav-link" href="/guides/contributing/index.html">Contributing and docs versions</a></li><li class="nav-item"><a class="nav-link" href="/guides/control-center/index.html">Control Center</a></li><li class="nav-item"><a class="nav-link" href="/guides/mail/index.html">Mail catcher</a></li><li class="nav-item"><a class="nav-link" href="/guides/images/index.html">Pictures in the terminal</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><span class="nav-link disabled">reference</span><button type="button" class="nav-toggle" aria-expanded="true" aria-label="Toggle reference section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested"><li class="nav-item"><a class="nav-link" href="/reference/commands/index.html">Command reference</a></li><li class="nav-item"><a class="nav-link" href="/reference/config-files/index.html">Files and folders</a></li><li class="nav-item"><a class="nav-link active" href="/reference/runner-vs-omarchy/index.html">Runner Vs Omarchy</a></li></ul></li></ul>
+				<a class="bxsites-powered-by" href="https://bxsites.io" target="_blank" rel="noopener noreferrer">
+					<img class="bxsites-powered-by__logo" src="/assets/bxsites-logo.svg" alt="" aria-hidden="true"> <span>Powered by BxSites</span>
+				</a>
+			</aside>
+
+			
+			<main class="col-lg-9 col-xl-8 content">
+					
+
+	
+	<article class="page-content">
+		
+		
+		
+		
+		
+		
+		
+		<h1 class="page-title" id="page-title">
+			<a href="#page-title" id="page-title" class="anchor"></a>
+			
+			Runner Vs Omarchy
+		</h1>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#sources-read">Sources read</a></li><li class="toc-level-2"><a href="#1-top-level-sections">1. Top-level sections</a></li><li class="toc-level-2"><a href="#2-sections-entry-by-entry">2. Sections, entry by entry</a></li><li class="toc-level-3"><a href="#21-apps">2.1 Apps</a></li><li class="toc-level-3"><a href="#22-learn">2.2 Learn</a></li><li class="toc-level-3"><a href="#23-trigger-omarchy-trigger-bxrig-trigger">2.3 Trigger &#x28;Omarchy&#x3a; Trigger&#x3b; BxRig&#x3a; Trigger&#x29;</a></li><li class="toc-level-3"><a href="#24-style-omarchy-vs-appearance-bxrig">2.4 Style &#x28;Omarchy&#x29; vs Appearance &#x28;BxRig&#x29;</a></li><li class="toc-level-3"><a href="#25-setup">2.5 Setup</a></li><li class="toc-level-3"><a href="#26-install">2.6 Install</a></li><li class="toc-level-3"><a href="#27-remove">2.7 Remove</a></li><li class="toc-level-3"><a href="#28-update">2.8 Update</a></li><li class="toc-level-3"><a href="#29-about-and-system">2.9 About and System</a></li><li class="toc-level-3"><a href="#210-bxrig-only-sections">2.10 BxRig-only sections</a></li><li class="toc-level-2"><a href="#3-keyboard-shortcuts">3. Keyboard shortcuts</a></li><li class="toc-level-3"><a href="#31-side-by-side">3.1 Side by side</a></li><li class="toc-level-3"><a href="#32-is-each-bxrig-shortcut-reachable-from-the-runner-menu">3.2 Is each BxRig shortcut reachable from the runner menu</a></li><li class="toc-level-2"><a href="#4-summary-and-gaps">4. Summary and gaps</a></li><li class="toc-level-3"><a href="#counts-rows-of-the-tables-above-a-row-can-stand-for-several-leaf-entries">Counts &#x28;rows of the tables above&#x3b; a row can stand for several leaf entries&#x29;</a></li><li class="toc-level-3"><a href="#prioritized-gaps">Prioritized gaps</a></li><li class="toc-level-3"><a href="#findings-outside-the-comparison">Findings outside the comparison</a></li></ul></details>
+		
+
+		
+		<h1 id="bxrig-runner-menu-vs-omarchy-quick-run-menu"><a href="#bxrig-runner-menu-vs-omarchy-quick-run-menu" id="bxrig-runner-menu-vs-omarchy-quick-run-menu" name="bxrig-runner-menu-vs-omarchy-quick-run-menu" class="anchor"></a>BxRig runner menu vs Omarchy quick-run menu</h1>
+<p>One-to-one comparison of <code>bxrig menu</code> (the control center, shown on your runner's menu provider) with <code>omarchy-menu</code>, plus the keyboard shortcuts of both.</p>
+<h2 id="sources-read"><a href="#sources-read" id="sources-read" name="sources-read" class="anchor"></a>Sources read</h2>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Side</th><th>Source</th><th>Read</th></tr>
+</thead>
+<tbody>
+<tr><td>Omarchy menu</td><td><code>bin/omarchy-menu</code> of basecamp/omarchy, branch <code>master</code> (892 lines, fetched with curl)</td><td>all of it</td></tr>
+<tr><td>Omarchy keys</td><td><code>default/hypr/bindings/tiling-v2.conf</code>, <code>utilities.conf</code>, <code>media.conf</code>, <code>clipboard.conf</code> (current); <code>config/hypr/bindings.conf</code> (app launch keys). <code>tiling.conf</code> and <code>default/hypr/bindings.conf</code> are marked deprecated and only used to confirm that</td><td>all of them</td></tr>
+<tr><td>BxRig menu</td><td><code>dist/bxrig menu items</code> (298 entries) and <code>--json</code>; <code>src/bxrig/Menu.bx</code>, <code>MenuTree.bx</code>; <code>docs/guides/menu.md</code>; COMMAND-CONTRACT 13.16</td><td>all of it</td></tr>
+<tr><td>BxRig keys</td><td><code>bxrig keys show</code>; <code>src/bxrig/Shortcuts.bx</code> (table plus the Lua module it renders); <code>templates/hyprland.lua</code> bindings; COMMAND-CONTRACT 13.4; <code>docs/guides/shortcuts.md</code></td><td>all of it</td></tr>
+</tbody>
+</table></div>
+<p>Not read: the helper scripts Omarchy's menu calls (<code>omarchy-capture-screenshot</code>, <code>omarchy-menu-share</code>, <code>omarchy-transcode</code>, <code>omarchy-launch-audio</code> and so on). Where a verdict depends on what such a script does, the note says so. The GitHub API listing of the repository was refused in this session, so the file list of <code>default/hypr/bindings/</code> comes from the <code>source</code> lines in the deprecated <code>bindings.conf</code> plus the files that were fetched (<code>system.conf</code>, 14 bytes, is empty of bindings).</p>
+<p>Status words: <strong>same</strong> (same job, same or close place), <strong>ours only</strong>, <strong>Omarchy only</strong>, <strong>different on purpose</strong>. Omarchy-only rows carry a verdict: <code>Add (P1/P2/P3)</code> means missing and worth adding, <code>N/A</code> means not applicable, with the reason. Rows are grouped: one row can stand for several leaf entries, the note says how many. Section numbers below match the menu names.</p>
+<h2 id="1-top-level-sections"><a href="#1-top-level-sections" id="1-top-level-sections" name="1-top-level-sections" class="anchor"></a>1. Top-level sections</h2>
+<div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
+<thead>
+<tr><th>Omarchy</th><th>BxRig</th><th>Status</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Apps (opens Walker)</td><td>Apps (<code>bxrig apps</code>)</td><td>same</td><td>BxRig lists every <code>.desktop</code> app in the menu provider</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Learn</td><td>Learn</td><td>same</td><td>BxRig adds BoxLang, Noctalia, CachyOS links</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Trigger</td><td>Trigger</td><td>same</td><td>Contents differ a lot, see 2.3</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Style</td><td>Appearance</td><td>different on purpose</td><td>Renamed; 56 leaf entries vs 7; absorbs the toggles for bar, gaps, ratio, layout</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Setup</td><td>Setup</td><td>same</td><td>BxRig 94 leaf entries</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Install</td><td>Install</td><td>same</td><td>Omarchy hard-codes apps; BxRig reads the 289-app catalog</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Remove</td><td>Remove</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Update</td><td>Update</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>About</td><td>About</td><td>same</td><td>Both are a single leaf that shows machine status</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>System</td><td>System</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>(none)</td><td>Develop</td><td>ours only</td><td>BoxLang, databases, mail catcher, VMs, containers, editor (31 leaves)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>(none)</td><td>Agent</td><td>ours only</td><td>AI agents, pull-down shell, local models (9 leaves)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>(none)</td><td>Control Center</td><td>ours only</td><td>Opens the TUI, one entry per page (18 leaves)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>(none)</td><td>Search (first entry of the interactive menu, not in <code>menu items</code>)</td><td>ours only</td><td>Flat filter over every entry; also <code>bxrig menu search TEXT</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>omarchy-menu NAME</code> jumps straight to a submenu (toggle, hardware, share, reminder, background, capture, theme, screenrecord, power, system, update, install, remove, style, setup, learn, trigger)</td><td><code>bxrig menu</code> takes only <code>items</code> and <code>search</code></td><td>Omarchy only</td><td>Add (P1): <code>bxrig menu SECTION</code> so shortcuts can open one section</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>User extension hook <code>~/.config/omarchy/extensions/menu.sh</code></td><td>none</td><td>Omarchy only</td><td>Add (P3): custom entries file for the menu</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Menu toggles closed when pressed again (<code>toggle_existing_menu</code>)</td><td>Esc cancels only</td><td>Omarchy only</td><td>N/A: depends on Walker; BxRig supports five providers</td></tr>
+</tbody>
+</table></div>
+<p>Order differs: Omarchy goes Apps, Learn, Trigger, Style, Setup, Install, Remove, Update, About, System. BxRig goes Apps, Install, Remove, Appearance, Trigger, Setup, Update, Develop, Agent, Learn, About, System, Control Center.</p>
+<h2 id="2-sections-entry-by-entry"><a href="#2-sections-entry-by-entry" id="2-sections-entry-by-entry" name="2-sections-entry-by-entry" class="anchor"></a>2. Sections, entry by entry</h2>
+<h3 id="21-apps"><a href="#21-apps" id="21-apps" name="21-apps" class="anchor"></a>2.1 Apps</h3>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Entry</th><th>Omarchy</th><th>BxRig</th><th>Status</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr><td>Launch an app</td><td><code>walker -p &quot;Launch...&quot;</code></td><td><code>bxrig apps</code></td><td>same</td><td>Also on Super+Space via <code>runner launch</code></td></tr>
+</tbody>
+</table></div>
+<h3 id="22-learn"><a href="#22-learn" id="22-learn" name="22-learn" class="anchor"></a>2.2 Learn</h3>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Entry</th><th>Omarchy</th><th>BxRig</th><th>Status</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr><td>Keybindings</td><td>Keybindings (<code>omarchy-menu-keybindings</code>)</td><td>Shortcut cheat sheet (<code>keys sheet</code>)</td><td>same</td><td> </td></tr>
+<tr><td>Product manual</td><td>Omarchy manual (learn.omacom.io)</td><td>BxRig docs (bxcachy.boxlang.io)</td><td>different on purpose</td><td>Own docs</td></tr>
+<tr><td>Hyprland</td><td>Hyprland wiki</td><td>Hyprland wiki</td><td>same</td><td> </td></tr>
+<tr><td>Arch</td><td>Arch wiki</td><td>Arch wiki</td><td>same</td><td> </td></tr>
+<tr><td>Neovim</td><td>LazyVim keymaps</td><td>LazyVim keymaps</td><td>same</td><td> </td></tr>
+<tr><td>Bash</td><td>devhints.io/bash</td><td>none</td><td>Omarchy only</td><td>Add (P3): a shell cheat sheet link (zsh is the BxRig default)</td></tr>
+<tr><td>BoxLang, Noctalia, CachyOS</td><td>none</td><td>BoxLang docs and links, Noctalia docs, CachyOS wiki (3)</td><td>ours only</td><td> </td></tr>
+</tbody>
+</table></div>
+<h3 id="23-trigger-omarchy-trigger-bxrig-trigger"><a href="#23-trigger-omarchy-trigger-bxrig-trigger" id="23-trigger-omarchy-trigger-bxrig-trigger" name="23-trigger-omarchy-trigger-bxrig-trigger" class="anchor"></a>2.3 Trigger (Omarchy: Trigger; BxRig: Trigger)</h3>
+<div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
+<thead>
+<tr><th>Entry</th><th>Omarchy</th><th>BxRig</th><th>Status</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Reminder: set, show all, clear all (3)</td><td><code>omarchy-reminder</code></td><td>none</td><td>Omarchy only</td><td>Add (P3): small <code>bxrig remind</code> (notification after N minutes)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Screenshot</td><td><code>omarchy-capture-screenshot</code></td><td>Screenshot menu, Screen, Region, Window (4)</td><td>same</td><td>BxRig is finer grained</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Screen recording start or stop</td><td>Screenrecord submenu</td><td>Screen recording: start or stop (<code>record toggle</code>)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Recording with desktop audio</td><td><code>--with-desktop-audio</code></td><td>none (<code>Record.bx</code> has no audio option)</td><td>Omarchy only</td><td>Add (P1)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Recording with desktop + microphone audio</td><td><code>--with-microphone-audio</code></td><td>none</td><td>Omarchy only</td><td>Add (P1)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Recording with webcam overlay</td><td><code>--with-webcam</code>, device picker</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Recording of a region</td><td>none in the menu</td><td><code>record toggle --region</code> (shortcut only)</td><td>ours only</td><td>Not in the menu, only on Super+Alt+Shift+R</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Text extraction (OCR)</td><td><code>omarchy-capture-text-extraction</code></td><td>Text (OCR)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Color picker</td><td><code>hyprpicker -a</code></td><td>none (<code>hyprpicker</code> is in the catalog, optional)</td><td>Omarchy only</td><td>Add (P1)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>QR code</td><td>none</td><td>QR code</td><td>ours only</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Transcode</td><td><code>omarchy-transcode</code> (not read)</td><td>none</td><td>Omarchy only</td><td>Add (P3): ffmpeg is in the catalog</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Share: clipboard, file, folder (3)</td><td><code>omarchy-menu-share</code> (not read)</td><td>none</td><td>Omarchy only</td><td>Add (P3): LocalSend is a default catalog app, wire it in</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Toggle: Screensaver</td><td><code>omarchy-toggle-screensaver</code></td><td>none</td><td>Omarchy only</td><td>N/A: Omarchy's own screensaver; BxRig has none</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Toggle: Nightlight</td><td><code>omarchy-toggle-nightlight</code></td><td>Night light</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Toggle: Idle Lock</td><td><code>omarchy-toggle-idle</code></td><td>none</td><td>Omarchy only</td><td>Add (P1): idle lock off while presenting or watching</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Toggle: Notifications</td><td>silence on or off</td><td>Do Not Disturb, Snooze 30 minutes, Snooze 2 hours, Turn snooze off, Clear notifications (5)</td><td>same</td><td>BxRig is richer</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Toggle: Top Bar</td><td><code>omarchy-toggle-waybar</code></td><td>Appearance &gt; Bar &gt; Show, Hide, Toggle</td><td>same</td><td>Different section</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Toggle: Workspace Layout</td><td>layout toggle</td><td>Window layout: tile or float; Appearance &gt; Layout (dwindle, scrolling, floating)</td><td>different on purpose</td><td>BxRig also offers scrolling and floating</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Toggle: Window Gaps</td><td>gaps toggle</td><td>Appearance &gt; Windows &gt; Gaps</td><td>same</td><td>Different section</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Toggle: 1-Window Ratio</td><td>square aspect toggle</td><td>Appearance &gt; Windows &gt; Single window aspect ratio</td><td>same</td><td>Different section</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Toggle: Monitor Scaling</td><td>cycles scale</td><td>Setup &gt; Display &gt; Scale (pick monitor)</td><td>different on purpose</td><td>BxRig sets an explicit value</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Toggle: Direct Boot</td><td><code>omarchy-config-direct-boot</code></td><td>none</td><td>Omarchy only</td><td>N/A: Omarchy's boot setup (script not read), not part of CachyOS installs</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Toggle: Passwordless Sudo</td><td><code>omarchy-sudo-passwordless</code></td><td>Setup &gt; Security &gt; Passwordless sudo on, off</td><td>same</td><td>Different section</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Hardware: Laptop Display</td><td>toggle</td><td>Setup &gt; Display &gt; Laptop panel on, off</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Hardware: Mirror Display</td><td>toggle</td><td>Setup &gt; Display &gt; Mirror the laptop panel on, off</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Hardware: Hybrid GPU</td><td><code>omarchy-toggle-hybrid-gpu</code>, shown only on hybrid machines</td><td>Setup &gt; Hardware &gt; GPU check (read only)</td><td>Omarchy only</td><td>Add (P3): only the check exists, no switch</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Hardware: Touchpad</td><td>toggle, shown when a touchpad exists</td><td>Setup &gt; Hardware &gt; Input devices and gestures (read only)</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Hardware: Touchscreen</td><td>toggle</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Hardware: Touchpad Haptics</td><td>Dell XPS tool</td><td>none</td><td>Omarchy only</td><td>N/A: Dell XPS only</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Emoji</td><td>key only (Super+Ctrl+E)</td><td>Emoji</td><td>ours only</td><td>In BxRig's menu as well as on the key</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Clipboard history</td><td>key only (Super+Ctrl+V)</td><td>Clipboard history</td><td>ours only</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Force quit, Minimize window, Restore window, Overview (4)</td><td>none</td><td>same names</td><td>ours only</td><td>Mac-like helpers</td></tr>
+</tbody>
+</table></div>
+<h3 id="24-style-omarchy-vs-appearance-bxrig"><a href="#24-style-omarchy-vs-appearance-bxrig" id="24-style-omarchy-vs-appearance-bxrig" name="24-style-omarchy-vs-appearance-bxrig" class="anchor"></a>2.4 Style (Omarchy) vs Appearance (BxRig)</h3>
+<div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
+<thead>
+<tr><th>Entry</th><th>Omarchy</th><th>BxRig</th><th>Status</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Theme</td><td>Walker theme menu</td><td>Theme (pick)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Next, random theme; mode (follow, dark, light, auto); theme status (7)</td><td>none</td><td>present</td><td>ours only</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Unlock</td><td>Walker menu <code>omarchyunlocks</code></td><td>none</td><td>Omarchy only</td><td>N/A: a Walker menu that is specific to Omarchy's lock screen</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Font</td><td>pick from installed</td><td>Font (pick)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Background</td><td>Walker background menu</td><td>Background &gt; Pick, Next, Random</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Hyprland (edit <code>looknfeel.conf</code>)</td><td>opens editor</td><td>none</td><td>Omarchy only</td><td>Add (P2): see Setup &gt; Config in 2.5</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Screensaver text or image</td><td>branding</td><td>none</td><td>Omarchy only</td><td>N/A: no BxRig screensaver</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>About text or image</td><td><code>omarchy-branding-about</code></td><td>none</td><td>Omarchy only</td><td>N/A: Omarchy branding</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Bar: show, hide, position, style, clock, battery (17 leaves)</td><td>none</td><td>present</td><td>ours only</td><td>Noctalia bar</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Dock: show, hide, toggle, mode, position (9 leaves)</td><td>none</td><td>present</td><td>ours only</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Windows: corners, opacity (the other 6 of the 12 Windows leaves are gaps, ratio, layout, counted above)</td><td>none</td><td>present</td><td>ours only</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Animations on, off</td><td>none</td><td>present</td><td>ours only</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Appearance status, re-apply, install theme from git</td><td>none here (Omarchy installs a theme from Install &gt; Style)</td><td>present</td><td>ours only</td><td> </td></tr>
+</tbody>
+</table></div>
+<h3 id="25-setup"><a href="#25-setup" id="25-setup" name="25-setup" class="anchor"></a>2.5 Setup</h3>
+<div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
+<thead>
+<tr><th>Entry</th><th>Omarchy</th><th>BxRig</th><th>Status</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Audio</td><td><code>omarchy-launch-audio</code> (not read)</td><td>none</td><td>Omarchy only</td><td>Add (P1): open the Noctalia control center (<code>panel-toggle control-center</code> is already used in <code>bxrig.lua</code>) or a mixer (<code>wiremix</code> is in the catalog)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Wifi</td><td><code>omarchy-launch-wifi</code></td><td>none</td><td>Omarchy only</td><td>Add (P1)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Bluetooth</td><td><code>omarchy-launch-bluetooth</code></td><td>none</td><td>Omarchy only</td><td>Add (P1)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Power Profile</td><td>pick from <code>powerprofilesctl</code></td><td>Power &gt; Profile: Performance, Balanced, Power saver</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Power: status, lid action, laptop tools, doctor (6 of the 9 Power leaves)</td><td>none</td><td>present</td><td>ours only</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>System Sleep: enable or disable suspend, hibernate</td><td>toggles</td><td>Power &gt; Closing the lid (suspend, lock, nothing)</td><td>different on purpose</td><td>BxRig sets the lid action, not the sleep modes</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Monitors</td><td>opens <code>monitors.conf</code></td><td>Display: list, scale, laptop panel, mirror, brightness, apply, forget (12 leaves)</td><td>different on purpose</td><td>BxRig has real controls, no file to edit</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Keybindings</td><td>opens <code>bindings.conf</code></td><td>Keyboard &gt; Shortcuts, cheat sheet, conflicts; Control Center &gt; Shortcuts</td><td>different on purpose</td><td>BxRig has a table and an editor</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Input (opens <code>input.conf</code>)</td><td>opens the file</td><td>Hardware &gt; Input devices and gestures (read only)</td><td>Omarchy only</td><td>Add (P2): natural scroll, repeat rate, layout</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Defaults: Browser</td><td>pick</td><td>Defaults &gt; Browser</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Defaults: Terminal</td><td>pick</td><td>Defaults &gt; Terminal</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Defaults: Editor</td><td>pick (Neovim, VSCode, Cursor, Zed, Sublime, Helix, Vim, Emacs)</td><td>none (<code>default</code> takes browser, terminal, filemanager)</td><td>Omarchy only</td><td>Add (P2)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Defaults: File manager</td><td>none</td><td>Defaults &gt; File manager</td><td>ours only</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>DNS</td><td><code>omarchy-setup-dns</code></td><td>DNS: show, Cloudflare, Google, Quad9, custom, DHCP (6)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Security: Fingerprint</td><td>setup</td><td>Security &gt; Fingerprint for sudo (turn on, enroll, off)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Security: Fido2</td><td>setup</td><td>Security &gt; Security key for sudo (register, on, off)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Security: status, SSH key, secrets, keyring, SSH server (10 of the 14 Security leaves)</td><td>none</td><td>present</td><td>ours only</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Config: Hyprland</td><td>opens <code>hyprland.conf</code></td><td>none (Update &gt; Refresh a config &gt; Hyprland resets it)</td><td>Omarchy only</td><td>Add (P2): open <code>hyprland.lua</code> in the editor</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Config: Hypridle, Hyprlock, Hyprsunset</td><td>open the file, restart service</td><td>none</td><td>Omarchy only</td><td>Add (P3): only if BxRig ships those configs</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Config: Swayosd, Walker, Waybar</td><td>open the file</td><td>none</td><td>Omarchy only</td><td>N/A: BxRig uses Noctalia for bar, OSD and notifications; Walker is one optional provider</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Config: XCompose</td><td>open <code>~/.XCompose</code></td><td>none</td><td>Omarchy only</td><td>N/A: Omarchy's text expansion feature</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Time, Kernel, Cloud storage, Backup, NAS (36 leaves)</td><td>none</td><td>present</td><td>ours only</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Hardware: AirPlay receiver, GPU check</td><td>none</td><td>present</td><td>ours only</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Setup status, dotfiles status, launcher check, export settings (4)</td><td>none</td><td>present</td><td>ours only</td><td> </td></tr>
+</tbody>
+</table></div>
+<h3 id="26-install"><a href="#26-install" id="26-install" name="26-install" class="anchor"></a>2.6 Install</h3>
+<div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
+<thead>
+<tr><th>Entry</th><th>Omarchy</th><th>BxRig</th><th>Status</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Package</td><td><code>omarchy-pkg-install</code></td><td>Package (repos and AUR)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>AUR</td><td><code>omarchy-pkg-aur-install</code></td><td>AUR package</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Web App</td><td>create</td><td>Web app &gt; Create web app</td><td>same</td><td>BxRig adds install-all for Google, Microsoft, Apple, BoxLang</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>TUI</td><td><code>omarchy-tui-install</code> (script not read)</td><td>none</td><td>Omarchy only</td><td>N/A: script not read, BxRig has no equivalent concept; <code>Package</code> covers installs</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Service: Dropbox, Tailscale, NordVPN, Bitwarden</td><td>install</td><td>Catalog (infra, network, everyday)</td><td>same</td><td>Catalog ids: <code>dropbox</code>, <code>tailscale</code>, <code>nordvpn</code>, <code>bitwarden</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Service: ONCE, Chromium Account</td><td>install</td><td>none</td><td>Omarchy only</td><td>N/A: Omarchy and Basecamp specific</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Style: Theme</td><td><code>omarchy-theme-install</code></td><td>Appearance &gt; Install a theme from git</td><td>same</td><td>Different section</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Style: Background</td><td><code>omarchy-theme-bg-install</code></td><td>none (Pick covers installed backgrounds)</td><td>Omarchy only</td><td>Add (P3): add a wallpaper from a file or URL</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Style: Font (Cascadia, Meslo, Fira, Victor, Bitstream, Iosevka)</td><td>6 fixed fonts</td><td>Font &gt; Install a font (choose from fonts-uninstalled)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Development: Rails, Ruby</td><td><code>install-dev-env ruby</code></td><td>none (use Package)</td><td>Omarchy only</td><td>N/A: BxRig is Java and BoxLang first; <code>mise</code> is in the catalog for the rest</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Development: JavaScript (Node, Bun, Deno)</td><td>3</td><td>Node.js (nvm); Bun and Deno from the catalog</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Development: Go, PHP, Python, Java</td><td>4</td><td>catalog (<code>go</code>, <code>php</code>, <code>uv</code>, <code>python-pip</code>, <code>jdk21</code>, <code>maven</code>, <code>gradle</code>)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Development: Laravel, Symfony, Phoenix</td><td>3</td><td>none</td><td>Omarchy only</td><td>N/A: framework starters outside the BoxLang focus</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Development: Elixir, Zig, Rust, .NET, OCaml, Clojure, Scala</td><td>7</td><td>none (use Package)</td><td>Omarchy only</td><td>N/A: outside the BoxLang focus</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Development: Docker DB</td><td><code>omarchy-install-docker-dbs</code></td><td>Develop &gt; Databases (<code>db menu</code>)</td><td>same</td><td>BxRig uses Podman and has more engines</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Editor: Cursor, Zed, Sublime Text, Helix, VSCode</td><td>5</td><td>catalog (<code>cursor</code>, <code>zed</code>, <code>sublime-text</code>, <code>helix</code>, <code>vscode</code>)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Editor: Vim, Emacs</td><td>2</td><td>none (<code>neovim</code> is there)</td><td>Omarchy only</td><td>Add (P3): <code>vim</code> and <code>emacs</code> are plain pacman packages</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Terminal: Alacritty, Foot, Ghostty, Kitty</td><td>4</td><td>catalog (same four plus Konsole, Tabby)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Browser: Chrome, Edge, Brave, Firefox, Zen</td><td>5</td><td>catalog (<code>google-chrome</code>, <code>edge</code>, <code>brave</code>, <code>firefox</code>, <code>zen</code>)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Browser: Brave Origin</td><td>install</td><td>none</td><td>Omarchy only</td><td>N/A: Omarchy-specific package</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>AI: Dictation</td><td><code>omarchy-voxtype-install</code></td><td>Dictation (<code>dictation setup</code>)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>AI: LM Studio, Ollama</td><td>2</td><td>catalog (<code>lm-studio</code>, <code>ollama</code>, plus cuda and rocm builds)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>AI: Crush</td><td>install</td><td>none</td><td>Omarchy only</td><td>Add (P3): <code>crush-bin</code> AUR package</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Gaming: Steam, RetroArch, Minecraft, GeForce Now, Xbox Cloud, Moonlight, Lutris, Heroic (8)</td><td>8</td><td>catalog (all eight ids exist)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Gaming: Xbox Controller</td><td>driver install</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Windows</td><td><code>omarchy-windows-vm install</code></td><td>Virtual machine &gt; Windows</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Catalog by group (11), Virtual machine (Linux desktops, tags, check), Neovim with LazyVim, Agent skills (3 of the 31 leaves)</td><td>none</td><td>present</td><td>ours only</td><td> </td></tr>
+</tbody>
+</table></div>
+<h3 id="27-remove"><a href="#27-remove" id="27-remove" name="27-remove" class="anchor"></a>2.7 Remove</h3>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Entry</th><th>Omarchy</th><th>BxRig</th><th>Status</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr><td>Package</td><td><code>omarchy-pkg-remove</code></td><td>Package</td><td>same</td><td> </td></tr>
+<tr><td>Web App</td><td>remove</td><td>Web app</td><td>same</td><td> </td></tr>
+<tr><td>Theme</td><td>remove</td><td>Theme</td><td>same</td><td> </td></tr>
+<tr><td>Windows</td><td><code>windows-vm remove</code></td><td>Virtual machine</td><td>same</td><td> </td></tr>
+<tr><td>Dictation, Browser (6), Gaming (9), Development (13 groups)</td><td>dedicated removers</td><td>App from the catalog (pick from installed)</td><td>different on purpose</td><td>One generic remover instead of per-app scripts</td></tr>
+<tr><td>TUI</td><td>remove</td><td>none</td><td>Omarchy only</td><td>N/A: see Install</td></tr>
+<tr><td>Preinstalls</td><td><code>omarchy-remove-preinstalls</code></td><td>none</td><td>Omarchy only</td><td>N/A: Omarchy's preinstalled app set</td></tr>
+<tr><td>Security: Fingerprint, Fido2</td><td>remove</td><td>Setup &gt; Security &gt; Turn off</td><td>same</td><td>Different section</td></tr>
+<tr><td>Agent skill</td><td>none</td><td>Agent skill</td><td>ours only</td><td> </td></tr>
+</tbody>
+</table></div>
+<h3 id="28-update"><a href="#28-update" id="28-update" name="28-update" class="anchor"></a>2.8 Update</h3>
+<div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
+<thead>
+<tr><th>Entry</th><th>Omarchy</th><th>BxRig</th><th>Status</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Update the distro</td><td>Omarchy</td><td>System update (snapshot first)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Update the tool itself</td><td>none separate</td><td>Check for a BxRig update, Install the BxRig update</td><td>ours only</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Omarchy to Quattro</td><td>upgrade</td><td>none</td><td>Omarchy only</td><td>N/A: Omarchy release migration</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Channel</td><td>Stable, RC, Edge, Dev</td><td>Stable, Beta</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Config: refresh to default</td><td>Hyprland, Hypridle, Hyprlock, Hyprsunset, Plymouth, Swayosd, Tmux, Walker, Waybar (9)</td><td>Hyprland, Noctalia, Terminals, Shell and prompt, Neovim layer, Theme, Everything (7)</td><td>same</td><td>Targets follow each stack</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Extra themes</td><td><code>omarchy-theme-update</code></td><td>none</td><td>Omarchy only</td><td>Add (P3): update themes installed from git</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Process: restart Hypridle, Hyprsunset, Mako, Swayosd, Walker, Waybar</td><td>6</td><td>none</td><td>Omarchy only</td><td>Add (P1): restart Noctalia (and the other BxRig-managed processes)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Hardware: restart Audio, Wi-Fi, Bluetooth, Trackpad</td><td>4</td><td>none</td><td>Omarchy only</td><td>Add (P1): pipewire and wireplumber, NetworkManager, bluetooth service</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Firmware</td><td><code>omarchy-update-firmware</code></td><td>none</td><td>Omarchy only</td><td>Add (P2): fwupd</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Password: drive encryption, user</td><td>2</td><td>none</td><td>Omarchy only</td><td>Add (P3): <code>passwd</code>; drive password only if LUKS</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Timezone, Time</td><td>tz select, update time</td><td>Setup &gt; Time (6 leaves)</td><td>same</td><td>Different section</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Notifications on, off; re-apply appearance and display; agent skills update (5)</td><td>none</td><td>present</td><td>ours only</td><td> </td></tr>
+</tbody>
+</table></div>
+<h3 id="29-about-and-system"><a href="#29-about-and-system" id="29-about-and-system" name="29-about-and-system" class="anchor"></a>2.9 About and System</h3>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Entry</th><th>Omarchy</th><th>BxRig</th><th>Status</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr><td>About</td><td><code>omarchy-launch-about</code></td><td>About (<code>bxrig status</code>)</td><td>same</td><td> </td></tr>
+<tr><td>Lock</td><td><code>omarchy-system-lock</code></td><td>Lock</td><td>same</td><td> </td></tr>
+<tr><td>Suspend</td><td><code>systemctl suspend</code>, hidden when disabled</td><td>Suspend</td><td>same</td><td> </td></tr>
+<tr><td>Hibernate</td><td>shown when available</td><td>none</td><td>Omarchy only</td><td>Add (P2): show only when resume is configured</td></tr>
+<tr><td>Logout</td><td>yes</td><td>Logout (<code>--yes</code>)</td><td>same</td><td> </td></tr>
+<tr><td>Restart</td><td>yes</td><td>Reboot (<code>--yes</code>)</td><td>same</td><td> </td></tr>
+<tr><td>Shutdown</td><td>yes</td><td>Shutdown (<code>--yes</code>)</td><td>same</td><td> </td></tr>
+<tr><td>Screensaver (force)</td><td><code>omarchy-launch-screensaver force</code></td><td>none</td><td>Omarchy only</td><td>N/A: no screensaver in BxRig</td></tr>
+</tbody>
+</table></div>
+<h3 id="210-bxrig-only-sections"><a href="#210-bxrig-only-sections" id="210-bxrig-only-sections" name="210-bxrig-only-sections" class="anchor"></a>2.10 BxRig-only sections</h3>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Section</th><th>Leaves</th><th>Status</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr><td>Develop: BoxLang (6), databases, mail catcher (10), virtual machines (8), containers (3), editor (3)</td><td>31</td><td>ours only</td><td>The BoxLang developer side</td></tr>
+<tr><td>Agent: default agent, any agent, pull-down shell, sessions, models, API keys, skills status</td><td>9</td><td>ours only</td><td> </td></tr>
+<tr><td>Control Center: whole TUI plus 17 single pages</td><td>18</td><td>ours only</td><td> </td></tr>
+</tbody>
+</table></div>
+<h2 id="3-keyboard-shortcuts"><a href="#3-keyboard-shortcuts" id="3-keyboard-shortcuts" name="3-keyboard-shortcuts" class="anchor"></a>3. Keyboard shortcuts</h2>
+<p>Omarchy: Hyprland <code>bindd</code> lines from <code>tiling-v2.conf</code>, <code>utilities.conf</code>, <code>media.conf</code>, <code>clipboard.conf</code>, and <code>config/hypr/bindings.conf</code>. BxRig: <code>bxrig keys show</code> (38 rows with keys, 17 more unbound rows, one per Control Center page), plus the binds in <code>bxrig.lua</code> that are outside the table (Super+Space, Super+S, Super+Comma, Alt+Tab) and the starter <code>hyprland.lua</code>.</p>
+<h3 id="31-side-by-side"><a href="#31-side-by-side" id="31-side-by-side" name="31-side-by-side" class="anchor"></a>3.1 Side by side</h3>
+<div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
+<thead>
+<tr><th>Action</th><th>Omarchy keys</th><th>BxRig keys</th><th>Status</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Launch apps</td><td>Super+Space</td><td>Super+Space</td><td>same</td><td><code>runner launch</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Main menu</td><td>Super+Alt+Space (also Super+Shift+code:201)</td><td>Super+Alt+M</td><td>different on purpose</td><td>BxRig gives Super+Alt+Space to the all-apps window</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>All apps window</td><td>none (Super+Space is Walker)</td><td>Super+Alt+Space</td><td>ours only</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>System menu</td><td>Super+Escape, XF86PowerOff</td><td>none</td><td>Omarchy only</td><td>Add (P1): needs <code>menu SECTION</code> first</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Toggle menu</td><td>Super+Ctrl+O</td><td>none</td><td>Omarchy only</td><td>Add (P2)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Hardware menu</td><td>Super+Ctrl+H</td><td>none</td><td>Omarchy only</td><td>Add (P2)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Capture menu</td><td>Super+Ctrl+C</td><td>Super+Shift+5 (screenshot menu)</td><td>different on purpose</td><td>Mac-style</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Show key bindings</td><td>Super+K</td><td>Super+K</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Calculator key</td><td>XF86Calculator</td><td>none</td><td>Omarchy only</td><td>N/A: needs a calculator app; trivial</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Emoji picker</td><td>Super+Ctrl+E</td><td>Super+Ctrl+E</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Clipboard manager</td><td>Super+Ctrl+V</td><td>Super+Shift+V</td><td>different on purpose</td><td>Mac-style</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Universal copy, paste, cut</td><td>Super+C, V, X (Hyprland <code>sendshortcut</code>)</td><td>Super+C, V, X (xremap, terminal-aware)</td><td>different on purpose</td><td>BxRig also sends Ctrl+Shift in terminals</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Screenshot</td><td>Print</td><td>Super+Shift+3, 4</td><td>different on purpose</td><td>Add (P3): also bind the Print key</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Screen recording</td><td>Alt+Print (menu)</td><td>Super+Shift+R; region Super+Alt+Shift+R</td><td>different on purpose</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Color picker</td><td>Super+Print</td><td>none</td><td>Omarchy only</td><td>Add (P1) with the menu entry</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>OCR from screen</td><td>Super+Ctrl+Print</td><td>none (menu entry, or Super+Shift+5)</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Share</td><td>Super+Ctrl+S</td><td>none</td><td>Omarchy only</td><td>Add (P3) with Share</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Transcode</td><td>Super+Ctrl+Period</td><td>none</td><td>Omarchy only</td><td>Add (P3) with Transcode</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Reminders: set, show, clear</td><td>Super+Ctrl+R, Super+Ctrl+Alt+R, Super+Shift+Ctrl+R</td><td>none</td><td>Omarchy only</td><td>Add (P3) with Reminder</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Time, battery, weather notices</td><td>Super+Ctrl+Alt+T, B, W</td><td>none</td><td>Omarchy only</td><td>N/A: Omarchy comment says these are for a bar-less setup; the Noctalia bar shows them</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Audio, Bluetooth, Wifi controls</td><td>Super+Ctrl+A, B, W</td><td>Super+S opens the Noctalia control center</td><td>Omarchy only</td><td>Add (P1): one key per panel; Super+S clashes with the Save remap when Mac keys are on</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Activity monitor</td><td>Super+Ctrl+T (btop)</td><td>none (Control Center pages are unbound)</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Dictation toggle</td><td>Super+Ctrl+X</td><td>Super+Ctrl+X</td><td>same</td><td>Both use <code>voxtype record toggle</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Dictation push to talk</td><td>F9 (start on press, stop on release)</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Zoom in, reset</td><td>Super+Ctrl+Z, Super+Ctrl+Alt+Z</td><td>none</td><td>Omarchy only</td><td>Add (P3): cursor zoom, an accessibility help</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Lock</td><td>Super+Ctrl+L</td><td>Super+Ctrl+Q (starter file, <code>hyprlock</code>; not in the table)</td><td>different on purpose</td><td>Mac-style</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Toggle top bar</td><td>Super+Shift+Space</td><td>none</td><td>Omarchy only</td><td>Add (P2): bind <code>appearance bar toggle</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Background menu, theme menu</td><td>Super+Ctrl+Space, Super+Shift+Ctrl+Space</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Window transparency toggle</td><td>Super+Backspace</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Window gaps toggle</td><td>Super+Shift+Backspace</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Single-window square toggle</td><td>Super+Ctrl+Backspace</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Dismiss last, all notifications</td><td>Super+Comma, Super+Shift+Comma</td><td>none (Super+Comma is Preferences or Noctalia settings)</td><td>Omarchy only</td><td>Add (P2): <code>notify clear</code> exists, bind it</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Toggle silencing notifications</td><td>Super+Ctrl+Comma</td><td>Super+Alt+N (Do Not Disturb)</td><td>different on purpose</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Invoke, restore last notification</td><td>Super+Alt+Comma, Super+Shift+Alt+Comma</td><td>none</td><td>Omarchy only</td><td>N/A: <code>makoctl</code>; BxRig uses Noctalia and no Noctalia equivalent was read</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Idle lock toggle</td><td>Super+Ctrl+I</td><td>none</td><td>Omarchy only</td><td>Add (P1) with the menu entry</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Night light</td><td>Super+Ctrl+N</td><td>Super+Alt+Shift+N</td><td>different on purpose</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Laptop display toggle, mirror</td><td>Super+Ctrl+Delete, Super+Ctrl+Alt+Delete</td><td>none (menu entries exist)</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Lid switch handling</td><td><code>bindl switch:on:Lid Switch</code></td><td>Power &gt; Closing the lid (logind setting)</td><td>different on purpose</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Close window</td><td>Super+W</td><td>Super+Q (starter file)</td><td>different on purpose</td><td>Super+W is Close tab in BxRig</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Close all windows</td><td>Ctrl+Alt+Delete</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Toggle split</td><td>Super+J</td><td>Super+J (starter file)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Pseudo window</td><td>Super+P</td><td>none</td><td>Omarchy only</td><td>N/A: Super+P is Print in BxRig and pseudo-tiling is rarely used</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Float or tile</td><td>Super+T</td><td>Super+V (starter file)</td><td>different on purpose</td><td>Clashes with the Paste remap when Mac keys are on</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Full screen</td><td>Super+F</td><td>Super+F (starter file)</td><td>same</td><td>Clashes with the Find remap when Mac keys are on</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Tiled fullscreen, full width</td><td>Super+Ctrl+F, Super+Alt+F</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Pop window out (float and pin)</td><td>Super+O</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Toggle workspace layout</td><td>Super+L</td><td>none (menu entry only)</td><td>Omarchy only</td><td>Add (P3): Super+L is Address bar in BxRig</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Focus with arrows</td><td>Super+Arrows</td><td>Super+Arrows (starter file)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Switch to workspace 1 to 10</td><td>Super+1..0</td><td>Super+1..0 (starter file)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Move window to workspace 1 to 10</td><td>Super+Shift+1..0</td><td>Super+Shift+1..0 (starter file)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Move window silently to workspace</td><td>Super+Shift+Alt+1..0</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Scratchpad: toggle, send</td><td>Super+S, Super+Alt+S</td><td>none (the AI shell has its own special workspace on Super+`)</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Next, previous, former workspace</td><td>Super+Tab, Super+Shift+Tab, Super+Ctrl+Tab</td><td>none (three-finger swipe and Super+scroll)</td><td>different on purpose</td><td>Super+Tab is the Cmd+Tab window switcher</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Move workspace to other monitor</td><td>Super+Shift+Alt+Arrows</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Swap window with neighbour</td><td>Super+Shift+Arrows (<code>swapwindow</code>)</td><td>Super+Shift+Arrows (<code>window.move</code>, starter file)</td><td>same</td><td>Dispatcher differs, behaviour not tested</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Cycle windows</td><td>Alt+Tab, Alt+Shift+Tab</td><td>Alt+Tab (Noctalia switcher; Super+Tab remaps to it)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Focus next, previous monitor</td><td>Ctrl+Alt+Tab, Ctrl+Alt+Shift+Tab</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Resize with keys</td><td>Super+Minus, Super+Equal (+Shift)</td><td>none (mouse drag only)</td><td>Omarchy only</td><td>Add (P2)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Scroll workspaces</td><td>Super+scroll</td><td>Super+scroll (starter file)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Move, resize with mouse</td><td>Super+LMB, Super+RMB</td><td>Super+LMB, Super+RMB (starter file)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Window groups (toggle, join, navigate, by number; 13 binds)</td><td>Super+G, Super+Alt+...</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Cycle monitor scaling</td><td>Super+Slash, Super+Alt+Slash</td><td>none (menu: Display &gt; Scale)</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Volume, mute, mic mute</td><td>XF86Audio keys (SwayOSD)</td><td>XF86Audio keys (<code>wpctl</code>, starter file)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Brightness</td><td>XF86MonBrightness keys</td><td>XF86MonBrightness keys (<code>brightnessctl</code>, starter file)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Precise 1%, max, min brightness and volume</td><td>Alt or Shift plus the keys</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Keyboard backlight</td><td>XF86KbdBrightness, XF86KbdLightOnOff</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Touchpad toggle</td><td>XF86Touchpad keys</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Media transport</td><td>XF86AudioPlay, Pause, Next, Prev (<code>playerctl</code>)</td><td>none (<code>playerctl</code> is in the catalog)</td><td>Omarchy only</td><td>Add (P2)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Switch audio output</td><td>Super+XF86AudioMute</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Terminal</td><td>Super+Return</td><td>Super+Return (starter file)</td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Terminal with tmux</td><td>Super+Alt+Return</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Browser</td><td>Super+Shift+Return, Super+Shift+B (private: +Alt)</td><td>Super+B (starter file)</td><td>different on purpose</td><td>Super+B is Bold when Mac keys are on</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>File manager</td><td>Super+Shift+F (cwd: +Alt)</td><td>Super+E (starter file)</td><td>different on purpose</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Editor</td><td>Super+Shift+N</td><td>none</td><td>Omarchy only</td><td>Add (P3)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Music, Docker TUI, Signal, Obsidian, Typora, passwords, ChatGPT, Grok, calendar, email, YouTube, WhatsApp, Messages, Photos, X (Super+Shift+letter, about 17 binds)</td><td>present</td><td>none; the keys editor binds only existing table rows</td><td>Omarchy only</td><td>N/A: personal app choices; Add (P3) a way to bind your own commands (not checked whether <code>keys</code> supports it)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Log out to the login screen</td><td>none</td><td>Super+Shift+Q</td><td>ours only</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Pull-down AI shell</td><td>none</td><td>Super+`</td><td>ours only</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Force quit</td><td>none</td><td>Super+Alt+Escape</td><td>ours only</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Minimize, show minimized</td><td>none</td><td>Super+M, Super+Shift+M</td><td>ours only</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Overview</td><td>none</td><td>Super+Ctrl+Up</td><td>ours only</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Mac-style Cmd keys (C, V, Z, X, A, S, F, T, N, O, P, R, W, L, B, I, U, Comma, Tab; 19 remaps)</td><td>none</td><td>xremap</td><td>ours only</td><td>Opt-in with <code>keys mac on</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Control Center pages (17 unbound rows)</td><td>none</td><td>unbound by default</td><td>ours only</td><td>Bind in the keys editor</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Noctalia settings window</td><td>none</td><td>Super+Comma</td><td>ours only</td><td>Clashes with Preferences remap</td></tr>
+</tbody>
+</table></div>
+<h3 id="32-is-each-bxrig-shortcut-reachable-from-the-runner-menu"><a href="#32-is-each-bxrig-shortcut-reachable-from-the-runner-menu" id="32-is-each-bxrig-shortcut-reachable-from-the-runner-menu" name="32-is-each-bxrig-shortcut-reachable-from-the-runner-menu" class="anchor"></a>3.2 Is each BxRig shortcut reachable from the runner menu</h3>
+<p>Every row of <code>bxrig keys show</code>, plus the extra binds in <code>bxrig.lua</code> and the starter file.</p>
+<div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
+<thead>
+<tr><th>BxRig shortcut</th><th>Action</th><th>In the menu</th><th>Where</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Space</td><td>Launch apps</td><td>no</td><td>none (Apps opens <code>bxrig apps</code>, not the runner)</td><td>Different command; Add (P3): <code>runner launch</code> entry</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Alt+M</td><td>Control center</td><td>n/a</td><td>the menu itself</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Alt+Space</td><td>All apps</td><td>yes</td><td>Apps</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+K</td><td>Shortcut cheat sheet</td><td>yes</td><td>Learn, Setup &gt; Keyboard</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Shift+3</td><td>Screenshot screen</td><td>yes</td><td>Trigger &gt; Capture &gt; Screen</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Shift+4</td><td>Screenshot region</td><td>yes</td><td>Trigger &gt; Capture &gt; Region</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Shift+5</td><td>Screenshot menu</td><td>yes</td><td>Trigger &gt; Capture &gt; Screenshot menu</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Shift+R</td><td>Recording toggle</td><td>yes</td><td>Trigger &gt; Capture &gt; Screen recording</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Alt+Shift+R</td><td>Recording of a region</td><td>no</td><td>none</td><td>Add (P2): <code>record toggle --region</code> entry</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Shift+V</td><td>Clipboard history</td><td>yes</td><td>Trigger &gt; Clipboard history</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Ctrl+E</td><td>Emoji</td><td>yes</td><td>Trigger &gt; Emoji</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Ctrl+X</td><td>Dictation toggle</td><td>no</td><td>only <code>Dictation</code> setup under Install</td><td>Add (P2): a toggle entry</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Alt+N</td><td>Do Not Disturb</td><td>yes</td><td>Trigger &gt; Toggle</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Alt+Shift+N</td><td>Night shift</td><td>yes</td><td>Trigger &gt; Toggle &gt; Night light</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Alt+Escape</td><td>Force quit</td><td>yes</td><td>Trigger &gt; Force quit an app</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+M</td><td>Minimize</td><td>yes</td><td>Trigger &gt; Minimize window</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Shift+M</td><td>Show minimized</td><td>yes</td><td>Trigger &gt; Restore window</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Ctrl+Up</td><td>Overview</td><td>yes</td><td>Trigger &gt; Overview</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+`</td><td>AI shell</td><td>yes</td><td>Agent &gt; Pull-down AI shell</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Shift+Q</td><td>Log out</td><td>yes</td><td>System &gt; Logout</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Ctrl+Q</td><td>Lock (starter file)</td><td>yes</td><td>System &gt; Lock</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>17 Control Center page rows</td><td>Open one TUI page</td><td>yes</td><td>Control Center, one entry each</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Cmd-style remaps (19 keys incl. Super+Tab)</td><td>Key remaps</td><td>no</td><td>Setup &gt; Keyboard &gt; Mac-style keys on, off only</td><td>Remaps are not actions; nothing to run</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+S</td><td>Noctalia control center panel</td><td>no</td><td>none</td><td>Add (P1) with the Audio, Wifi, Bluetooth entries</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Comma</td><td>Noctalia settings</td><td>no</td><td>none</td><td>Add (P2)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Alt+Tab</td><td>Noctalia window switcher</td><td>no</td><td>none</td><td>N/A: interactive switcher</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Super+Q, Return, B, E, F, V, J, arrows, workspaces, mouse</td><td>Window and app basics (starter file)</td><td>no</td><td>none</td><td>N/A: window manager actions, not commands</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>XF86 volume and brightness keys</td><td>Hardware keys</td><td>partly</td><td>Setup &gt; Display &gt; Brightness (up, down, 50%, 100%)</td><td>No volume entry</td></tr>
+</tbody>
+</table></div>
+<h2 id="4-summary-and-gaps"><a href="#4-summary-and-gaps" id="4-summary-and-gaps" name="4-summary-and-gaps" class="anchor"></a>4. Summary and gaps</h2>
+<h3 id="counts-rows-of-the-tables-above-a-row-can-stand-for-several-leaf-entries"><a href="#counts-rows-of-the-tables-above-a-row-can-stand-for-several-leaf-entries" id="counts-rows-of-the-tables-above-a-row-can-stand-for-several-leaf-entries" name="counts-rows-of-the-tables-above-a-row-can-stand-for-several-leaf-entries" class="anchor"></a>Counts (rows of the tables above; a row can stand for several leaf entries)</h3>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Status</th><th>Menu (sections 1 and 2)</th><th>Shortcuts (3.1)</th></tr>
+</thead>
+<tbody>
+<tr><td>same</td><td>65</td><td>16</td></tr>
+<tr><td>different on purpose</td><td>8</td><td>15</td></tr>
+<tr><td>ours only</td><td>29</td><td>9</td></tr>
+<tr><td>Omarchy only</td><td>51</td><td>43</td></tr>
+<tr><td>of which: Add (P1)</td><td>10</td><td>4</td></tr>
+<tr><td>of which: Add (P2)</td><td>6</td><td>6</td></tr>
+<tr><td>of which: Add (P3)</td><td>16</td><td>29</td></tr>
+<tr><td>of which: N/A</td><td>19</td><td>4</td></tr>
+</tbody>
+</table></div>
+<p>Size: Omarchy's menu has 10 top-level sections; BxRig's <code>menu items</code> has 13 sections and 298 leaf entries (plus the interactive Search entry). Omarchy leaves were counted as rows, not one by one, because most of its leaves are generated lists (fonts, languages, games).</p>
+<p>Reading the numbers: most of what BxRig lacks is either Omarchy branding and Omarchy-only features (19 menu rows and 4 key rows marked N/A) or low-value extras (P3). The real gaps are few and cluster around daily-use controls: audio, network and Bluetooth panels, idle lock, color picker, recording audio, and restart helpers.</p>
+<h3 id="prioritized-gaps"><a href="#prioritized-gaps" id="prioritized-gaps" name="prioritized-gaps" class="anchor"></a>Prioritized gaps</h3>
+<p>P1, daily use, small to build:</p>
+<ol>
+<li>Setup: Audio, Wifi, Bluetooth entries, plus keys for each (Omarchy Super+Ctrl+A, B, W). Open the Noctalia control center (already used by <code>bxrig.lua</code>) or a mixer. Note: Super+S for the panel clashes with the Save remap when Mac keys are on.</li>
+<li><code>bxrig menu SECTION</code> (jump straight to a submenu, as <code>omarchy-menu NAME</code>), then bind System, Toggle and Hardware menus (Omarchy Super+Escape, Super+Ctrl+O, Super+Ctrl+H, XF86PowerOff).</li>
+<li>Trigger &gt; Capture &gt; Color picker (<code>hyprpicker</code>, optional in the catalog) and a key (Omarchy Super+Print).</li>
+<li>Trigger &gt; Toggle &gt; Idle lock, with a key (Omarchy Super+Ctrl+I).</li>
+<li>Screen recording with desktop audio and with microphone (<code>Record.bx</code> has no audio option).</li>
+<li>Update &gt; Process and Hardware: restart Noctalia, pipewire and wireplumber, Wi-Fi, Bluetooth.</li>
+</ol>
+<p>P2, useful:</p>
+<ol start="7">
+<li>Setup &gt; Config: open <code>hyprland.lua</code> (and the Hyprlock, Hypridle files if BxRig ships them) in the editor; Setup &gt; Defaults &gt; Editor; Setup &gt; Input (natural scroll, repeat rate, layout).</li>
+<li>Update &gt; Firmware (fwupd) and System &gt; Hibernate when resume is configured.</li>
+<li>Keys for dismiss notifications (<code>notify clear</code>), toggle top bar (<code>appearance bar toggle</code>), keyboard window resize, and media transport (<code>playerctl</code> is in the catalog).</li>
+<li>Menu entries for what only has a key today: record a region, dictation toggle, <code>runner launch</code>, Noctalia settings.</li>
+</ol>
+<p>P3, nice to have: reminders, transcode, share, recording with webcam, hybrid GPU, touchpad and touchscreen toggles, window groups, scratchpad, silent move to workspace, zoom, workspace to monitor, keyboard backlight, Print key, Vim, Emacs, Crush and Xbox controller installs, Bash cheat sheet link, a user extension file for the menu, binding your own commands to keys.</p>
+<h3 id="findings-outside-the-comparison"><a href="#findings-outside-the-comparison" id="findings-outside-the-comparison" name="findings-outside-the-comparison" class="anchor"></a>Findings outside the comparison</h3>
+<ul>
+<li>With Mac keys on, the starter <code>hyprland.lua</code> binds Super+V (float), Super+F (fullscreen), Super+B (browser) and <code>bxrig.lua</code> binds Super+S and Super+Comma, while xremap sends Ctrl+V, Ctrl+F, Ctrl+B, Ctrl+S, Ctrl+Comma for the same keys. <code>bxrig keys conflicts</code> printed &quot;No conflicts&quot; on this machine; its docs say it compares against your own <code>hyprland.lua</code>, so whether it sees the starter file's binds was not verified.</li>
+<li>The menu has no volume entries; brightness has four.</li>
+</ul>
+
+	
+
+	
+	
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/reference/runner-vs-omarchy.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/reference/runner-vs-omarchy.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 14, 2026, 3&#x3a;52&#x3a;17 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Runner%20Vs%20Omarchy&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Freference%2Frunner-vs-omarchy%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+	
+</article>
+
+
+
+
+
+
+	<nav class="page-nav d-flex justify-content-between" aria-label="Page navigation">
+		
+		
+			<a class="page-nav__card page-nav__card--prev" href="/reference/config-files/index.html">
+				<span class="page-nav__icon"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
+				<span class="page-nav__text">
+					<span class="page-nav__label">Previous</span>
+					<span class="page-nav__title">Files and folders</span>
+				</span>
+			</a>
+		
+		
+		
+		
+		
+	</nav>
+
+
+
+
+
+
+			</main>
+
+			
+			
+				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#sources-read">Sources read</a></li><li class="toc-level-2"><a href="#1-top-level-sections">1. Top-level sections</a></li><li class="toc-level-2"><a href="#2-sections-entry-by-entry">2. Sections, entry by entry</a></li><li class="toc-level-3"><a href="#21-apps">2.1 Apps</a></li><li class="toc-level-3"><a href="#22-learn">2.2 Learn</a></li><li class="toc-level-3"><a href="#23-trigger-omarchy-trigger-bxrig-trigger">2.3 Trigger &#x28;Omarchy&#x3a; Trigger&#x3b; BxRig&#x3a; Trigger&#x29;</a></li><li class="toc-level-3"><a href="#24-style-omarchy-vs-appearance-bxrig">2.4 Style &#x28;Omarchy&#x29; vs Appearance &#x28;BxRig&#x29;</a></li><li class="toc-level-3"><a href="#25-setup">2.5 Setup</a></li><li class="toc-level-3"><a href="#26-install">2.6 Install</a></li><li class="toc-level-3"><a href="#27-remove">2.7 Remove</a></li><li class="toc-level-3"><a href="#28-update">2.8 Update</a></li><li class="toc-level-3"><a href="#29-about-and-system">2.9 About and System</a></li><li class="toc-level-3"><a href="#210-bxrig-only-sections">2.10 BxRig-only sections</a></li><li class="toc-level-2"><a href="#3-keyboard-shortcuts">3. Keyboard shortcuts</a></li><li class="toc-level-3"><a href="#31-side-by-side">3.1 Side by side</a></li><li class="toc-level-3"><a href="#32-is-each-bxrig-shortcut-reachable-from-the-runner-menu">3.2 Is each BxRig shortcut reachable from the runner menu</a></li><li class="toc-level-2"><a href="#4-summary-and-gaps">4. Summary and gaps</a></li><li class="toc-level-3"><a href="#counts-rows-of-the-tables-above-a-row-can-stand-for-several-leaf-entries">Counts &#x28;rows of the tables above&#x3b; a row can stand for several leaf entries&#x29;</a></li><li class="toc-level-3"><a href="#prioritized-gaps">Prioritized gaps</a></li><li class="toc-level-3"><a href="#findings-outside-the-comparison">Findings outside the comparison</a></li></ul></nav>
+				</aside>
+			
+		</div>
+		
+	</div>
+	
+
+	
+	
+		<footer class="bxsites-footer">
+			<div class="container-fluid bxsites-footer__inner">
+				
+				<div class="bxsites-footer__copy">&copy; 2026 BxRig</div>
+				
+				
+					<div class="bxsites-footer__social"><a class="social-link" href="https://github.com/ortus-boxlang/BoxLang" target="_blank" rel="noopener noreferrer" aria-label="BoxLang on GitHub" title="BoxLang on GitHub"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.333-1.754-1.333-1.754-1.089-.744.083-.729.083-.729 1.205.084 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.303-5.467-1.332-5.467-5.93 0-1.31.468-2.38 1.235-3.22-.123-.303-.535-1.523.117-3.176 0 0 1.008-.322 3.301 1.23A11.5 11.5 0 0 1 12 5.803c1.02.005 2.045.138 3.003.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.118 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.625-5.48 5.92.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 21.795 24 17.298 24 12c0-6.63-5.37-12-12-12"/></svg></a><a class="social-link" href="https://www.boxlang.io" target="_blank" rel="noopener noreferrer" aria-label="BoxLang" title="BoxLang"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></a></div>
+				
+				
+				<div class="bxsites-footer__credit">Built with <a href="https://bxsites.io" target="_blank" rel="noopener noreferrer">BxSites</a></div>
+			</div>
+		</footer>
+	
+
+	
+	<script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+	<script src="/assets/vendor/highlight/highlight.min.js"></script>
+	<script src="/assets/highlight-boxlang.c59b5de4.js"></script>
+	<script>hljs.highlightAll();</script>
+	<script src="/assets/code-lines.66ad0c90.js"></script>
+	<script src="/assets/copy-code.a5acc8cc.js" defer></script>
+	<script src="/assets/admonition-collapse.df9b134e.js" defer></script>
+	<script src="/assets/nav-toggle.6bc5dbe8.js" defer></script>
+	<script src="/assets/toc-collapse.cb73e778.js" defer></script>
+	<script src="/assets/tabs.24dffad6.js" defer></script>
+	<script src="/assets/conditional-content-init.9ef1e0f9.js" defer></script>
+	<script src="/assets/course-progress.3813411a.js" defer></script>
+	<script src="/assets/prompt-init.774781de.js" defer></script>
+	<script src="/assets/contact-form-init.7f7be308.js" defer></script>
+
+	
+	
+
+	
+	
+		<script src="/assets/vendor/mermaid/mermaid.min.js"></script>
+		<script src="/assets/mermaid-init.b2f3ed5c.js"></script>
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+</body>
+</html>
+

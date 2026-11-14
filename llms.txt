@@ -33,3 +33,4 @@
 - [Control Center](https://bxcachy.boxlang.io/guides/control-center.md) ([HTML](https://bxcachy.boxlang.io/guides/control-center/index.html))
 - [Mail catcher](https://bxcachy.boxlang.io/guides/mail.md) ([HTML](https://bxcachy.boxlang.io/guides/mail/index.html))
 - [Pictures in the terminal](https://bxcachy.boxlang.io/guides/images.md) ([HTML](https://bxcachy.boxlang.io/guides/images/index.html))
+- [Runner Vs Omarchy](https://bxcachy.boxlang.io/reference/runner-vs-omarchy.md) ([HTML](https://bxcachy.boxlang.io/reference/runner-vs-omarchy/index.html))
