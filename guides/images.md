@@ -11,7 +11,7 @@ The TUIs can show app icons and screenshots. A picture is never required: when o
 
 | Picture | Sources, in order |
 |---|---|
-| App icon | the installed icon theme and `.desktop` file, the AppStream catalog icons, [Dashboard Icons](https://github.com/homarr-labs/dashboard-icons) (a letter tile when none has it) |
+| App icon | the installed icon theme (your GTK icon theme and what it inherits first, then hicolor) and `.desktop` file, an SVG-only icon turned into a cached 128 px PNG with `rsvg-convert` (librsvg) or ImageMagick when one is installed, the AppStream catalog icons, [Dashboard Icons](https://github.com/homarr-labs/dashboard-icons) (a letter tile when none has it) |
 | Screenshot | the AppStream catalog (`archlinux-appstream-data`, optional), downloaded on first view |
 
 Dashboard Icons is Apache-2.0 licensed. The logos in it belong to their owners and are shown only to identify the app. There is no web image search.
