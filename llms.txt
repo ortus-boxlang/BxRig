@@ -34,3 +34,4 @@
 - [Mail catcher](https://bxcachy.boxlang.io/guides/mail.md) ([HTML](https://bxcachy.boxlang.io/guides/mail/index.html))
 - [Pictures in the terminal](https://bxcachy.boxlang.io/guides/images.md) ([HTML](https://bxcachy.boxlang.io/guides/images/index.html))
 - [Runner Vs Omarchy](https://bxcachy.boxlang.io/reference/runner-vs-omarchy.md) ([HTML](https://bxcachy.boxlang.io/reference/runner-vs-omarchy/index.html))
+- [SHORTCUTS DECISIONS](https://bxcachy.boxlang.io/architecture/SHORTCUTS-DECISIONS.md) ([HTML](https://bxcachy.boxlang.io/architecture/SHORTCUTS-DECISIONS/index.html))
