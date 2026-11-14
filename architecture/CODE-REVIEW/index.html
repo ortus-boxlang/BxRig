@@ -1,0 +1,1025 @@
+
+
+
+
+
+
+
+
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Code review, DRY and encapsulation - BxRig</title>
+	<meta property="og:type" content="website">
+	<meta property="og:site_name" content="BxRig">
+	<meta property="og:title" content="Code review, DRY and encapsulation">
+
+	
+	
+
+	
+	
+		<link rel="canonical" href="https&#x3a;&#x2f;&#x2f;bxcachy.boxlang.io&#x2f;architecture&#x2f;CODE-REVIEW&#x2f;index.html">
+	
+
+	
+	
+		<meta name="description" content="Developer reference. Where the same logic exists more than once, where a concept has no single home, and the plan to fix it.">
+		<meta property="og:description" content="Developer reference. Where the same logic exists more than once, where a concept has no single home, and the plan to fix it.">
+	
+
+	
+	
+
+	
+	
+		<link rel="icon" href="/assets/favicon.png">
+	
+
+	
+	<script>
+		( function () {
+			var configuredMode = "dark";
+			var stored = localStorage.getItem( "bxsites-theme" );
+			var prefersDark = window.matchMedia( "(prefers-color-scheme: dark)" ).matches;
+			var wantsDark = stored ? stored === "dark" : ( configuredMode === "dark" || ( configuredMode === "auto" && prefersDark ) );
+			if ( wantsDark ) {
+				document.documentElement.setAttribute( "data-theme", "dark" );
+			}
+		} )();
+	</script>
+
+	
+	<link rel="stylesheet" href="/assets/vendor/bootstrap/bootstrap.min.css">
+	<link rel="stylesheet" href="/assets/vendor/highlight/github.min.css">
+	<link rel="stylesheet" href="/assets/theme/style.a70338f7.css">
+
+	
+	
+
+	
+	
+		<style>
+			
+			
+				:root {
+					--bxsites-accent: #00C853;
+					--bxsites-link: #00C853;
+					--bxsites-link-hover: color-mix( in srgb, #00C853 85%, black );
+				}
+			
+			
+			
+				[data-theme="dark"] {
+					--bxsites-accent: #00FF78;
+					--bxsites-link: #00FF78;
+					--bxsites-link-hover: color-mix( in srgb, #00FF78 85%, white );
+				}
+			
+		</style>
+	
+
+	
+	
+		<style>
+			.bxsites-nav-nested {
+				border-inline-start: 2px solid var(--bxsites-accent, var(--bxsites-border));
+				margin-inline-start: 0.2rem;
+				padding-inline-start: 0.85rem;
+			}
+		</style>
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+		<script>window.__BXSITES_BASE_PATH__ = "/";</script>
+		<script>window.__BXSITES_SEARCH_NO_RESULTS__ = "No\x20results\x20found.";</script>
+		<script src="/assets/vendor/minisearch/minisearch.js"></script>
+		<script src="/assets/search.f14e08a2.js" defer></script>
+	
+
+	
+	
+
+	
+	
+
+	<script src="/assets/vendor/alpine/cdn.min.js" defer></script>
+</head>
+
+
+<body
+	x-data="{ dark: document.documentElement.getAttribute( 'data-theme' ) === 'dark', navOpen: window.matchMedia( '(min-width: 992px)' ).matches ? ( localStorage.getItem( 'bxsites-nav-open' ) !== null ? localStorage.getItem( 'bxsites-nav-open' ) === 'true' : true ) : false }"
+	x-init="$watch( 'dark', v => { document.documentElement.setAttribute( 'data-theme', v ? 'dark' : 'light' ); localStorage.setItem( 'bxsites-theme', v ? 'dark' : 'light' ) } ); $watch( 'navOpen', v => { if ( window.matchMedia( '(min-width: 992px)' ).matches ) localStorage.setItem( 'bxsites-nav-open', v ) } )">
+	
+	<nav class="navbar navbar-expand-lg brand-navbar">
+		<div class="container-fluid navbar-row">
+			
+			<button
+				class="navbar-toggler"
+				type="button"
+				@click="navOpen = !navOpen"
+				:aria-expanded="navOpen.toString()"
+				aria-controls="bxsites-sidebar"
+				aria-label="Toggle navigation">
+				<span class="navbar-toggler-icon"></span>
+			</button>
+
+			
+			<a class="navbar-brand brand-mark" href="/"><img class="brand-logo" src="/assets/bxrig-logo.svg" alt=""><span class="brand-name">BxRig</span></a>
+
+			
+			<div class="navbar-controls">
+				
+				
+					
+
+	<div class="bxsites-search position-relative">
+		<input
+			type="search"
+			id="bxsites-search-input"
+			class="form-control"
+			placeholder="Search..."
+			aria-label="Search">
+		<kbd class="bxsites-search-kbd" aria-hidden="true">Ctrl K</kbd>
+		<ul id="bxsites-search-results" class="bxsites-search-results list-unstyled"></ul>
+	</div>
+
+
+
+				
+
+				
+				
+
+				
+				
+					<a
+						class="repo-link"
+						href="https://github.com/ortus-boxlang/bxrig"
+						target="_blank"
+						rel="noopener noreferrer"
+						aria-label="Repository"
+						title="Repository">
+						<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.333-1.754-1.333-1.754-1.089-.744.083-.729.083-.729 1.205.084 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.303-5.467-1.332-5.467-5.93 0-1.31.468-2.38 1.235-3.22-.123-.303-.535-1.523.117-3.176 0 0 1.008-.322 3.301 1.23A11.5 11.5 0 0 1 12 5.803c1.02.005 2.045.138 3.003.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.118 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.625-5.48 5.92.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 21.795 24 17.298 24 12c0-6.63-5.37-12-12-12"/></svg>
+					</a>
+				
+
+				
+				<button
+					type="button"
+					class="theme-toggle"
+					@click="dark = !dark"
+					aria-label="Toggle dark mode">
+					<span x-show="!dark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg></span>
+					<span x-show="dark" x-cloak><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></span>
+				</button>
+			</div>
+			
+		</div>
+		
+	</nav>
+
+	
+	<div class="container-fluid">
+		
+		<div class="row" :class="{ 'bxsites-nav-collapsed' : !navOpen }">
+			
+			<aside class="col-lg-3 col-xl-2 sidebar" id="bxsites-sidebar" x-show="navOpen" x-cloak>
+				
+				
+				<ul class="nav flex-column"><li class="nav-item"><a class="nav-link" href="/index.html">Home</a></li><li class="nav-item"><a class="nav-link" href="/getting-started/index.html">Getting started</a></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/architecture/index.html">Architecture</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Architecture section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/architecture/COMMAND-CONTRACT/index.html">Command contract</a></li><li class="nav-item"><a class="nav-link" href="/architecture/MATCHBOX-PARITY/index.html">MatchBox parity</a></li><li class="nav-item"><a class="nav-link" href="/architecture/wizard/index.html">The wizard program</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><span class="nav-link disabled">guides</span><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle guides section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/guides/wizard/index.html">The setup wizard</a></li><li class="nav-item"><a class="nav-link" href="/guides/menu/index.html">The control center</a></li><li class="nav-item"><a class="nav-link" href="/guides/desktop/index.html">The desktop</a></li><li class="nav-item"><a class="nav-link" href="/guides/appearance/index.html">Appearance</a></li><li class="nav-item"><a class="nav-link" href="/guides/shortcuts/index.html">Shortcuts and Mac keys</a></li><li class="nav-item"><a class="nav-link" href="/guides/themes/index.html">Themes</a></li><li class="nav-item"><a class="nav-link" href="/guides/apps/index.html">Apps and web apps</a></li><li class="nav-item"><a class="nav-link" href="/guides/system/index.html">Displays, power and time</a></li><li class="nav-item"><a class="nav-link" href="/guides/vms/index.html">Virtual machines</a></li><li class="nav-item"><a class="nav-link" href="/guides/ai/index.html">AI agents and skills</a></li><li class="nav-item"><a class="nav-link" href="/guides/backups/index.html">Backups and BxTimeMachine</a></li><li class="nav-item"><a class="nav-link" href="/guides/nas/index.html">Your NAS</a></li><li class="nav-item"><a class="nav-link" href="/guides/boxlang/index.html">BoxLang and MatchBox</a></li><li class="nav-item"><a class="nav-link" href="/guides/updates/index.html">Updates and channels</a></li><li class="nav-item"><a class="nav-link" href="/guides/settings/index.html">Move to another machine</a></li><li class="nav-item"><a class="nav-link" href="/guides/security/index.html">Security</a></li><li class="nav-item"><a class="nav-link" href="/guides/troubleshooting/index.html">Troubleshooting</a></li><li class="nav-item"><a class="nav-link" href="/guides/contributing/index.html">Contributing and docs versions</a></li><li class="nav-item"><a class="nav-link" href="/guides/control-center/index.html">Control Center</a></li><li class="nav-item"><a class="nav-link" href="/guides/mail/index.html">Mail catcher</a></li><li class="nav-item"><a class="nav-link" href="/guides/images/index.html">Pictures in the terminal</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><span class="nav-link disabled">reference</span><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle reference section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/reference/commands/index.html">Command reference</a></li><li class="nav-item"><a class="nav-link" href="/reference/config-files/index.html">Files and folders</a></li><li class="nav-item"><a class="nav-link" href="/reference/runner-vs-omarchy/index.html">Runner Vs Omarchy</a></li></ul></li></ul>
+				<a class="bxsites-powered-by" href="https://bxsites.io" target="_blank" rel="noopener noreferrer">
+					<img class="bxsites-powered-by__logo" src="/assets/bxsites-logo.svg" alt="" aria-hidden="true"> <span>Powered by BxSites</span>
+				</a>
+			</aside>
+
+			
+			<main class="col-lg-9 col-xl-8 content">
+					
+
+	
+	<article class="page-content">
+		
+		
+		
+		
+		
+		
+		
+		<h1 class="page-title" id="page-title">
+			<a href="#page-title" id="page-title" class="anchor"></a>
+			
+			Code review, DRY and encapsulation
+		</h1>
+		
+		
+			<p class="page-summary">Developer reference. Where the same logic exists more than once, where a concept has no single home, and the plan to fix it.</p>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#0-the-short-version">0. The short version</a></li><li class="toc-level-2"><a href="#1-constraints-that-shape-every-proposal">1. Constraints that shape every proposal</a></li><li class="toc-level-2"><a href="#2-findings">2. Findings</a></li><li class="toc-level-3"><a href="#a-plumbing-copied-into-every-command-class">A. Plumbing copied into every command class</a></li><li class="toc-level-3"><a href="#b-external-tools-called-from-many-places">B. External tools called from many places</a></li><li class="toc-level-3"><a href="#c-command-registry-and-mainbx">C. Command registry and Main.bx</a></li><li class="toc-level-3"><a href="#d-parsers">D. Parsers</a></li><li class="toc-level-3"><a href="#e-shortcuts">E. Shortcuts</a></li><li class="toc-level-3"><a href="#f-tui-layer">F. TUI layer</a></li><li class="toc-level-3"><a href="#g-tests">G. Tests</a></li><li class="toc-level-3"><a href="#h-constants-and-leaks">H. Constants and leaks</a></li><li class="toc-level-2"><a href="#3-test-coverage-of-the-review-itself">3. Test coverage of the review itself</a></li><li class="toc-level-2"><a href="#4-what-is-already-good-keep-it">4. What is already good &#x28;keep it&#x29;</a></li><li class="toc-level-2"><a href="#5-where-mainbx-and-clijson-overlap-today-detail-for-f13">5. Where Main.bx and cli.json overlap today &#x28;detail for F13&#x29;</a></li><li class="toc-level-2"><a href="#6-counts-table-single-list-for-tracking-progress">6. Counts table &#x28;single list, for tracking progress&#x29;</a></li><li class="toc-level-2"><a href="#7-order-of-operations-that-keeps-risk-low">7. Order of operations that keeps risk low</a></li><li class="toc-level-2"><a href="#8-ratchet-checks-to-add-cheap-no-new-framework">8. Ratchet checks to add &#x28;cheap, no new framework&#x29;</a></li><li class="toc-level-2"><a href="#9-ranked-top-15-by-payoff">9. Ranked top 15 by payoff</a></li><li class="toc-level-2"><a href="#10-phased-refactor-plan">10. Phased refactor plan</a></li><li class="toc-level-2"><a href="#11-rules-for-the-contributing-docs-add-to-docsguidescontributingmd">11. Rules for the contributing docs &#x28;add to docs&#x2f;guides&#x2f;contributing.md &#x29;</a></li><li class="toc-level-2"><a href="#appendix-a-how-the-numbers-were-produced">Appendix A&#x3a; how the numbers were produced</a></li></ul></details>
+		
+
+		
+		<h1 id="code-review-repeat-yourself-never-one-home-per-concept"><a href="#code-review-repeat-yourself-never-one-home-per-concept" id="code-review-repeat-yourself-never-one-home-per-concept" name="code-review-repeat-yourself-never-one-home-per-concept" class="anchor"></a>Code review: repeat yourself never, one home per concept</h1>
+<p>Read-only review of the tree on 2026-11-14 (HEAD <code>5beb9a1</code>, <code>development</code>). Nothing was changed except this file.
+Numbers come from <code>grep</code> and <code>wc</code> over <code>src/</code>, <code>tests/</code>, <code>docs/</code>, <code>bootstrap/</code> and <code>.github/</code>; each can be re-run (appendix A).</p>
+<p>Scope: <code>src/Main.bx</code> (1018 lines), <code>src/bxrig/*.bx</code> (137 classes, about 24,600 lines, of which about 3,850 are generated <code>*Data.bx</code>), 74 shell tests, 20 <code>.bxs</code> tests, 8 generators.</p>
+<h2 id="0-the-short-version"><a href="#0-the-short-version" id="0-the-short-version" name="0-the-short-version" class="anchor"></a>0. The short version</h2>
+<ul>
+<li>The code is consistent in style, and that is the problem: the same 5 to 10 helper lines were pasted into 20 to 57 classes instead of living once. Counting definitions only, about 550 lines are pure copies. Counting call sites that depend on a copy (<code>say(</code> 788, <code>tryExec(</code> 314, <code>has(</code> 143, <code>fail(</code> 267) the coupling is much bigger than the line count.</li>
+<li>Five copies have already <strong>diverged</strong> and are now behaviour bugs, not style (section 2, marked BUG): <code>dataHome()</code> means two different directories, <code>XDG_CONFIG_HOME</code> is honoured by 4 classes and ignored by the config service, two <code>.desktop</code> parsers disagree on what is an app, <code>has()</code> has two meanings, and Main accepts any flag for any command.</li>
+<li>Main.bx is a 1018-line <code>switch</code> that is simultaneously the command registry, the flag whitelist, the usage text store, the arity checker and, in three places, domain logic. The command list already exists once as data (<code>docs/reference/cli.json</code>) and is only checked against Main, not used by it.</li>
+<li>Tests: 70 of 74 shell tests define the same <code>fail()</code>; 64 define the same <code>code()</code>; 20 of 20 <code>.bxs</code> tests define the same <code>check()</code>; every new test must be registered by hand in <code>ci.yml</code> twice, in <code>tests/arch/suite.sh</code> and in the <code>.bxs</code> list.</li>
+</ul>
+<p>Findings: 27 (8 high, 15 medium, 4 low). Ranked top 15 is in section 9, the phased plan in section 10, the rules for contributing docs in section 11.</p>
+<h2 id="1-constraints-that-shape-every-proposal"><a href="#1-constraints-that-shape-every-proposal" id="1-constraints-that-shape-every-proposal" name="1-constraints-that-shape-every-proposal" class="anchor"></a>1. Constraints that shape every proposal</h2>
+<p>BoxLang on MatchBox has quirks recorded in this repo (<code>COMMAND-CONTRACT.md</code> 13.x, <code>MATCHBOX-PARITY.md</code>, comments in <code>AppsModel.bx</code>, <code>Main.bx</code>). Every abstraction below respects them:</p>
+<div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
+<thead>
+<tr><th>Quirk</th><th>Consequence for the design</th></tr>
+</thead>
+<tbody>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>==</code> on strings is case-insensitive</td><td>Anything keyed by exact case (desktop entry keys, key names <code>q</code> vs <code>Q</code>) must use <code>compare( a, b ) == 0</code>. Shared helpers must hide that, so callers cannot get it wrong (finding F17, F21).</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Struct keys are case-insensitive (assumed from the same rule; verify on MatchBox before relying on it)</td><td>A generic INI or properties parser must not return a plain struct for case-distinct keys. Return an array of <code>{ key, value }</code> pairs plus a <code>get( section, key )</code> that uses <code>compare</code>.</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Closures cannot call class methods</td><td>Shared helpers are called outside <code>.map( function ... )</code> bodies, or the closure receives everything it needs as arguments. No design below needs a closure to call <code>variables.x.y()</code>. Callbacks stored in structs (<code>ask.make</code>, provider <code>actions[].run</code>) already work and stay.</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>No postfix operators on indexes (<code>a[ i ]++</code>)</td><td>Counters are written <code>a[ i ] = a[ i ] + 1</code>. Relevant to <code>Options</code> (flag counting) and <code>Keys</code>.</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Big struct literals are built stepwise</td><td><code>CommandSpec</code> and <code>ProviderSpec</code> are assembled with <code>s = {}; s.yes = ...</code>, not one 60-key literal. The generator writes it that way (it already does for <code>HelpData</code>).</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>extends</code> is used 0 times in <code>src/</code>; mixins do not exist</td><td><strong>No base class design.</strong> Shared behaviour comes from small collaborator classes held in <code>variables.*</code> plus one-line delegates, the pattern <code>KeysService.say</code> and <code>BackupMove.fail</code> already use.</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>No static members</td><td>Utilities are tiny classes instantiated where used (<code>new bxrig.Text()</code>), as <code>new bxrig.Shortcuts()</code> and <code>new bxrig.Brand()</code> are today.</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>var</code> declared in one <code>case</code> is not visible in another (#159)</td><td>A registry refactor of Main must give each route its own function or scope, not rely on the un-<code>var</code>ed globals Main uses today (<code>pk</code>, <code>cat</code>, <code>st</code> leak between cases).</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>A missing key of a parsed JSON struct inside <code>try</code> in a nested function panicked the native runner</td><td><code>JsonStore.read</code> checks <code>structKeyExists</code> before every access and never reads a missing key inside its <code>try</code>.</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>arguments.x</code> prefix is used everywhere</td><td>New classes keep the convention, so a sed-based migration stays mechanical.</td></tr>
+</tbody>
+</table></div>
+<p>Unverified and needing a one-day spike before Phase 7 of the plan: whether a <code>.bxs</code> under <code>tests/</code> can resolve a helper class (script discovery looks only in the script's own directory, <code>MATCHBOX-PARITY.md</code> section 3), and whether <code>invoke( obj, &quot;name&quot;, args )</code> works in a native build (needed only for the optional full-registry dispatch in F13).</p>
+<h2 id="2-findings"><a href="#2-findings" id="2-findings" name="2-findings" class="anchor"></a>2. Findings</h2>
+<p>Severity: <strong>High</strong> = copies have diverged (bug) or there are more than 30; <strong>Medium</strong> = 8 to 30 copies or a missing owner; <strong>Low</strong> = small, mostly cosmetic. Effort: S (under a day), M (1 to 3 days), L (a week).</p>
+<h3 id="a-plumbing-copied-into-every-command-class"><a href="#a-plumbing-copied-into-every-command-class" id="a-plumbing-copied-into-every-command-class" name="a-plumbing-copied-into-every-command-class" class="anchor"></a>A. Plumbing copied into every command class</h3>
+<h4 id="f01-high-effort-m-say--fail--envelope-building-57-files"><a href="#f01-high-effort-m-say--fail--envelope-building-57-files" id="f01-high-effort-m-say--fail--envelope-building-57-files" name="f01-high-effort-m-say--fail--envelope-building-57-files" class="anchor"></a>F01 (High, effort M): <code>say</code> / <code>fail</code> / envelope building, 57 files</h4>
+<p>What: Each command class re-declares how to print a result: the <code>--json</code> envelope or the human lines, then return the exit code. <code>Cli.envelope</code> is the only shared part, so every class still writes the <code>if ( asJson ) println( envelope ) else for lines println</code> branch itself.</p>
+<p>Where (counts from <code>grep -h &quot;function say&quot;</code>):</p>
+<ul>
+<li><code>function say( command, code, data, asJson, lines = [] )</code> 16 files (<code>Launchers.bx:67</code>, <code>Web.bx:19</code>, <code>Apps.bx</code>, <code>Menu.bx</code>, ...)</li>
+<li><code>function say( code, data, asJson, lines = [], dry = false )</code> 14 files (<code>Time.bx:32</code>, <code>Appearance.bx:33</code>, ...)</li>
+<li><code>...lines = [], dryRun = false</code> 11 files (<code>Vm.bx:37</code>, <code>Mail.bx:31</code>, ...), plus 5 more variants. 54 definitions, 8 signatures, 2 argument orders (command first or code first).</li>
+<li>Inline envelope without a helper: <code>variables.cli.envelope(</code> in 66 files, 96 sites; 15 in <code>Main.bx</code>.</li>
+<li><code>fail</code>: 17 files, 5 shapes: <code>Time.bx:37</code>, <code>Appearance.bx:39</code>, <code>Mail.bx:37</code> (command first), <code>Pkg.bx:25</code>, <code>Vm.bx:43</code>, <code>BackupMove.bx:19</code> (delegates to another class).</li>
+<li><code>error:</code> prefix hand-written 147 times.</li>
+</ul>
+<pre><code>// Time.bx:32, identical in 13 other classes except the signature
+function say( code, data, asJson, lines = [], dry = false ) {
+    if ( arguments.asJson ) println( variables.cli.envelope( &quot;time&quot;, arguments.code, arguments.data, arguments.dry ) );
+    else for ( var l in arguments.lines ) println( l );
+    return arguments.code;
+}
+</code></pre>
+<p>Single home: <code>Cli.bx</code> (already injected into 71 classes as <code>variables.cli</code>; no new constructor wiring) plus a tiny bound facade <code>Out</code>.</p>
+<pre><code>class Cli {   // existing, extended
+    function say( command, code, data, asJson, lines = [], dry = false )   // returns code
+    function fail( command, code, msg, asJson )                            // { error: msg } and &quot;error: msg&quot;
+    function scoped( command )                                             // -&gt; Out bound to a command name
+}
+class Out {
+    function say( code, data, asJson, lines = [], dry = false )
+    function fail( code, msg, asJson )
+    function usage( msg, asJson )          // code 2
+    function precondition( msg, asJson )   // code 4
+    function failed( msg, asJson )         // code 6 (see F25)
+    function sub( command )                // keys set, keys reset: same class, other command string
+}
+</code></pre>
+<p>Replaces: 54 <code>say</code> definitions, 17 <code>fail</code>, 96 inline envelope sites. Migration keeps call sites untouched by leaving a <strong>one-line delegate</strong> per class (<code>function say( ... ) { return variables.out.say( ... ); }</code>), removed by sed in a later step. <code>Cli.emitMap</code> stays.</p>
+<p>Quirk limits: no base class, so every class still holds <code>variables.out</code>; the two argument orders need both <code>Out.say( code, ... )</code> and <code>Cli.say( command, code, ... )</code>. Closures never call <code>say</code>, checked.</p>
+<p>Risk: low, output is covered by about 300 <code>--json | jq</code> assertions (<code>grep -c &quot;\-\-json | jq&quot; tests/*.sh</code>). The only trap is <code>Time.say</code> and others bind a constant command string while <code>Launchers</code> passes it per call.</p>
+<h4 id="f02-high-effort-m-process-execution-tryexec-has-isroot-run-myself-33--28-files"><a href="#f02-high-effort-m-process-execution-tryexec-has-isroot-run-myself-33--28-files" id="f02-high-effort-m-process-execution-tryexec-has-isroot-run-myself-33--28-files" name="f02-high-effort-m-process-execution-tryexec-has-isroot-run-myself-33--28-files" class="anchor"></a>F02 (High, effort M): process execution, <code>tryExec</code>, <code>has</code>, <code>isRoot</code>, run-myself, 33 + 28 files</h4>
+<p>What: &quot;run an argv, never throw, give <code>{ exitCode, output }</code>&quot; is written 33 times; &quot;is this command installed&quot; 28 times; &quot;run <code>bxrig</code> itself&quot; 5 ways. The class that really owns process execution is called <code>Installer</code>, so 57 files <code>new bxrig.Installer( runner )</code> just to call <code>.exec</code>.</p>
+<p>Where:</p>
+<ul>
+<li><code>tryExec</code>: 33 files, 5 different default timeouts (20, 30, 60, 120, 600), 2 shapes (<code>Pkg.bx:30</code> adds <code>timeout: false</code>, the others do not, so <code>r.timeout</code> is undefined in 32 classes). 42 <code>exitCode: 127</code> fallbacks in 39 files.</li>
+<li><code>has</code>: 25 byte-identical lines <code>function has( name ) { return tryExec( [ &quot;sh&quot;, &quot;-c&quot;, 'command -v &quot;$1&quot;', &quot;_&quot;, arguments.name ], 10 ).exitCode == 0; }</code> (<code>Time.bx:31</code>, <code>Power.bx:26</code>, <code>Nas.bx:34</code>, ... ); <code>Menu.bx:99</code> without try; <code>Sdk.bx:43</code>, <code>TuiSys.bx:22</code> different.</li>
+<li><strong>BUG (semantics)</strong>: <code>Installer.hasCommand</code> runs <code>name --version</code> (30 call sites in 12 files: <code>Pkg</code>, <code>Packages</code>, <code>Setup</code> x4, <code>Assets</code>, <code>Time</code>, <code>Tiling</code>, <code>KeysService</code>, <code>Session</code>). <code>has</code> uses <code>command -v</code>. A tool with no <code>--version</code> is &quot;missing&quot; in one and present in the other, and the first one <strong>executes the tool</strong>. Test stubs are shaped by it (<code>time-test.sh</code> sudo stub answers <code>--version</code>).</li>
+<li><strong>BUG (contract 2.9)</strong>: <code>TuiSys.bx:23</code> builds a shell string: <code>run( &quot;sh&quot;, [ &quot;-c&quot;, &quot;command -v &quot; &amp; arguments.cmd ], 5 )</code>. Command name is concatenated unquoted; the 25 other copies pass it as <code>$1</code>.</li>
+<li>Run-myself: <code>ControlCenter.bx:58 runCli</code>, <code>TimeMachine.bx:18 runCli</code> (identical), <code>TuiSys.bx:6 bx</code>, <code>DashboardData.bx:79,90</code> direct <code>systemExecute( self(), ... )</code>, <code>ControlCenter.bx:70 runArgv</code>. Five paths, three different timeouts (1800, 120, 40).</li>
+<li><code>self()</code>: 9 identical copies (<code>getSystemSetting( &quot;BXRIG_SELF&quot;, &quot;bxrig&quot; )</code>).</li>
+</ul>
+<p>Single home: <code>Proc.bx</code>. <code>Installer</code> keeps only <code>steps()</code> / <code>run()</code> and receives a <code>Proc</code>.</p>
+<pre><code>class Proc {
+    function init( runner = &quot;&quot; )                       // the same injectable runner Installer has today (tests rely on it)
+    function exec( argv, timeout = 30 )                // -&gt; { exitCode, output, timeout }; 127 + message when it cannot start; never throws
+    function has( name )                               // `command -v` through argv, never a shell string
+    function works( name )                             // `name --version` exit 0, only where that is the actual question
+    function isRoot()
+    function self( args, timeout = 1800 )              // runs bxrig itself (BXRIG_SELF)
+    function selfData( args )                          // `bxrig ARGS --json` -&gt; data struct or {}  (TuiSys.bx today)
+}
+</code></pre>
+<p>Replaces: 33 <code>tryExec</code>, 28 <code>has</code>, <code>Installer.exec/isRoot/hasCommand</code>, 9 <code>self</code>, 5 run-myself paths, <code>TuiSys.run/has/bx/self</code>. <code>variables.inst.exec</code> has 112 call sites in 55 files; keep <code>Installer.exec</code> as a deprecated forwarder for one release so the batch can be mechanical.</p>
+<p>Decision needed from the owner: pick one meaning for &quot;has&quot;. Proposal: <code>has</code> = <code>command -v</code> everywhere, <code>works</code> kept for the 6 places that really check a version (<code>Sdk</code>, <code>Java</code>, <code>Setup.hasYay</code>). Then the test stubs for <code>sudo</code> and <code>yay</code> no longer need a <code>--version</code> branch.</p>
+<p>Quirk limits: injectable runner is stored in <code>variables</code> and called as <code>variables.custom( argv, timeout )</code>; works since MatchBox #158.</p>
+<p>Risk: medium for the <code>has</code> semantic change (it touches the stubs of 21 tests); everything else is mechanical. Guards: all <code>*-test.sh</code> that stub binaries, <code>installer_test.bxs</code>.</p>
+<h4 id="f03-high-effort-s-then-m-environment-home-and-path-helpers-bug"><a href="#f03-high-effort-s-then-m-environment-home-and-path-helpers-bug" id="f03-high-effort-s-then-m-environment-home-and-path-helpers-bug" name="f03-high-effort-s-then-m-environment-home-and-path-helpers-bug" class="anchor"></a>F03 (High, effort S then M): environment, home and path helpers, BUG</h4>
+<p>What: the &quot;where do my files live&quot; question is answered 40 times in 6 flavours, and the answers disagree.</p>
+<p>Where:</p>
+<ul>
+<li><code>home()</code> 17 files (14 identical), <code>env( name, fallback )</code> 11 files, <code>dataHome()</code> 8 files, <code>cfg()</code>/<code>cfgHome()</code> 8, <code>appsDir()</code> 2, <code>cacheDir()</code> 2.</li>
+<li><strong>BUG, <code>dataHome()</code> means two things</strong>: <code>Db.bx:21</code>, <code>Vm.bx:21</code>, <code>Dotfiles.bx:24</code>, <code>BackupConfig.bx:26</code>, <code>Secrets.bx:44</code> return <code>&#x24;BXRIG_DATA_HOME or &#x7e;&#x2f;.local&#x2f;share&#x2f;bxrig&#x60;&#x3b; &#x60;Launchers.bx&#x3a;24&#x60; returns &#x60;&#x24;XDG_DATA_HOME or ~/.local/share</code> (no <code>bxrig</code>). Same name, different directory, so a reader or a sed can swap them silently.</li>
+<li><strong>BUG, split brain on config home</strong>: <code>ConfigService.bx:16</code> = <code>$BXRIG_CONFIG_HOME or ~/.config</code> (ignores <code>XDG_CONFIG_HOME</code>). <code>Launchers.bx:31</code>, <code>Editor.bx:37</code>, <code>Strata.bx:20</code>, <code>IconTheme.bx:21</code> honour <code>XDG_CONFIG_HOME</code> and ignore <code>BXRIG_CONFIG_HOME</code>. A user with <code>XDG_CONFIG_HOME=~/cfg</code> gets <code>bxrig.lua</code> in <code>~/.config/hypr</code> and the Neovim starter in <code>~/cfg/nvim</code>. Tests never set <code>XDG_CONFIG_HOME</code>, so no test sees it.</li>
+<li>Cache: <code>AppsData.bx:42</code> and <code>ImageCache.bx:31</code> each spell the <code>BXRIG_CACHE_HOME</code>, <code>XDG_CACHE_HOME</code>, <code>~/.cache/bxrig</code> chain.</li>
+<li>Path literals: <code>/bxrig/*.json</code> appears in 17 classes; 97 hits for <code>.config</code> or <code>/bxrig/</code> strings.</li>
+<li>State home exists only in <code>ConfigService.stateDir</code> (<code>BXRIG_STATE_HOME</code>, <code>XDG_STATE_HOME</code> ignored).</li>
+</ul>
+<p>Single home: <code>Env.bx</code>, one precedence rule for everything: <code>BXRIG_*_HOME</code> override, then <code>XDG_*_HOME</code>, then <code>$HOME</code> default.</p>
+<pre><code>class Env {
+    function init( home = &quot;&quot; )                         // test override, replaces the `variables.opts.home` hack in IconTheme
+    function get( name, fallback = &quot;&quot; )                // getSystemSetting with empty -&gt; fallback (the 11 `env` copies)
+    function home()
+    function config( sub = &quot;&quot; )                        // ~/.config[/bxrig/sub]  : BXRIG_CONFIG_HOME &gt; XDG_CONFIG_HOME &gt; ~/.config
+    function data( sub = &quot;&quot; )                          // ~/.local/share/bxrig[/sub]
+    function xdgData( sub = &quot;&quot; )                       // ~/.local/share[/sub]   (desktop entries, icons; Launchers, Web, Installer)
+    function cache( sub = &quot;&quot; )  function state( sub = &quot;&quot; )
+    function self()                                    // BXRIG_SELF
+}
+</code></pre>
+<p>Replaces: 17 <code>home</code>, 11 <code>env</code>, 8 <code>dataHome</code>, 8 <code>cfg*</code>, 9 <code>self</code>, cache copies, and <code>ConfigService.cfgHome/stateDir</code> (they delegate). Two distinct method names (<code>data</code> vs <code>xdgData</code>) remove the <code>dataHome</code> ambiguity.</p>
+<p>Quirk limits: none (pure functions of <code>getSystemSetting</code>). Keep <code>arguments.</code> prefix.</p>
+<p>Risk: the XDG fix is a deliberate behaviour change for users who set <code>XDG_CONFIG_HOME</code>; document it in <code>config-files.md</code>. Add one test that sets it. Guards: <code>config-test.sh</code>, <code>launchers-test.sh</code>, <code>editor-test.sh</code>, <code>strata-test.sh</code>, <code>icon_theme_test.bxs</code>.</p>
+<h4 id="f04-high-effort-m-the-mutation-protocol-plan---yes---dry-run-root-guard-44-files"><a href="#f04-high-effort-m-the-mutation-protocol-plan---yes---dry-run-root-guard-44-files" id="f04-high-effort-m-the-mutation-protocol-plan---yes---dry-run-root-guard-44-files" name="f04-high-effort-m-the-mutation-protocol-plan---yes---dry-run-root-guard-44-files" class="anchor"></a>F04 (High, effort M): the mutation protocol (plan, <code>--yes</code>, <code>--dry-run</code>, root guard), 44 files</h4>
+<p>What: <code>COMMAND-CONTRACT.md</code> section 2 defines one protocol for every mutating verb. It is re-implemented by hand per command.</p>
+<p>Where (counts):</p>
+<ul>
+<li>&quot;Nothing was changed&quot; 89 times in 44 files; &quot;Add --yes to apply&quot; 80; <code>arguments.yes</code> 175 uses in 44 files; &quot;Plan:&quot;/&quot;Dry run&quot; banners 103 in 52 files.</li>
+<li>Three local plan runners with the same shape and different details: <code>Tweaks.bx:31 runPlan( cmd, title, cmds, yes, dry, asJson, data )</code> (timeout 900, exit 6 on the first failure), <code>Time.bx:93 runPlan( title, cmds, yes, dry, asJson, data )</code>, <code>BackupData.bx:128 plan( title, lines, yes, dry, asJson, data )</code>; <code>Security.bx:146 sudoCmd</code>, <code>Power</code>, <code>Nas</code>, <code>Containers</code>, <code>Cloud</code> each have a variant inline.</li>
+<li>Root guard: the sentence &quot;Run as a regular user&quot; is written 15 times (<code>SetupPlan.bx</code> x8, <code>Launchers.bx:167</code>, <code>Refresh.bx:109</code>, <code>Tiling.bx:59</code>, <code>Assets.bx:57</code>, <code>Time.bx:160</code>, <code>Pkg.bx:188</code>). 19 files put <code>&quot;sudo&quot;</code> into argv (71 refs) but only 12 check <code>isRoot()</code>; the contract rule 4 and rule 5 are enforced by convention.</li>
+<li>Which exit code a plan without <code>--yes</code> returns: 2 in all copies checked, but nothing enforces it.</li>
+</ul>
+<p>Single home: <code>Mutation.bx</code>, a plan object that renders itself and runs itself.</p>
+<pre><code>class Mutation {
+    function init( out, proc, title )                       // out: the Out of F01, proc: F02
+    function step( argv, timeout = 900, label = &quot;&quot; )        // add one argv command (sudo stays visible in the plan)
+    function note( line )  function data( key, value )
+    function needUser()                                     // sets the &quot;Run as a regular user&quot; precondition once
+    function run( yes, dry, asJson )                        // no --yes: plan, exit 2; --dry-run: plan, exit 0; else run, first failure -&gt; 6
+}
+</code></pre>
+<p>Replaces: <code>Tweaks.runPlan</code>, <code>Time.runPlan</code>, <code>BackupData.plan</code>, the inline plan blocks in about 40 commands, 15 root-guard sentences. <code>SetupPlan</code>/<code>InitPlan</code> already return <code>{ steps: [ { commands: [ argv ] } ] }</code>; <code>Mutation</code> takes that shape as input, so the pure planners stay.</p>
+<p>Quirk limits: the plan holds argv arrays only (rule 9), no closures needed. Steps that run in a loop use <code>var</code> inside the loop body, not shared across <code>case</code>s.</p>
+<p>Risk: medium. Output text is asserted by many tests (<code>grep -q 'Nothing was changed'</code>). Keep the wording byte-identical in the first version; unify wording later.</p>
+<h4 id="f05-medium-effort-m-json-settings-files-read-and-written-by-hand-37-sites"><a href="#f05-medium-effort-m-json-settings-files-read-and-written-by-hand-37-sites" id="f05-medium-effort-m-json-settings-files-read-and-written-by-hand-37-sites" name="f05-medium-effort-m-json-settings-files-read-and-written-by-hand-37-sites" class="anchor"></a>F05 (Medium, effort M): JSON settings files read and written by hand, 37 sites</h4>
+<p>What: 37 sites do <code>jsonDeserialize( fileRead( x ) )</code>, 24 of them inside their own <code>try { } catch ( any e ) { return {}; }</code>, then a merge into defaults, then (for 8 classes) a direct <code>fileWrite</code>.</p>
+<p>Where:</p>
+<ul>
+<li>Readers: <code>Appearance.bx:84</code>, <code>Display.bx:48</code>, <code>BackupData.bx:57</code>, <code>Nas.bx:60,411</code>, <code>Db.bx:26,149</code>, <code>Vm.bx:34</code> (reads <code>db.json</code> too), <code>Mail.bx:40</code>, <code>Skills.bx:52</code>, <code>Update.bx</code>, <code>Shortcuts.bx:18</code>, <code>SystemState.bx:41</code>, <code>Runner.bx:57</code>, <code>Init.bx:19</code>, <code>Setup.bx:163,175</code>, <code>Editor.bx:68</code>, <code>Secrets.bx:87</code>, ...</li>
+<li>Direct writers: <code>Appearance.bx:93</code>, <code>Display.bx:55</code>, <code>Theme.bx:114</code>, <code>BackupData.bx:71</code>, <code>Nas.bx:66,414</code>, <code>Skills.bx:58</code>, <code>Update.bx:47</code>: <code>directoryCreate( getDirectoryFromPath( f ), true, true ); fileWrite( f, jsonSerialize( s ) &amp; chr( 10 ) );</code>.</li>
+<li><strong>BUG (contract 2.6)</strong>: &quot;Every config file touched goes through the config service (backup, atomic replace, journal). No direct writes.&quot; The 8 writers above bypass it (no backup, no journal, no atomic move, no <code>config history</code>). <code>Ai.bx:57</code>, <code>Secrets.bx:98</code>, <code>KeysEditor.bx:86</code> do it right.</li>
+<li>34 <code>fileWrite(</code> in 20 files in total; 47 <code>directoryCreate(</code> in 24 files.</li>
+</ul>
+<p>Single home: <code>JsonStore.bx</code>, the only class that reads and writes a BxRig settings JSON.</p>
+<pre><code>class JsonStore {
+    function init( config, name, file, defaults = {}, mode = &quot;644&quot; )   // config: the ConfigService
+    function read()                                // defaults merged with the file; {} + defaults when missing or invalid; never throws
+    function get( key, fallback = &quot;&quot; )             // structKeyExists first (the native-runner panic quirk)
+    function write( data, reason = &quot;apply&quot; )       // ConfigService.configWrite: backup, atomic, journal
+}
+</code></pre>
+<p>Replaces: 37 read sites, 8 direct writers, the <code>settingsFile()</code>/<code>stateFile()</code> helpers (7 files, each concatenating <code>cfg() &amp; &quot;/bxrig/NAME.json&quot;</code>).</p>
+<p>Quirk limits: no key read inside <code>try</code> for a missing key; <code>read()</code> validates with <code>isStruct</code>. Keys are lower-case by convention, so struct case-insensitivity is harmless here.</p>
+<p>Risk: medium, because writes now create journal entries and backups (new files under the state dir). Tests that count files in <code>$tmp/cfg/bxrig/</code> may need an update. Guards: <code>appearance-test.sh</code>, <code>display-test.sh</code>, <code>theme-test.sh</code>, <code>nas-test.sh</code>, <code>backup-data-test.sh</code>, <code>skills-test.sh</code>, <code>update-test.sh</code>.</p>
+<h4 id="f06-medium-effort-m-config-entries-built-by-hand-root-owned-files-bypass-the-service"><a href="#f06-medium-effort-m-config-entries-built-by-hand-root-owned-files-bypass-the-service" id="f06-medium-effort-m-config-entries-built-by-hand-root-owned-files-bypass-the-service" name="f06-medium-effort-m-config-entries-built-by-hand-root-owned-files-bypass-the-service" class="anchor"></a>F06 (Medium, effort M): config entries built by hand; root-owned files bypass the service</h4>
+<p>What: the entry <code>{ name, target, mode, content }</code> is a struct literal in 51 places (19 files). Files owned by root are written with <code>fileWrite</code> to a temp file then <code>sudo install -Dm644</code>, which has no backup or journal at all.</p>
+<p>Where:</p>
+<ul>
+<li>Entry literals: <code>Ai.bx:57</code>, <code>Secrets.bx:98,321</code>, <code>KeysEditor.bx:86</code>, <code>MacExtras.bx:157,249</code>, <code>Update.bx:177,178</code>, <code>Shortcuts.bx:259-263</code>, <code>Theme.bx:134</code>, <code>Main.bx:184</code>, ...</li>
+<li>Root file writes: <code>Nas.bx:235,310,311</code>, <code>Power.bx:120</code>, <code>Security.bx:117,125</code>, <code>Time.bx:151</code>, <code>Update.bx:82</code> (writes temp, then installs): 9 <code>sudo install -Dm</code> sites in 4 files. Each re-derives the temp path (<code>getTempDirectory()</code> 16 uses in 12 files, <code>createUUID()</code> 26 uses).</li>
+<li>Hand-written systemd unit text: <code>Time.bx:44</code>, <code>MacExtras.bx:157,249</code>, <code>Update.bx:177</code>, <code>Cloud.bx:62</code>, <code>Nas.bx:295,297</code>, <code>Shortcuts.bx:274</code>, <code>BackupData.bx</code> (8 places).</li>
+<li><code>Installer.writeFile:60</code> and <code>AppIcons.bx:157</code> implement a third and fourth &quot;write temp then move&quot;.</li>
+</ul>
+<p>Single home: add <code>ConfigService.entry()</code> and a root variant <code>SystemFile</code>; <code>SystemdUnit</code> renders unit text.</p>
+<pre><code>class ConfigService {       // existing, extended
+    function entry( name, target, content, mode = &quot;644&quot; )          // the one place the shape is spelled
+}
+class SystemFile {
+    function init( proc, config )
+    function step( entry )          // -&gt; argv steps: write temp, `sudo install -Dm&lt;mode&gt;`, plus a backup copy step so `config history` knows it
+}
+class SystemdUnit {
+    function render( sections )     // sections: array of { name, lines } (ordered, because struct key order is not promised)
+}
+</code></pre>
+<p>Replaces: 51 literals, 9 <code>sudo install</code> sites, 8 unit text builders, 3 temp-then-move helpers.</p>
+<p>Quirk limits: <code>render</code> takes an array of sections (not a struct) to keep order and to avoid case-insensitive keys; build entries stepwise.</p>
+<p>Risk: medium for the root files (journal for files the user cannot read back as a normal user: decide whether <code>config diff</code> may use <code>sudo cat</code>). Guards: <code>nas-test.sh</code>, <code>power-test.sh</code>, <code>security-test.sh</code>, <code>time-test.sh</code>, <code>update-test.sh</code>, <code>config-test.sh</code>.</p>
+<h4 id="f07-medium-effort-s-validname-x9-each-with-its-own-regex-and-its-own-exit-code"><a href="#f07-medium-effort-s-validname-x9-each-with-its-own-regex-and-its-own-exit-code" id="f07-medium-effort-s-validname-x9-each-with-its-own-regex-and-its-own-exit-code" name="f07-medium-effort-s-validname-x9-each-with-its-own-regex-and-its-own-exit-code" class="anchor"></a>F07 (Medium, effort S): <code>validName</code> x9, each with its own regex and its own exit code</h4>
+<p>Where (<code>grep -n &quot;function validName&quot;</code>): <code>BackupData.bx:74</code> and <code>Nas.bx:52</code> <code>^[a-z][a-z0-9-]{0,30}&#x24;&#x60; &#x28;exit &#x2a;&#x2a;2&#x2a;&#x2a;&#x29;, &#x60;Cloud.bx&#x3a;30&#x60; and &#x60;Web.bx&#x3a;27&#x60; &#x60;&#x5e;&#x5b;A-Za-z0-9_-&#x5d;&#x7b;1,40&#x7d;&#x24;</code> (exit <strong>4</strong>), <code>Db.bx:31</code> <code>^[a-zA-Z0-9-]{1,40}&#x24;&#x60;, &#x60;Vm.bx&#x3a;27&#x60; &#x60;&#x5e;&#x5b;a-z0-9&#x5d;&#x5b;a-z0-9-&#x5d;&#x7b;0,30&#x7d;&#x24;</code> (exit 4), <code>Theme.bx:364</code> <code>{0,40}</code>, <code>Secrets.bx:27</code> <code>^[A-Z_][A-Z0-9_]{0,63}&#x24;&#x60; &#x28;exit 4&#x29;, &#x60;Pkg.bx&#x3a;37&#x60; &#x60;&#x5e;&#x5b;a-z0-9&#x40;._&#x2b;-&#x5d;&#x7b;1,100&#x7d;&#x24;</code>; the same pacman regex pasted inline twice in <code>AppsData.bx:403,419</code>. Bad input exits 2 in 3 classes and 4 in 5 (contract: 2 is usage).</p>
+<p>Single home: <code>Names.bx</code>.</p>
+<pre><code>class Names {
+    function kind( kind, value )          // kind: &quot;slug&quot;, &quot;remote&quot;, &quot;container&quot;, &quot;vm&quot;, &quot;theme&quot;, &quot;secret&quot;, &quot;package&quot; -&gt; true/false
+    function rule( kind )                 // the human sentence for the error message (also used by help text)
+}
+</code></pre>
+<p>Replaces: 9 definitions, 2 inline regex, 11 hand-written error sentences. Exit code for a bad name becomes a decision made once (propose 2).</p>
+<p>Risk: low. Behaviour change in the exit code for 5 classes; update their tests (<code>vm-test.sh</code>, <code>secrets-test.sh</code>, <code>runtime-cloud-test.sh</code>, <code>web-vpn-test.sh</code>).</p>
+<h4 id="f08-medium-effort-s-small-text-and-format-helpers-copied-around"><a href="#f08-medium-effort-s-small-text-and-format-helpers-copied-around" id="f08-medium-effort-s-small-text-and-format-helpers-copied-around" name="f08-medium-effort-s-small-text-and-format-helpers-copied-around" class="anchor"></a>F08 (Medium, effort S): small text and format helpers copied around</h4>
+<ul>
+<li><code>merge( base, extra )</code>: 10 byte-identical copies (<code>Db.bx:41</code>, <code>Cloud.bx:92</code>, <code>Layout.bx:88</code>, <code>Record.bx:45</code>, <code>Vm.bx:420</code>, <code>Web.bx:98</code>, <code>Dotfiles.bx:312</code>, <code>AiSession.bx:74</code>, <code>Pkg.bx:239</code>, <code>Update.bx:164</code>).</li>
+<li>Byte sizes: <code>TuiKit.bx:213 size</code>, <code>BackupConfig.bx:96 human</code>, <code>Vm.bx:97 humanKb</code>, plus forwarders (<code>TimeMachineView.bx:285</code>). Three formats (&quot;1.5 MB&quot;, &quot;1.5 MB&quot; with rounding by <code>/104857.6</code>, &quot;2 GB&quot;).</li>
+<li>Durations: <code>TuiSys.bx span</code> (&quot;5m&quot;), <code>DashboardPage.bx:51 ago</code> (&quot;5 min ago&quot;), <code>BackupTimeline.bx:62 ago</code> (&quot;5 minutes ago&quot;, &quot;yesterday&quot;, weeks, months). Three ladders with different thresholds.</li>
+<li>Padding: <code>AppsPage.bx:40 pad/padLeft</code>, <code>ListPage.bx:122 padText</code>, <code>Help.bx:16 pad</code> (the first two byte-identical).</li>
+<li>Lines: <code>listToArray( ..., chr( 10 ) )</code> 98 times (45 on command output), <code>trim( x.output )</code> 201 times in 59 files, <code>chr( 10 )</code> 295 times, a local <code>nl()</code> in 7 files.</li>
+<li>Timestamps: <code>dateTimeFormat( now(), &quot;yyyy-MM-dd'T'HH:mm:ss&quot; )</code> in <code>ConfigService.bx:43</code>, <code>BackupConfig.bx:128</code>, <code>BackupTimeline.bx:48</code>.</li>
+</ul>
+<p>Single home: <code>Text.bx</code> (strings) and <code>Fmt.bx</code> (human formatting).</p>
+<pre><code>class Text { function merge( a, b )  function lines( s )  function pad( s, w )  function padLeft( s, w )  function nl() }
+class Fmt  { function bytes( n )  function kb( n )  function ago( seconds, style = &quot;long&quot; )  function span( seconds )  function stamp() }
+</code></pre>
+<p>Quirk limits: closures cannot call these (<code>rows.map( function ... )</code> in <code>Launchers</code>, <code>Shortcuts</code>). Where a closure needs <code>ago</code>, compute the strings in a plain loop before; the existing code already does that in most places.</p>
+<p>Risk: low. Keep each style as a named option so every existing test string stays identical.</p>
+<h3 id="b-external-tools-called-from-many-places"><a href="#b-external-tools-called-from-many-places" id="b-external-tools-called-from-many-places" name="b-external-tools-called-from-many-places" class="anchor"></a>B. External tools called from many places</h3>
+<h4 id="f09-medium-effort-m-pacman--aur--flatpak-call-sites-22-files"><a href="#f09-medium-effort-m-pacman--aur--flatpak-call-sites-22-files" id="f09-medium-effort-m-pacman--aur--flatpak-call-sites-22-files" name="f09-medium-effort-m-pacman--aur--flatpak-call-sites-22-files" class="anchor"></a>F09 (Medium, effort M): pacman / AUR / flatpak call sites, 22 files</h4>
+<p>Where:</p>
+<ul>
+<li>The literal <code>&quot;sudo&quot;, &quot;pacman&quot;, &quot;-S&quot;, &quot;--needed&quot;, &quot;--noconfirm&quot;</code> appears 16 times in 11 files (<code>SetupPlan.bx</code> x4, <code>BackupSnapshots</code> x2, <code>Security</code> x2, <code>BackupConfig</code>, <code>Containers</code>, <code>Dotfiles</code>, <code>Editor</code>, <code>Nas</code>, <code>Power</code>, <code>Secrets</code>, <code>Tweaks</code>). <code>Installer.bx:114</code> already builds the same argv properly (root-aware).</li>
+<li>&quot;Set of installed package names&quot; (<code>pacman -Qq</code> then split lines then trim): <code>Pkg.bx:42</code>, <code>AppsData.bx:237</code>, <code>Packages.bx:15</code>, <code>Tweaks.bx:121</code>, <code>MacExtras.bx:179</code>, <code>BackupConfig.bx:240</code>, <code>Dolphin.bx:19</code>: 7 parsers, 3 timeouts (15, 30, 60).</li>
+<li>&quot;Is package X installed&quot;: <code>Containers.bx:26 pacmanHas</code>, <code>Editor.bx:116</code>, <code>Setup.bx:15</code>.</li>
+<li><code>yay</code>: <code>Installer.bx:93</code>, <code>SetupPlan.bx:289</code>, <code>Update.bx:193</code>, <code>Packages.bx:145</code>, <code>Pkg.bx:189</code> (each with its own &quot;yay is not installed&quot; sentence); flatpak: <code>AppsData.bx:245</code>, <code>AppsModel.bx:292</code>.</li>
+<li>Package-name regex pasted into <code>Pkg.bx:37</code>, <code>AppsData.bx:403,419</code> (F07).</li>
+</ul>
+<p>Single home: <code>Pacman.bx</code>, next to <code>Installer</code> (which becomes its main client).</p>
+<pre><code>class Pacman {
+    function init( proc )
+    function installed()                                     // struct set of every installed name
+    function has( pkg )
+    function installArgv( pkgs, asRoot = false )             // [ &quot;sudo&quot;, &quot;pacman&quot;, &quot;-S&quot;, &quot;--needed&quot;, &quot;--noconfirm&quot;, ... ]
+    function removeArgv( pkgs, asRoot = false, recursive = true )
+    function aurArgv( pkgs )                                 // [ &quot;yay&quot;, &quot;-S&quot;, ... ]
+    function search( text )  function info( name )
+}
+</code></pre>
+<p>Replaces: 16 literals, 7 installed-set parsers, 3 <code>has</code> checks. <code>Installer.steps</code> and the four <code>SetupPlan</code> blocks call <code>installArgv</code>.</p>
+<p>Quirk limits: argv arrays only, returned as new arrays each call (callers <code>append</code> to them; sharing one array would alias, see <code>Installer.steps</code> building <code>pac</code> per call).</p>
+<p>Risk: low to medium. Tests assert on the logged argv (<code>grep -q &quot;pacman -S --needed --noconfirm&quot;</code> in fake-binary logs), so the exact flag order must not change.</p>
+<h4 id="f10-medium-effort-m-systemctl-and-units-16-files-47-refs"><a href="#f10-medium-effort-m-systemctl-and-units-16-files-47-refs" id="f10-medium-effort-m-systemctl-and-units-16-files-47-refs" name="f10-medium-effort-m-systemctl-and-units-16-files-47-refs" class="anchor"></a>F10 (Medium, effort M): systemctl and units, 16 files, 47 refs</h4>
+<p>Where:</p>
+<ul>
+<li>&quot;enable now&quot;: <code>daemon-reload</code> then <code>enable --now UNIT</code>: <code>Cloud.bx:86-87</code>, <code>MacExtras.bx:160-161,252-253</code>, <code>Update.bx:180-181</code>, <code>BackupData.bx:385</code>, <code>SetupPlan.bx:304</code>, <code>Nas.bx:312-313</code>, <code>Time.bx:151</code>: 8 times.</li>
+<li>&quot;is active&quot; two idioms: output equals <code>&quot;active&quot;</code> (<code>Cloud.bx:123</code>, <code>Containers.bx:45</code>, <code>MacExtras.bx:138,146,240</code>, <code>MacKeys.bx:23</code>, <code>AiModels.bx:67</code>) versus <code>--quiet</code> exit code (<code>BackupSnapshots.bx:54</code>, <code>Power.bx:70</code>, <code>Time.bx:79</code>, <code>Security.bx:169</code>). Local wrapper names: <code>active</code>, <code>autoActive</code>, <code>serviceActive</code>.</li>
+<li><code>--user</code> and system variants mixed; <code>sudo systemctl</code> 9 times in <code>Nas</code>, <code>Security</code>, <code>Power</code>, <code>BackupSnapshots</code>.</li>
+<li>Unit names are string literals scattered (<code>bxrig-update-check.timer</code>, <code>bxrig-wlsunset.service</code>, <code>bxrig-airplay.service</code>, <code>bxrig-snooze.timer</code>, <code>bxrig-backup.timer</code>, <code>automatic-timezoned.service</code>, <code>xremap.service</code>): 28 occurrences, no list.</li>
+</ul>
+<p>Single home: <code>Systemd.bx</code>.</p>
+<pre><code>class Systemd {
+    function init( proc, user = true )
+    function isActive( unit )                    // one idiom
+    function enableNowArgv( unit )               // [ [ &quot;systemctl&quot;, &quot;--user&quot;, &quot;daemon-reload&quot; ], [ ..., &quot;enable&quot;, &quot;--now&quot;, unit ] ]
+    function disableNowArgv( unit )
+    function restartArgv( unit )
+    function sudo()                              // same API with `sudo systemctl` (system units)
+}
+</code></pre>
+<p>Replaces: 8 enable sequences, 11 <code>is-active</code> wrappers. Unit names move to one <code>UnitNames</code> map next to the unit renderer of F06.</p>
+<p>Risk: low. Guards: <code>macextras-test.sh</code>, <code>nas-test.sh</code>, <code>update-test.sh</code>, <code>runtime-cloud-test.sh</code>, <code>power-test.sh</code>, <code>time-test.sh</code>.</p>
+<h4 id="f11-medium-effort-m-curl-and-download-call-sites-11-files-17-refs"><a href="#f11-medium-effort-m-curl-and-download-call-sites-11-files-17-refs" id="f11-medium-effort-m-curl-and-download-call-sites-11-files-17-refs" name="f11-medium-effort-m-curl-and-download-call-sites-11-files-17-refs" class="anchor"></a>F11 (Medium, effort M): curl and download call sites, 11 files, 17 refs</h4>
+<p>Where:</p>
+<ul>
+<li><code>Boxlang.bx:101</code> <code>curl -fsSL --max-time 30</code>, <code>Pkg.bx:75</code> <code>-fsS -m 20</code>, <code>Sdk.bx:66</code> <code>-fsSL --max-time 25</code>, <code>Skills.bx:63</code> <code>-fsSL --max-time 30</code>, <code>Skills.bx:138</code> <code>-sSL ... -X POST</code>, <code>Update.bx:92,97,153,154</code> <code>--max-time</code> 30/600, <code>Strata.bx:58</code> <code>-fsSL</code> no timeout flag (only the process timeout 120), <code>SetupPlan.bx:215</code> <code>-fsSL -m 120</code>, <code>Java.bx:97</code> direct <code>systemExecute( &quot;curl&quot;, args, 600 )</code>, <code>Mail.bx:58</code>.</li>
+<li>Spelling <code>-m</code> vs <code>--max-time</code>, <code>-fsSL</code> vs <code>-sSL</code> (Skills POST drops <code>-f</code>, so HTTP errors look like success), 4 error styles: return <code>&quot;&quot;</code> (<code>Sdk</code>), return the raw result (<code>Java</code>, <code>Mail</code>), <code>throw</code>, or a struct with <code>exitCode</code>.</li>
+<li>Process timeout and curl <code>--max-time</code> are set independently (<code>Skills.bx:63</code> 30 vs 60, <code>Update.bx:153</code> 600 vs 700): two clocks to keep in step.</li>
+<li>External installer scripts (contract 2.8): <code>Installer.bx:104</code> pipes curl to shell inside <code>bash -c</code>; <code>SetupPlan.bx:215</code> downloads to a file first. Two code paths for the same rule.</li>
+</ul>
+<p>Single home: <code>Http.bx</code>.</p>
+<pre><code>class Http {
+    function init( proc )
+    function get( url, timeout = 30 )                       // -&gt; { ok, status, body, error }
+    function post( url, json, timeout = 30 )
+    function download( url, dest, timeout = 120 )           // temp then move; returns { ok, sha256 }
+    function script( url )                                  // contract 2.8: download to temp, print url and sha256, caller runs it as the user
+}
+</code></pre>
+<p>One place sets <code>-fsSL</code>, <code>--max-time</code>, <code>--connect-timeout</code>, a <code>User-Agent: bxrig/VERSION</code>, and derives the process timeout as <code>timeout + 10</code>.</p>
+<p>Risk: low. Tests fake <code>curl</code> on <code>PATH</code> (3 test files) and match argument text; keep <code>-fsSL --max-time N</code> as the argv spelling.</p>
+<h4 id="f12-medium-effort-s-desktop-detection-and-container-engine-choice"><a href="#f12-medium-effort-s-desktop-detection-and-container-engine-choice" id="f12-medium-effort-s-desktop-detection-and-container-engine-choice" name="f12-medium-effort-s-desktop-detection-and-container-engine-choice" class="anchor"></a>F12 (Medium, effort S): desktop detection and container-engine choice</h4>
+<ul>
+<li>Desktop: <code>Resolver.detectShell( text )</code> exists, yet 12 files read <code>XDG_CURRENT_DESKTOP</code> themselves (<code>AiShell.bx:30</code>, <code>Display.bx:32</code>, <code>Layout.bx:27</code>, <code>MacExtras.bx:36</code>, <code>Screenshot.bx:30</code>, <code>Secrets.bx:487</code>, <code>Runner.bx:41,98</code>, <code>Packages.bx:49</code>, ...) with <code>findNoCase( &quot;KDE&quot;, ... )</code>, <code>lCase( ... ) == &quot;hyprland&quot;</code> and similar. Only <code>MacExtras</code> and <code>Screenshot</code> honour the <code>BXRIG_DESKTOP</code> override, so tests cannot steer the other 10. Home: <code>Env.desktop()</code> returning <code>&quot;hyprland&quot; | &quot;plasma&quot; | &quot;&quot;</code>, implemented on <code>Resolver.detectShell</code>.</li>
+<li>Container engine: <code>Db.bx:26</code>, <code>Vm.bx:34</code> (reads <code>db.json</code> again), <code>SystemState.bx:85</code> each decide podman or docker from the same file and defaults. Home: <code>Db.engine()</code>; <code>Vm</code> and <code>SystemState</code> ask <code>Db</code>.</li>
+</ul>
+<p>Risk: low.</p>
+<h3 id="c-command-registry-and-mainbx"><a href="#c-command-registry-and-mainbx" id="c-command-registry-and-mainbx" name="c-command-registry-and-mainbx" class="anchor"></a>C. Command registry and Main.bx</h3>
+<h4 id="f13-high-effort-l-staged-the-command-registry-does-not-exist-mainbx-is-it"><a href="#f13-high-effort-l-staged-the-command-registry-does-not-exist-mainbx-is-it" id="f13-high-effort-l-staged-the-command-registry-does-not-exist-mainbx-is-it" name="f13-high-effort-l-staged-the-command-registry-does-not-exist-mainbx-is-it" class="anchor"></a>F13 (High, effort L, staged): the command registry does not exist; Main.bx is it</h4>
+<p>What: a command's facts are spelled in 7 places that nothing forces to agree.</p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Where the name or flag list lives</th><th>What it holds</th><th>Checked against the others?</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Main.bx</code> <code>case &quot;x&quot;:</code> (93 cases)</td><td>routing, arity (<code>p.len() == N</code>, 149 times), usage text (56 <code>&quot;Usage: bxrig ...&quot;</code> strings)</td><td>gen-docs checks names</td></tr>
+<tr><td><code>Main.bx:18</code> flag whitelist</td><td>130 entries, 122 distinct, 8 duplicated (<code>overwrite</code>, <code>default</code>, <code>out</code>, <code>type</code>, <code>region</code>, <code>from</code>, <code>tag</code>, <code>mode</code>)</td><td>no</td></tr>
+<tr><td><code>Main.bx</code> catalog case (~line 118)</td><td>a second, local whitelist</td><td>no</td></tr>
+<tr><td><code>docs/reference/cli.json</code></td><td>summary, <code>usage[]</code>, <code>examples[]</code>, group</td><td><code>gen-docs.sh</code> checks names, first word of usage and example commands only; usage text is <strong>not</strong> compared with Main's <code>&quot;Usage:&quot;</code> string</td></tr>
+<tr><td><code>src/bxrig/HelpData.bx</code></td><td>generated copy of cli.json</td><td><code>gen-docs.sh --check</code></td></tr>
+<tr><td><code>MenuTree.bx</code>, <code>Launchers.bx</code>, <code>Shortcuts.bx</code> (<code>execBxrig( &quot;record toggle&quot; )</code>)</td><td>argv strings that must name real commands</td><td><code>menu-test.sh</code> partly</td></tr>
+<tr><td><code>tests/help-test.sh</code>, <code>cli-contract-test.sh</code>, <code>native-smoke.sh</code></td><td>expected lists</td><td>self</td></tr>
+</tbody>
+</table></div>
+<p>Problems that follow:</p>
+<ul>
+<li><strong>BUG (looseness)</strong>: the whitelist is global. <code>bxrig version --ram=4</code> passes the flag check, because <code>ram</code> is valid for <code>vm</code>. Every command accepts every flag of every other command. Only <code>catalog</code> re-checks. The contract says &quot;unknown flags are usage errors&quot;.</li>
+<li><strong>BUG (contract 1)</strong>: the <code>default:</code> branch (<code>Main.bx:1013</code>) prints &quot;Unsupported command&quot; and falls out of <code>main</code> with no <code>CLIExit( 2 )</code>; it exits 0 (verify), while <code>help nonsense</code> exits 2.</li>
+<li><code>structKeyExists( args.options, &quot;yes&quot; )</code> 66 times, <code>&quot;dry-run&quot;</code> 53, 129 option reads in total, 26 <code>args.options.x ?: &quot;&quot;</code>.</li>
+<li>Usage text duplicated: when a flag is added, Main's string, cli.json and the whitelist must all be edited by hand (3 edits, no test ties the first to the other two).</li>
+</ul>
+<p>Single home: <code>docs/reference/cli.json</code> becomes the registry (it is already data, already generated into <code>HelpData</code>, already reviewed). Extend each command with <code>flags</code> and <code>subs</code>, generate <code>CommandSpec.bx</code>, and let one class validate.</p>
+<pre><code>// cli.json command: { name, group, summary, usage[], examples[], flags: [ { name, kind: &quot;bool&quot;|&quot;value&quot;, for: [ &quot;install&quot;, &quot;remove&quot; ] } ], subs: [ { path: &quot;key set&quot;, args: 2 } ] }
+class CommandSpec {            // GENERATED by bootstrap/gen-docs.sh (stepwise literal, as HelpData is)
+    function names()           function flagsFor( command )     function usage( command )
+}
+class Options {                // wraps args.options once
+    function init( raw )  function yes()  function dry()  function has( name )  function str( name, fallback = &quot;&quot; )
+    function unknown( allowed )                  // -&gt; first flag not allowed, or &quot;&quot;
+}
+class Router {                 // phase 2
+    function check( command, positionals, options )    // flags + arity from the spec; returns &quot;&quot; or the usage line
+}
+</code></pre>
+<p>Staging (each stage shippable):</p>
+<ol>
+<li>Put <code>flags</code> into <code>cli.json</code>; <code>gen-docs.sh</code> emits <code>CommandSpec</code>; Main's global whitelist is replaced by <code>CommandSpec.flagsFor( cmd )</code>. New test: <code>tests/flags-test.sh</code> walks every command and asserts a foreign flag exits 2.</li>
+<li>Replace the 56 <code>&quot;Usage:...&quot;</code> literals by <code>CommandSpec.usage( cmd )</code>, remove them from Main; <code>gen-docs.sh</code> already guarantees usage text exists.</li>
+<li>Replace <code>structKeyExists( args.options, &quot;yes&quot; )</code> (129 sites) by <code>opts.yes()</code> etc.</li>
+<li>Optional: each command class gets <code>run( words, opts, asJson )</code>; Main case becomes one line (<code>CLIExit( new bxrig.Time( cli ).run( p, opts, asJson ) )</code>). Arity moves from <code>p.len() == 3</code> conditions into the class, or into <code>subs</code>. Full dispatch by name would need <code>invoke()</code>; the plain <code>switch</code> stays until that is verified.</li>
+</ol>
+<p>Quirk limits: the generated class is a stepwise literal (quirk), <code>switch</code> cases keep their own scope (#159), no closures call methods.</p>
+<p>Risk: stage 1 is the only one that can break users (a script that passes a stray flag now gets exit 2); that is the documented behaviour. Guards: <code>cli-contract-test.sh</code>, <code>help-test.sh</code>, <code>native-smoke.sh</code> (<code>usage_exit2</code>, <code>expect_error</code>), plus the new <code>flags-test.sh</code>.</p>
+<h4 id="f14-medium-effort-m-mainbx-holds-domain-logic"><a href="#f14-medium-effort-m-mainbx-holds-domain-logic" id="f14-medium-effort-m-mainbx-holds-domain-logic" name="f14-medium-effort-m-mainbx-holds-domain-logic" class="anchor"></a>F14 (Medium, effort M): Main.bx holds domain logic</h4>
+<ul>
+<li><code>config</code> case (<code>Main.bx:174-230</code>): builds the list of managed files itself: an inline <code>bxrig.json</code> literal (line 184), <code>Shortcuts.entries</code> (185), <code>Starter.entries</code> (186). <code>Refresh.bx:39</code> has a second list of &quot;what is owned by whom&quot;. <code>config diff</code> writes a temp file and shells out to <code>diff</code> (<code>Main.bx:213-215</code>). Home: <code>ManagedConfigs.all( config )</code> in <code>ConfigService</code>'s neighbourhood, and <code>ConfigService.diff( entry )</code>. Any new managed file (Theme, Appearance, Display, Editor, Terminal, Shell entries are <code>configWrite</code>d but NOT in <code>config list</code>) is invisible to <code>bxrig config list</code> until someone edits Main. 8 classes write entries that <code>config list</code> does not know.</li>
+<li><code>catalog</code> case (about 70 lines, <code>Main.bx:97-170</code>): list filtering, grouping and printing; belongs to <code>Catalog</code>.</li>
+<li><code>version</code> case prints the logo and tagline (<code>Main.bx:31-37</code>); <code>wizard</code> case (<code>Main.bx:908-934</code>) reads answers, writes <code>--out</code>.</li>
+<li><code>runner show</code> prints <code>rnCfg</code> itself.</li>
+</ul>
+<p>Single home: each belongs to its domain class; <code>Main</code> only routes. Effort M because each is a move, not a rewrite.</p>
+<h4 id="f15-low-effort-s-the-version-string-6-places"><a href="#f15-low-effort-s-the-version-string-6-places" id="f15-low-effort-s-the-version-string-6-places" name="f15-low-effort-s-the-version-string-6-places" class="anchor"></a>F15 (Low, effort S): the version string, 6 places</h4>
+<p><code>Main.bx:5</code>, <code>:11</code>, <code>:35</code>, <code>box.json:4</code>, <code>tests/native-smoke.sh:5</code>, <code>tests/bootstrap-test.sh:43,84,533</code>, and <code>SystemState.bx:56</code> builds <code>new bxrig.Cli( &quot;0&quot; )</code> (a version that is a lie). <code>Update</code> cannot ask <code>Cli</code> for the running version because <code>Cli.version</code> has no getter.</p>
+<p>Home: <code>Cli.version()</code>, set once from a generated <code>Version.bx</code> (<code>gen-version.sh</code> reads <code>box.json</code>, same <code>--check</code> pattern as the other 8 generators). Tests read <code>box.json</code> with <code>jq</code>.</p>
+<h4 id="f16-medium-effort-m-control-center-page-registry-in-three-places-provider-boilerplate"><a href="#f16-medium-effort-m-control-center-page-registry-in-three-places-provider-boilerplate" id="f16-medium-effort-m-control-center-page-registry-in-three-places-provider-boilerplate" name="f16-medium-effort-m-control-center-page-registry-in-three-places-provider-boilerplate" class="anchor"></a>F16 (Medium, effort M): Control Center page registry in three places; provider boilerplate</h4>
+<ul>
+<li>Page identity is spelled in <code>ControlCenterPages.list()</code> (<code>id</code>, <code>title</code>, <code>icon</code>, 17 rows), in each provider (<code>id()</code>, <code>title()</code>, <code>icon()</code> in 14 providers), in <code>ControlCenter.buildPages()</code> (order must match), in <code>Launchers.folders()</code> (page-id lists as strings, <code>Launchers.bx:41</code>). <code>control_center_test.bxs</code> checks they agree; the shape is still four sources of truth.</li>
+<li>13 of 14 providers define the identical constants <code>refreshSeconds() { return 0; }</code>, <code>live() { return false; }</code>, <code>detailLines() { return 2; }</code> (39 lines), and each carries a <code>variables.demo</code> branch (28 refs) with inline fixtures. <code>DashboardDemo</code> and <code>TimeMachineDemo</code> already show the better shape (fixtures in a <code>*Demo</code> class); the 14 providers do not follow it.</li>
+<li>Every provider does <code>variables.sys = new bxrig.TuiSys()</code> (13 times).</li>
+</ul>
+<p>Home: <code>ControlCenterPages</code> becomes the one registry with a <code>make( id, demo )</code> factory (a <code>switch</code> on id, quirk-safe) and <code>ListPage</code> reads missing provider methods from a defaults struct:</p>
+<pre><code>class ListPage { function init( provider ) { variables.spec = new bxrig.ProviderSpec( arguments.provider ); } }   // spec.live(), spec.detailLines(): provider value or default
+class ControlCenterPages { function list()  function make( id, demo = false )  function folderOf( id ) }
+</code></pre>
+<p>Risk: low. Guards: <code>control_center_test.bxs</code>, <code>app_pages_test.bxs</code>, <code>tui-test.sh</code>.</p>
+<h3 id="d-parsers"><a href="#d-parsers" id="d-parsers" name="d-parsers" class="anchor"></a>D. Parsers</h3>
+<h4 id="f17-high-effort-m-two-and-a-half-desktop-parsers-and-two-directory-lists-bug"><a href="#f17-high-effort-m-two-and-a-half-desktop-parsers-and-two-directory-lists-bug" id="f17-high-effort-m-two-and-a-half-desktop-parsers-and-two-directory-lists-bug" name="f17-high-effort-m-two-and-a-half-desktop-parsers-and-two-directory-lists-bug" class="anchor"></a>F17 (High, effort M): two and a half <code>.desktop</code> parsers and two directory lists, BUG</h4>
+<p>What: three classes parse <code>[Desktop Entry]</code> differently, and five classes write desktop entries by string concatenation.</p>
+<p>Where:</p>
+<ul>
+<li><code>Apps.bx:27-45 parse</code> compares with <code>==</code> (<code>key == &quot;Name&quot;</code>): <strong>case-insensitive</strong> (<code>name=</code> or <code>NAME=</code> would match; localized keys such as <code>Name[de]</code> are skipped only because the full key text differs). <code>AppsData.bx:55-78 parseDesktop</code> uses <code>compare( key, &quot;Name&quot; ) == 0</code>: case-sensitive and correct. <code>AppIcons.bx:53-60</code> is a third, reading only <code>Icon=</code>.</li>
+<li>Same 20 lines of loop body (<code>inEntry</code>, <code>find( &quot;=&quot;, line )</code>, <code>left</code>/<code>mid</code>) in all three.</li>
+<li><strong>Behaviour divergence</strong>: <code>AppsData</code> hides <code>X-BxRig-Launcher</code> entries (commit <code>d6a0678</code> fixed it there); <code>Apps.bx:46-50</code> does not, so <code>bxrig apps</code> / <code>apps list</code> can list BxRig's own launchers. <code>AppsData</code> keeps entries with an empty <code>Exec</code>; <code>Apps.bx</code> drops them. <code>AppsData</code> reads <code>Comment</code> and <code>Categories</code>; <code>Apps.bx</code> does not.</li>
+<li>Two directory lists and two env overrides: <code>Apps.bx:21 dirs()</code> = <code>/usr/share/applications</code>, <code>~/.local/share/applications</code>, <code>/var/lib/flatpak/exports/share/applications</code>, override <code>BXRIG_APPS_DIRS</code>; <code>AppsData.bx:46 desktopDirs()</code> = <code>/usr/share/applications</code>, <code>/usr/local/share/applications</code>, <code>~/.local/share/applications</code> (no flatpak exports), override <code>BXRIG_DESKTOP_DIRS</code>. The same screen can show different app sets depending on which command asked.</li>
+<li><code>cleanExec</code>: byte-identical in <code>Apps.bx:48</code> and <code>AppsData.bx:33</code>.</li>
+<li>Writers: <code>Installer.bx:53 launcherFile</code>, <code>Launchers.bx:85,95</code>, <code>Web.bx:59</code>, <code>Vm.bx:412</code>, <code>PlasmaPanels.bx:143</code> all concatenate <code>&quot;[Desktop Entry]&quot; &amp; chr( 10 ) &amp; &quot;Type=Application&quot; ...</code>. Five spellings of the same file, with <code>Terminal=false</code>, <code>Categories=</code>, comments in different orders.</li>
+</ul>
+<p>Single home: <code>DesktopEntry.bx</code>.</p>
+<pre><code>class DesktopEntry {
+    function parse( text )                          // -&gt; { name, exec, icon, type, hidden, comment, categories, keys: [ { key, value } ] }; compare() on keys
+    function read( file )                           // fileRead + parse; never throws
+    function dirs()                                 // one list, one env override BXRIG_DESKTOP_DIRS (BXRIG_APPS_DIRS kept as alias for tests)
+    function all()                                  // visible applications, later folder wins, X-BxRig-Launcher hidden unless asked
+    function cleanExec( exec )
+    function render( entry )                        // text for [ { key, value } ] in a fixed order; Terminal, Categories optional
+}
+</code></pre>
+<p>Replaces: <code>Apps.parse/cleanExec/dirs/all</code>, <code>AppsData.parseDesktop/cleanExec/desktopDirs/desktopEntries</code>, <code>AppIcons</code> icon read, five writers.</p>
+<p>Quirk limits: <code>compare()</code> for keys (the only reason <code>AppsData</code> is right and <code>Apps</code> is wrong); entries returned as arrays of pairs when exact key case matters, with named fields filled for the known keys.</p>
+<p>Risk: medium (the app list shown by <code>apps</code> changes: flatpak apps appear in the Control Center page, BxRig launchers disappear from <code>apps</code>). Guards: <code>apps-test.sh</code>, <code>apps-manager-test.sh</code>, <code>apps_manager_test.bxs</code>, <code>app_icons_test.bxs</code>, <code>launchers-test.sh</code>, <code>web-vpn-test.sh</code>, <code>vm-test.sh</code>, <code>plasma-panels-test.sh</code>; add <code>desktop_entry_test.bxs</code> with <code>name=</code> lower-case, <code>Name[de]</code>, <code>NoDisplay</code>, <code>X-BxRig-Launcher</code>.</p>
+<h4 id="f18-medium-effort-s-other-small-parsers"><a href="#f18-medium-effort-s-other-small-parsers" id="f18-medium-effort-s-other-small-parsers" name="f18-medium-effort-s-other-small-parsers" class="anchor"></a>F18 (Medium, effort S): other small parsers</h4>
+<ul>
+<li><code>key=value</code> lines: <code>Update.bx:104</code> (properties file: <code>listFirst</code>/<code>listRest</code>), <code>BackupData.bx:171</code> (<code>--keys-file</code>), <code>IconTheme.bx:51</code> (<code>gtk-icon-theme-name=</code> with quote stripping), <code>Secrets.bx:412</code>, <code>Time.bx:62</code> (<code>timedatectl show</code>). Five implementations, two of them using <code>listFirst( line, &quot;=&quot; )</code> (breaks when the key is empty; <code>listToArray</code> drops empty items by default and these calls do not pass <code>includeEmpty</code>).</li>
+<li><code>[section]</code> walkers: <code>Apps</code>, <code>AppsData</code>, <code>AppIcons</code> (F17) and the <code>kglobalshortcutsrc</code> reads in <code>KeysService</code> through <code>kreadconfig6</code>.</li>
+<li>Lua scraping: <code>KeysEditor.bx:27-57 userBinds</code> parses <code>hl.bind(</code> lines by hand (the header says &quot;not a Lua parser&quot;). It must stay best-effort, but it duplicates the key-name rules of <code>Shortcuts.parseKeys</code> (F20).</li>
+</ul>
+<p>Single home: <code>Props.bx</code> (key=value, <code>#</code> comments, quote strip, <code>compare</code>-based <code>get</code>) and the <code>DesktopEntry</code> section reader reused as <code>Ini.parse( text )</code> returning arrays of pairs.</p>
+<p>Risk: low.</p>
+<h3 id="e-shortcuts"><a href="#e-shortcuts" id="e-shortcuts" name="e-shortcuts" class="anchor"></a>E. Shortcuts</h3>
+<h4 id="f19-high-effort-m-the-shared-table-is-incomplete-so-conflict-scanning-is-blind-bug-class"><a href="#f19-high-effort-m-the-shared-table-is-incomplete-so-conflict-scanning-is-blind-bug-class" id="f19-high-effort-m-the-shared-table-is-incomplete-so-conflict-scanning-is-blind-bug-class" name="f19-high-effort-m-the-shared-table-is-incomplete-so-conflict-scanning-is-blind-bug-class" class="anchor"></a>F19 (High, effort M): the shared table is incomplete, so conflict scanning is blind, BUG-class</h4>
+<p>What: <code>Shortcuts.table()</code> is billed as the single source for xremap, Hyprland and Plasma, but 4 Hyprland binds are written as plain Lua text inside <code>hyprland()</code>, and the starter template carries about 30 more. <code>keys show</code>, the cheat sheet (<code>KeySheet</code>), <code>keys set</code> and <code>keys conflicts</code> read only the table.</p>
+<p>Where:</p>
+<ul>
+<li><code>Shortcuts.bx:196-203</code> hand-written: <code>Super+Space</code> (launcher), <code>Super+S</code> (control-center panel), <code>Super+comma</code> (settings), <code>Alt+Tab</code> (window switcher). None is a row, so none is listed by <code>keys sheet</code>, none can be changed with <code>keys set</code>, none is seen by the conflict scan.</li>
+<li><code>templates/hyprland.lua</code> (embedded as <code>TemplateData.bx:154-179</code>): <code>Super+Q/Return/B/E/F/V/J</code>, arrows, workspaces 1 to 9. Not in the table either.</li>
+<li><code>KeysEditor.bx:59-72 scan()</code> compares only <code>editable()</code> rows (<code>kind != &quot;remap&quot;</code>) with each other and with user files. It never compares <strong>remap sources with binds</strong>.</li>
+<li>Probable dead binds (verify on a machine): xremap rewrites <code>Super+S</code> to <code>Ctrl+S</code> (<code>mac-s</code>), <code>Super+comma</code> to <code>Ctrl+comma</code> (<code>mac-comma</code>), <code>Super+V</code> to <code>Ctrl+V</code> (<code>paste</code>), <code>Super+F</code> and <code>Super+B</code> likewise, before Hyprland sees them. The hand-written <code>mainMod .. &quot;+S&quot;</code> (control center) and <code>mainMod .. &quot;+comma&quot;</code> and the starter's <code>Super+V</code> (float) and <code>Super+F</code> (fullscreen) can then never fire. A scan over remaps plus binds would have said so.</li>
+<li><code>ShortcutsProvider.bx:25</code> has its own demo rows for the same data (a second table, demo only).</li>
+</ul>
+<p>Single home: still <code>Shortcuts</code>, but complete: add <code>kind: &quot;hypr-fixed&quot;</code> rows (listed, conflict-checked, not editable) for the 4 hand-written binds and the starter binds (generated from <code>templates/hyprland.lua</code> by a small reader, or declared once in the table and rendered into both files).</p>
+<pre><code>// Shortcuts
+function table()                 // + fixed rows: { id, keys, action, kind: &quot;hypr-fixed&quot;, dispatch }
+function conflicts()             // -&gt; { within: [...], remapShadows: [ { id, combo, remap } ], user: [...] }   (used by KeysEditor.scan and KeySheet)
+</code></pre>
+<p>Risk: low for the table; the conflict rule may report existing real clashes (that is the point). Guards: <code>shortcuts_test.bxs</code> (<code>show lists every row</code> counts 55, will change), <code>keys-test.sh</code>, <code>keys-editor-test.sh</code>, <code>keys-apply-test.sh</code>, <code>xremap-test.sh</code>, <code>hyprland-setup-test.sh</code>.</p>
+<h4 id="f20-medium-effort-m-shortcutsbx-mixes-four-jobs-lua-text-is-hand-assembled"><a href="#f20-medium-effort-m-shortcutsbx-mixes-four-jobs-lua-text-is-hand-assembled" id="f20-medium-effort-m-shortcutsbx-mixes-four-jobs-lua-text-is-hand-assembled" name="f20-medium-effort-m-shortcutsbx-mixes-four-jobs-lua-text-is-hand-assembled" class="anchor"></a>F20 (Medium, effort M): <code>Shortcuts.bx</code> mixes four jobs; Lua text is hand-assembled</h4>
+<p>What: one 278-line class holds key-combo parsing (<code>parseKeys</code>, <code>normalize</code>, <code>hyprExpr</code>, <code>qtKeys</code>), the data table, three renderers (xremap YAML, Hyprland Lua, Plasma ini) and the managed-file entries.</p>
+<p>Where:</p>
+<ul>
+<li><code>Shortcuts.bx:210-235</code>: the same Lua block (<code>local cfgdir = os.getenv( &quot;BXRIG_CONFIG_HOME&quot; ) or ...; local ok, X = pcall( dofile, cfgdir .. &quot;/bxrig/theme/NAME.lua&quot; )</code>) is pasted 3 times for <code>hypr.lua</code>, <code>look.lua</code>, <code>monitors.lua</code>. The producers of those files are in three other classes (<code>Theme.bx:134</code>, <code>Appearance.bx:30 lookFile</code>, <code>Display.bx:24 monitorsFile</code>); the file names exist as string literals on both sides (6 places) and in <code>Refresh.bx:39,67-68</code>.</li>
+<li><code>xremap()</code> rebuilds the source key as <code>&quot;Super-&quot; &amp; lcase( listLast( r.keys, &quot;+&quot; ) )</code>: it assumes every remap starts with <code>Super+</code>, ignoring the <code>parseKeys</code> it already has. The Plasma value is <code>qtKeys( r.keys ) &amp; &quot;,&quot; &amp; r.plasmaTail</code> computed inside <code>table()</code> as a side effect on the row.</li>
+<li><code>table()</code> is rebuilt (and <code>ControlCenterPages().list()</code> re-instantiated) on every call; <code>setKeys</code> calls it 3 times and normalises every row each time.</li>
+</ul>
+<p>Single home: split by job, keep <code>Shortcuts</code> as the facade so callers do not change.</p>
+<pre><code>class KeyCombo   { function parse( text )  function normal()  function hypr()  function qt()  function xremap() }        // pure, tested alone
+class LuaModule  { function optional( file, variable, apply )  function bind( combo, dispatch ) }                         // the 3 pasted blocks become 3 calls
+class ShortcutRenderers { function xremap( rows )  function hyprland( rows )  function plasma( rows ) }
+class Shortcuts  { function table()  function entries( cfgHome )  function render( target ) }                             // facade, unchanged API
+</code></pre>
+<p>Plus constants for the module names (<code>ThemeFiles.hypr()</code>, <code>look()</code>, <code>monitors()</code>), used by Theme, Appearance, Display and <code>LuaModule</code>.</p>
+<p>Quirk limits: <code>KeyCombo.parse</code> keeps <code>compare</code> for <code>Enter</code> vs <code>enter</code> handling (today <code>lcase( raw ) == &quot;enter&quot;</code>, safe because both sides are lowered).</p>
+<p>Risk: low; <code>shortcuts_test.bxs</code> already asserts rendered text, keep it as the golden test.</p>
+<h3 id="f-tui-layer"><a href="#f-tui-layer" id="f-tui-layer" name="f-tui-layer" class="anchor"></a>F. TUI layer</h3>
+<h4 id="f21-medium-effort-m-plan--ask--result-state-machine-written-twice-key-tables-written-twice"><a href="#f21-medium-effort-m-plan--ask--result-state-machine-written-twice-key-tables-written-twice" id="f21-medium-effort-m-plan--ask--result-state-machine-written-twice-key-tables-written-twice" name="f21-medium-effort-m-plan--ask--result-state-machine-written-twice-key-tables-written-twice" class="anchor"></a>F21 (Medium, effort M): plan / ask / result state machine written twice; key tables written twice</h4>
+<p>What: <code>ControlCenterApp</code> and <code>TimeMachineApp</code> each carry the same modal state (<code>{ title, lines, intent }</code>, modes <code>confirm</code> and <code>result</code>, <code>y</code>/<code>n</code>/<code>Escape</code>/<code>Enter</code> handling), and <code>ControlCenterApp</code> adds the text-entry <code>ask</code> mode that <code>WizardApp</code> and <code>ListPage</code> (filter input) and <code>AppsModel.typeChar</code> re-implement.</p>
+<p>Where:</p>
+<ul>
+<li><code>ControlCenterApp.bx:68-69</code> <code>showPlan</code>/<code>showResult</code> and <code>onKey</code> 82-110 (confirm: <code>y Y Enter</code> runs, <code>n N Escape q</code> cancels; result: any key; ask: Backspace/Space/printable). <code>TimeMachineApp.bx:168-178</code> <code>showPlan</code>/<code>showResult</code>, <code>onKey</code> 191-206 and <code>leaveConfirm</code>, with lines split from text (<code>listToArray( text, chr( 10 ), true )</code>) where Control Center receives an array.</li>
+<li>Intent execution: <code>ControlCenter.bx:76-104 handle</code> and <code>TimeMachine.bx:47 handle</code> both run &quot;dry-run, show plan, on <code>y</code> run with <code>--yes</code>, show result&quot;, with <code>runCli</code> twice (F02).</li>
+<li>Case-sensitive key compares: <code>compare( k, &quot;q&quot; ) == 0</code> 32 times in 5 files (<code>AppsModel</code> 10, <code>ControlCenterApp</code> 6, <code>DashboardPage</code> 5, <code>ListPage</code> 3, <code>AppsData</code> 8; the <code>AppsData</code> ones are not keys). It exists only because <code>==</code> is case-insensitive and <code>q</code> and <code>Q</code> are different keys. Each author must remember it.</li>
+<li>Footer hints and handlers are separate lists: <code>DashboardPage.keys()</code> (line 29) vs <code>onKey</code> (31), <code>AppsPage.keys()</code> (28) vs <code>AppsModel.onKey</code> (340-396), <code>ListPage.keys()</code> (37) vs <code>onKey</code> (84). <code>ListPage</code> provider <code>actions()</code> (<code>{ key, label, run }</code>) already shows the right shape: one list drives both.</li>
+<li>Printing: <code>ControlCenterApp</code> modal and <code>TimeMachineView.modalBox</code>, <code>ControlCenterView</code> modal, <code>TuiKit.modal/confirmModal</code> (the kit has the drawing).</li>
+</ul>
+<p>Single home: two small classes next to <code>TuiList</code>.</p>
+<pre><code>class Modal   {                                   // state only, no drawing
+    function plan( title, lines, intent )  function result( title, lines )  function ask( title, prompt, make )
+    function onKey( key )                         // -&gt; { done: true|false, intent, confirmed } ; y/n/Escape/Enter/Backspace/printable in one place
+}
+class KeyMap  {                                   // one table: key, label, intent; drives footer and dispatch
+    function add( key, label, run )  function hints()  function dispatch( key )   // compare() inside
+}
+class IntentRunner { function init( proc )  function handle( app, intent ) }   // ControlCenter.handle and TimeMachine.handle merged
+</code></pre>
+<p>Quirk limits: <code>KeyMap.dispatch</code> returns the stored closure's result; closures in <code>run</code> capture data, never call methods (as <code>provider.actions()[].run</code> does today). <code>Modal.onKey</code> is a plain method called from the app, not from a closure.</p>
+<p>Risk: medium (key handling is dense; many tests send keys). Guards: <code>control_center_test.bxs</code>, <code>time_machine_test.bxs</code>, <code>app_pages_test.bxs</code>, <code>wizard_app_test.bxs</code>, <code>tui-test.sh</code>, <code>timeline-test.sh</code>, <code>pty-frame.py</code> runs.</p>
+<h4 id="f22-low-effort-s-view-forwarders-palette-copies-starfield"><a href="#f22-low-effort-s-view-forwarders-palette-copies-starfield" id="f22-low-effort-s-view-forwarders-palette-copies-starfield" name="f22-low-effort-s-view-forwarders-palette-copies-starfield" class="anchor"></a>F22 (Low, effort S): view forwarders, palette copies, starfield</h4>
+<ul>
+<li><code>WizardView.bx:29-37</code> (9 one-line forwarders <code>mix</code>, <code>brand</code>, <code>shimmer</code>, <code>c</code>, <code>put</code>, <code>fillRect</code>, <code>gtext</code>, <code>wrap</code>, <code>panel</code>) and <code>TimeMachineView.bx:24-41</code> (12) re-export <code>TuiKit</code> methods; <code>ControlCenterView</code> and the pages call the kit directly.</li>
+<li>The Catppuccin and brand palette is declared again in <code>WizardView.bx:14-18</code> and <code>TimeMachineView.bx:14</code> (50 <code>variables.BASE</code> style uses) although <code>TuiKit.color( &quot;BASE&quot; )</code> has it (<code>TuiKit.bx:15</code>).</li>
+<li>Starfield: <code>WizardView.bx:94 starfield</code> (46 stars) and <code>TimeMachineView.bx:101 stars</code> (40 stars) share the same LCG constants (<code>2654435769</code>, <code>1664525</code>, <code>1013904223</code>) and logic, differing in avoid-rect and glyphs.</li>
+<li><code>TuiSys</code> is a data and process helper but is named for the TUI, and <code>AppsData.bx:18</code> (documented as reusable by &quot;a future desktop app&quot;) depends on it. Fixed by F02.</li>
+</ul>
+<p>Home: <code>TuiKit.starfield( count, avoid, tick, style )</code>; views call <code>variables.kit.x()</code> directly; palette read from <code>kit.color()</code>.</p>
+<p>Risk: low, covered by <code>tui_kit_test.bxs</code>, <code>wizard_view_test.bxs</code>, <code>time_machine_test.bxs</code> (they render frames).</p>
+<h3 id="g-tests"><a href="#g-tests" id="g-tests" name="g-tests" class="anchor"></a>G. Tests</h3>
+<h4 id="f23-high-effort-m-the-shell-test-harness-is-copy-pasted-70-times"><a href="#f23-high-effort-m-the-shell-test-harness-is-copy-pasted-70-times" id="f23-high-effort-m-the-shell-test-harness-is-copy-pasted-70-times" name="f23-high-effort-m-the-shell-test-harness-is-copy-pasted-70-times" class="anchor"></a>F23 (High, effort M): the shell test harness is copy-pasted 70 times</h4>
+<p>Counts over <code>tests/*.sh</code> (74 files, 5,876 lines):</p>
+<ul>
+<li><code>fail() { echo &quot;FAIL: $*&quot; &gt;&amp;2; exit 1; }</code> in <strong>70</strong>, byte-identical.</li>
+<li><code>code() { set +e; run &quot;&#x24;&#x40;&quot; &gt;&#x2f;dev&#x2f;null 2&gt;&amp;1&#x3b; local c&#x3d;&#x24;?; set -e; echo &quot;$c&quot;; }</code> in 53 (four more spellings in 11 files).</li>
+<li><code>run() { env HOME=... BXRIG_CONFIG_HOME=... PATH=&quot;&#x24;tmp&#x2f;bin&#x3a;&#x24;PATH&quot; LOG=... &quot;$@&quot;; }</code> in 61, with at least 8 different environment sets (the 5 most common appear 2 to 3 times each, the rest once).</li>
+<li><code>tmp=&quot;&#x24;&#x28;mktemp -d&#x29;&quot;&#x3b; trap &#x27;rm -rf &quot;&#x24;{tmp:?}&quot;' EXIT</code> in 69; <code>binary=&quot;&#x24;&#x28;realpath &quot;&#x24;{1:?native executable required}&quot;)&quot;</code> in 65.</li>
+<li>58 <code>cat &gt; &quot;$tmp/bin/NAME&quot;</code> fake-binary heredocs: <code>pacman</code> 13 times in 23 files, <code>sudo</code> stub in 21, <code>id</code> stub in 22, <code>systemctl</code> in 10, <code>curl</code> x3, <code>git</code> x3, <code>hyprctl</code> x3, <code>restic</code> x3.</li>
+<li><code>grep -q ... &quot;$LOG&quot; || fail ...</code> 145 times; <code>jq -e</code> 351 times, 322 of them on the same envelope fields (<code>.ok</code>, <code>.exit</code>, <code>.schema == 1</code>, <code>.data...</code>).</li>
+<li><code>native-smoke.sh</code> has its own <code>has()</code>, <code>usage_exit2()</code>, <code>expect_error()</code>.</li>
+</ul>
+<p>Single home: <code>tests/lib/harness.sh</code>, sourced by every test.</p>
+<pre><code># tests/lib/harness.sh
+fail() { ...; }                       # one definition
+bx_init BINARY_ARG                    # binary, tmp, trap, home, cfg, data, state, LOG; exports the standard env list
+bx_run ARGS...                        # env HOME BXRIG_CONFIG_HOME ... PATH=&quot;$tmp/bin:$PATH&quot; LOG ... &quot;$@&quot;
+bx_code ARGS...                       # exit code only
+bx_stub NAME 'BODY'                   # writes $tmp/bin/NAME logging &quot;NAME $*&quot; to $LOG, exit 0; bx_stub_sudo, bx_stub_id, bx_stub_pacman, bx_stub_systemctl
+bx_log_has 'text'  bx_log_lacks 'text'
+bx_json ARGS... -- 'jq filter'        # runs with --json and asserts jq -e
+</code></pre>
+<p>Replaces about 450 lines of preamble (70 files x 6 to 7 lines) and the 58 fake-binary blocks that are repeats; makes F02's <code>has</code> change a one-file edit (the <code>--version</code> branch of the <code>sudo</code> stub lives once).</p>
+<p>Quirk limits: none (bash). <code>set -euo pipefail</code> stays in each test (a sourced file cannot set it for the caller reliably); <code>fail</code> must exit the caller.</p>
+<p>Risk: low, but large diff; do it per test group (tests of one subsystem at a time) with the guard being the test itself.</p>
+<h4 id="f24-medium-effort-s-bxs-harness-and-test-registration"><a href="#f24-medium-effort-s-bxs-harness-and-test-registration" id="f24-medium-effort-s-bxs-harness-and-test-registration" name="f24-medium-effort-s-bxs-harness-and-test-registration" class="anchor"></a>F24 (Medium, effort S): <code>.bxs</code> harness and test registration</h4>
+<ul>
+<li><code>function check( label, ok ) { if ( ok ) println( &quot;ok &quot; &amp; label ); else { println( &quot;FAIL &quot; &amp; label ); failures++; } }</code> plus <code>failures = 0</code> in all 20 <code>.bxs</code> tests; <code>sh()</code> x3, <code>text()</code> x2, <code>touch()</code>, <code>shot()</code> x2 (render a frame) repeated.</li>
+<li>Registration is by hand in 4 lists: <code>.github/workflows/ci.yml</code> names every shell test <strong>twice</strong> (the <code>bash -n</code> syntax line and the run list, 74 mentions) and every <code>.bxs</code> once (<code>ci.yml:139-...</code>); <code>tests/arch/suite.sh</code> lists 48 steps by hand (46 of 74 shell tests and all 19 <code>.bxs</code> tests are not in it); adding a test means 2 to 3 edits. Forgetting one means the test silently never runs in that environment.</li>
+</ul>
+<p>Home: <code>tests/lib/Check.bx</code> (a class: <code>check</code>, <code>done</code>, <code>tmp</code>, <code>text</code>, <code>touch</code>, <code>frame</code>) and a loop in CI:</p>
+<pre><code>for t in tests/*-test.sh; do bash &quot;$t&quot; &quot;$candidate&quot;; done      # discovery, with an explicit skip file for the 5 that need other args
+for t in tests/*_test.bxs; do ( cd src &amp;&amp; matchbox &quot;../$t&quot; ); done
+</code></pre>
+<p>Quirk limits: <code>.bxs</code> helper resolution (section 1). Spike first: put <code>tests/Application.bx</code> with <code>this.mappings = { &quot;/lib&quot;: ... }</code>, or run with <code>cd tests</code>.</p>
+<p>Risk: low. Gain: a new test cannot be forgotten.</p>
+<h3 id="h-constants-and-leaks"><a href="#h-constants-and-leaks" id="h-constants-and-leaks" name="h-constants-and-leaks" class="anchor"></a>H. Constants and leaks</h3>
+<h4 id="f25-medium-effort-s-with-f01-exit-codes-are-numeric-literals"><a href="#f25-medium-effort-s-with-f01-exit-codes-are-numeric-literals" id="f25-medium-effort-s-with-f01-exit-codes-are-numeric-literals" name="f25-medium-effort-s-with-f01-exit-codes-are-numeric-literals" class="anchor"></a>F25 (Medium, effort S with F01): exit codes are numeric literals</h4>
+<p>404 literals: <code>say( ..., 4, ...)</code> 156, <code>0</code> 135, <code>6</code> 63, <code>2</code> 51; <code>CLIExit( 2 )</code> 78 in Main; <code>return N;</code> 162. The contract table (section 3) is the only definition; a typo (<code>5</code> for <code>6</code>, or the <code>Installer.exitCode</code> 5/6/7 logic) is invisible. F07 shows the symptom: the same condition (bad name) exits 2 in 3 classes and 4 in 5.</p>
+<p>Home: name by intent, not by number, in the <code>Out</code> of F01 (<code>out.usage</code>, <code>out.precondition</code>, <code>out.failed</code>, <code>out.partial</code>, <code>out.drift</code>), because BoxLang has no constants and a <code>new bxrig.Exit().USAGE()</code> call is noisier than the number it replaces. Keep a single <code>Exit</code> class with <code>describe( code )</code> for help and the contract test (the table in <code>COMMAND-CONTRACT.md</code> section 3 is generated from it).</p>
+<h4 id="f26-low-effort-s-strings-that-should-be-named-once"><a href="#f26-low-effort-s-strings-that-should-be-named-once" id="f26-low-effort-s-strings-that-should-be-named-once" name="f26-low-effort-s-strings-that-should-be-named-once" class="anchor"></a>F26 (Low, effort S): strings that should be named once</h4>
+<ul>
+<li><code>BXRIG_*</code> environment names: 63 distinct, 143 references; <code>BXRIG_SELF</code> 16 times, <code>BXRIG_TTY_IN</code> 11, <code>BXRIG_POWER_DIR</code> 6. A typo returns the fallback silently. Home: names are method names on <code>Env</code> (<code>Env.configHome()</code>), listed in <code>docs/reference/config-files.md</code> by a check that greps <code>Env.bx</code>.</li>
+<li>Unit names (28 refs, F10), theme module file names (6, F20), page ids (F16), icon names (<code>ControlCenterPages</code> 17, provider <code>icon()</code> 14, <code>Launchers.folders</code> freedesktop names, <code>MenuTree.themeIcon</code> 4, <code>TuiKit.glyphs</code> 24), URLs (<code>https://github.com</code> 118 refs, <code>www.icloud.com</code> 16, <code>downloads.ortussolutions.com</code>, <code>skills.boxlang.io</code>, <code>try.boxlang.io</code> repeated in <code>Update</code>, <code>Skills</code>, <code>Boxlang</code>, <code>MenuTree</code>, <code>Boxlang.welcomeHtml</code>). Home: <code>Urls.bx</code> for first-party hosts; page and icon names through the registry of F16.</li>
+<li>Path literals <code>/.local/share/applications</code>, <code>~/.config/bxrig/*.json</code>: through <code>Env</code> (F03).</li>
+</ul>
+<h4 id="f27-low-effort-s-encapsulation-leaks-short-list"><a href="#f27-low-effort-s-encapsulation-leaks-short-list" id="f27-low-effort-s-encapsulation-leaks-short-list" name="f27-low-effort-s-encapsulation-leaks-short-list" class="anchor"></a>F27 (Low, effort S): encapsulation leaks, short list</h4>
+<ol>
+<li><code>Shortcuts.bx:13</code> builds a <code>ConfigService</code> to learn the config directory; a pure data class depends on a file service. After F03 it calls <code>Env.config()</code>.</li>
+<li><code>KeysEditor.bx:84-88</code>, <code>Ai.bx:57</code>, <code>Secrets.bx:98,321</code> build the config entry struct themselves (F06, <code>ConfigService.entry</code>).</li>
+<li><code>AppsData.bx:18</code> and 13 providers use <code>TuiSys</code> for non-UI work (F02, F22).</li>
+<li><code>Main.bx:184-186</code> knows which classes own managed files (F14); <code>Refresh.bx:39</code> knows it a second time.</li>
+<li><code>Installer</code> is the process runner and the install planner; its name hides the first job (57 files <code>new Installer</code> only for <code>.exec</code>). Rename role: <code>Proc</code> (F02).</li>
+<li>The same collaborator has three field names: <code>variables.config</code> (25 classes), <code>variables.cfgSvc</code> (7), <code>variables.cfg</code> (1); <code>variables.inst</code> (56) holds the runner. A reader cannot grep for &quot;who uses ConfigService&quot;.</li>
+<li><code>ControlCenter.handle</code> mutates the app through <code>showPlan</code>/<code>showResult</code> and runs processes; the app and the runner know each other (F21 <code>IntentRunner</code> fixes the direction).</li>
+</ol>
+<h2 id="3-test-coverage-of-the-review-itself"><a href="#3-test-coverage-of-the-review-itself" id="3-test-coverage-of-the-review-itself" name="3-test-coverage-of-the-review-itself" class="anchor"></a>3. Test coverage of the review itself</h2>
+<p>This review ran no tests. Every phase below names its guards (section 10) and adds a failing-first test.</p>
+<h2 id="4-what-is-already-good-keep-it"><a href="#4-what-is-already-good-keep-it" id="4-what-is-already-good-keep-it" name="4-what-is-already-good-keep-it" class="anchor"></a>4. What is already good (keep it)</h2>
+<ul>
+<li>Pure planners (<code>SetupPlan</code>, <code>InitPlan</code>, <code>Resolver</code>) take <code>facts</code> and return steps; they are the model for <code>Mutation</code> input.</li>
+<li>The injectable runner (<code>init( cli, runner = &quot;&quot; )</code>, 65 classes) is the right seam; F02 keeps it.</li>
+<li><code>ConfigService</code> is a real service (atomic write, journal, drift); F05 and F06 route more traffic to it rather than replacing it.</li>
+<li>Generated data classes with <code>--check</code> in CI (8 generators) catch stale copies; F13 and F15 reuse that pattern.</li>
+<li><code>ListPage</code> plus provider <code>actions()</code> is the right shape for key tables (F21 generalises it).</li>
+<li><code>Cli.envelope</code> is already the single envelope builder.</li>
+</ul>
+<h2 id="5-where-mainbx-and-clijson-overlap-today-detail-for-f13"><a href="#5-where-mainbx-and-clijson-overlap-today-detail-for-f13" id="5-where-mainbx-and-clijson-overlap-today-detail-for-f13" name="5-where-mainbx-and-clijson-overlap-today-detail-for-f13" class="anchor"></a>5. Where Main.bx and cli.json overlap today (detail for F13)</h2>
+<p><code>bootstrap/gen-docs.sh</code> already parses <code>case &quot;x&quot;:</code> from <code>Main.bx</code> with a regex, so Main is treated as data by the build. The generator checks: every route has a cli.json entry, no stray entries, usage starts with the command name, examples start with a real route, summaries end with a full stop. It does not check: flags, arity, or that <code>usage</code> equals what Main prints. Moving those into the spec (stage 1 and 2 of F13) keeps the generator, only richer.</p>
+<h2 id="6-counts-table-single-list-for-tracking-progress"><a href="#6-counts-table-single-list-for-tracking-progress" id="6-counts-table-single-list-for-tracking-progress" name="6-counts-table-single-list-for-tracking-progress" class="anchor"></a>6. Counts table (single list, for tracking progress)</h2>
+<div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
+<thead>
+<tr><th>Item</th><th>Now</th><th>Target</th></tr>
+</thead>
+<tbody>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>function say(</code> definitions</td><td>54 in 57 files</td><td>0 (1 in <code>Cli</code>)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>function fail(</code></td><td>17</td><td>0</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>function tryExec(</code></td><td>33</td><td>0</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>function has(</code> (<code>command -v</code>)</td><td>28</td><td>0</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>function env(</code> / <code>home()</code> / <code>self()</code> / <code>dataHome()</code></td><td>11 / 17 / 9 / 8</td><td>0</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>function merge(</code></td><td>10</td><td>0</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>function validName(</code></td><td>9</td><td>1 (<code>Names</code>)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>&quot;pacman&quot;, &quot;-S&quot;, &quot;--needed&quot;, &quot;--noconfirm&quot;</code> literals</td><td>16 in 11 files</td><td>1</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>.desktop</code> parsers / writers</td><td>3 / 5</td><td>1 / 1</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>jsonDeserialize( fileRead(</code></td><td>37</td><td>1</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>direct <code>fileWrite</code> of settings JSON</td><td>8</td><td>0</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>&quot;Usage: bxrig</code> literals in Main</td><td>56</td><td>0</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>flag whitelist entries (duplicates)</td><td>130 (8)</td><td>per command</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>structKeyExists( args.options, &quot;yes&quot; )</code></td><td>66</td><td>0</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>fail()</code> in shell tests</td><td>70</td><td>1</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>check()</code> in <code>.bxs</code> tests</td><td>20</td><td>1</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>test registration places</td><td>3</td><td>0 (discovery)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>numeric exit literals</td><td>404</td><td>0</td></tr>
+</tbody>
+</table></div>
+<h2 id="7-order-of-operations-that-keeps-risk-low"><a href="#7-order-of-operations-that-keeps-risk-low" id="7-order-of-operations-that-keeps-risk-low" name="7-order-of-operations-that-keeps-risk-low" class="anchor"></a>7. Order of operations that keeps risk low</h2>
+<ol>
+<li>Add the new class, with its own unit test, and change nothing else.</li>
+<li>Migrate 2 to 3 pilot classes whose tests are strongest.</li>
+<li>Mechanical migration in batches of about 10 files; each batch run against that batch's tests.</li>
+<li>Delete the one-line delegates.</li>
+<li>Add a <strong>ratchet test</strong> (<code>tests/dry-test.sh</code>, a grep script) that fails when a banned pattern reappears, with the current count as the allowed maximum; lower the maximum each batch.</li>
+</ol>
+<h2 id="8-ratchet-checks-to-add-cheap-no-new-framework"><a href="#8-ratchet-checks-to-add-cheap-no-new-framework" id="8-ratchet-checks-to-add-cheap-no-new-framework" name="8-ratchet-checks-to-add-cheap-no-new-framework" class="anchor"></a>8. Ratchet checks to add (cheap, no new framework)</h2>
+<pre><code># tests/dry-test.sh   (each line: pattern, allowed maximum; maximum goes down to the target in section 6)
+count 'function say('            src/bxrig  0
+count 'function tryExec('        src/bxrig  0
+count 'function validName('      src/bxrig  1
+count '&quot;Usage: bxrig'            src/Main.bx 0
+count 'fail() {'                 tests      1
+count 'jsonDeserialize( fileRead(' src/bxrig 1
+count 'getSystemSetting( &quot;HOME&quot;' src/bxrig  1
+</code></pre>
+<h2 id="9-ranked-top-15-by-payoff"><a href="#9-ranked-top-15-by-payoff" id="9-ranked-top-15-by-payoff" name="9-ranked-top-15-by-payoff" class="anchor"></a>9. Ranked top 15 by payoff</h2>
+<p>Payoff weighs: defects it removes now, breadth (files touched), how much it unblocks, and risk/effort. &quot;BUG&quot; means a divergence that changes behaviour today.</p>
+<div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
+<thead>
+<tr><th>#</th><th>Finding</th><th>Why first</th><th>Effort</th><th>Risk</th></tr>
+</thead>
+<tbody>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>1</td><td>F01 <code>Cli.say</code> / <code>Out</code></td><td>57 files, 788 call sites, unlocks F04, F25; low risk</td><td>M</td><td>low</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>2</td><td>F02 <code>Proc</code> (exec, has, isRoot, run-myself)</td><td>33+28 files; fixes a contract-2.9 shell string and the two meanings of <code>has</code> (BUG)</td><td>M</td><td>med</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>3</td><td>F03 <code>Env</code> paths</td><td>BUG: <code>dataHome</code> ambiguity and <code>XDG_CONFIG_HOME</code> split; tiny first step</td><td>S</td><td>low</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>4</td><td>F17 <code>DesktopEntry</code></td><td>BUG: <code>==</code> parser, two dir lists, BxRig launchers leak into <code>apps</code></td><td>M</td><td>med</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>5</td><td>F13 <code>CommandSpec</code> + <code>Options</code></td><td>BUG: any flag accepted anywhere; removes the 3-way edit per flag</td><td>L</td><td>med</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>6</td><td>F19 shortcut table completeness and remap-shadow scan</td><td>BUG-class: likely dead binds, invisible to every tool</td><td>M</td><td>low</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>7</td><td>F23 shell test harness</td><td>70 copies; makes every other phase cheaper to test</td><td>M</td><td>low</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>8</td><td>F04 <code>Mutation</code> plan protocol</td><td>44 files, 89+80 hand-written plan texts, root guard enforced by hand</td><td>M</td><td>med</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>9</td><td>F05 <code>JsonStore</code></td><td>BUG: 8 writers bypass the config service; 37 read sites</td><td>M</td><td>med</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>10</td><td>F09 <code>Pacman</code></td><td>16 literals, 7 installed-set parsers; one place for the <code>--needed --noconfirm</code> rule</td><td>M</td><td>low</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>11</td><td>F06 <code>ConfigService.entry</code> + <code>SystemFile</code> + <code>SystemdUnit</code></td><td>51 literals, root files with no backup, 8 hand-written unit texts</td><td>M</td><td>med</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>12</td><td>F10 <code>Systemd</code></td><td>47 refs, two <code>is-active</code> idioms, 28 unit-name literals</td><td>M</td><td>low</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>13</td><td>F21 <code>Modal</code> / <code>KeyMap</code> / <code>IntentRunner</code></td><td>two copies of the confirm/ask/result machine, 32 case-sensitive key compares</td><td>M</td><td>med</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>14</td><td>F11 <code>Http</code></td><td>11 files, <code>-f</code> missing on a POST, two timeout clocks</td><td>M</td><td>low</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>15</td><td>F24 test discovery and <code>Check</code></td><td>a new test can no longer be forgotten; 20 copies of <code>check()</code></td><td>S</td><td>low</td></tr>
+</tbody>
+</table></div>
+<p>Next in line: F14 (Main logic), F16 (page registry), F20 (Shortcuts split), F07 (names), F08 (text), F12 (desktop and engine), F18 (props), F25 (exit names, rides with F01), F15 (version), F22, F26, F27.</p>
+<h2 id="10-phased-refactor-plan"><a href="#10-phased-refactor-plan" id="10-phased-refactor-plan" name="10-phased-refactor-plan" class="anchor"></a>10. Phased refactor plan</h2>
+<p>Each phase is one pull request (or a short series), shippable alone, leaves <code>development</code> green, and ends with the ratchet line from section 8 lowered. &quot;Guards&quot; are existing tests that must stay green; &quot;New&quot; are tests written first.</p>
+<p><strong>Phase 0: guard rails (S, 1 day)</strong></p>
+<ul>
+<li>Add <code>tests/lib/harness.sh</code> (F23) and migrate 5 pilot tests: <code>time-test.sh</code>, <code>power-test.sh</code>, <code>security-test.sh</code>, <code>help-test.sh</code>, <code>keys-test.sh</code>. Add <code>tests/dry-test.sh</code> (section 8) with today's counts.</li>
+<li>Spike <code>.bxs</code> helper resolution (F24); write <code>tests/lib/Check.bx</code> if it works.</li>
+<li>Guards: the 5 migrated tests, <code>bash -n</code> line in CI. New: <code>dry-test.sh</code>.</li>
+</ul>
+<p><strong>Phase 1: foundations, no behaviour change (M, 3 days)</strong></p>
+<ul>
+<li>Add <code>Cli.say/fail/scoped</code> and <code>Out</code> (F01), <code>Proc</code> (F02, with <code>Installer.exec</code> forwarding), <code>Env</code> (F03, but <code>data()</code> and <code>xdgData()</code> reproduce today's two behaviours exactly), <code>Text</code>/<code>Fmt</code> (F08). Each with a <code>.bxs</code> unit test.</li>
+<li>Migrate <code>Time</code>, <code>Power</code>, <code>Security</code> fully as pilots.</li>
+<li>Guards: <code>time-test.sh</code>, <code>power-test.sh</code>, <code>security-test.sh</code>, <code>cli-contract-test.sh</code>, <code>installer_test.bxs</code>. New: <code>out_test.bxs</code>, <code>proc_test.bxs</code>, <code>env_test.bxs</code>, <code>text_test.bxs</code>.</li>
+</ul>
+<p><strong>Phase 2: mechanical migration of the helpers (M, 3 days, 4 PRs of about 10 classes)</strong></p>
+<ul>
+<li>Replace the 54 <code>say</code>, 17 <code>fail</code>, 33 <code>tryExec</code>, 28 <code>has</code>, 11 <code>env</code>, 17 <code>home</code>, 9 <code>self</code>, 10 <code>merge</code> definitions with delegates, then delete the delegates. Mostly sed on exact-match lines.</li>
+<li>Guards: the test of each batch's classes (each batch lists them); <code>dry-test.sh</code> counts must fall.</li>
+</ul>
+<p><strong>Phase 3: the two path bugs (S, 1 day)</strong></p>
+<ul>
+<li>Launchers, Editor, Strata, IconTheme use <code>Env.config()</code> and <code>Env.xdgData()</code>; <code>ConfigService.cfgHome</code> honours <code>XDG_CONFIG_HOME</code> after <code>BXRIG_CONFIG_HOME</code>. Document in <code>config-files.md</code>.</li>
+<li>Guards: <code>config-test.sh</code>, <code>launchers-test.sh</code>, <code>editor-test.sh</code>, <code>strata-test.sh</code>, <code>icon_theme_test.bxs</code>, <code>refresh-test.sh</code>. New: <code>paths-test.sh</code> (run with <code>XDG_CONFIG_HOME</code> and <code>BXRIG_CONFIG_HOME</code> set, assert every managed file lands under the same root).</li>
+</ul>
+<p><strong>Phase 4: <code>has</code> meaning and run-myself (S, 1 day)</strong></p>
+<ul>
+<li>Decide <code>has</code> = <code>command -v</code>; switch the 30 <code>hasCommand</code> sites; keep <code>works()</code> for version checks; fix <code>TuiSys.has</code>; merge the 5 run-myself paths into <code>Proc.self</code>.</li>
+<li>Guards: <code>setup-test.sh</code>, <code>pkg-test.sh</code>, <code>packages-test.sh</code>, <code>tiling-test.sh</code>, <code>session-test.sh</code>, <code>keys-apply-test.sh</code>, <code>tui-test.sh</code>, <code>timeline-test.sh</code>, <code>control_center_test.bxs</code>. New: a stub-without-<code>--version</code> case in <code>setup-test.sh</code>.</li>
+</ul>
+<p><strong>Phase 5: <code>DesktopEntry</code> (M, 2 days)</strong></p>
+<ul>
+<li>Add <code>DesktopEntry</code>, migrate <code>Apps</code>, <code>AppsData</code>, <code>AppIcons</code>, then the 5 writers.</li>
+<li>Guards: <code>apps-test.sh</code>, <code>apps-manager-test.sh</code>, <code>apps_manager_test.bxs</code>, <code>app_icons_test.bxs</code>, <code>app_pages_test.bxs</code>, <code>launchers-test.sh</code>, <code>web-vpn-test.sh</code>, <code>vm-test.sh</code>, <code>plasma-panels-test.sh</code>, <code>web-install-test.sh</code>. New: <code>desktop_entry_test.bxs</code> (lower-case key, <code>Name[de]</code>, hidden, launcher, flatpak dir).</li>
+</ul>
+<p><strong>Phase 6: flags, usage, options (M then M, 2 PRs)</strong></p>
+<ul>
+<li>6a: <code>flags</code> in <code>cli.json</code>, <code>gen-docs.sh</code> emits <code>CommandSpec</code>, Main validates per command, default branch exits 2.</li>
+<li>6b: usage strings from the spec, <code>Options</code> replaces 129 <code>structKeyExists</code> reads.</li>
+<li>Guards: <code>help-test.sh</code>, <code>cli-contract-test.sh</code>, <code>native-smoke.sh</code>, <code>gen-docs.sh --check</code>. New: <code>flags-test.sh</code>.</li>
+</ul>
+<p><strong>Phase 7: mutation protocol (M, 3 days, 2 PRs)</strong></p>
+<ul>
+<li><code>Mutation</code> with the existing wording; migrate <code>Tweaks</code>, <code>Time</code>, <code>Power</code>, <code>Security</code>, <code>Nas</code>, <code>Containers</code>, <code>Cloud</code>, <code>BackupData.plan</code>, then the rest.</li>
+<li>Guards: the test of each class; <code>system-actions-test.sh</code>; <code>init-test.sh</code> (uses <code>InitPlan</code> output). New: <code>mutation_test.bxs</code> (no <code>--yes</code> exits 2, <code>--dry-run</code> exits 0 and runs nothing, first failure exits 6).</li>
+</ul>
+<p><strong>Phase 8: tools (M, 3 days, one PR per class)</strong></p>
+<ul>
+<li><code>Pacman</code> (F09), <code>Systemd</code> (F10), <code>Http</code> (F11). Each replaces call sites and lowers its ratchet line.</li>
+<li>Guards: tests that log fake <code>pacman</code>, <code>systemctl</code>, <code>curl</code> argv (grep for <code>--needed --noconfirm</code>, <code>enable --now</code>, <code>--max-time</code>): <code>containers-test.sh</code>, <code>nas-test.sh</code>, <code>macextras-test.sh</code>, <code>update-test.sh</code>, <code>skills-test.sh</code>, <code>sdk-test.sh</code>, <code>java-test.sh</code>, <code>mail-test.sh</code>, <code>strata-test.sh</code>, <code>boxlang-test.sh</code>.</li>
+</ul>
+<p><strong>Phase 9: config traffic through the service (M, 3 days)</strong></p>
+<ul>
+<li><code>JsonStore</code> (F05), <code>ConfigService.entry</code>, <code>SystemFile</code>, <code>SystemdUnit</code> (F06); add the missing managed files to <code>config list</code> and move the managed list out of Main (F14).</li>
+<li>Guards: <code>config-test.sh</code>, <code>config-native-test.sh</code>, <code>appearance-test.sh</code>, <code>display-test.sh</code>, <code>theme-test.sh</code>, <code>nas-test.sh</code>, <code>backup-data-test.sh</code>, <code>skills-test.sh</code>, <code>update-test.sh</code>, <code>refresh-test.sh</code>. New: <code>config-list-test.sh</code> (every managed file written by any command appears in <code>config list</code>).</li>
+</ul>
+<p><strong>Phase 10: shortcuts (M, 3 days)</strong></p>
+<ul>
+<li>F19 first (fixed rows, remap-shadow scan), then F20 (<code>KeyCombo</code>, <code>LuaModule</code>, renderers).</li>
+<li>Guards: <code>shortcuts_test.bxs</code>, <code>keys-test.sh</code>, <code>keys-editor-test.sh</code>, <code>keys-apply-test.sh</code>, <code>xremap-test.sh</code>, <code>hyprland-setup-test.sh</code>, <code>noctalia-config-test.sh</code>, <code>theme-test.sh</code>, <code>appearance-test.sh</code>, <code>display-test.sh</code>. New: <code>remap_shadow</code> case in <code>shortcuts_test.bxs</code>.</li>
+</ul>
+<p><strong>Phase 11: TUI (M, 4 days)</strong></p>
+<ul>
+<li><code>Modal</code>, <code>KeyMap</code>, <code>IntentRunner</code>, <code>TuiKit.starfield</code>, remove view forwarders, page registry and <code>ProviderSpec</code> (F16, F21, F22).</li>
+<li>Guards: <code>tui_kit_test.bxs</code>, <code>wizard_app_test.bxs</code>, <code>wizard_view_test.bxs</code>, <code>time_machine_test.bxs</code>, <code>control_center_test.bxs</code>, <code>app_pages_test.bxs</code>, <code>tui-test.sh</code>, <code>timeline-test.sh</code>, <code>wizard-test.sh</code>, the <code>pty-frame.py</code> runs.</li>
+</ul>
+<p><strong>Phase 12: finish (S, 1 day each)</strong></p>
+<ul>
+<li>Test discovery in CI and <code>suite.sh</code> (F24), version single source (F15), <code>Names</code> (F07), <code>Urls</code> (F26), the 7 leaks of F27, move Main's remaining logic (F14).</li>
+<li>Guards: <code>ci.yml</code> itself on a branch; <code>gen-*.sh --check</code>.</li>
+</ul>
+<p>Order rationale: phases 0 to 4 are small, low-risk and make every later phase cheaper; phases 3 and 5 fix real bugs early; phase 6 is the largest user-visible change and comes after the helpers are stable.</p>
+<h2 id="11-rules-for-the-contributing-docs-add-to-docsguidescontributingmd"><a href="#11-rules-for-the-contributing-docs-add-to-docsguidescontributingmd" id="11-rules-for-the-contributing-docs-add-to-docsguidescontributingmd" name="11-rules-for-the-contributing-docs-add-to-docsguidescontributingmd" class="anchor"></a>11. Rules for the contributing docs (add to <code>docs/guides/contributing.md</code>)</h2>
+<ol>
+<li><strong>One home per concept.</strong> Before writing a helper, <code>grep -rn &quot;function NAME&quot; src/</code>. If it exists anywhere, use or move it; never paste it.</li>
+<li><strong>A command class never defines <code>say</code>, <code>fail</code>, <code>tryExec</code>, <code>has</code>, <code>env</code>, <code>home</code>, <code>self</code>, <code>merge</code> or <code>validName</code>.</strong> Use <code>Cli</code>/<code>Out</code>, <code>Proc</code>, <code>Env</code>, <code>Text</code>, <code>Names</code>. <code>tests/dry-test.sh</code> enforces it.</li>
+<li><strong>Never read <code>HOME</code>, <code>XDG_*</code> or <code>BXRIG_*_HOME</code> directly.</strong> Ask <code>Env</code>. New environment overrides for tests are added to <code>Env</code> and listed in <code>docs/reference/config-files.md</code>.</li>
+<li><strong>Run programs only through <code>Proc</code></strong>, with an argv array, never <code>sh -c</code> plus concatenation. A command is &quot;present&quot; if <code>Proc.has</code> says so; <code>Proc.works</code> is for version checks only.</li>
+<li><strong>External tools have one wrapper each</strong>: <code>Pacman</code> for pacman, yay and flatpak, <code>Systemd</code> for systemctl and units, <code>Http</code> for curl. No new literal <code>&quot;pacman&quot;, &quot;-S&quot;</code> or <code>&quot;curl&quot;</code> outside them.</li>
+<li><strong>Every mutating verb is a <code>Mutation</code>.</strong> No <code>--yes</code> prints the plan and exits 2; <code>--dry-run</code> prints it and exits 0; the first failed step exits 6. Do not write the sentences again.</li>
+<li><strong>Every file BxRig writes goes through <code>ConfigService</code></strong> (user files) or <code>SystemFile</code> (root files): backup, atomic replace, journal. Settings JSON goes through <code>JsonStore</code>. No bare <code>fileWrite</code> outside those classes.</li>
+<li><strong>A new command is one edit in <code>docs/reference/cli.json</code></strong> (name, flags, usage, examples) plus its class. Main routes, validates flags and prints usage from the generated spec; do not add a flag to a whitelist or a <code>&quot;Usage:&quot;</code> string in Main.</li>
+<li><strong>Name exit codes by intent</strong> (<code>out.usage</code>, <code>out.precondition</code>, <code>out.failed</code>), never a bare number, and do not invent new codes; the table in the contract is the only list.</li>
+<li><strong>Shortcuts, pages, units, theme module files, icon names and URLs are declared once</strong> (<code>Shortcuts.table</code>, <code>ControlCenterPages</code>, <code>UnitNames</code>, <code>ThemeFiles</code>, <code>Urls</code>) and generated into every other place. A hand-written bind, page list or unit name outside them needs a reason in the PR.</li>
+<li><strong>Parse each format once.</strong> <code>.desktop</code> through <code>DesktopEntry</code>, <code>key=value</code> through <code>Props</code>, JSON through <code>JsonStore</code>. Compare exact-case keys with <code>compare()</code>, never <code>==</code> (strings compare case-insensitively on MatchBox).</li>
+<li><strong>Respect the MatchBox quirks in shared code:</strong> no base classes (compose and delegate), no closures that call class methods, no postfix operators on indexes, build large struct literals stepwise, check a JSON key exists before reading it.</li>
+<li><strong>TUI screens paint with <code>TuiKit</code> and use <code>Modal</code>, <code>KeyMap</code> and <code>IntentRunner</code>.</strong> Footer hints and key handlers come from the same <code>KeyMap</code>; do not keep two lists. Fixtures live in a <code>*Demo</code> class, not in the provider.</li>
+<li><strong>Tests source <code>tests/lib/harness.sh</code> and <code>tests/lib/Check.bx</code>.</strong> Do not define <code>fail</code>, <code>run</code>, <code>code</code> or <code>check</code> again. Stubs of <code>sudo</code>, <code>id</code>, <code>pacman</code>, <code>systemctl</code> come from the library. Tests are discovered by name (<code>*-test.sh</code>, <code>*_test.bxs</code>); do not edit CI lists.</li>
+<li><strong>Generated files stay generated</strong> (<code>*Data.bx</code>, <code>CommandSpec.bx</code>, <code>Version.bx</code>): change the source, run the generator, commit both, and CI <code>--check</code> keeps them honest.</li>
+<li><strong>Version, command names and flags are written once.</strong> A release bump edits <code>box.json</code> only.</li>
+</ol>
+<h2 id="appendix-a-how-the-numbers-were-produced"><a href="#appendix-a-how-the-numbers-were-produced" id="appendix-a-how-the-numbers-were-produced" name="appendix-a-how-the-numbers-were-produced" class="anchor"></a>Appendix A: how the numbers were produced</h2>
+<p>Run from <code>/home/user/bxcachy</code>:</p>
+<pre><code>grep -h &quot;function say&quot; src/bxrig/*.bx | sed 's/^ *//' | sort | uniq -c | sort -rn      # say variants
+grep -c &quot;function has(&quot; src/bxrig/*.bx | awk -F: '$2&gt;0'                                  # has copies
+grep -n &quot;function dataHome\|function cfgHome\|function home()&quot; src/bxrig/*.bx           # path helpers
+grep -c &quot;jsonDeserialize( fileRead(&quot; src/bxrig/*.bx                                      # settings reads
+grep -n '&quot;pacman&quot;, &quot;-S&quot;, &quot;--needed&quot;, &quot;--noconfirm&quot;' src/bxrig/*.bx                      # install literal
+grep -c &quot;^fail()&quot; tests/*.sh | awk -F: '$2&gt;0' | wc -l                                    # test harness copies
+python3 -c &quot;import re;s=open('src/Main.bx').read();...&quot;                                  # flag whitelist: 130 entries, 122 distinct
+</code></pre>
+<p>Counts are line-based and can over- or under-count by a few where a definition spans lines; none of the conclusions depends on an exact number. Behavioural claims marked &quot;verify&quot; (default branch exit code, dead Hyprland binds under xremap, case-insensitive struct keys) were read from code, not run.</p>
+
+	
+
+	
+	
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/architecture/CODE-REVIEW.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/architecture/CODE-REVIEW.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 14, 2026, 7&#x3a;20&#x3a;39 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Code%20review%2C%20DRY%20and%20encapsulation&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Farchitecture%2FCODE-REVIEW%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+	
+</article>
+
+
+
+
+
+
+
+
+
+
+
+			</main>
+
+			
+			
+				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#0-the-short-version">0. The short version</a></li><li class="toc-level-2"><a href="#1-constraints-that-shape-every-proposal">1. Constraints that shape every proposal</a></li><li class="toc-level-2"><a href="#2-findings">2. Findings</a></li><li class="toc-level-3"><a href="#a-plumbing-copied-into-every-command-class">A. Plumbing copied into every command class</a></li><li class="toc-level-3"><a href="#b-external-tools-called-from-many-places">B. External tools called from many places</a></li><li class="toc-level-3"><a href="#c-command-registry-and-mainbx">C. Command registry and Main.bx</a></li><li class="toc-level-3"><a href="#d-parsers">D. Parsers</a></li><li class="toc-level-3"><a href="#e-shortcuts">E. Shortcuts</a></li><li class="toc-level-3"><a href="#f-tui-layer">F. TUI layer</a></li><li class="toc-level-3"><a href="#g-tests">G. Tests</a></li><li class="toc-level-3"><a href="#h-constants-and-leaks">H. Constants and leaks</a></li><li class="toc-level-2"><a href="#3-test-coverage-of-the-review-itself">3. Test coverage of the review itself</a></li><li class="toc-level-2"><a href="#4-what-is-already-good-keep-it">4. What is already good &#x28;keep it&#x29;</a></li><li class="toc-level-2"><a href="#5-where-mainbx-and-clijson-overlap-today-detail-for-f13">5. Where Main.bx and cli.json overlap today &#x28;detail for F13&#x29;</a></li><li class="toc-level-2"><a href="#6-counts-table-single-list-for-tracking-progress">6. Counts table &#x28;single list, for tracking progress&#x29;</a></li><li class="toc-level-2"><a href="#7-order-of-operations-that-keeps-risk-low">7. Order of operations that keeps risk low</a></li><li class="toc-level-2"><a href="#8-ratchet-checks-to-add-cheap-no-new-framework">8. Ratchet checks to add &#x28;cheap, no new framework&#x29;</a></li><li class="toc-level-2"><a href="#9-ranked-top-15-by-payoff">9. Ranked top 15 by payoff</a></li><li class="toc-level-2"><a href="#10-phased-refactor-plan">10. Phased refactor plan</a></li><li class="toc-level-2"><a href="#11-rules-for-the-contributing-docs-add-to-docsguidescontributingmd">11. Rules for the contributing docs &#x28;add to docs&#x2f;guides&#x2f;contributing.md &#x29;</a></li><li class="toc-level-2"><a href="#appendix-a-how-the-numbers-were-produced">Appendix A&#x3a; how the numbers were produced</a></li></ul></nav>
+				</aside>
+			
+		</div>
+		
+	</div>
+	
+
+	
+	
+		<footer class="bxsites-footer">
+			<div class="container-fluid bxsites-footer__inner">
+				
+				<div class="bxsites-footer__copy">&copy; 2026 BxRig</div>
+				
+				
+					<div class="bxsites-footer__social"><a class="social-link" href="https://github.com/ortus-boxlang/BoxLang" target="_blank" rel="noopener noreferrer" aria-label="BoxLang on GitHub" title="BoxLang on GitHub"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.333-1.754-1.333-1.754-1.089-.744.083-.729.083-.729 1.205.084 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.303-5.467-1.332-5.467-5.93 0-1.31.468-2.38 1.235-3.22-.123-.303-.535-1.523.117-3.176 0 0 1.008-.322 3.301 1.23A11.5 11.5 0 0 1 12 5.803c1.02.005 2.045.138 3.003.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.118 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.625-5.48 5.92.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 21.795 24 17.298 24 12c0-6.63-5.37-12-12-12"/></svg></a><a class="social-link" href="https://www.boxlang.io" target="_blank" rel="noopener noreferrer" aria-label="BoxLang" title="BoxLang"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></a></div>
+				
+				
+				<div class="bxsites-footer__credit">Built with <a href="https://bxsites.io" target="_blank" rel="noopener noreferrer">BxSites</a></div>
+			</div>
+		</footer>
+	
+
+	
+	<script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+	<script src="/assets/vendor/highlight/highlight.min.js"></script>
+	<script src="/assets/highlight-boxlang.c59b5de4.js"></script>
+	<script>hljs.highlightAll();</script>
+	<script src="/assets/code-lines.66ad0c90.js"></script>
+	<script src="/assets/copy-code.a5acc8cc.js" defer></script>
+	<script src="/assets/admonition-collapse.df9b134e.js" defer></script>
+	<script src="/assets/nav-toggle.6bc5dbe8.js" defer></script>
+	<script src="/assets/toc-collapse.cb73e778.js" defer></script>
+	<script src="/assets/tabs.24dffad6.js" defer></script>
+	<script src="/assets/conditional-content-init.9ef1e0f9.js" defer></script>
+	<script src="/assets/course-progress.3813411a.js" defer></script>
+	<script src="/assets/prompt-init.774781de.js" defer></script>
+	<script src="/assets/contact-form-init.7f7be308.js" defer></script>
+
+	
+	
+
+	
+	
+		<script src="/assets/vendor/mermaid/mermaid.min.js"></script>
+		<script src="/assets/mermaid-init.b2f3ed5c.js"></script>
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+</body>
+</html>
+
