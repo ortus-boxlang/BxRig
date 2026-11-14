@@ -8,6 +8,7 @@
 - [Command reference](https://bxcachy.boxlang.io/reference/commands.md) ([HTML](https://bxcachy.boxlang.io/reference/commands/index.html))
 - [Home](https://bxcachy.boxlang.io/index.md) ([HTML](https://bxcachy.boxlang.io/index.html))
 - [The setup wizard](https://bxcachy.boxlang.io/guides/wizard.md) ([HTML](https://bxcachy.boxlang.io/guides/wizard/index.html))
+- [Command flags](https://bxcachy.boxlang.io/reference/command-flags.md) ([HTML](https://bxcachy.boxlang.io/reference/command-flags/index.html))
 - [Files and folders](https://bxcachy.boxlang.io/reference/config-files.md) ([HTML](https://bxcachy.boxlang.io/reference/config-files/index.html))
 - [Getting started](https://bxcachy.boxlang.io/getting-started.md) ([HTML](https://bxcachy.boxlang.io/getting-started/index.html))
 - [MatchBox parity](https://bxcachy.boxlang.io/architecture/MATCHBOX-PARITY.md) ([HTML](https://bxcachy.boxlang.io/architecture/MATCHBOX-PARITY/index.html))
