@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
 # `bxrig wizard` end to end in a real pseudo-terminal: pages in, keys typed, answers out (and cancel writes nothing).
 # Needs the native bxrig built with MatchBox's TUI. Usage: wizard-test.sh BXRIG_BINARY
-set -euo pipefail
-root="$(cd "$(dirname "$0")/.." && pwd)"; export BXRIG_TEST_LIB="$root/tests/lib"
-bin="$(realpath "${1:?native bxrig executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 cat > "$tmp/pages.json" <<'JSON'
 {"title":"T","pages":[
  {"id":"a","title":"A","questions":[
@@ -15,7 +11,7 @@ cat > "$tmp/pages.json" <<'JSON'
    {"type":"multi","id":"tags","label":"Tags","default":[],"options":[{"value":"x","label":"X"},{"value":"y","label":"Y"}]}]}]}
 JSON
 run_keys() {  # OUT KEYS... : runs the wizard in a pty and sends the keys (python escapes), returns its exit code
-  python3 - "$bin" "$tmp/pages.json" "$1" "$2" <<'PY'
+  python3 - "$binary" "$tmp/pages.json" "$1" "$2" <<'PY'
 import os, pty, select, sys, time, struct, fcntl, termios
 sys.path.insert(0, os.environ['BXRIG_TEST_LIB'])
 from pty_ready import ready
@@ -52,8 +48,8 @@ rc=0; run_keys "$tmp/cancel.json" '\r|\x03' || rc=$?
 [[ ! -e "$tmp/cancel.json" ]] || fail "cancel wrote answers"
 # a bad pages file is a clean failure
 echo '{' > "$tmp/bad.json"
-rc=0; "$bin" wizard --pages="$tmp/bad.json" --out="$tmp/x.json" >/dev/null 2>&1 || rc=$?
+rc=0; "$binary" wizard --pages="$tmp/bad.json" --out="$tmp/x.json" >/dev/null 2>&1 || rc=$?
 [[ "$rc" == 4 ]] || fail "a bad pages file should exit 4, got $rc"
-rc=0; "$bin" wizard >/dev/null 2>&1 || rc=$?
+rc=0; "$binary" wizard >/dev/null 2>&1 || rc=$?
 [[ "$rc" == 2 ]] || fail "no arguments should exit 2, got $rc"
 echo "wizard tests passed"

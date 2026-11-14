@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # emoji, forcequit, window, overview, nightshift, gpu doctor, input, airplay and settings export/import with fake tools. Usage: macextras-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/nobin" "$tmp/zi" "$tmp/cfg/bxrig"; export LOG="$tmp/log"; : > "$LOG"
 logger() { printf '#!/usr/bin/env bash\necho "%s $*" >> "$LOG"\n%s\n' "$1" "${2:-}" > "$tmp/bin/$1"; }
 for t in rofimoji hyprctl qdbus6 wlsunset systemctl kwriteconfig6 libinput-gestures-setup libinput-gestures uxplay hyprpm; do logger $t; done
@@ -14,7 +11,6 @@ logger id 'echo "ada wheel"'
 chmod +x "$tmp/bin"/*
 printf '#country\tcoords\ttz\n#\nES\t+4024-00341\tEurope/Madrid\tmain\n' > "$tmp/zi/zone1970.tab"
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_ZONEINFO="$tmp/zi" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 nobin() { env HOME="$tmp/home" PATH="$tmp/nobin" "$@"; }
 
 run "$binary" emoji; grep -q '^rofimoji' "$LOG" || fail 'emoji'

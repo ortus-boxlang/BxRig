@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 # `bxrig mail` end to end with a fake, stateful podman/docker and a tiny fake of the Mailpit API on 127.0.0.1. Usage: mail-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; srv=""; trap '[[ -n "$srv" ]] && kill "$srv" 2>/dev/null; rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
+srv=""; trap '[[ -n "$srv" ]] && kill "$srv" 2>/dev/null; rm -rf "${tmp:?}"' EXIT
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/fake" "$tmp/nobin"
 # fake container engine: one folder per container, every call logged to $FAKE/<program>.log
 cat > "$tmp/bin/fakeengine" <<'FAKE'

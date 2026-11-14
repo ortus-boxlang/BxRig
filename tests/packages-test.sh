@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # Read-only package commands on the catalog, with a fake pacman. Usage: packages-test.sh [binary]
-set -euo pipefail
-bin="$(cd "$(dirname "${1:-./bxrig}")" && pwd)/$(basename "${1:-./bxrig}")"
-fail() { echo "FAIL: $*" >&2; exit 1; }
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home/.local/share/applications"
 # A pacman that reports a fixed set of installed packages.
 cat > "$tmp/bin/pacman" <<'SH'
@@ -14,24 +11,24 @@ SH
 chmod +x "$tmp/bin/pacman"
 run() { env -i HOME="$tmp/home" PATH="$tmp/bin:$PATH" "$@"; }
 rc() { set +e; "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
-j() { run "$bin" "$@" --json; }
+j() { run "$binary" "$@" --json; }
 
 # installed detection
-[[ "$(run "$bin" package-status git)" == 'git: installed' ]] || fail 'git installed'
-[[ "$(rc run "$bin" package-status git)" == 0 ]] || fail 'installed exits 0'
-[[ "$(rc run "$bin" package-status lazygit)" == 1 ]] || fail 'missing exits 1'
-[[ "$(rc run "$bin" package-status nope-app)" == 3 ]] || fail 'unknown id exits 3'
-[[ "$(rc run "$bin" package-status 'bad;id')" == 2 ]] || fail 'bad id exits 2'
+[[ "$(run "$binary" package-status git)" == 'git: installed' ]] || fail 'git installed'
+[[ "$(rc run "$binary" package-status git)" == 0 ]] || fail 'installed exits 0'
+[[ "$(rc run "$binary" package-status lazygit)" == 1 ]] || fail 'missing exits 1'
+[[ "$(rc run "$binary" package-status nope-app)" == 3 ]] || fail 'unknown id exits 3'
+[[ "$(rc run "$binary" package-status 'bad;id')" == 2 ]] || fail 'bad id exits 2'
 [[ "$(j package-status git | jq -r '.data.installed')" == true ]] || fail 'status json'
 # a web app is installed when its launcher exists
-[[ "$(rc run "$bin" package-status boxlang-docs)" == 1 ]] || fail 'web app missing'
+[[ "$(rc run "$binary" package-status boxlang-docs)" == 1 ]] || fail 'web app missing'
 touch "$tmp/home/.local/share/applications/bxrig-boxlang-docs.desktop"
-[[ "$(rc run "$bin" package-status boxlang-docs)" == 0 ]] || fail 'web app launcher counts as installed'
+[[ "$(rc run "$binary" package-status boxlang-docs)" == 0 ]] || fail 'web app launcher counts as installed'
 
 # package-source reads the catalog
 [[ "$(j package-source vscode | jq -r '.data.source')" == aur ]] || fail 'vscode source aur'
 [[ "$(j package-source git | jq -r '.data.targets[0]')" == git ]] || fail 'git target'
-[[ "$(rc run "$bin" package-source nope-app)" == 3 ]] || fail 'source unknown id'
+[[ "$(rc run "$binary" package-source nope-app)" == 3 ]] || fail 'source unknown id'
 
 # plan: installed apps are skipped, profile uses the profile tier
 out="$(j plan --profile=core)"
@@ -44,7 +41,7 @@ out="$(j plan --profile=terminal)"
 jq -e '[.data.would_install[].id]|index("eza")|not' <<<"$out" >/dev/null || fail 'eza is optional in terminal'
 
 # shells
-out="$(env -i HOME="$tmp/home" PATH="$tmp/bin:$PATH" XDG_CURRENT_DESKTOP=KDE "$bin" plan --json)"
+out="$(env -i HOME="$tmp/home" PATH="$tmp/bin:$PATH" XDG_CURRENT_DESKTOP=KDE "$binary" plan --json)"
 [[ "$(jq -r '.data.selection.shell' <<<"$out")" == plasma ]] || fail 'KDE detected as plasma'
 out="$(j plan --shell=plasma)"
 jq -e '[.data.skipped[]|select(.reason=="wrong_shell").id]|index("walker")' <<<"$out" >/dev/null || fail 'walker is wrong_shell on plasma'
@@ -52,14 +49,14 @@ out="$(j plan --shell=hyprland --optional)"
 jq -e '[.data.skipped[]|select(.reason=="wrong_shell").id]|index("walker")|not' <<<"$out" >/dev/null || fail 'walker stays on hyprland'
 out="$(j plan --shell=plasma)"
 jq -e '[.data.skipped[]|select(.reason=="optional").id]|index("walker")|not' <<<"$out" >/dev/null || fail 'walker is not reported optional on plasma'
-[[ "$(rc run "$bin" plan --shell=gnome)" == 2 ]] || fail 'unknown shell exits 2'
+[[ "$(rc run "$binary" plan --shell=gnome)" == 2 ]] || fail 'unknown shell exits 2'
 
 # named apps
 out="$(j plan hyprsunset --shell=plasma)"
 [[ "$(jq -r '.data.would_install[0].id' <<<"$out")" == hyprsunset ]] || fail 'named app ignores shell'
-[[ "$(rc run "$bin" plan nope-app)" == 2 ]] || fail 'unknown app exits 2'
-[[ "$(rc run "$bin" plan neovim --profile=core)" == 2 ]] || fail 'ids with --profile exit 2'
-[[ "$(rc run "$bin" plan --profile)" == 2 ]] || fail '--profile needs a value'
+[[ "$(rc run "$binary" plan nope-app)" == 2 ]] || fail 'unknown app exits 2'
+[[ "$(rc run "$binary" plan neovim --profile=core)" == 2 ]] || fail 'ids with --profile exit 2'
+[[ "$(rc run "$binary" plan --profile)" == 2 ]] || fail '--profile needs a value'
 
 # web apps pull in brave
 out="$(j plan gmail)"

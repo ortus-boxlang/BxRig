@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig setup plasma|undo plasma|status` end to end with fake pacman, git, sudo and id. Usage: setup-test.sh [binary]
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home"
 cat > "$tmp/bin/pacman" <<'MOCK'
 #!/usr/bin/env bash
@@ -35,7 +32,6 @@ chmod +x "$tmp/bin/"*
 export SETUP_LOG="$tmp/setup.log"
 printf 'NAME="CachyOS Linux"\nID=cachyos\nID_LIKE=arch\n' > "$tmp/os-cachyos"; printf 'ID=ubuntu\n' > "$tmp/os-ubuntu"
 run() { env BXRIG_OS_RELEASE="${OS_FILE:-$tmp/os-cachyos}" BXRIG_STATE_HOME="$tmp/state-home" HOME="$tmp/home" PATH="$tmp/bin:$PATH" XDG_CURRENT_DESKTOP=KDE XDG_SESSION_TYPE=wayland SETUP_LOG="$SETUP_LOG" MOCK_INSTALL_FAIL="${MOCK_INSTALL_FAIL:-}" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 reset() { : > "$SETUP_LOG"; rm -rf "$tmp/home/.local" "$tmp/state-home"; }
 leftovers() { { ls -d /tmp/bxrig-hyprkwin-* 2>/dev/null || true; } | wc -l; }
 before="$(leftovers)"; reset

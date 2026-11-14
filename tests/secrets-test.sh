@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig secrets` with a fake secret-tool and busctl (keyring backend) and with private files. Usage: secrets-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/nobin" "$tmp/kr"
 # fake secret-tool: store (secret on stdin), lookup, clear, search --all; attributes are "service bxrig name NAME"
 cat > "$tmp/bin/secret-tool" <<'SH'

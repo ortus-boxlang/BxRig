@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig setup terminal` and the default terminal in `setup hyprland`, with fake pacman, sudo, id. Usage: terminal-setup-test.sh [binary]
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home"
 export LOG="$tmp/log"; : > "$LOG"
 cat > "$tmp/bin/pacman" <<'MOCK'
@@ -22,7 +19,6 @@ printf '#!/usr/bin/env bash\necho x86_64\n' > "$tmp/bin/uname"
 chmod +x "$tmp/bin/"*
 printf 'ID=cachyos\n' > "$tmp/os"
 run() { env BXRIG_OS_RELEASE="$tmp/os" BXRIG_STATE_HOME="$tmp/state" BXRIG_CONFIG_HOME="$tmp/cfg" HOME="$tmp/home" USER=dev PATH="$tmp/bin:$PATH" XDG_CURRENT_DESKTOP=Hyprland LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 
 [[ "$(code "$binary" setup terminal)" == 2 ]] || fail 'no --yes exits 2'
 run "$binary" setup terminal --dry-run --json | jq -e '.ok and (.data.steps[0].commands[0] | join(" ") | test("ghostty$"))' >/dev/null || fail 'ghostty is the default terminal'

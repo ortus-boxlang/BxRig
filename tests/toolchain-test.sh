@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig toolchain node`: the pinned nvm installer (a fake curl serves a fake one) and Node.js through nvm. Usage: toolchain-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-root="$(cd "$(dirname "$0")/.." && pwd)"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home"
 export LOG="$tmp/log"; : > "$LOG"
 printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo "${MOCK_UID:-1000}"; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
@@ -33,7 +29,6 @@ INSTALLER
 MOCK
 chmod +x "$tmp/bin/"*
 run() { env HOME="$tmp/home" NVM_DIR="$tmp/home/.nvm" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 
 [[ "$(code "$binary" toolchain)" == 2 && "$(code "$binary" toolchain python)" == 2 ]] || fail 'usage exits 2'
 [[ "$(code "$binary" toolchain node)" == 2 ]] || fail 'no --yes exits 2'

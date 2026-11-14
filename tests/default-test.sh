@@ -1,14 +1,10 @@
 #!/usr/bin/env bash
 # `bxrig default browser|terminal|show` with fake xdg-settings and kwriteconfig6. Usage: default-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/apps" "$tmp/nobin"; export LOG="$tmp/log"; : > "$LOG"
 printf '#!/usr/bin/env bash\necho "xdg-settings $*" >> "$LOG"\ncase "$1" in get) echo "firefox.desktop" ;; esac\n' > "$tmp/bin/xdg-settings"
 chmod +x "$tmp/bin/xdg-settings"
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" BXRIG_APPS_DIRS="$tmp/apps" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 d() { run "$binary" default "$@"; }
 
 # browser

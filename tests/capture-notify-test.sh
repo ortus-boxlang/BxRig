@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig screenshot|qr|notify|keys sheet` with fake tools. Usage: capture-notify-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/nobin"; export LOG="$tmp/log"; : > "$LOG"
 logger() { printf '#!/usr/bin/env bash\necho "%s $*" >> "$LOG"\n%s\n' "$1" "${2:-}" > "$tmp/bin/$1"; }
 logger noctalia 'case "$2" in notification-dnd-status) echo "on" ;; esac'
@@ -13,7 +10,6 @@ logger zbarimg 'echo "https://example.com"'
 logger qrencode 'echo "QR"'
 chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 
 # screenshots: Noctalia on Hyprland, Spectacle on Plasma, grim and slurp without Noctalia
 run "$binary" screenshot screen | true; grep -q 'noctalia msg screenshot-fullscreen' "$LOG" || fail "screen: $(cat "$LOG")"

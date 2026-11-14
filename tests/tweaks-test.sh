@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig toggle|dns|kernel` with fake noctalia, nmcli, pacman, uname, sudo. Usage: tweaks-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home"; export LOG="$tmp/log"; : > "$LOG"
 printf '#!/usr/bin/env bash\necho "noctalia $*" >> "$LOG"\n' > "$tmp/bin/noctalia"
 cat > "$tmp/bin/nmcli" <<'F'
@@ -27,7 +24,6 @@ printf '#!/usr/bin/env bash\n[[ "$1" == -r ]] && { echo "${KERNEL:-6.12.5-2-cach
 printf '#!/usr/bin/env bash\n[[ "$1" == --version ]] && { echo "Sudo version 1.9"; exit 0; }\necho "sudo $*" >> "$LOG"\nexec "$@"\n' > "$tmp/bin/sudo"
 chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 has() { grep -qF -- "$1" "$LOG"; }
 
 # ---- toggle ----

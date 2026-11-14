@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig dictation`, `quicklook` and `dolphin doctor` with fake tools. Usage: extras-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/xdg/menus"
 printf '#!/usr/bin/env bash\nprintf "kio-extras\\nkdegraphics-thumbnailers\\nkimageformats\\nffmpegthumbs\\npolkit-kde-agent\\n"\n' > "$tmp/bin/pacman"
 printf '#!/usr/bin/env bash\necho "xdg-mime $*" >> "$LOG"\ncase "$1" in query) echo "io.github.lgse.Strata.desktop" ;; esac\n' > "$tmp/bin/xdg-mime"
@@ -11,7 +8,6 @@ printf '#!/usr/bin/env bash\necho "kbuildsycoca6 $*" >> "$LOG"\n' > "$tmp/bin/kb
 printf '#!/usr/bin/env bash\necho "superwhisper" >> "$LOG"\n' > "$tmp/bin/superwhisper"
 chmod +x "$tmp/bin"/*; export LOG="$tmp/log"; : > "$LOG"
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" XDG_CONFIG_DIRS="$tmp/xdg" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 
 # dictation: the engines, their shortcuts, status
 run "$binary" dictation key | grep -q 'Hold Right Alt' || fail 'superwhisper shortcut'

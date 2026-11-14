@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig containers` and `bxrig editor lazyvim` with fake podman, docker, pacman, sudo, systemctl and git. Usage: containers-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/etc" "$tmp/installed"; export LOG="$tmp/log"; : > "$LOG"
 printf '#!/usr/bin/env bash\necho "podman $*" >> "$LOG"\n[[ "$1" == info ]] && echo "${ROOTLESS:-true}"\n' > "$tmp/bin/podman"
 printf '#!/usr/bin/env bash\necho "podman version 6.2.0"\n' > "$tmp/bin/docker"
@@ -18,7 +15,6 @@ SH
 printf '#!/usr/bin/env bash\necho "git $*" >> "$LOG"\nif [[ "$1" == clone ]]; then mkdir -p "$3/.git" "$3/lua"; echo init > "$3/init.lua"; fi\n' > "$tmp/bin/git"
 chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" USER=ada BXRIG_ETC="$tmp/etc" XDG_RUNTIME_DIR=/run/user/1000 XDG_CONFIG_HOME="$tmp/home/.config" INSTALLED="$tmp/installed" LOG="$LOG" ROOTLESS="${ROOTLESS:-true}" SOCK="${SOCK:-}" PATH="$tmp/bin:$PATH" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 
 # doctor: everything missing it can fix is reported with the command that fixes it
 echo "ada:100000:65536" > "$tmp/etc/subuid"; echo "ada:100000:65536" > "$tmp/etc/subgid"

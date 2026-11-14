@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig pkg ...` and `bxrig remove ...` with a stateful fake pacman, yay, sudo, curl (the AUR) and id. Usage: pkg-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/fake/installed"; export LOG="$tmp/log"; : > "$LOG"
 # the repo: repo name version description
 cat > "$tmp/fake/repo.txt" <<'EOF'
@@ -43,7 +40,6 @@ FAKE
 printf '#!/usr/bin/env bash\ncase "$1" in -u) echo "${FAKE_UID:-1000}";; *) echo "${FAKE_UID:-1000}";; esac\n' > "$tmp/bin/id"
 chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" PATH="$tmp/bin:$PATH" LOG="$LOG" FAKE="$tmp/fake" BXRIG_AUR_URL="https://aur.test/rpc/v5" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 inst() { [[ -e "$tmp/fake/installed/$1" ]]; }
 
 # search: exact and repo results first, AUR after (by popularity), installed marked, JSON shape

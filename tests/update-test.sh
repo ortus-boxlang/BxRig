@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig update ...` and `system update` with a fake curl serving local files and fake systemctl, notify-send, snapper, pacman. Usage: update-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/srv/stable" "$tmp/srv/beta" "$tmp/inst"; export LOG="$tmp/log"; : > "$LOG"
 # the fake server: http://fake/<path> is $tmp/srv/<path>; curl -o FILE URL copies, otherwise prints
 printf '#!/usr/bin/env bash\nout=""; url=""\nwhile [ $# -gt 0 ]; do case "$1" in -o) out="$2"; shift ;; http://*) url="$1" ;; esac; shift; done\nsrc="%s/srv/${url#http://fake/}"\n[ -f "$src" ] || exit 22\nif [ -n "$out" ]; then cp "$src" "$out"; else cat "$src"; fi\n' "$tmp" > "$tmp/bin/curl"
@@ -18,7 +15,6 @@ printf 'version=0.12.0\ncommit=abc1234\nsha256=%s\nbuiltAt=2026-11-13T00:00:00Z\
 oldsum="$(sha256sum "$tmp/inst/bxrig" | cut -d' ' -f1)"
 printf 'version=0.11.0\ncommit=1111111\nsha256=%s\nbuiltAt=2026-11-01T00:00:00Z\n' "$oldsum" > "$tmp/srv/stable/version-latest.properties"
 run() { env HOME="$tmp/home" BXRIG_PUBKEY_FILE=none BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_BASE_URL=http://fake BXRIG_SELF="$tmp/inst/bxrig" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 
 # channels
 run "$binary" update channel | grep -q 'channel: stable' || fail 'default channel is stable'

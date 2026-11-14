@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig nas ...` with fake avahi-browse, smbclient, showmount, findmnt, sudo, rsync and a fake /etc. Usage: nas-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/etc/cred" "$tmp/etc/systemd" "$tmp/fake" "$tmp/src"; export LOG="$tmp/log"; : > "$LOG"
 echo hello > "$tmp/src/a.txt"
 cat > "$tmp/bin/avahi-browse" <<'F'
@@ -41,7 +38,6 @@ exit 0
 F
 chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" USER=dev BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_DATA_HOME="$tmp/data" BXRIG_NAS_CRED_DIR="$tmp/etc/cred" BXRIG_SYSTEMD_DIR="$tmp/etc/systemd" BXRIG_NAS_HOME="$tmp/NAS" PATH="$tmp/bin:$PATH" LOG="$LOG" FAKE="$tmp/fake" BXRIG_NAS_REACH="${REACH:-yes}" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 has() { grep -qF -- "$1" "$LOG"; }
 printf 'secret123\n' > "$tmp/pw"; printf 'wrongpass\n' > "$tmp/pw.bad"
 

@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig init`: answers file in, ordinary commands out (a fake bxrig and git record them), plus the wizard in a pty. Usage: init-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-export BXRIG_TEST_LIB="$(cd "$(dirname "$0")" && pwd)/lib"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home"
 export LOG="$tmp/log"; : > "$LOG"
 # the fake "bxrig": records its arguments, fails on `setup shell` when FAIL_SHELL is set

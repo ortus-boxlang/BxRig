@@ -1,16 +1,12 @@
 #!/usr/bin/env bash
 # `bxrig ai list|default|launch` with fake agent commands and terminals. Usage: ai-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/cfg/bxrig"
 export LOG="$tmp/log"; : > "$LOG"
 # a fake terminal that logs how it was started
 for t in ghostty kitty; do printf '#!/usr/bin/env bash\necho "%s $*" >> "$LOG"\n' "$t" > "$tmp/bin/$t"; chmod +x "$tmp/bin/$t"; done
 printf '#!/usr/bin/env bash\necho claude-ran\n' > "$tmp/bin/claude"; chmod +x "$tmp/bin/claude"
 run() { env -u ANTHROPIC_API_KEY -u OPENAI_API_KEY -u GEMINI_API_KEY HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_DATA_HOME="$tmp/data" BXRIG_SELF=bxrig LOG="$LOG" PATH="$tmp/bin:$PATH" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 ai() { run "$binary" ai "$@"; }
 printf '{"backend":"file"}\n' > "$tmp/cfg/bxrig/secrets.json"
 

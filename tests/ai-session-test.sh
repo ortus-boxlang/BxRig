@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig ai session` and `bxrig ai models` with fake tmux, ollama, systemctl and sudo. Usage: ai-session-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/cfg/bxrig" "$tmp/tm" "$tmp/work"
 export LOG="$tmp/log"; : > "$LOG"
 cat > "$tmp/bin/tmux" <<'SH'
@@ -31,7 +28,6 @@ printf '#!/usr/bin/env bash\necho "systemctl $*" >> "$LOG"\n[[ "$1" == is-active
 printf '#!/usr/bin/env bash\necho "sudo $*" >> "$LOG"\nexec "$@"\n' > "$tmp/bin/sudo"
 chmod +x "$tmp/bin"/*
 run() { env -u ANTHROPIC_API_KEY HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_DATA_HOME="$tmp/data" BXRIG_SELF=bxrig TM="$tmp/tm" LOG="$LOG" SVC="${SVC:-}" NO_SERVER="${NO_SERVER:-}" PWD="$tmp/work" PATH="$tmp/bin:$PATH" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 printf '{"default":"claude-code"}\n' > "$tmp/cfg/bxrig/ai.json"; printf '{"backend":"file"}\n' > "$tmp/cfg/bxrig/secrets.json"
 
 # ---- sessions ----

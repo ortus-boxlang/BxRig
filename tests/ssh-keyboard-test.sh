@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig ssh key` and `bxrig setup keyboard` with fake ssh-keygen and kwriteconfig6. Usage: ssh-keyboard-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home"; export LOG="$tmp/log"; : > "$LOG"
 cat > "$tmp/bin/ssh-keygen" <<'SH'
 #!/usr/bin/env bash
@@ -14,7 +11,6 @@ SH
 printf '#!/usr/bin/env bash\necho "kwriteconfig6 $*" >> "$LOG"\n' > "$tmp/bin/kwriteconfig6"
 chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 
 # ssh key
 [[ "$(code "$binary" ssh key)" == 2 ]] || fail 'no --yes exits 2'

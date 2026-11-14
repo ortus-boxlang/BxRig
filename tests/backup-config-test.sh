@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig backup config ...` with a temp home, fake pacman, sudo and a fake bxrig. Usage: backup-config-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 H="$tmp/home"; mkdir -p "$tmp/bin" "$H/.config/hypr" "$H/.config/bxrig" "$H/.config/nvim/.git" "$H/.ssh" "$H/.config/zed"; export LOG="$tmp/log"; : > "$LOG"
 echo 'hl config' > "$H/.config/hypr/hyprland.lua"; echo '{"a":1}' > "$H/.config/bxrig/answers.json"; echo 'export A=1' > "$H/.zshrc"
 echo 'init' > "$H/.config/nvim/init.lua"; echo 'gitstuff' > "$H/.config/nvim/.git/HEAD"
@@ -23,7 +20,6 @@ printf '#!/usr/bin/env bash\necho "self $*" >> "$LOG"\nif [[ "$2" == export ]]; 
 printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo 1000; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
 chmod +x "$tmp/bin"/* "$tmp/self"
 run() { env HOME="$H" BXRIG_CONFIG_HOME="$H/.config" BXRIG_DATA_HOME="$tmp/data" BXRIG_SELF="$tmp/self" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 has() { grep -qF -- "$1" "$LOG"; }
 
 run "$binary" backup config list --json | jq -e '.data.snapshots == []' >/dev/null || fail 'starts empty'

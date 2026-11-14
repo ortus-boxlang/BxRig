@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig refresh ...` with a fake bxrig (logs the commands it is asked to run), a fake terminal and a temp home. Usage: refresh-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home"; export LOG="$tmp/log"; : > "$LOG"
 printf '#!/usr/bin/env bash\necho "self $*" >> "$LOG"\n' > "$tmp/self"
 printf '#!/usr/bin/env bash\n:\n' > "$tmp/bin/ghostty"
@@ -11,7 +8,6 @@ printf '#!/usr/bin/env bash\necho "noctalia $*" >> "$LOG"\n' > "$tmp/bin/noctali
 printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo 1000; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
 chmod +x "$tmp/self" "$tmp/bin"/*
 run() { env HOME="$tmp/home" SHELL=/usr/bin/zsh BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" BXRIG_SELF="$tmp/self" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 has() { grep -qF -- "$1" "$LOG"; }
 
 run "$binary" refresh list --json | jq -e '.data.components | map(.id) == ["hyprland","noctalia","terminals","shell","nvim","theme"]' >/dev/null || fail 'list'

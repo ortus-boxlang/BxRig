@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig runner`: provider choice, commands, doctor, launch. It must never touch keybindings. Usage: runner-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/cfg/hypr"
 echo '-- my keybinds' > "$tmp/cfg/hypr/hyprland.lua"; echo '-- bxrig' > "$tmp/cfg/hypr/bxrig.lua"
 before="$(sha256sum "$tmp/cfg/hypr/"*)"
@@ -12,7 +9,6 @@ printf '#!/usr/bin/env bash\necho "noctalia $*" >> "$LOG"\n' > "$tmp/bin/noctali
 printf '#!/usr/bin/env bash\ntrue\n' > "$tmp/bin/rofi"
 chmod +x "$tmp/bin/"*
 run() { env BXRIG_CONFIG_HOME="$tmp/cfg" HOME="$tmp/home" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 hypr() { XDG_CURRENT_DESKTOP=Hyprland run "$@"; }
 kde() { XDG_CURRENT_DESKTOP=KDE run "$@"; }
 

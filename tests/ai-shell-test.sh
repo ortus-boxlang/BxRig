@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig ai shell` with fake hyprctl, dbus-send, yakuake and terminals. Usage: ai-shell-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/cfg/bxrig" "$tmp/rt"
 export LOG="$tmp/log"; : > "$LOG"
 # fakes: hyprctl (clients come from $tmp/clients.json), dbus-send (yakuake "running" when $tmp/yak exists), terminals, agent
@@ -26,7 +23,6 @@ printf '#!/usr/bin/env bash\necho agent\n' > "$tmp/bin/claude"
 chmod +x "$tmp/bin"/*
 export CLIENTS="$tmp/clients.json" YAK="$tmp/yak"
 run() { env -u ANTHROPIC_API_KEY -u OPENAI_API_KEY -u GEMINI_API_KEY HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_DATA_HOME="$tmp/data" BXRIG_SELF=bxrig XDG_RUNTIME_DIR="$tmp/rt" XDG_CURRENT_DESKTOP="${DESK:-}" HYPRLAND_INSTANCE_SIGNATURE= LOG="$LOG" CLIENTS="$CLIENTS" YAK="$YAK" FAIL_LEGACY="${FAIL_LEGACY:-}" PATH="$tmp/bin:$PATH" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 wait_log() { for _ in $(seq 1 30); do grep -q "$1" "$LOG" && return 0; sleep 0.2; done; return 1; }
 printf '{"default":"claude-code"}\n' > "$tmp/cfg/bxrig/ai.json"
 printf '{"backend":"file"}\n' > "$tmp/cfg/bxrig/secrets.json"

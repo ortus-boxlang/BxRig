@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig session show|set` with fake session directories, SDDM state file, sudo and id. Usage: session-test.sh [binary]
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/sessions" "$tmp/home"
 printf '[Desktop Entry]\nName=Hyprland (uwsm-managed)\nExec=uwsm start hyprland.desktop\n' > "$tmp/sessions/hyprland-uwsm.desktop"
 printf '[Desktop Entry]\nName=Hyprland\nExec=Hyprland\n' > "$tmp/sessions/hyprland.desktop"
@@ -13,7 +10,6 @@ printf '#!/usr/bin/env bash\n[[ "$1" == --version ]] && { echo "Sudo version 1.9
 printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo "${MOCK_UID:-1000}"; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
 chmod +x "$tmp/bin/"*
 run() { env HOME="$tmp/home" PATH="$tmp/bin:$PATH" BXRIG_SESSION_DIRS="$tmp/sessions" BXRIG_SDDM_STATE="$tmp/state.conf" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 
 run "$binary" session show | grep -q 'plasma.desktop  Plasma (Wayland)  (preselected)' || fail 'show marks the preselected session'
 run "$binary" session show --json | jq -e '(.data.sessions | length) == 3 and (.data.preselected | endswith("plasma.desktop"))' >/dev/null || fail 'show --json'

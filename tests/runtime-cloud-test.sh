@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig layout`, `bxrig keys mac` and `bxrig cloud` with fake hyprctl, systemctl, rclone and fusermount3. Usage: runtime-cloud-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/cfg/systemd/user" "$tmp/fake"; export LOG="$tmp/log" FAKE="$tmp/fake"; : > "$LOG"
 cat > "$tmp/bin/hyprctl" <<'SH'
 #!/usr/bin/env bash
@@ -18,7 +15,6 @@ printf '#!/usr/bin/env bash\n[[ "$1" == listremotes ]] && printf "gdrive:\\nwork
 printf '#!/usr/bin/env bash\n' > "$tmp/bin/fusermount3"
 chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" XDG_CURRENT_DESKTOP= HYPRLAND_INSTANCE_SIGNATURE="${HYPR:-}" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" FAKE="$FAKE" LOG="$LOG" PATH="$tmp/bin:$PATH" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 export HYPR=sig
 
 # ---- layout (Hyprland): the windows of workspace 2 only ----

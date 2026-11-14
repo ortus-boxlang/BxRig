@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig boxlang` with fake bvm, mvm, bx-module, code and curl (a canned ForgeBox answer). Usage: boxlang-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/nobin"; export LOG="$tmp/log"; : > "$LOG"
 logger() { printf '#!/usr/bin/env bash\necho "%s $*" >> "$LOG"\n%s\n' "$1" "${2:-}" > "$tmp/bin/$1"; }
 logger boxlang 'echo "BoxLang 1.19.0"'
@@ -16,7 +13,6 @@ logger xdg-open
 printf '#!/usr/bin/env bash\necho "curl $*" >> "$LOG"\necho '"'"'{"data":{"results":[{"slug":"bx-ai","title":"BoxLang AI","summary":"AI integration","latestVersion":{"version":"3.7.0"}},{"slug":"bx-sites","title":"Sites","summary":"Static sites","latestVersion":{"version":"1.0.0"}}]}}'"'"'\n' > "$tmp/bin/curl"
 chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 
 run "$binary" boxlang status --json | jq -e '.data.boxlang == "BoxLang 1.19.0" and .data.bvm == "1.19.0" and .data.mvm and .data.bx_module and .data.vscode_extension' >/dev/null || fail "status: $(run "$binary" boxlang status --json)"
 # use: bvm and mvm, installing a missing version first

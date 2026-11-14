@@ -1,15 +1,11 @@
 #!/usr/bin/env bash
 # `bxrig theme list|show|set|mode|status|random|next` with fake desktop tools. Usage: theme-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/state"; export LOG="$tmp/log"; : > "$LOG"
 logger() { printf '#!/usr/bin/env bash\necho "%s $*" >> "$LOG"\n%s\n' "$1" "${2:-}" > "$tmp/bin/$1"; }
 for t in noctalia plasma-apply-colorscheme hyprctl; do logger $t; done
 chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 
 # list: 15 bundled themes, both origins, nothing current yet
 run "$binary" theme list --json | jq -e '.ok and (.data.themes | length == 15) and (.data.themes | map(select(.valid)) | length == 15) and (.data.themes | map(select(.light)) | map(.name) | sort == ["bxrig-light","catppuccin-latte","flexoki-light","rose-pine"])' >/dev/null || fail 'list'

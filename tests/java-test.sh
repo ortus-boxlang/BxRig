@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig java` with fake JDKs and a fake download. Usage: java-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 export HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" BXRIG_JAVA_DIR="$tmp/data/java" BXRIG_JAVA_SYSTEM_DIR="$tmp/jvm" BXRIG_SDKMAN_DIR="$tmp/sdkman"
 mkdir -p "$HOME"
 code() { set +e; "$@" >/dev/null 2>&1; echo $?; set -e; }

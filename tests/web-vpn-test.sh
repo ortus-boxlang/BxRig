@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig web add|list|rm` and `bxrig vpn nordvpn setup` with fake browsers, xdg-settings, sudo and systemctl. Usage: web-vpn-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/data"; export LOG="$tmp/log"; : > "$LOG"
 for b in brave chromium firefox; do printf '#!/usr/bin/env bash\n' > "$tmp/bin/$b"; done
 printf '#!/usr/bin/env bash\necho "${DEFAULT_BROWSER:-firefox.desktop}"\n' > "$tmp/bin/xdg-settings"
@@ -11,7 +8,6 @@ printf '#!/usr/bin/env bash\necho "sudo $*" >> "$LOG"\n' > "$tmp/bin/sudo"
 printf '#!/usr/bin/env bash\n' > "$tmp/bin/nordvpn"
 chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" USER=ada XDG_DATA_HOME="$tmp/data" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" DEFAULT_BROWSER="${DEFAULT_BROWSER:-firefox.desktop}" LOG="$LOG" PATH="$tmp/bin:$PATH" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 f="$tmp/data/applications/bxrig-web-notion.desktop"
 
 # validation and plan

@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
 # `bxrig assets list|install`: the embedded images land byte for byte. Usage: assets-test.sh [binary]
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-root="$(cd "$(dirname "$0")/.." && pwd)"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home"
 printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo "${MOCK_UID:-1000}"; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"; chmod +x "$tmp/bin/id"
 run() { env HOME="$tmp/home" PATH="$tmp/bin:$PATH" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 run "$binary" assets list | grep -q 'wallpapers/box.jpg -> '"$tmp"'/home/Pictures/BxRig/box.jpg' || fail 'list shows the targets'
 run "$binary" assets list --json | jq -e '(.data.assets | length) == 13' >/dev/null || fail 'list --json'
 [[ "$(code "$binary" assets install)" == 2 ]] || fail 'install without --yes exits 2'

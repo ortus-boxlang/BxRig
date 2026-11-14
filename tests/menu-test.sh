@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 # `bxrig menu`: the control center on a fake Rofi (it plays the answers: an index for a choice, text for a typed line); results open in a
 # fake terminal. Usage: menu-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
+. "$(dirname "$0")/lib/harness.sh"
 root="$(cd "$(dirname "$binary")/.." && pwd)"
-tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/fake"
 export FAKE="$tmp/fake"
 printf '#!/usr/bin/env bash\ncat > /dev/null\nn=$(( $(cat "$FAKE/n" 2>/dev/null || echo 0) + 1 )); echo $n > "$FAKE/n"\nsed -n "${n}p" "$FAKE/answers"\n' > "$tmp/bin/rofi"
@@ -20,7 +17,6 @@ if [[ "$1 $2" == "pkg search" ]]; then echo '{"data":{"results":[{"name":"ripgre
 FAKE
 chmod +x "$tmp/bin/rofi" "$tmp/bin/ghostty" "$tmp/bin/xdg-open" "$tmp/self"
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" BXRIG_SELF="$tmp/self" FAKE="$FAKE" PATH="$tmp/bin:$PATH" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 wait_for() { for _ in $(seq 1 30); do [[ -s "$1" ]] && return 0; sleep 0.2; done; return 1; }
 # play ANSWER...: one answer per line, fresh logs, then the menu
 play() { rm -f "$FAKE/n" "$FAKE/spawn.log" "$FAKE/terminal.log" "$FAKE/open.log"; : > "$FAKE/answers"; for a in "$@"; do printf '%s\n' "$a" >> "$FAKE/answers"; done; run "$binary" menu >/dev/null; }

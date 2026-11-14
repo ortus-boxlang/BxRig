@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig setup hyprland --yes` end to end with fake pacman, sudo, id: packages, images, starter configs, shortcut files. Usage: hyprland-setup-test.sh [binary]
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-root="$(cd "$(dirname "$0")/.." && pwd)"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home"
 export LOG="$tmp/log"; : > "$LOG"
 cat > "$tmp/bin/pacman" <<'MOCK'
@@ -23,7 +19,6 @@ printf '#!/usr/bin/env bash\necho x86_64\n' > "$tmp/bin/uname"
 chmod +x "$tmp/bin/"*
 printf 'ID=cachyos\n' > "$tmp/os"
 run() { env BXRIG_OS_RELEASE="$tmp/os" BXRIG_STATE_HOME="$tmp/state" BXRIG_CONFIG_HOME="$tmp/cfg" HOME="$tmp/home" USER=dev PATH="$tmp/bin:$PATH" XDG_CURRENT_DESKTOP=Hyprland LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 
 # plan only: nothing written
 [[ "$(code "$binary" setup hyprland)" == 2 ]] || fail 'no --yes exits 2'

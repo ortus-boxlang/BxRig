@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig tui` outside a terminal: page data as JSON, demo data, usage and unknown pages. Usage: tui-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 export HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" BXRIG_SELF="$binary"
 mkdir -p "$HOME"
 code() { set +e; "$@" >/dev/null 2>&1; echo $?; set -e; }

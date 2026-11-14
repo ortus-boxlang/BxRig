@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig apps` (the all-apps window) with fake desktop entries and a fake Rofi. Usage: apps-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/sys" "$tmp/usr" "$tmp/fake"; export FAKE="$tmp/fake"
 d() { printf '[Desktop Entry]\n%s\n' "$2" > "$1"; }
 d "$tmp/sys/firefox.desktop" $'Type=Application\nName=Firefox\nName[de]=Feuerfuchs\nExec=firefox %u\nIcon=firefox'
@@ -18,7 +15,6 @@ printf '#!/usr/bin/env bash\ncat > "$FAKE/menu.in"\nn=$(( $(cat "$FAKE/n" 2>/dev
 printf '#!/usr/bin/env bash\necho "launched $*" >> "$FAKE/launch.log"\n' > "$tmp/bin/calc"
 chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_APPS_DIRS="$tmp/sys:$tmp/usr" FAKE="$FAKE" PATH="$tmp/bin:$PATH" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 
 # list: only applications, no hidden ones, the later folder wins for the same file name, field codes removed, sorted by name
 run "$binary" apps list --json | jq -e '(.data.apps | map(.name)) == ["Calculator","Kitty (mine)","Other group"] and (.data.apps[0].exec == "calc --flag % done") and (.data.apps[1].exec == "kitty --mine")' >/dev/null || fail "list: $(run "$binary" apps list --json)"

@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig clipboard` and `bxrig record` with fake cliphist, wl-copy, wf-recorder, slurp, pgrep, pkill and Rofi. Usage: utilities-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/fake" "$tmp/videos"; export LOG="$tmp/log" FAKE="$tmp/fake"; : > "$LOG"
 cat > "$tmp/bin/cliphist" <<'SH'
 #!/usr/bin/env bash
@@ -21,7 +18,6 @@ printf '#!/usr/bin/env bash\n[[ -e "$FAKE/recording" ]]\n' > "$tmp/bin/pgrep"
 printf '#!/usr/bin/env bash\necho "pkill $*" >> "$LOG"; rm -f "$FAKE/recording"\n' > "$tmp/bin/pkill"
 chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_VIDEOS="$tmp/videos" FAKE="$FAKE" LOG="$LOG" PATH="$tmp/bin:$PATH" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 
 # ---- clipboard ----
 run "$binary" clipboard status --json | jq -e '.data.cliphist and .data.wl_clipboard and .data.entries == 3' >/dev/null || fail 'status'

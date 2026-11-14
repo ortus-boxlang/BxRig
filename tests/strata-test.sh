@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig strata integrations` with a fake curl. Usage: strata-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home"
 printf '#!/usr/bin/env bash\nall="$*"\necho "curl $all" >> "$LOG"\nwhile [ $# -gt 0 ]; do case "$1" in -o) out="$2"; shift ;; esac; shift; done\ncase "$all" in *"${FAILURL:-@@none@@}"*) exit 22 ;; esac\necho "fake" > "$out"\n' > "$tmp/bin/curl"
 printf '#!/bin/sh\nexit 0\n' > "$tmp/bin/python3"; chmod +x "$tmp/bin"/*

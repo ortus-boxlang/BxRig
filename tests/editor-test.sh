@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig editor lazyvim|boxlang|status|refresh`: the BxRig layer on the LazyVim starter, with fake git, pacman and sudo. Usage: editor-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/state"; export LOG="$tmp/log"; : > "$LOG"
 # a fake starter: lazyvim.json with the starter's own keys, an options.lua of comments, an example plugin file
 cat > "$tmp/bin/git" <<'FAKE'
@@ -20,7 +17,6 @@ FAKE
 for t in pacman sudo; do printf '#!/usr/bin/env bash\necho "%s $*" >> "$LOG"\nif [[ "%s" == pacman && "$1" == -Q ]]; then exit 1; fi\n' "$t" "$t" > "$tmp/bin/$t"; done
 chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" BXRIG_STATE_HOME="$tmp/state" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 nv="$tmp/home/.config/nvim"; cfg="$tmp/home/.config"
 
 [[ "$(code "$binary" editor lazyvim)" == 2 ]] || fail 'lazyvim without --yes exits 2'

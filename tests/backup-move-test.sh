@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig backup send` and `backup export` with a fake restic. Usage: backup-move-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 H="$tmp/home"; mkdir -p "$tmp/bin" "$H/Projects" "$H/.config/hypr" "$tmp/disk"; export LOG="$tmp/log"; : > "$LOG"
 echo hl > "$H/.config/hypr/hyprland.lua"
 cat > "$tmp/bin/restic" <<'F'
@@ -16,7 +13,6 @@ printf '#!/usr/bin/env bash\ncase "$1" in -Qqe|-Qqm) echo git ;; esac\n' > "$tmp
 printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo 1000; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
 chmod +x "$tmp/bin"/*
 run() { env HOME="$H" USER=dev BXRIG_CONFIG_HOME="$H/.config" BXRIG_DATA_HOME="$tmp/data" BXRIG_SELF=/usr/bin/bxrig PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 has() { grep -qF -- "$1" "$LOG"; }
 add_s3() { printf 'AWS_ACCESS_KEY_ID=%s\nAWS_SECRET_ACCESS_KEY=sec\n' "$2" > "$tmp/k-$1"; run "$binary" backup data target add "$1" --type=s3 --bucket="$1-bucket" --keys-file="$tmp/k-$1" >/dev/null; }
 

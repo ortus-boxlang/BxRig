@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig dotfiles` end to end: real git repos on disk, a throwaway home directory, fake stow/chezmoi/yadm/pacman. Usage: dotfiles-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 export GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null
 mkdir -p "$tmp/bin"; export LOG="$tmp/log"; : > "$LOG"
 for tool in stow chezmoi yadm; do printf '#!/usr/bin/env bash\necho "%s $*" >> "$LOG"\n' "$tool" > "$tmp/fake-$tool"; chmod +x "$tmp/fake-$tool"; done
@@ -18,7 +15,6 @@ mkrepo() { local r="$tmp/repos/$1"; shift; mkdir -p "$r"; git -C "$r" init -q; f
 # a fresh home and data folder for each scenario
 fresh() { rm -rf "$tmp/home" "$tmp/data" "$tmp/state" "$tmp/cfg"; mkdir -p "$tmp/home"; }
 run() { env HOME="$tmp/home" BXRIG_DATA_HOME="$tmp/data" BXRIG_STATE_HOME="$tmp/state" BXRIG_CONFIG_HOME="$tmp/cfg" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 df() { run "$binary" dotfiles "$@"; }
 home="$tmp/home"
 

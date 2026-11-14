@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig keys check|apply` and the shortcut files in `config`, with fake kreadconfig6/kwriteconfig6. Usage: keys-apply-test.sh [binary]
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/cfg" "$tmp/state" "$tmp/kg"
 cat > "$tmp/bin/kreadconfig6" <<'MOCK'
 #!/usr/bin/env bash
@@ -18,7 +15,6 @@ MOCK
 printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo "${MOCK_UID:-1000}"; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
 chmod +x "$tmp/bin/"*
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" KG="$tmp/kg" PATH="$tmp/bin:$PATH" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 
 [[ "$(code "$binary" keys check)" == 1 ]] || fail 'check before apply exits 1'
 [[ "$(code "$binary" keys apply)" == 2 ]] || fail 'apply without --yes exits 2'

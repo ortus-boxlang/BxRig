@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig tiling on|off|status` with fake kreadconfig6, kwriteconfig6 and qdbus6. Usage: tiling-test.sh [binary]
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/state"
 export LOG="$tmp/log" STATE="$tmp/state"
 # kwinrc is one file per key; qdbus6 knows KWin only while $STATE/kwin exists
@@ -27,7 +24,6 @@ MOCK
 printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo "${MOCK_UID:-1000}"; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
 chmod +x "$tmp/bin/"*
 run() { env HOME="$tmp/home" PATH="$tmp/bin:$PATH" LOG="$LOG" STATE="$STATE" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 
 # not installed
 [[ "$(code "$binary" tiling status)" == 4 ]] || fail 'status without HyprKwin exits 4'

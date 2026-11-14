@@ -20,7 +20,7 @@ count 'function env('              src/bxrig 1
 count 'function self()'            src/bxrig 2
 count '"Usage: bxrig'              src/Main.bx 4
 count '"Usage: bxrig'              src/bxrig 16
-count 'fail() { echo "FAIL'        tests 67
+count 'fail() { echo "FAIL'        tests 4
 count 'jsonDeserialize( fileRead(' src/bxrig 37
 count 'getSystemSetting( "HOME"'   src/bxrig 12
 # every test file is run by CI (a new test cannot be forgotten)

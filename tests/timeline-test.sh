@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig backup timeline` and `bxrig timemachine` outside a terminal. Usage: timeline-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 H="$tmp/home"; mkdir -p "$tmp/bin" "$H/.config/hypr" "$tmp/disk"; export LOG="$tmp/log"; : > "$LOG"
 echo hl > "$H/.config/hypr/hyprland.lua"
 cat > "$tmp/bin/restic" <<'F'

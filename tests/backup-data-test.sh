@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig backup data ...` with a fake restic (logs its arguments and the variables it was given), a fake systemctl and a temp home. Usage: backup-data-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 H="$tmp/home"; mkdir -p "$tmp/bin" "$H/Projects/app" "$H/Documents" "$H/.ssh" "$tmp/disk"; export LOG="$tmp/log"; : > "$LOG"
 echo code > "$H/Projects/app/main.bx"
 cat > "$tmp/bin/restic" <<'F'
@@ -24,7 +21,6 @@ chmod +x "$tmp/bin"/*
 echo '{"type":"service_account"}' > "$tmp/gcs.json"
 printf 'AWS_ACCESS_KEY_ID=AKIAEXAMPLE\nAWS_SECRET_ACCESS_KEY=s3cr3tvalue\n' > "$tmp/keys"
 run() { env HOME="$H" USER=dev BXRIG_CONFIG_HOME="$H/.config" BXRIG_DATA_HOME="$tmp/data" BXRIG_USER_UNIT_DIR="$tmp/units" BXRIG_SELF=/usr/bin/bxrig PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 has() { grep -qF -- "$1" "$LOG"; }
 
 run "$binary" backup data status --json | jq -e '.data.schedule == "off" and .data.retention.daily == 7 and (.data.include | index("Projects") != null)' >/dev/null || fail 'defaults'

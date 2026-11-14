@@ -1,16 +1,12 @@
 #!/usr/bin/env bash
 # `bxrig plasma panels|desktops` with fake qdbus6, kwriteconfig6 and dbus-send. Usage: plasma-panels-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/cfg"; export LOG="$tmp/log"; : > "$LOG"
 printf '#!/usr/bin/env bash\necho "qdbus6 $1 $2 $3" >> "$LOG"\nif [ "$1" = org.kde.plasmashell ] && [ -z "${2:-}" ]; then [ "${RUNNING:-0}" = 1 ] && exit 0 || exit 1; fi\nif [ "${3:-}" = org.kde.PlasmaShell.evaluateScript ]; then printf "%%s" "$4" > "$tmp_script"; fi\n' > "$tmp/bin/qdbus6"
 for t in kwriteconfig6 dbus-send; do printf '#!/usr/bin/env bash\necho "%s $*" >> "$LOG"\n' $t > "$tmp/bin/$t"; done
 chmod +x "$tmp/bin"/*
 export tmp_script="$tmp/script.js"
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" PATH="$tmp/bin:$PATH" LOG="$LOG" tmp_script="$tmp_script" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 echo '[Containments][1]' > "$tmp/cfg/plasma-org.kde.plasma.desktop-appletsrc"
 
 # plan and dry run change nothing

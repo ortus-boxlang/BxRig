@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig vm ...` with a stateful fake podman and docker, and fake xdg-open and FreeRDP. Usage: vm-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/fake"; export LOG="$tmp/log"; : > "$LOG"
 cat > "$tmp/bin/podman" <<'FAKE'
 #!/usr/bin/env bash
@@ -26,7 +23,6 @@ for t in xdg-open sdl-freerdp3; do printf '#!/usr/bin/env bash\necho "%s $*" >> 
 chmod +x "$tmp/bin"/*
 mkdir -p "$tmp/dri"; echo 'MemTotal:       16000000 kB' > "$tmp/meminfo"; : > "$tmp/kvm"
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_DATA_HOME="$tmp/data" PATH="$tmp/bin:$PATH" LOG="$LOG" FAKE="$tmp/fake" BXRIG_VM_NO_WAIT=1 BXRIG_VM_SKIP_KVM_CHECK=1 BXRIG_MEMINFO_FILE="$tmp/meminfo" BXRIG_DRI_DIR="$tmp/dri" BXRIG_IPV6_DIR="$tmp/dri" BXRIG_KVM_DEVICE="$tmp/kvm" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 args() { cat "$tmp/fake/containers/$1.args"; }
 
 # the tables

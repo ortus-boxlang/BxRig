@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig skills` with a fake skills hub (curl) and fake agents. Usage: skills-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/nobin"; export LOG="$tmp/log"; : > "$LOG"
 # the fake hub: list and search, show, and install (content per skill; "blocked" fails its audit with 403, "missing" is 404)
 cat > "$tmp/bin/curl" <<'CURL'
@@ -35,7 +32,6 @@ CURL
 for t in claude codex; do printf '#!/bin/sh\n' > "$tmp/bin/$t"; done
 chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_SKILLS_URL=http://hub PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 
 # the hub: search and show
 run "$binary" skills search matchbox | grep -q 'ortus-boxlang/skills/boxlang-developer~runtime-matchbox  \[trusted\]' || fail 'search'

@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig status` and the system-aware wizard flags, with a fake pacman. Usage: status-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home"
 printf '#!/usr/bin/env bash\nprintf "git\\ncurl\\nhyprland\\nghostty\\nollama\\nclaude-code\\n"\n' > "$tmp/bin/pacman"; chmod +x "$tmp/bin/pacman"
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_ROOT_FS=ext4 SHELL=/usr/bin/zsh PATH="$tmp/bin:$PATH" "$@"; }

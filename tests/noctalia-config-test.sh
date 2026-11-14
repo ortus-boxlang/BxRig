@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
 # The Noctalia starter files through `config apply`: valid TOML and JSON, safe re-runs, drift. Usage: noctalia-config-test.sh [binary]
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/home"
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 run "$binary" config list | grep -q '^noctalia: missing' || fail 'config list shows noctalia as missing'
 [[ "$(code "$binary" config apply noctalia)" == 2 ]] || fail 'apply without --yes exits 2'
 [[ ! -e "$tmp/cfg/noctalia" ]] || fail 'apply without --yes wrote a file'

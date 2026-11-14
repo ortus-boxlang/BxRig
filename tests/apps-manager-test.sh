@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # The Apps manager page (`bxrig tui apps`) on a fake machine: fake pacman, checkupdates, flatpak, desktop files. Usage: apps-manager-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/desk" "$tmp/cache"
 d() { printf '[Desktop Entry]\n%s\n' "$2" > "$1"; }
 d "$tmp/desk/firefox.desktop" $'Type=Application\nName=Firefox\nComment=Web browser\nExec=firefox %u\nIcon=firefox'

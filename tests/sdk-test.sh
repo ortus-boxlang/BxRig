@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 # `bxrig sdk` and Java through SDKMAN, with a fake SDKMAN and a local copy of its version API. Usage: sdk-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; srv=""; trap '[[ -n "$srv" ]] && kill "$srv" 2>/dev/null; rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
+srv=""; trap '[[ -n "$srv" ]] && kill "$srv" 2>/dev/null; rm -rf "${tmp:?}"' EXIT
 export HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" BXRIG_SDKMAN_DIR="$tmp/sdkman" BXRIG_JAVA_DIR="$tmp/data/java" BXRIG_JAVA_SYSTEM_DIR="$tmp/jvm" LOG="$tmp/log"
 mkdir -p "$HOME"; : > "$LOG"
 code() { set +e; "$@" >/dev/null 2>&1; echo $?; set -e; }

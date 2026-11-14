@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig display ...` with fake hyprctl, kscreen-doctor, brightnessctl and noctalia. Usage: display-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home"; export LOG="$tmp/log"; : > "$LOG"
 cat > "$tmp/mons.json" <<'J'
 [{"name":"eDP-1","description":"Laptop","width":2880,"height":1800,"refreshRate":120.0,"x":0,"y":0,"scale":1.5,"transform":0,"focused":true,"disabled":false},

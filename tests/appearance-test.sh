@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig appearance ...` with fake noctalia, hyprctl, fc-list, pacman and sudo. Usage: appearance-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home/Pictures/BxRig" "$tmp/fake/installed"; export LOG="$tmp/log"; : > "$LOG"
 for t in noctalia hyprctl; do printf '#!/usr/bin/env bash\necho "%s $*" >> "$LOG"\n' "$t" > "$tmp/bin/$t"; done
 printf '#!/usr/bin/env bash\necho "self $*" >> "$LOG"\n' > "$tmp/self"
@@ -26,7 +23,6 @@ chmod +x "$tmp/bin"/* "$tmp/self"
 printf 'CaskaydiaMono Nerd Font,CaskaydiaMono NF\nJetBrainsMono Nerd Font,JetBrainsMono NF\nIosevka Nerd Font,Iosevka NF\n' > "$tmp/fake/fonts"
 run() { env HOME="$tmp/home" USER=dev BXRIG_OS_RELEASE="$tmp/os" BXRIG_STATE_HOME="$tmp/state" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_SELF="$tmp/self" PATH="$tmp/bin:$PATH" LOG="$LOG" FAKE="$tmp/fake" "$@"; }
 hypr() { run env HYPRLAND_INSTANCE_SIGNATURE=x "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 has() { grep -qF -- "$1" "$LOG"; }
 look="$tmp/cfg/bxrig/theme/look.lua"
 lookhas() { grep -qF -- "$1" "$look"; }

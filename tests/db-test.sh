@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # `bxrig db` end to end with a fake, stateful podman/docker (no containers are started). Usage: db-test.sh BINARY
-set -euo pipefail
-binary="$(realpath "${1:?native executable required}")"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+. "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/fake" "$tmp/nobin"   # nobin: an empty PATH, so a real podman or docker on the machine can never be reached
 # fake container engine: keeps one folder per container, logs every call to $FAKE/<program>.log
 cat > "$tmp/bin/fakeengine" <<'FAKE'
@@ -31,7 +28,6 @@ FAKE
 chmod +x "$tmp/bin/fakeengine"; ln -s fakeengine "$tmp/bin/podman"; ln -s fakeengine "$tmp/bin/docker"
 export FAKE="$tmp/fake"
 run() { env BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_DATA_HOME="$tmp/data" HOME="$tmp/home" PATH="$tmp/bin:$PATH" FAKE="$FAKE" "$@"; }
-code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 c=bxrig-db
 
 # the registry
