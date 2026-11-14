@@ -83,6 +83,15 @@ press() { : > "$LOG"; rm -f "$tmp/cfg/bxrig/runner.json"; [[ -z "${1:-}" ]] || h
 hypr sh -c "$bound" >/dev/null 2>&1; for _ in 1 2 3 4 5 6 7 8 9 10; do [[ -s "$LOG" ]] && break; sleep 0.3; done
 [[ "$(cat "$LOG")" == "noctalia msg panel-toggle launcher" ]] || fail 'a launcher that is not installed falls back to Noctalia'
 
+# icon-theme: a theme that is installed is saved, auto clears it, a missing one is refused
+mkdir -p "$tmp/share/icons/Papirus"
+[[ "$(BXRIG_SHARE_DIR="$tmp/share" code "$binary" runner icon-theme Nope)" == 4 ]] || fail 'an unknown icon theme exits 4'
+BXRIG_SHARE_DIR="$tmp/share" run "$binary" runner icon-theme Papirus | grep -q 'Icon theme: Papirus' || fail 'icon-theme prints the choice'
+run "$binary" runner show | grep -q '"icon_theme":"Papirus"' || fail 'icon_theme is saved in runner.json'
+[[ "$(code "$binary" runner icon-theme auto)" == 0 ]] || fail 'icon-theme auto exits 0'
+run "$binary" runner show | grep -q icon_theme && fail 'auto removes icon_theme' || true
+[[ "$(code "$binary" runner icon-theme)" == 2 ]] || fail 'icon-theme needs a name'
+
 # it never changes keybindings
 [[ "$(sha256sum "$tmp/cfg/hypr/"*)" == "$before" ]] || fail 'the runner touched the Hyprland config'
 echo "runner tests passed"

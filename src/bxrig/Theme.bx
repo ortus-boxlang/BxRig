@@ -123,6 +123,7 @@ class Theme {
     // The generated files for a parsed theme, in the config service entry shape.
     function files( c, neovimText ) {
         var d = outDir();
+        var icons = new bxrig.IconTheme().name();
         var out = [
             { name: "theme-palette", target: cfg() & "/noctalia/palettes/BxRigTheme.json", mode: "644", content: variables.tc.palette( arguments.c ) },
             { name: "theme-ghostty", target: d & "/ghostty", mode: "644", content: variables.tc.ghostty( arguments.c ) },
@@ -133,12 +134,12 @@ class Theme {
             { name: "theme-hypr", target: d & "/hypr.lua", mode: "644", content: hyprAccent( arguments.c ) },
             { name: "theme-tmux", target: d & "/tmux.conf", mode: "644", content: variables.tc.tmux( arguments.c ) },
             { name: "theme-fzf", target: d & "/fzf.sh", mode: "644", content: variables.tc.fzf( arguments.c ) },
-            { name: "theme-rofi", target: d & "/rofi.rasi", mode: "644", content: variables.tc.rofi( arguments.c ) },
+            { name: "theme-rofi", target: d & "/rofi.rasi", mode: "644", content: variables.tc.rofi( arguments.c, icons ) },
             { name: "theme-gtk4", target: cfg() & "/gtk-4.0/gtk.css", mode: "644", content: variables.tc.gtk( arguments.c ) },
             { name: "theme-gtk3", target: cfg() & "/gtk-3.0/gtk.css", mode: "644", content: variables.tc.gtk( arguments.c ) },
             { name: "theme-qt6ct", target: cfg() & "/qt6ct/colors/bxrig.conf", mode: "644", content: variables.tc.qtct( arguments.c ) },
             { name: "theme-qt5ct", target: cfg() & "/qt5ct/colors/bxrig.conf", mode: "644", content: variables.tc.qtct( arguments.c ) },
-            { name: "theme-fuzzel", target: cfg() & "/fuzzel/fuzzel.ini", mode: "644", content: variables.tc.fuzzel( arguments.c ) },
+            { name: "theme-fuzzel", target: cfg() & "/fuzzel/fuzzel.ini", mode: "644", content: variables.tc.fuzzel( arguments.c, icons ) },
             { name: "theme-wofi", target: cfg() & "/wofi/style.css", mode: "644", content: variables.tc.wofi( arguments.c ) }
         ];
         // Rofi reads config.rasi: a stub that imports the generated theme, written only when you have none.

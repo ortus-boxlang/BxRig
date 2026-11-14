@@ -324,13 +324,24 @@ class Menu {
         return activate( arguments.runner, flat[ pick ].entry );
     }
 
+    // The icon each section really has in the icon theme (see IconTheme): { wanted name: name that exists or "" }.
+    function resolveIcons( entries ) {
+        var want = [ "system-search", "application-exit", "go-previous" ];
+        for ( var e in arguments.entries ) if ( structKeyExists( e, "themeIcon" ) ) want.append( e.themeIcon );
+        try { return new bxrig.IconTheme().resolve( want ); } catch ( any err ) { return {}; }
+    }
+
     // Shows one level and follows the choice. Returns when the user goes back or cancels. The top level starts with Search.
     function level( runner, title, entries, top = false ) {
+        if ( !structKeyExists( variables, "iconMap" ) ) variables.iconMap = resolveIcons( arguments.entries );
+        var icons = variables.iconMap;
+        var iconOf = function( n ) { return structKeyExists( icons, n ) ? icons[ n ] : ""; };
         while ( true ) {
-            var labels = arguments.entries.map( function( e ) { return structKeyExists( e, "themeIcon" ) ? { label: e.label, icon: e.themeIcon } : e.label; } );
+            var labels = arguments.entries.map( function( e ) { return structKeyExists( e, "themeIcon" ) && len( iconOf( e.themeIcon ) ) ? { label: e.label, icon: iconOf( e.themeIcon ) } : e.label; } );
             var off = 0;
-            if ( arguments.top ) { labels.prepend( { label: "Search…", icon: "system-search" } ); off = 1; }
-            labels.append( arguments.top ? { label: "Exit", icon: "application-exit" } : { label: "Back", icon: "go-previous" } );
+            if ( arguments.top ) { labels.prepend( len( iconOf( "system-search" ) ) ? { label: "Search…", icon: iconOf( "system-search" ) } : "Search…" ); off = 1; }
+            var tail = arguments.top ? { label: "Exit", icon: iconOf( "application-exit" ) } : { label: "Back", icon: iconOf( "go-previous" ) };
+            labels.append( len( tail.icon ) ? tail : tail.label );
             var pick = arguments.runner.select( arguments.title, labels );
             if ( pick == 0 || pick == labels.len() ) return 0;
             if ( arguments.top && pick == 1 ) { var sc = searchAll( arguments.runner, arguments.entries ); if ( sc != 0 ) return sc; continue; }

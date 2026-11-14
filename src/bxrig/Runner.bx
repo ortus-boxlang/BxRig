@@ -184,6 +184,14 @@ class Runner {
         if ( arguments.kind == "provider" ) {
             if ( !arrayFind( launcherProviders(), arguments.provider ) ) return "Unsupported runner provider: " & arguments.provider & " (use " & launcherProviders().toList( ", " ) & ")";
             cfg.provider = arguments.provider;
+        } else if ( arguments.kind == "icon-theme" ) {
+            // The icon theme the runner draws icons from: a theme folder name, or "auto" to follow your GTK setting again.
+            var themes = new bxrig.IconTheme();
+            if ( lCase( arguments.provider ) == "auto" ) structDelete( cfg, "icon_theme" );
+            else {
+                if ( !themes.installed( arguments.provider ) ) return "No icon theme named " & arguments.provider & " is installed (looked in ~/.local/share/icons, ~/.icons and /usr/share/icons). Use auto to follow your GTK setting.";
+                cfg.icon_theme = arguments.provider;
+            }
         } else if ( arguments.kind == "menu" ) {
             if ( !arrayFind( menuProviders(), arguments.provider ) ) return "Unsupported menu provider: " & arguments.provider & " (use " & menuProviders().toList( ", " ) & ")";
             cfg.menu_provider = arguments.provider;

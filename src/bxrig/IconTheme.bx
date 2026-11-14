@@ -1,0 +1,192 @@
+// The icon theme the runner (Rofi, Fuzzel) draws its icons from, and which icon NAMES that theme really has.
+//   name()            the theme (the first of its Inherits chain that really holds icons: Rofi does not follow Inherits, so `elementary-xfce-dark`,
+//                     which is only an index.theme, would draw nothing): BXRIG_ICON_THEME, else `icon_theme` in ~/.config/bxrig/runner.json (`bxrig runner icon-theme NAME`), else the GTK setting
+//                     (gtk-3.0 and gtk-4.0 settings.ini, then gsettings), each only when that theme is installed; else the first installed of
+//                     Papirus, Adwaita, elementary-xfce, breeze, hicolor.
+//   resolve( names )  { name: icon that exists, ... }: for each wanted name the first of its candidates (the name, its -symbolic twin, a few
+//                     alternatives, then folder, application-x-executable and bxrig) found in that theme or hicolor; "" when none.
+// One `find` looks for every candidate at once, so a menu start costs one process whatever the theme size.
+// opts (tests): { home, share, noGsettings }. The folders searched: ~/.local/share/icons, ~/.icons, /usr/share/icons (BXRIG_SHARE_DIR replaces /usr/share).
+class IconTheme {
+    function init( opts = {} ) {
+        variables.opts = arguments.opts;
+        variables.picked = "";
+        return this;
+    }
+
+    function env( name, fallback ) { var v = getSystemSetting( arguments.name, "" ); return len( v ) ? v : arguments.fallback; }
+    function home() { return variables.opts.home ?: env( "HOME", "" ); }
+    function share() { return variables.opts.share ?: env( "BXRIG_SHARE_DIR", "/usr/share" ); }
+    function userShare() { return structKeyExists( variables.opts, "home" ) ? variables.opts.home & "/.local/share" : env( "XDG_DATA_HOME", home() & "/.local/share" ); }
+    function cfgHome() { return structKeyExists( variables.opts, "home" ) ? variables.opts.home & "/.config" : env( "XDG_CONFIG_HOME", home() & "/.config" ); }
+    function roots() { return [ userShare() & "/icons", home() & "/.icons", share() & "/icons" ]; }
+
+    function valid( n ) { return len( arguments.n ) > 0 && reFind( "^[A-Za-z0-9_.-]+$", arguments.n ) > 0; }
+
+    // Is there an icon theme folder of this name?
+    function installed( n ) {
+        if ( !valid( arguments.n ) ) return false;
+        for ( var r in roots() ) if ( directoryExists( r & "/" & arguments.n ) ) return true;
+        return false;
+    }
+
+    // `icon_theme` of runner.json, "" when unset or "auto".
+    function savedSetting() {
+        var f = cfgHome() & "/bxrig/runner.json";
+        if ( !fileExists( f ) ) return "";
+        try {
+            var cfg = jsonDeserialize( fileRead( f ) );
+            if ( isStruct( cfg ) && structKeyExists( cfg, "icon_theme" ) && isSimpleValue( cfg.icon_theme ) && lCase( cfg.icon_theme ) != "auto" ) return cfg.icon_theme;
+        } catch ( any e ) {}
+        return "";
+    }
+
+    // gtk-icon-theme-name of the GTK settings.ini files.
+    function gtkSetting() {
+        for ( var f in [ cfgHome() & "/gtk-3.0/settings.ini", cfgHome() & "/gtk-4.0/settings.ini" ] ) {
+            if ( !fileExists( f ) ) continue;
+            try {
+                for ( var line in listToArray( fileRead( f ), chr( 10 ) ) ) {
+                    var l = trim( line );
+                    if ( left( l, 19 ) == "gtk-icon-theme-name" && find( "=", l ) ) return trim( replace( mid( l, find( "=", l ) + 1, 200 ), '"', "", "all" ) );
+                }
+            } catch ( any e ) {}
+        }
+        return "";
+    }
+
+    // org.gnome.desktop.interface icon-theme (GNOME, and what many desktops mirror); "" when gsettings is missing or slow.
+    function gsettingsSetting() {
+        if ( structKeyExists( variables.opts, "noGsettings" ) ) return "";
+        try {
+            var r = systemExecute( "gsettings", [ "get", "org.gnome.desktop.interface", "icon-theme" ], 3, true );
+            if ( r.exitCode == 0 ) return trim( replace( replace( trim( r.output ), "'", "", "all" ), '"', "", "all" ) );
+        } catch ( any e ) {}
+        return "";
+    }
+
+    // Does a theme folder hold icons (a folder of its own, not just index.theme)?
+    function hasIcons( n ) {
+        for ( var r in roots() ) {
+            var d = r & "/" & arguments.n;
+            if ( !directoryExists( d ) ) continue;
+            try { for ( var sub in directoryList( d, false, "name" ) ) if ( directoryExists( d & "/" & sub ) ) return true; } catch ( any e ) {}
+        }
+        return false;
+    }
+
+    // The theme itself when it holds icons, else the first theme of its Inherits chain that does (Rofi does not follow Inherits).
+    function usable( n ) {
+        if ( hasIcons( arguments.n ) ) return arguments.n;
+        for ( var t in chain( arguments.n ) ) if ( t != "hicolor" && hasIcons( t ) ) return t;
+        return arguments.n;
+    }
+
+    // The theme to use. Cached for this object.
+    function name() {
+        if ( len( variables.picked ) ) return variables.picked;
+        var tries = [ env( "BXRIG_ICON_THEME", "" ), savedSetting(), gtkSetting() ];
+        for ( var t in tries ) if ( installed( t ) ) { variables.picked = usable( t ); return variables.picked; }
+        var g = gsettingsSetting();
+        if ( installed( g ) ) { variables.picked = usable( g ); return variables.picked; }
+        for ( var fb in [ "Papirus", "Adwaita", "elementary-xfce", "breeze" ] ) if ( installed( fb ) ) { variables.picked = fb; return fb; }
+        variables.picked = "hicolor";
+        return "hicolor";
+    }
+
+    // The theme and what it Inherits (breadth first, at most 12), then hicolor.
+    function chain( theme = "" ) {
+        var out = [];
+        var queue = [ len( arguments.theme ) ? arguments.theme : name() ];
+        var guard = 0;
+        while ( queue.len() && guard < 12 ) {
+            guard = guard + 1;
+            var t = queue[ 1 ]; queue.deleteAt( 1 );
+            if ( !valid( t ) || arrayFindNoCase( out, t ) ) continue;
+            out.append( t );
+            for ( var r in roots() ) {
+                var idx = r & "/" & t & "/index.theme";
+                if ( !fileExists( idx ) ) continue;
+                try {
+                    for ( var line in listToArray( fileRead( idx ), chr( 10 ) ) ) {
+                        if ( left( trim( line ), 9 ) == "Inherits=" ) for ( var inh in listToArray( mid( trim( line ), 10, 300 ), "," ) ) queue.append( trim( inh ) );
+                    }
+                } catch ( any e ) {}
+                break;
+            }
+        }
+        if ( !arrayFindNoCase( out, "hicolor" ) ) out.append( "hicolor" );
+        return out;
+    }
+
+    // Other icons that say the same thing, for themes that lack the main name (the -symbolic twin of each is tried too).
+    function alternatives() {
+        return {
+            "applications-other": [ "applications-all", "applications-utilities" ],
+            "system-run": [ "utilities-terminal", "system-run-symbolic" ],
+            "system-software-install": [ "package-x-generic", "list-add" ],
+            "edit-delete": [ "user-trash", "list-remove" ],
+            "preferences-desktop-theme": [ "preferences-desktop-wallpaper", "applications-graphics" ],
+            "input-keyboard": [ "preferences-desktop-keyboard" ],
+            "preferences-system": [ "applications-system", "emblem-system", "preferences-other" ],
+            "system-software-update": [ "view-refresh", "software-update-available" ],
+            "applications-development": [ "applications-engineering", "utilities-terminal" ],
+            "applications-science": [ "applications-engineering", "applications-education" ],
+            "help-browser": [ "help-about", "dialog-information" ],
+            "help-about": [ "dialog-information", "help-browser" ],
+            "system-shutdown": [ "system-reboot", "application-exit" ],
+            "utilities-system-monitor": [ "utilities-terminal", "applications-utilities" ],
+            "system-search": [ "edit-find", "search" ],
+            "application-exit": [ "window-close", "system-log-out" ],
+            "go-previous": [ "go-up", "back" ]
+        };
+    }
+
+    // Every name to try for one wanted icon, best first. The last three never leave a gap: a plain folder, an executable, the BxRig icon itself.
+    function candidates( want ) {
+        var out = [];
+        var add = function( n ) { if ( !arrayFind( out, n ) ) out.append( n ); };
+        var alt = alternatives();
+        var base = [ arguments.want ];
+        if ( structKeyExists( alt, arguments.want ) ) for ( var a in alt[ arguments.want ] ) base.append( a );
+        for ( var b in base ) { add( b ); if ( right( b, 9 ) != "-symbolic" ) add( b & "-symbolic" ); }
+        for ( var g in [ "folder", "application-x-executable", "bxrig" ] ) add( g );
+        return out;
+    }
+
+    // { wanted name: the icon name that exists in the theme or "" } for a list of wanted names, with one `find`.
+    function resolve( names ) {
+        var wanted = [];
+        for ( var n in arguments.names ) if ( valid( n ) && !arrayFindNoCase( wanted, n ) ) wanted.append( n );
+        var all = [];
+        for ( var w in wanted ) for ( var c in candidates( w ) ) if ( !arrayFind( all, c ) ) all.append( c );
+        var dirs = [];
+        for ( var t in [ name(), "hicolor" ] ) for ( var r in roots() ) if ( directoryExists( r & "/" & t ) && !arrayFind( dirs, r & "/" & t ) ) dirs.append( r & "/" & t );
+        var have = {};
+        if ( dirs.len() && all.len() ) {
+            var args = [];
+            for ( var d in dirs ) args.append( d );
+            args.append( "(" );
+            var first = true;
+            for ( var cn in all ) {
+                if ( !first ) args.append( "-o" );
+                first = false;
+                args.append( "-name" ); args.append( cn & ".*" );
+            }
+            args.append( ")" ); args.append( "-printf" ); args.append( "%f" & chr( 10 ) );
+            try {
+                var run = systemExecute( "find", args, 20, true );
+                for ( var line in listToArray( run.output, chr( 10 ) ) ) {
+                    var base = reReplace( trim( line ), "\.(png|svg|xpm|svgz)$", "" );
+                    if ( len( base ) ) have[ base ] = true;
+                }
+            } catch ( any e ) {}
+        }
+        var out = {};
+        for ( var w2 in wanted ) {
+            out[ w2 ] = "";
+            for ( var c2 in candidates( w2 ) ) if ( structKeyExists( have, c2 ) ) { out[ w2 ] = c2; break; }
+        }
+        return out;
+    }
+}

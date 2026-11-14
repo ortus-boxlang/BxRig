@@ -3,7 +3,8 @@
 // Develop, System and Look, each with its own icon (a .directory file per folder plus one menu merge file with nested <Menu>;
 // flat launchers like rofi ignore the folders).
 //   on [--yes] [--dry-run]    writes ~/.local/share/applications/bxrig-tui-PAGE.desktop for every page ("BxRig Databases", Icon=bxrig,
-//                             Exec = your terminal + bxrig tui PAGE) and puts the BxRig icon in ~/.local/share/icons/hicolor/256x256/apps/bxrig.png
+//                             Exec = your terminal + bxrig tui PAGE) and puts the BxRig icon in ~/.local/share/icons/hicolor: 16, 24, 32, 48, 64, 128 and
+//                             256 px PNGs (the first four are a simplified drawing that stays readable) and the scalable SVG, all named bxrig
 //   off [--yes] [--dry-run]   removes the entries BxRig wrote and the icon when it is still the one BxRig wrote
 //   status                    which entries exist (and whether you edited one)
 // The terminal is the one `bxrig ai launch` uses (first line of ~/.config/xdg-terminals.list, else the first installed known terminal).
@@ -22,7 +23,11 @@ class Launchers {
     function self() { return getSystemSetting( "BXRIG_SELF", "bxrig" ); }
     function dataHome() { return getSystemSetting( "XDG_DATA_HOME", getSystemSetting( "HOME", "" ) & "/.local/share" ); }
     function appsDir() { return dataHome() & "/applications"; }
-    function iconFile() { return dataHome() & "/icons/hicolor/256x256/apps/bxrig.png"; }
+    // The app icon files: [ { name: embedded name, file: where it goes } ] (every size and the scalable SVG).
+    function iconSet() {
+        var assets = new bxrig.Assets( variables.cli, variables.runner );
+        return assets.iconNames().map( function( n ) { return { name: n, file: assets.target( n ) }; } );
+    }
     function configHome() { return getSystemSetting( "XDG_CONFIG_HOME", getSystemSetting( "HOME", "" ) & "/.config" ); }
     function directoryFile() { return dataHome() & "/desktop-directories/bxrig.directory"; }
     function menuFile() { return configHome() & "/menus/applications-merged/bxrig.menu"; }
@@ -130,10 +135,10 @@ class Launchers {
         return listFirst( trim( r.output ), " " );
     }
 
-    // The hash of the embedded icon, written to a scratch file first.
-    function embeddedIconHash() {
-        var tmp = variables.config.stateDir() & "/launcher-icon.png";
-        new bxrig.Assets( variables.cli, variables.runner ).decode( "icon.png", tmp );
+    // The hash of one embedded icon, written to a scratch file first.
+    function embeddedIconHash( name ) {
+        var tmp = variables.config.stateDir() & "/launcher-icon.tmp";
+        new bxrig.Assets( variables.cli, variables.runner ).decode( arguments.name, tmp );
         var h = sha( tmp );
         fileDelete( tmp );
         return h;
@@ -144,7 +149,9 @@ class Launchers {
         var term = new bxrig.Ai( variables.cli, variables.runner ).terminal();
         var rs = rows( structKeyExists( term, "argv" ) ? term.argv : [] );
         var present = rs.filter( function( r ) { return r.state != "missing"; } ).len();
-        var data = { enabled: present > 0, present: present, total: rs.len(), icon: fileExists( iconFile() ), terminal: structKeyExists( term, "id" ) ? term.id : "", launchers: publicRows( rs ) };
+        var iconsAll = iconSet();
+        var iconsHave = iconsAll.filter( function( i ) { return fileExists( i.file ); } ).len();
+        var data = { enabled: present > 0, present: present, total: rs.len(), icon: iconsHave == iconsAll.len(), icons: iconsHave, terminal: structKeyExists( term, "id" ) ? term.id : "", launchers: publicRows( rs ) };
         var lines = [ present & " of " & rs.len() & " launchers in the application menu" & ( structKeyExists( term, "id" ) ? " (terminal: " & term.id & ")" : " (no terminal found)" ) ];
         for ( var r in rs ) lines.append( ( r.state == "missing" ? "  -  " : "  +  " ) & "BxRig " & r.title & ( r.state == "drifted" ? "   (edited by you)" : "" ) );
         var sub = extras().filter( function( e ) { return fileExists( e.target ); } ).len();
@@ -165,15 +172,17 @@ class Launchers {
         var plan = [];
         var kept = [];
         for ( var r in rs ) { if ( r.state == "drifted" || r.state == "blocked" ) kept.append( r ); else if ( r.state != "clean" ) plan.append( r ); }
-        var iconWrite = !fileExists( iconFile() );
+        var iconPlan = iconSet().filter( function( i ) { return !fileExists( i.file ); } );
+        var iconWrite = iconPlan.len() > 0;
         var extraPlan = extras().filter( function( e ) { return !fileExists( e.target ) || mine( e.target ); } );
-        var data = { submenu: extraPlan.map( function( e ) { return e.target; } ), terminal: term.id, write: plan.map( function( r ) { return r.file; } ), keep: kept.map( function( r ) { return r.file; } ), icon: iconFile(), icon_write: iconWrite };
+        var data = { submenu: extraPlan.map( function( e ) { return e.target; } ), terminal: term.id, write: plan.map( function( r ) { return r.file; } ), keep: kept.map( function( r ) { return r.file; } ), icon_write: iconPlan.map( function( i ) { return i.file; } ) };
         if ( !arguments.yes || arguments.dryRun ) {
             var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": " & plan.len() & " launchers for the application menu, opening in " & term.id ];
             for ( var p in plan ) lines.append( "  write " & p.file );
             for ( var k in kept ) lines.append( "  keep  " & k.file & " (edited by you)" );
             for ( var x in extraPlan ) lines.append( "  write " & x.target & " (the BxRig submenu)" );
-            lines.append( iconWrite ? "  write " & iconFile() : "  keep  " & iconFile() & " (already there)" );
+            for ( var ip in iconPlan ) lines.append( "  write " & ip.file );
+            if ( !iconWrite ) lines.append( "  keep  the BxRig icons (already there)" );
             lines.append( arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
             return say( cmd, arguments.dryRun ? 0 : 2, data, arguments.asJson, lines );
         }
@@ -183,9 +192,9 @@ class Launchers {
         for ( var x in extraPlan ) {
             if ( variables.config.configWrite( x, x.content, "apply", true, false ) != 0 ) return say( cmd, 6, { error: "Could not write " & x.target }, arguments.asJson, [ "error: could not write " & x.target ] );
         }
-        if ( iconWrite ) {
-            try { new bxrig.Assets( variables.cli, variables.runner ).decode( "icon.png", iconFile() ); }
-            catch ( any e ) { return say( cmd, 6, { error: "Could not write the icon" }, arguments.asJson, [ "error: could not write " & iconFile() ] ); }
+        for ( var ic in iconPlan ) {
+            try { new bxrig.Assets( variables.cli, variables.runner ).decode( ic.name, ic.file ); }
+            catch ( any e ) { return say( cmd, 6, { error: "Could not write the icon" }, arguments.asJson, [ "error: could not write " & ic.file ] ); }
         }
         return say( cmd, 0, data, arguments.asJson, [ "Added " & plan.len() & " launchers to the application menu." & ( kept.len() ? " Kept " & kept.len() & " you edited." : "" ) ] );
     }
@@ -202,25 +211,28 @@ class Launchers {
             // with a terminal known the state says whether it is still exactly what BxRig wrote; without one, the marker has to do
             if ( ( r.state == "clean" || r.state == "outdated" || ( r.state == "present" && mine( r.file ) ) ) ) gone.append( r ); else kept.append( r );
         }
-        var iconGone = false;
-        if ( fileExists( iconFile() ) && gone.len() ) {
-            try { iconGone = sha( iconFile() ) == embeddedIconHash(); } catch ( any e ) { iconGone = false; }
+        var iconGone = [];
+        if ( gone.len() ) {
+            for ( var ic in iconSet() ) {
+                if ( !fileExists( ic.file ) ) continue;
+                try { if ( sha( ic.file ) == embeddedIconHash( ic.name ) ) iconGone.append( ic ); } catch ( any e ) {}
+            }
         }
         var extraGone = !kept.len() ? extras().filter( function( e ) { return mine( e.target ); } ) : [];
-        var data = { submenu: extraGone.map( function( e ) { return e.target; } ), remove: gone.map( function( r ) { return r.file; } ), keep: kept.map( function( r ) { return r.file; } ), icon_remove: iconGone };
+        var data = { submenu: extraGone.map( function( e ) { return e.target; } ), remove: gone.map( function( r ) { return r.file; } ), keep: kept.map( function( r ) { return r.file; } ), icon_remove: iconGone.map( function( i ) { return i.file; } ) };
         if ( !gone.len() && !kept.len() && !extraGone.len() ) return say( cmd, 0, data, arguments.asJson, [ "No launchers are in the application menu." ] );
         if ( !arguments.yes || arguments.dryRun ) {
             var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": remove " & gone.len() & " launchers from the application menu" ];
             for ( var g in gone ) lines.append( "  delete " & g.file );
             for ( var k in kept ) lines.append( "  keep   " & k.file & " (edited by you)" );
             for ( var x in extraGone ) lines.append( "  delete " & x.target );
-            if ( iconGone ) lines.append( "  delete " & iconFile() );
+            for ( var ig in iconGone ) lines.append( "  delete " & ig.file );
             lines.append( arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
             return say( cmd, arguments.dryRun ? 0 : 2, data, arguments.asJson, lines );
         }
         for ( var g in gone ) fileDelete( g.file );
         for ( var x in extraGone ) fileDelete( x.target );
-        if ( iconGone ) fileDelete( iconFile() );
+        for ( var ig in iconGone ) fileDelete( ig.file );
         return say( cmd, 0, data, arguments.asJson, [ "Removed " & gone.len() & " launchers." & ( kept.len() ? " Kept " & kept.len() & " you edited." : "" ) ] );
     }
 

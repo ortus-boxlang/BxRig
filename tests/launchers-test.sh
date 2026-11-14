@@ -53,7 +53,10 @@ grep -q '<Category>X-BxRig-Look</Category>' "$menuf" || fail 'the Look folder is
 grep -qx 'Exec=ghostty -e /opt/bxrig/bxrig tui databases' "$f" || fail "exec: $(grep '^Exec' "$f")"
 ! grep -q StartupWMClass "$f" || fail 'no StartupWMClass is written'
 [[ "$(stat -c %a "$f")" == 644 ]] || fail 'mode 644'
-cmp "$icon" "$root/assets/icon.png" || fail 'the icon is the embedded one'
+cmp "$icon" "$root/assets/icons/256.png" || fail 'the icon is the embedded one'
+for sz in 16 24 32 48 64 128 256; do cmp "$tmp/data/icons/hicolor/${sz}x${sz}/apps/bxrig.png" "$root/assets/icons/$sz.png" || fail "icon size $sz"; done
+cmp "$tmp/data/icons/hicolor/scalable/apps/bxrig.svg" "$root/assets/icons/bxrig.svg" || fail 'scalable icon'
+run "$binary" launchers status --json | jq -e '.data.icons == 8 and .data.icon == true' >/dev/null || fail 'status counts the icon files'
 run "$binary" launchers status --json | jq -e '.data.enabled and .data.present == 20 and .data.icon and .data.terminal == "ghostty"' >/dev/null || fail 'status after'
 run "$binary" launchers status | grep -q '20 of 20 launchers' || fail 'status text'
 
@@ -70,13 +73,14 @@ run "$binary" launchers off --dry-run | grep -q "keep   $f" || fail 'off plan ke
 [[ "$(code "$binary" launchers off --yes)" == 0 ]] || fail 'off --yes exits 0'
 [[ "$(ls "$apps"/bxrig-tui-*.desktop | wc -l)" == 1 && -f "$f" ]] || fail 'off removed only the unedited entries'
 grep -qx mine "$icon" || fail 'off removed an icon you changed'
+[[ ! -e "$tmp/data/icons/hicolor/16x16/apps/bxrig.png" && ! -e "$tmp/data/icons/hicolor/scalable/apps/bxrig.svg" ]] || fail 'off left the icons that are still BxRig icons'
 [[ -f "$dirf" && -f "$menuf" ]] || fail 'the submenu stays while a kept entry needs it'
 rm "$f"
 
 # the icon goes while it is still BxRig's; `remove launchers` is the same as `launchers off`
 rm "$icon"
 [[ "$(code "$binary" launchers on --yes)" == 0 ]] || fail 'on again'
-cmp "$icon" "$root/assets/icon.png" || fail 'the icon is written again when it is missing'
+cmp "$icon" "$root/assets/icons/256.png" || fail 'the icon is written again when it is missing'
 [[ "$(code "$binary" remove launchers)" == 2 ]] || fail 'remove launchers without --yes is a plan'
 [[ "$(ls "$apps"/bxrig-tui-*.desktop | wc -l)" == 17 ]] || fail 'the plan removed files'
 [[ "$(code "$binary" remove launchers --yes)" == 0 ]] || fail 'remove launchers --yes'

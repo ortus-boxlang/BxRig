@@ -142,4 +142,17 @@ run "$binary" theme vscode --yes --json | jq -e '.ok and (.data.files | length =
 jq -e '."editor.fontSize" == 14 and ."workbench.colorCustomizations"."keep.me" == "#123456" and ."workbench.colorCustomizations"."editor.background" == "#1e1e2e"' "$tmp/cfg/Code/User/settings.json" >/dev/null || fail 'vscode merge keeps other keys'
 grep -q '// comment' "$tmp/cfg/VSCodium/User/settings.json" || fail 'vscode file with comments untouched'
 rm -rf "$tmp/cfg/Code" "$tmp/cfg/VSCodium"; [[ "$(code "$binary" theme vscode --yes)" == 4 ]] || fail 'vscode without settings exits 4'
+# the runner's icon theme: Rofi and Fuzzel get `icon-theme` (BXRIG_ICON_THEME, else GTK, else the first installed fallback) so the section icons always show
+mkdir -p "$tmp/share/icons/Papirus" "$tmp/share/icons/Adwaita" "$tmp/share/icons/Other"
+run env BXRIG_SHARE_DIR="$tmp/share" "$binary" theme set bxrig --yes >/dev/null || fail 'theme set with icon themes'
+rasi="$(find "$tmp" -name rofi.rasi | head -1)"
+grep -q 'configuration { icon-theme: "Papirus"; }' "$rasi" || fail "rofi.rasi names the icon theme (Papirus before Adwaita): $(head -3 "$rasi")"
+grep -qx 'icon-theme=Papirus' "$(find "$tmp" -path '*fuzzel/fuzzel.ini' | head -1)" || fail 'fuzzel.ini names the icon theme'
+run env BXRIG_SHARE_DIR="$tmp/share" BXRIG_ICON_THEME=Other "$binary" theme set bxrig --yes >/dev/null || fail 'theme set with BXRIG_ICON_THEME'
+grep -q 'icon-theme: "Other"' "$rasi" || fail 'BXRIG_ICON_THEME wins'
+run env BXRIG_SHARE_DIR="$tmp/share" BXRIG_ICON_THEME=NotInstalled "$binary" theme set bxrig --yes >/dev/null
+grep -q 'icon-theme: "Papirus"' "$rasi" || fail 'an icon theme that is not installed is ignored'
+rm -rf "$tmp/share"
+run env BXRIG_SHARE_DIR="$tmp/share" "$binary" theme set bxrig --yes >/dev/null
+grep -q 'icon-theme: "hicolor"' "$rasi" || fail 'no icon theme at all: hicolor'
 echo "theme tests passed"

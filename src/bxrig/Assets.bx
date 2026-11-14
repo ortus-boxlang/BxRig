@@ -10,12 +10,22 @@ class Assets {
         return this;
     }
 
-    // Where each image goes: wallpapers in ~/Pictures/BxRig, logo and icon in ~/.local/share/bxrig.
+    // Where each image goes: wallpapers in ~/Pictures/BxRig, the app icon in the user's icon theme (hicolor/SIZExSIZE/apps/bxrig.png and
+    // hicolor/scalable/apps/bxrig.svg, under XDG_DATA_HOME), the logo in ~/.local/share/bxrig.
     function target( name ) {
         var home = getSystemSetting( "HOME", "" );
         if ( left( name, 11 ) == "wallpapers/" ) return home & "/Pictures/BxRig/" & mid( name, 12, len( name ) );
+        if ( left( name, 6 ) == "icons/" ) {
+            var data = getSystemSetting( "XDG_DATA_HOME", home & "/.local/share" );
+            if ( name == "icons/bxrig.svg" ) return data & "/icons/hicolor/scalable/apps/bxrig.svg";
+            var px = listFirst( mid( name, 7, len( name ) ), "." );
+            return data & "/icons/hicolor/" & px & "x" & px & "/apps/bxrig.png";
+        }
         return home & "/.local/share/bxrig/" & name;
     }
+
+    // The app icon files (every size and the scalable SVG), as embedded names.
+    function iconNames() { return variables.data.names().filter( function( n ) { return left( n, 6 ) == "icons/"; } ); }
 
     // Writes one embedded image to a path (via a .b64 text file and `base64 -d`).
     function decode( name, dest ) {

@@ -807,8 +807,8 @@ class {
           // set and menu-set are user settings that act at once (no --yes), like `tiling`.
           rnSub = p.len() >= 2 ? p[2] : "";
           rn = new bxrig.Runner( cli );
-          rnUsage = "Usage: bxrig runner list | show | doctor | launch | select JSON_ENTRIES [--prompt=TEXT] | set PROVIDER | menu-set PROVIDER | launcher-command PROVIDER JSON_ARGV | menu-command PROVIDER JSON_ARGV [--json]";
-          rnArity = { list: 2, show: 2, doctor: 2, launch: 2, select: 3, set: 3, "menu-set": 3, "launcher-command": 4, "menu-command": 4 };
+          rnUsage = "Usage: bxrig runner list | show | doctor | launch | select JSON_ENTRIES [--prompt=TEXT] | set PROVIDER | menu-set PROVIDER | icon-theme NAME|auto | launcher-command PROVIDER JSON_ARGV | menu-command PROVIDER JSON_ARGV [--json]";
+          rnArity = { list: 2, show: 2, doctor: 2, launch: 2, select: 3, set: 3, "menu-set": 3, "icon-theme": 3, "launcher-command": 4, "menu-command": 4 };
           if ( !structKeyExists( rnArity, rnSub ) || p.len() != rnArity[ rnSub ] ) {
            println( rnUsage );
            CLIExit( 2 );
@@ -873,7 +873,8 @@ class {
             CLIExit( 4 );
            }
            if ( asJson ) println( cli.envelope( "runner " & rnSub, 0, { provider: p[3] } ) );
-           else println( ( rnSub == "set" ? "Runner provider: " : ( rnSub == "menu-set" ? "Menu provider: " : "Configured " ) ) & p[3] );
+           else println( ( rnSub == "set" ? "Runner provider: " : ( rnSub == "menu-set" ? "Menu provider: " : ( rnSub == "icon-theme" ? "Icon theme: " : "Configured " ) ) ) & p[3] );
+           if ( rnSub == "icon-theme" && !asJson ) println( "Apply it to Rofi and Fuzzel with: bxrig theme set THEME (the current theme name is in bxrig theme status)" );
            CLIExit( 0 );
           } catch ( any e ) {
            if ( e.message contains "CLIExit" ) rethrow;
