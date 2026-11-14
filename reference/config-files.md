@@ -6,6 +6,8 @@ summary: Where BxRig keeps things.
 
 # Files and folders
 
+**Where the folders are.** One rule for every file BxRig writes: `BXRIG_CONFIG_HOME`, then `XDG_CONFIG_HOME`, then `~/.config` for the config folder (the same for `BXRIG_STATE_HOME`/`XDG_STATE_HOME`, `XDG_DATA_HOME`, `XDG_CACHE_HOME`). If you set `XDG_CONFIG_HOME`, everything below that says `~/.config` lives under it instead, including `bxrig/`, `menus/`, `nvim/` and `strata/`. `BXRIG_DATA_HOME` and `BXRIG_CACHE_HOME` name BxRig's own data and cache folder directly (default `~/.local/share/bxrig`, `~/.cache/bxrig`). The tests use these overrides. `BXRIG_APPS_DIRS` replaces the folders read for `.desktop` files.
+
 | Path | What |
 |---|---|
 | `~/.local/bin/bxrig` | the program |
