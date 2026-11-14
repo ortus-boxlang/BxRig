@@ -49,7 +49,7 @@ class Init {
         if ( arguments.fromSystem ) {
             // what this machine has, in the wizard's answers (merged over your saved ones): a starting point for a script or another machine
             var sys = new bxrig.SystemState();
-            saved = sys.merge( saved, sys.scan( wizardSpec() ).answers, "tune" );
+            saved = sys.startingAnswers( saved, sys.scan( wizardSpec() ).answers, "tune" );
         }
         if ( arguments.asJson ) println( variables.cli.envelope( "init --print-answers", 0, { answers: saved, file: answersFile() } ) );
         else println( jsonSerialize( saved ) );
@@ -158,7 +158,7 @@ class Init {
             var sys = new bxrig.SystemState();
             var found = sys.scan( spec );
             if ( arguments.mode == "tune" ) sys.annotate( spec, found.installed );
-            var start = sys.merge( base, found.answers, arguments.mode );
+            var start = sys.startingAnswers( base, found.answers, arguments.mode );
             result = new bxrig.Wizard( spec, start ).run();
         } catch ( any e ) {
             println( "bxrig init needs a terminal (" & e.message & "). Use --answers FILE to run without one." );

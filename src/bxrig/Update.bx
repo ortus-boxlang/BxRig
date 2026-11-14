@@ -16,6 +16,7 @@
 class Update {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
+        variables.text = new bxrig.Text();
         variables.out = new bxrig.Out( variables.cli, "update" );
         variables.inst = new bxrig.Installer( arguments.runner );
         variables.proc = variables.inst.proc();
@@ -137,7 +138,7 @@ class Update {
         var target = selfPath();
         if ( !len( target ) ) return variables.out.say( 4, { error: "cannot find the installed bxrig" }, arguments.asJson, [ "error: cannot find the installed bxrig binary" ] );
         var data = { channel: d.channel, target: target, latest: p.version ?: "" };
-        if ( structKeyExists( p, "sha256" ) && sha( target ) == p.sha256 ) return variables.out.say( 0, merge( data, { updated: false } ), arguments.asJson, [ "Already on the latest " & d.channel & " build." ] );
+        if ( structKeyExists( p, "sha256" ) && sha( target ) == p.sha256 ) return variables.out.say( 0, variables.text.merge( data, { updated: false } ), arguments.asJson, [ "Already on the latest " & d.channel & " build." ] );
         if ( !arguments.yes ) return variables.out.say( 2, data, arguments.asJson, [ "Plan: replace " & target & " with the " & d.channel & " build " & ( p.version ?: "" ), "Nothing was changed. Add --yes to apply." ] );
         var tmp = target & ".new-" & left( createUUID(), 8 );
         var dl = variables.proc.exec( [ "curl", "-fsSL", "--max-time", "600", "-o", tmp, base() & "/" & d.channel & "/bxrig-linux-x86_64" ], 700 );
@@ -148,10 +149,8 @@ class Update {
         variables.proc.exec( [ "chmod", "755", tmp ], 10 );
         var mv = variables.proc.exec( [ "mv", "-f", tmp, target ], 30 );
         if ( mv.exitCode != 0 ) { if ( fileExists( tmp ) ) fileDelete( tmp ); return variables.out.say( 6, { error: trim( mv.output ) }, arguments.asJson, [ "error: could not replace " & target ] ); }
-        return variables.out.say( 0, merge( data, { updated: true } ), arguments.asJson, [ "Updated " & target & " to the " & d.channel & " build " & ( p.version ?: "" ) & "." ] );
+        return variables.out.say( 0, variables.text.merge( data, { updated: true } ), arguments.asJson, [ "Updated " & target & " to the " & d.channel & " build " & ( p.version ?: "" ) & "." ] );
     }
-
-    function merge( a, b ) { var o = {}; for ( var k in structKeyArray( arguments.a ) ) o[ k ] = arguments.a[ k ]; for ( var k2 in structKeyArray( arguments.b ) ) o[ k2 ] = arguments.b[ k2 ]; return o; }
 
     function unit( kind ) { return variables.config.cfgHome() & "/systemd/user/bxrig-update-check." & arguments.kind; }
 

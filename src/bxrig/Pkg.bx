@@ -12,6 +12,7 @@
 class Pkg {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
+        variables.text = new bxrig.Text();
         variables.inst = new bxrig.Installer( arguments.runner );
         variables.proc = variables.inst.proc();
         return this;
@@ -196,7 +197,7 @@ class Pkg {
             if ( !arrayFind( todo, n ) ) todo.append( n );
         }
         var pac = variables.inst.isRoot() ? [ "pacman" ] : [ "sudo", "pacman" ];
-        var data = merge( { remove: todo, skipped: skipped, blocked: blocked, command: todo.len() ? pac.toList( " " ) & " -Rns --noconfirm " & todo.toList( " " ) : "" }, arguments.extra );
+        var data = variables.text.merge( { remove: todo, skipped: skipped, blocked: blocked, command: todo.len() ? pac.toList( " " ) & " -Rns --noconfirm " & todo.toList( " " ) : "" }, arguments.extra );
         if ( !todo.len() ) {
             var why = blocked.map( function( b ) { return b.name & ": " & b.reason; } ).toList( "; " );
             var sk = skipped.map( function( s ) { return s.name & ": " & s.reason; } ).toList( "; " );
@@ -221,13 +222,6 @@ class Pkg {
         var lines2 = done.map( function( d ) { return "Removed: " & d; } );
         for ( var f in failed ) lines2.append( "Failed: " & f.name & ": " & left( f.error, 160 ) );
         return variables.cli.say( arguments.cmd, !failed.len() ? 0 : ( done.len() ? 7 : 5 ), data, arguments.asJson, lines2 );
-    }
-
-    function merge( a, b ) {
-        var o = {};
-        for ( var k in arguments.a ) o[ k ] = arguments.a[ k ];
-        for ( var k2 in arguments.b ) o[ k2 ] = arguments.b[ k2 ];
-        return o;
     }
 
     function remove( names, yes, dryRun, asJson ) {

@@ -116,7 +116,7 @@ class SystemState {
 
     // The wizard's starting answers for a mode: tune (saved answers merged with what the system has), rerun (saved only) or fresh (none).
     // Lists are joined (nothing you saved is dropped, nothing installed is missed); a single choice follows the system when it says something.
-    function merge( saved, detected, mode ) {
+    function startingAnswers( saved, detected, mode ) {
         if ( arguments.mode == "fresh" ) return structKeyExists( arguments.detected, "power_setup" ) ? { power_setup: arguments.detected.power_setup } : {};
         if ( arguments.mode == "rerun" ) return arguments.saved;
         var out = {};

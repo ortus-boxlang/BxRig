@@ -13,6 +13,7 @@
 class BackupTimeline {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
+        variables.fmt = new bxrig.Fmt();
         variables.out = new bxrig.Out( variables.cli, "backup" );
         variables.runner = arguments.runner;
         return this;
@@ -59,18 +60,8 @@ class BackupTimeline {
         return "yearly";
     }
 
-    // "3 hours ago", "yesterday", "5 weeks ago".
-    function ago( ageSeconds ) {
-        var a = max( 0, arguments.ageSeconds );
-        if ( a < 90 ) return "just now";
-        if ( a < 5400 ) return round( a / 60 ) & " minutes ago";
-        if ( a < 129600 ) return round( a / 3600 ) & " hours ago";
-        if ( a < 2 * 86400 ) return "yesterday";
-        if ( a < 14 * 86400 ) return int( a / 86400 ) & " days ago";
-        if ( a < 60 * 86400 ) return int( a / ( 7 * 86400 ) ) & " weeks ago";
-        if ( a < 730 * 86400 ) return int( a / ( 30 * 86400 ) ) & " months ago";
-        return int( a / ( 365 * 86400 ) ) & " years ago";
-    }
+    // "3 hours ago", "yesterday", "5 weeks ago" (see Fmt.age).
+    function ago( ageSeconds ) { return variables.fmt.age( arguments.ageSeconds ); }
 
     // ---- gathering ----
     function point( id, time, label, now, size = 0, extra = {} ) {

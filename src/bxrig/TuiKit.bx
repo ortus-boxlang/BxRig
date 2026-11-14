@@ -11,6 +11,7 @@
 // The state of a list (cursor, scroll, filter) is kept by TuiList; the event loop is TuiRunner.
 class TuiKit {
     function init( tui ) {
+        variables.fmt = new bxrig.Fmt();
         variables.tui = arguments.tui;
         variables.pal = {
             BASE: "##303446", MANTLE: "##292c3c", CRUST: "##232634", SURFACE0: "##414559", SURFACE1: "##51576d", OVERLAY: "##737994",
@@ -209,15 +210,8 @@ class TuiKit {
     }
 
     // ---- widgets ----
-    // "1.4 GB", "12 MB", "900 B".
-    function size( bytes ) {
-        var b = arguments.bytes;
-        var one = function( v ) { var r = numberFormat( v, "0.0" ); return right( r, 2 ) == ".0" ? left( r, len( r ) - 2 ) : r; };
-        if ( b < 1024 ) return b & " B";
-        if ( b < 1048576 ) return one( b / 1024 ) & " KB";
-        if ( b < 1073741824 ) return one( b / 1048576 ) & " MB";
-        return one( b / 1073741824 ) & " GB";
-    }
+    // "1.4 GB", "12 MB", "900 B" (see Fmt.bytes).
+    function size( bytes ) { return variables.fmt.bytes( arguments.bytes ); }
 
     // A row of tabs: names is an array of strings; each tab is a click region of kind `kind` with n = its index. Returns the x after the last tab.
     function tabs( x, y, names, active, kind = "tab", phase = 0 ) {

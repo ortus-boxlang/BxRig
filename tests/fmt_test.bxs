@@ -1,0 +1,13 @@
+// Fmt: sizes and ages in words. Run from src/: matchbox ../tests/fmt_test.bxs
+f = new bxrig.Fmt();
+failures = 0;
+function check( label, ok ) { if ( ok ) println( "ok   " & label ); else { println( "FAIL " & label ); failures++; } }
+check( "bytes B", f.bytes( 900 ) == "900 B" );
+check( "bytes KB", f.bytes( 2048 ) == "2 KB" && f.bytes( 1536 ) == "1.5 KB" );
+check( "bytes MB", f.bytes( 12 * 1048576 ) == "12 MB" );
+check( "bytes GB", f.bytes( 1503238554 ) == "1.4 GB" );
+check( "kb", f.kb( 812 ) == "812 KB" && f.kb( 37 * 1024 ) == "37 MB" && f.kb( 1572864 ) == "1.5 GB" );
+check( "age long", f.age( 30 ) == "just now" && f.age( 3600 * 5 ) == "5 hours ago" && f.age( 86400 * 2 + 5 ) == "2 days ago" && f.age( 86400 * 20 ) == "2 weeks ago" && f.age( 86400 * 1.5 ) == "yesterday" );
+check( "age short", f.ageShort( 600 ) == "10 min ago" && f.ageShort( 3 * 86400 ) == "3 days ago" && f.ageShort( 3 * 3600 ) == "3 h ago" );
+if ( failures > 0 ) { println( failures & " failed" ); exit( 1 ); }
+println( "fmt tests passed" );

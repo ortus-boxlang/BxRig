@@ -17,6 +17,7 @@ class BackupConfig {
     function init( cli, runner = "" ) {
         variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
+        variables.fmt = new bxrig.Fmt();
         variables.out = new bxrig.Out( variables.cli, "backup" );
         variables.inst = new bxrig.Installer( arguments.runner );
         variables.proc = variables.inst.proc();
@@ -83,13 +84,6 @@ class BackupConfig {
         return out;
     }
 
-    function human( bytes ) {
-        var b = arguments.bytes;
-        if ( b >= 1048576 ) return round( b / 104857.6 ) / 10 & " MB";
-        if ( b >= 1024 ) return round( b / 102.4 ) / 10 & " KB";
-        return b & " B";
-    }
-
     // Takes a snapshot. Returns { code, id, meta, error }.
     function take( reason, withSecrets, asJson ) {
         var id = stamp();
@@ -151,12 +145,12 @@ class BackupConfig {
     function nowCmd( opts, asJson ) {
         var r = take( arguments.opts.reason ?: "manual", structKeyExists( arguments.opts, "with-secrets" ), arguments.asJson );
         if ( r.code != 0 ) return variables.out.fail( r.code, r.error, arguments.asJson );
-        return variables.out.say( 0, { snapshot: r.meta }, arguments.asJson, [ "Snapshot " & r.id & ": " & r.meta.files & " files, " & r.meta.packages & " packages, " & human( r.meta.size ) & ( r.meta.secrets ? ", with the encrypted secrets" : "" ), "Restore it with: bxrig backup config restore " & r.id ] );
+        return variables.out.say( 0, { snapshot: r.meta }, arguments.asJson, [ "Snapshot " & r.id & ": " & r.meta.files & " files, " & r.meta.packages & " packages, " & variables.fmt.bytes( r.meta.size ) & ( r.meta.secrets ? ", with the encrypted secrets" : "" ), "Restore it with: bxrig backup config restore " & r.id ] );
     }
 
     function listCmd( asJson ) {
         var all = snapshots();
-        return variables.out.say( 0, { snapshots: all }, arguments.asJson, all.len() ? all.map( function( m ) { return m.id & "   " & m.reason & "   " & m.files & " files   " & m.packages & " packages   " & human( m.size ?: 0 ); } ) : [ "No snapshots yet. Take one: bxrig backup config now" ] );
+        return variables.out.say( 0, { snapshots: all }, arguments.asJson, all.len() ? all.map( function( m ) { return m.id & "   " & m.reason & "   " & m.files & " files   " & m.packages & " packages   " & variables.fmt.bytes( m.size ?: 0 ); } ) : [ "No snapshots yet. Take one: bxrig backup config now" ] );
     }
 
     // Extracts a snapshot to a new temp directory. Returns its path or "".

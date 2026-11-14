@@ -4,6 +4,7 @@
 // An intent is a struct: {} (nothing), { action: "goto", page }, { action: "launch", target } (leave the Control Center and run that screen: "timemachine", or "wizard" for the setup wizard, prefilled from this machine), { action: "cli", title, args } (plan first).
 class DashboardPage {
     function init( data ) {
+        variables.fmt = new bxrig.Fmt();
         variables.provider = arguments.data;
         variables.data = {};
         variables.att = [];
@@ -48,12 +49,7 @@ class DashboardPage {
 
     function onScroll( dir ) { return onKey( arguments.dir == "up" ? "Up" : "Down" ); }
 
-    function ago( seconds ) {
-        var a = max( 0, arguments.seconds );
-        if ( a < 5400 ) return round( a / 60 ) & " min ago";
-        if ( a < 129600 ) return round( a / 3600 ) & " h ago";
-        return int( a / 86400 ) & " days ago";
-    }
+    function ago( seconds ) { return variables.fmt.ageShort( arguments.seconds ); }
 
     function paint( kit, x, y, w, h, tick, phase ) {
         var p = arguments.kit;

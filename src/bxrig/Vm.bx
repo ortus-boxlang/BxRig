@@ -12,6 +12,8 @@ class Vm {
     function init( cli, runner = "" ) {
         variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
+        variables.text = new bxrig.Text();
+        variables.fmt = new bxrig.Fmt();
         variables.inst = new bxrig.Installer( arguments.runner );
         variables.proc = variables.inst.proc();
         variables.config = new bxrig.ConfigService().quiet( true );
@@ -77,13 +79,6 @@ class Vm {
         if ( !directoryExists( arguments.path ) ) return 0;
         var r = variables.proc.exec( [ "sh", "-c", 'du -sk "$1" 2>/dev/null | cut -f1', "_", arguments.path ], 120 );
         return r.exitCode == 0 ? int( val( trim( r.output ) ) ) : 0;
-    }
-
-    function humanKb( kb ) {
-        var n = arguments.kb + 0;
-        if ( n >= 1048576 ) return numberFormat( n / 1048576, "0.0" ) & " GB";
-        if ( n >= 1024 ) return numberFormat( n / 1024, "0" ) & " MB";
-        return n & " KB";
     }
 
     function portInUse( p ) {
@@ -185,7 +180,7 @@ class Vm {
         var ram = hostMemGb();
         rows.append( check( "memory", ram >= 4, ram & " GB in the machine" & ( ram < 4 ? " (Windows wants at least 4)" : "" ), false ) );
         var free = freeKb( variables.environ.data() );
-        rows.append( check( "free disk in " & variables.environ.data(), free >= 33554432, humanKb( free ) & " free" & ( free < 33554432 ? " (Windows wants at least 32 GB)" : "" ), false ) );
+        rows.append( check( "free disk in " & variables.environ.data(), free >= 33554432, variables.fmt.kb( free ) & " free" & ( free < 33554432 ? " (Windows wants at least 32 GB)" : "" ), false ) );
         var dri = variables.proc.exec( [ "sh", "-c", '[ -d "$1" ]', "_", driDir() ], 10 ).exitCode == 0;
         rows.append( check( "GPU for Linux desktops: /dev/dri (Intel and AMD)", dri, dri ? "present" : "not present (--gpu=intel|amd would fail)", false ) );
         var nv = variables.proc.exec( [ "sh", "-c", 'command -v nvidia-smi >/dev/null && nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -1' ], 20 );
@@ -355,7 +350,7 @@ class Vm {
             var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": " & cmd & " " & arguments.kind & " " & nm, "  would " & what ];
             if ( arguments.kind == "windows" ) lines.append( "  The Windows install downloads about " & numberFormat( variables.data.windowsVersion( rec.version ).size, "0.0" ) & " GB and takes a while; you need your own Windows license." );
             lines.append( arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return variables.cli.say( cmd, arguments.dryRun ? 0 : 2, merge( data, { would: what } ), arguments.asJson, lines, arguments.dryRun );
+            return variables.cli.say( cmd, arguments.dryRun ? 0 : 2, variables.text.merge( data, { would: what } ), arguments.asJson, lines, arguments.dryRun );
         }
         if ( !engineAvailable() ) return variables.cli.fail( cmd, 4, engineCli() & " is required but was not found (bxrig profile-install containers, or bxrig db engine docker)", arguments.asJson );
         if ( arguments.kind == "windows" && variables.proc.exec( [ "sh", "-c", '[ -r /dev/kvm ] && [ -w /dev/kvm ]' ], 10 ).exitCode != 0 && !len( getSystemSetting( "BXRIG_VM_SKIP_KVM_CHECK", "" ) ) ) return variables.cli.fail( cmd, 4, "/dev/kvm is not usable by you (run: bxrig vm doctor)", arguments.asJson );
@@ -375,7 +370,7 @@ class Vm {
         if ( r.exitCode != 0 ) {
             secrets().drop( secretKey( nm ) );
             variables.proc.exec( [ "rm", "-rf", dir ], 30 );
-            return variables.cli.say( cmd, 6, merge( data, { error: trim( r.output ) } ), arguments.asJson, [ "error: " & trim( r.output ) ] );
+            return variables.cli.say( cmd, 6, variables.text.merge( data, { error: trim( r.output ) } ), arguments.asJson, [ "error: " & trim( r.output ) ] );
         }
         writeRecord( rec );
         writeLauncher( rec );
@@ -401,13 +396,6 @@ class Vm {
 
     // rootless Podman maps the container's root to you, so the webtop runs with PUID=PGID=0 there (files stay yours); Docker uses your ids.
     function rootless() { return engineCli() == "podman"; }
-
-    function merge( base, extra ) {
-        var out = {};
-        for ( var k in arguments.base ) out[ k ] = arguments.base[ k ];
-        for ( var k2 in arguments.extra ) out[ k2 ] = arguments.extra[ k2 ];
-        return out;
-    }
 
     // ---- lifecycle ----
     function resolve( name ) {
@@ -486,7 +474,7 @@ class Vm {
             var st = eng ? stateOf( containerName( r.name ) ) : "";
             var row = { name: r.name, kind: r.kind, what: r.kind == "windows" ? r.version : r.tag, state: len( st ) ? st : ( eng ? "missing" : "unknown" ), ports: r.ports, url: url( r ), size_kb: duKb( dataDir( r.name ) ) };
             rows.append( row );
-            lines.append( r.name & repeatString( " ", max( 1, 16 - len( r.name ) ) ) & r.kind & repeatString( " ", max( 1, 9 - len( r.kind ) ) ) & row.what & repeatString( " ", max( 1, 14 - len( row.what & "" ) ) ) & row.state & repeatString( " ", max( 1, 10 - len( row.state ) ) ) & humanKb( row.size_kb ) & "  " & row.url );
+            lines.append( r.name & repeatString( " ", max( 1, 16 - len( r.name ) ) ) & r.kind & repeatString( " ", max( 1, 9 - len( r.kind ) ) ) & row.what & repeatString( " ", max( 1, 14 - len( row.what & "" ) ) ) & row.state & repeatString( " ", max( 1, 10 - len( row.state ) ) ) & variables.fmt.kb( row.size_kb ) & "  " & row.url );
         }
         if ( !rows.len() ) lines.append( "No VMs yet. Create one: bxrig vm create linux NAME   or   bxrig vm create windows" );
         return variables.cli.say( cmd, 0, { vms: rows }, arguments.asJson, lines );
@@ -499,7 +487,7 @@ class Vm {
         if ( len( res.error ) ) return variables.cli.fail( cmd, res.code, res.error, arguments.asJson );
         var st = engineAvailable() ? stateOf( res.container ) : "";
         var d = { name: arguments.name, kind: res.rec.kind, state: len( st ) ? st : "missing", url: url( res.rec ), ports: res.rec.ports, size_kb: duKb( dataDir( arguments.name ) ), data: dataDir( arguments.name ) };
-        return variables.cli.say( cmd, 0, d, arguments.asJson, [ arguments.name & ": " & d.state & "  " & d.url & "  data " & humanKb( d.size_kb ) & " in " & d.data ] );
+        return variables.cli.say( cmd, 0, d, arguments.asJson, [ arguments.name & ": " & d.state & "  " & d.url & "  data " & variables.fmt.kb( d.size_kb ) & " in " & d.data ] );
     }
 
     function size( name, asJson ) {
@@ -513,9 +501,9 @@ class Vm {
             var kb = duKb( dataDir( r.name ) );
             total += kb;
             rows.append( { name: r.name, kind: r.kind, data: dataDir( r.name ), size_kb: kb } );
-            lines.append( r.name & repeatString( " ", max( 1, 16 - len( r.name ) ) ) & humanKb( kb ) & "  " & dataDir( r.name ) );
+            lines.append( r.name & repeatString( " ", max( 1, 16 - len( r.name ) ) ) & variables.fmt.kb( kb ) & "  " & dataDir( r.name ) );
         }
-        lines.append( "Total " & humanKb( total ) & " (the images themselves are in the container engine: " & engineCli() & " image ls)" );
+        lines.append( "Total " & variables.fmt.kb( total ) & " (the images themselves are in the container engine: " & engineCli() & " image ls)" );
         return variables.cli.say( cmd, 0, { vms: rows, total_kb: total }, arguments.asJson, lines );
     }
 
@@ -542,7 +530,7 @@ class Vm {
         if ( !engineAvailable() ) return variables.cli.fail( cmd, 4, engineCli() & " was not found", arguments.asJson );
         var dir = dataDir( arguments.name );
         var kb = duKb( dir );
-        var what = "remove the container " & res.container & ( arguments.keepData ? " (the data in " & dir & ", the password and the record are KEPT)" : " AND DELETE ITS DATA (" & humanKb( kb ) & " in " & dir & "), its stored password and its record. The shared folder is not touched" );
+        var what = "remove the container " & res.container & ( arguments.keepData ? " (the data in " & dir & ", the password and the record are KEPT)" : " AND DELETE ITS DATA (" & variables.fmt.kb( kb ) & " in " & dir & "), its stored password and its record. The shared folder is not touched" );
         if ( !arguments.yes || arguments.dryRun ) return variables.cli.say( cmd, arguments.dryRun ? 0 : 2, { name: arguments.name, would: what, deletes_data: !arguments.keepData, size_kb: kb }, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": would " & what, arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dryRun );
         if ( len( stateOf( res.container ) ) ) {
             var r = engineExec( [ "rm", "-f", res.container ], 180 );
