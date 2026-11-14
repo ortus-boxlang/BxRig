@@ -77,7 +77,7 @@ class KeysEditor {
 
     function writeOverrides( data ) {
         var body = serializeJSON( arguments.data ) & chr( 10 );
-        return variables.config.configWrite( { name: "shortcuts-overrides", target: file(), mode: "644", content: body }, body, "apply", true, false ) == 0;
+        return variables.config.writeText( "shortcuts-overrides", file(), body ) == 0;
     }
 
     // `keys set ID KEYS`

@@ -30,14 +30,13 @@ class BackupData {
         variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
         variables.out = new bxrig.Out( variables.cli, "backup" );
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.proc = variables.inst.proc();
-        variables.cfgSvc = new bxrig.ConfigService().quiet( true );
+        variables.proc = new bxrig.Proc( arguments.runner );
+        variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }
 
-    function settingsFile() { return variables.cfgSvc.cfgHome() & "/bxrig/backup.json"; }
-    function unitDir() { return getSystemSetting( "BXRIG_USER_UNIT_DIR", variables.cfgSvc.cfgHome() & "/systemd/user" ); }
+    function settingsFile() { return variables.config.cfgHome() & "/bxrig/backup.json"; }
+    function unitDir() { return getSystemSetting( "BXRIG_USER_UNIT_DIR", variables.config.cfgHome() & "/systemd/user" ); }
     function secrets() { return new bxrig.Secrets( variables.cli ); }
 
     // ---- settings ----
@@ -383,8 +382,8 @@ class BackupData {
             var tx = unitTexts( v );
             var worst = 0;
             for ( var e in [ { name: "backup-service", target: svcFile, mode: "644", content: tx.service }, { name: "backup-timer", target: timFile, mode: "644", content: tx.timer } ] ) {
-                var st = variables.cfgSvc.configState( e );
-                if ( st != "clean" ) { var cc = variables.cfgSvc.configWrite( e, e.content, "schedule", true, false ); if ( cc != 0 ) worst = cc; }
+                var st = variables.config.configState( e );
+                if ( st != "clean" ) { var cc = variables.config.configWrite( e, e.content, "schedule", true, false ); if ( cc != 0 ) worst = cc; }
             }
             if ( worst != 0 ) return variables.out.fail( "failed", "could not write the timer files", arguments.asJson );
             for ( var c1 in cmds ) { var rr = variables.proc.exec( c1, 30 ); if ( rr.exitCode != 0 ) return variables.out.fail( "failed", trim( rr.output ), arguments.asJson ); }

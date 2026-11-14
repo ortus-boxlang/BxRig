@@ -1,6 +1,6 @@
 // Package browser: search the repos and the AUR, install and remove. Live: / sends your text to `pkg search`.
 class PackagesProvider {
-    function init( demo = false ) { variables.demo = arguments.demo; variables.sys = new bxrig.TuiSys(); return this; }
+    function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.Proc(); return this; }
     function id() { return "packages"; }
     function icon() { return "download"; }
     function title() { return "Packages"; }
@@ -23,7 +23,7 @@ class PackagesProvider {
 
     function load( q = "" ) {
         if ( !len( arguments.q ) ) return [];
-        var res = variables.demo ? demo( arguments.q ) : ( variables.sys.bx( [ "pkg", "search", arguments.q, "--limit=40" ] ).results ?: [] );
+        var res = variables.demo ? demo( arguments.q ) : ( variables.proc.selfData( [ "pkg", "search", arguments.q, "--limit=40" ] ).results ?: [] );
         var rows = [];
         for ( var p in res ) rows.append( { mark: p.installed ? "✓" : " ", name: p.name, version: p.version, source: p.source, installed: p.installed, description: p.description ?: "" } );
         return rows;

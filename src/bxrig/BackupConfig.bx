@@ -19,15 +19,14 @@ class BackupConfig {
         variables.cli = arguments.cli;
         variables.fmt = new bxrig.Fmt();
         variables.out = new bxrig.Out( variables.cli, "backup" );
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.proc = variables.inst.proc();
-        variables.cfgSvc = new bxrig.ConfigService().quiet( true );
+        variables.proc = new bxrig.Proc( arguments.runner );
+        variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }
 
     function dataHome() { return getSystemSetting( "BXRIG_DATA_HOME", variables.environ.home() & "/.local/share/bxrig" ); }
     function storeDir() { return dataHome() & "/backups/config"; }
-    function settingsFile() { return variables.cfgSvc.cfgHome() & "/bxrig/backup.json"; }
+    function settingsFile() { return variables.config.cfgHome() & "/bxrig/backup.json"; }
 
     // ---- settings (shared file with the data backups and the NAS targets) ----
     function defaultPaths() {

@@ -19,9 +19,8 @@ class Editor {
     function init( cli, runner = "" ) {
         variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.proc = variables.inst.proc();
-        variables.cfgSvc = new bxrig.ConfigService().quiet( true );
+        variables.proc = new bxrig.Proc( arguments.runner );
+        variables.config = new bxrig.ConfigService().quiet( true );
         variables.td = new bxrig.TemplateData();
         return this;
     }
@@ -45,10 +44,10 @@ class Editor {
     function applyEntries( entries, force ) {
         var out = { written: [], kept: [], failed: [] };
         for ( var e in arguments.entries ) {
-            var st = variables.cfgSvc.configState( e );
+            var st = variables.config.configState( e );
             if ( st == "clean" ) { out.kept.append( e.name ); continue; }
             if ( ( st == "drifted" && !arguments.force ) || st == "blocked" ) { out.kept.append( e.name ); continue; }
-            if ( variables.cfgSvc.configWrite( e, e.content, "apply", true, false ) == 0 ) out.written.append( e.name ); else out.failed.append( e.name );
+            if ( variables.config.configWrite( e, e.content, "apply", true, false ) == 0 ) out.written.append( e.name ); else out.failed.append( e.name );
         }
         return out;
     }
@@ -80,11 +79,11 @@ class Editor {
     // lua/plugins/theme.lua links to the current theme's neovim.lua (only when nothing is there: never replaces a real file).
     function ensureThemeLink( dir ) {
         var link = arguments.dir & "/lua/plugins/theme.lua";
-        if ( variables.cfgSvc.pathKind( link ) != "none" ) return false;
+        if ( variables.config.pathKind( link ) != "none" ) return false;
         var th = new bxrig.Theme( variables.cli );
         th.ensure();
         directoryCreate( getDirectoryFromPath( link ), true, true );
-        return variables.proc.exec( [ "ln", "-s", variables.cfgSvc.stateDir() & "/current/theme/neovim.lua", link ], 15 ).exitCode == 0;
+        return variables.proc.exec( [ "ln", "-s", variables.config.stateDir() & "/current/theme/neovim.lua", link ], 15 ).exitCode == 0;
     }
 
     // Everything the layer puts in dir. Returns { written, kept, failed, extras, hook, link }.
@@ -128,12 +127,12 @@ class Editor {
         var dir = target();
         if ( !directoryExists( dir & "/lua/plugins" ) ) return variables.cli.say( cmd, "precondition", { error: "no LazyVim config", target: dir }, arguments.asJson, [ "error: " & dir & "/lua/plugins was not found, so there is no LazyVim config to add the plugin to. Run `bxrig editor lazyvim --yes` for a new one." ] );
         var e = entryFor( dir, "lua/plugins/boxlang.lua" );
-        var st = variables.cfgSvc.configState( e );
+        var st = variables.config.configState( e );
         var data = { target: e.target, state: st };
         if ( st == "clean" ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Already in place: " & e.target ] );
         if ( st == "drifted" || st == "blocked" ) return variables.cli.say( cmd, "precondition", data, arguments.asJson, [ "error: " & e.target & " exists and is not the BxRig file, so it was left alone." ] );
         if ( !arguments.yes ) return variables.cli.say( cmd, "plan", data, arguments.asJson, [ "Plan: write " & e.target & " (ortus-boxlang/vim-boxlang). Nothing else changes.", "Nothing was changed. Add --yes to apply." ] );
-        if ( variables.cfgSvc.configWrite( e, e.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, "failed", data, arguments.asJson, [ "error: could not write " & e.target ] );
+        if ( variables.config.configWrite( e, e.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, "failed", data, arguments.asJson, [ "error: could not write " & e.target ] );
         return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "BoxLang plugin added: " & e.target & ". Restart nvim; it installs the plugin on the first run." ] );
     }
 
@@ -145,12 +144,12 @@ class Editor {
         if ( data.present ) {
             for ( var rel in layerFiles() ) {
                 var e = entryFor( dir, rel );
-                var st = variables.cfgSvc.configState( e );
+                var st = variables.config.configState( e );
                 data.files.append( { file: rel, state: st } );
                 lines.append( "  " & rel & ": " & st );
             }
             var link = dir & "/lua/plugins/theme.lua";
-            data.theme_link = variables.cfgSvc.pathKind( link );
+            data.theme_link = variables.config.pathKind( link );
             lines.append( "  lua/plugins/theme.lua: " & data.theme_link );
         }
         return variables.cli.say( cmd, "ok", data, arguments.asJson, lines );

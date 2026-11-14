@@ -15,8 +15,7 @@ class BackupSnapshots {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
         variables.out = new bxrig.Out( variables.cli, "backup" );
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.proc = variables.inst.proc();
+        variables.proc = new bxrig.Proc( arguments.runner );
         return this;
     }
 

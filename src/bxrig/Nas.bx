@@ -19,13 +19,12 @@ class Nas {
         variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
         variables.out = new bxrig.Out( variables.cli, "nas" );
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.proc = variables.inst.proc();
-        variables.cfgSvc = new bxrig.ConfigService().quiet( true );
+        variables.proc = new bxrig.Proc( arguments.runner );
+        variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }
 
-    function cfg() { return variables.cfgSvc.cfgHome(); }
+    function cfg() { return variables.config.cfgHome(); }
     function nasFile() { return cfg() & "/bxrig/nas.json"; }
     function backupFile() { return cfg() & "/bxrig/backup.json"; }
     function credDir() { return variables.environ.get( "BXRIG_NAS_CRED_DIR", "/etc/bxrig/nas" ); }

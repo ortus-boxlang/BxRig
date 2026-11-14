@@ -18,8 +18,7 @@ class Update {
         variables.cli = arguments.cli;
         variables.text = new bxrig.Text();
         variables.out = new bxrig.Out( variables.cli, "update" );
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.proc = variables.inst.proc();
+        variables.proc = new bxrig.Proc( arguments.runner );
         variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }

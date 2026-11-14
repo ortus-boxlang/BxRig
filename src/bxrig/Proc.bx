@@ -44,6 +44,24 @@ class Proc {
         return r.exitCode == 0 && trim( r.output ) == "0";
     }
 
+    // Runs a program with arguments: { exitCode, output, timeout }. Never throws.
+    function run( program, args = [], timeout = 30 ) {
+        var argv = [ arguments.program ];
+        for ( var a in arguments.args ) argv.append( a );
+        return exec( argv, arguments.timeout );
+    }
+
+    // `bxrig ARGS --json` -> its `data` struct, or {} when it fails or does not answer with JSON.
+    function selfData( args = [], timeout = 120 ) {
+        var a = [];
+        for ( var x in arguments.args ) a.append( x );
+        a.append( "--json" );
+        try {
+            var j = jsonDeserialize( self( a, arguments.timeout ).output );
+            return structKeyExists( j, "data" ) && isStruct( j.data ) ? j.data : {};
+        } catch ( any e ) { return {}; }
+    }
+
     // The path or name used to run BxRig itself (BXRIG_SELF, else `bxrig` from the PATH).
     function selfPath() {
         return getSystemSetting( "BXRIG_SELF", "bxrig" );

@@ -14,6 +14,16 @@ class ConfigService {
     function progress( text ) {
      if ( !variables.silent ) println( arguments.text );
     }
+    // A managed file in the shape configState and configWrite take: { name, target, mode, content }.
+    function entry( name, target, content, mode = "644" ) {
+        return { name: arguments.name, target: arguments.target, mode: arguments.mode, content: arguments.content };
+    }
+
+    // Writes one text file through the config service (backup, journal, never over your edit): the exit code of configWrite.
+    function writeText( name, target, content, mode = "644", reason = "apply" ) {
+        return configWrite( entry( arguments.name, arguments.target, arguments.content, arguments.mode ), arguments.content, arguments.reason, true, false );
+    }
+
     function cfgHome() {
      return variables.environ.xdgConfig();
     }

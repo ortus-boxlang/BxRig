@@ -18,7 +18,6 @@ class AppsData {
         variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
         variables.demo = arguments.demo;
-        variables.sys = new bxrig.TuiSys();
         variables.repoMap = {};
         variables.repoMapLoaded = false;
         variables.notes = [];
@@ -29,7 +28,7 @@ class AppsData {
     function isDemo() { return variables.demo; }
     function notes() { return variables.notes; }
     function note( text ) { if ( !arrayFind( variables.notes, arguments.text ) ) variables.notes.append( arguments.text ); }
-    function selfName() { return variables.sys.self(); }
+    function selfName() { return variables.proc.selfPath(); }
 
     function cacheDir() {
         var base = variables.environ.get( "BXRIG_CACHE_HOME", len( getSystemSetting( "XDG_CACHE_HOME", "" ) ) ? getSystemSetting( "XDG_CACHE_HOME", "" ) & "/bxrig" : variables.environ.home() & "/.cache/bxrig" );
@@ -39,7 +38,7 @@ class AppsData {
     // ---- desktop entries ----
 
     // ---- pacman ----
-    function pacman( args, timeout = 60 ) { return variables.sys.run( "pacman", arguments.args, arguments.timeout ); }
+    function pacman( args, timeout = 60 ) { return variables.proc.run( "pacman", arguments.args, arguments.timeout ); }
 
     // "repo pkg version [installed]" for every sync repo: pkg -> repo. One call, kept for the life of this object.
     function repoOf( pkg ) {
@@ -183,7 +182,7 @@ class AppsData {
     function flatpakRows() {
         var out = [];
         if ( !variables.proc.has( "flatpak" ) ) return out;
-        var r = variables.sys.run( "flatpak", [ "list", "--app", "--columns=application,name,version,size" ], 30 );
+        var r = variables.proc.run( "flatpak", [ "list", "--app", "--columns=application,name,version,size" ], 30 );
         if ( r.exitCode != 0 ) return out;
         for ( var line in listToArray( r.output, chr( 10 ) ) ) {
             var p = listToArray( line, chr( 9 ) );
@@ -277,7 +276,7 @@ class AppsData {
         if ( fileExists( f & ".json" ) || fileExists( f & ".run" ) ) return false;
         directoryCreate( cacheDir(), true, true );
         var script = "out=$1; self=$2; text=$3; limit=$4; : > ^$out.run^; ^$self^ pkg search ^$text^ --limit=^$limit^ --json > ^$out.tmp^ 2>/dev/null; mv -f ^$out.tmp^ ^$out.json^; rm -f ^$out.run^";
-        return detached( replace( script, "^", chr( 34 ), "all" ), [ f, variables.sys.self(), t, "24" ] );
+        return detached( replace( script, "^", chr( 34 ), "all" ), [ f, variables.proc.selfPath(), t, "24" ] );
     }
 
     // The rows of a finished search: { done: bool, rows: [] }.

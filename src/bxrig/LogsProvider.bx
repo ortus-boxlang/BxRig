@@ -1,6 +1,6 @@
 // Logs: the journal without remembering journalctl flags. p cycles the lowest priority shown (error, warning, info); / filters the lines.
 class LogsProvider {
-    function init( demo = false ) { variables.demo = arguments.demo; variables.sys = new bxrig.TuiSys(); variables.prio = 2; return this; }
+    function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.Proc(); variables.prio = 2; return this; }
     function id() { return "logs"; }
     function icon() { return "file"; }
     function title() { return "Logs"; }
@@ -43,7 +43,7 @@ class LogsProvider {
             return keep;
         }
         var level = [ "3", "4", "6" ][ variables.prio ];
-        var r = variables.sys.run( "journalctl", [ "-b", "-n", "300", "--no-pager", "-o", "json", "-p", level ], 20 );
+        var r = variables.proc.run( "journalctl", [ "-b", "-n", "300", "--no-pager", "-o", "json", "-p", level ], 20 );
         var rows = [];
         var lines = listToArray( r.output, chr( 10 ) );
         for ( var i = lines.len(); i >= 1; i-- ) { var row = parseLine( lines[ i ] ); if ( structCount( row ) ) rows.append( row ); }

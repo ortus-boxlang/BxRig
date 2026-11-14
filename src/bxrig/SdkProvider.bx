@@ -1,7 +1,7 @@
 // Maven and Gradle pages: everything SDKMAN offers for one tool, with the installed versions marked and the default starred.
 // Rows: [ * default | ● installed ] version. i installs the highlighted version, d makes it the default, x removes it. / filters.
 class SdkProvider {
-    function init( cand, demo = false ) { variables.cand = arguments.cand; variables.demo = arguments.demo; variables.sys = new bxrig.TuiSys(); variables.ready = true; return this; }
+    function init( cand, demo = false ) { variables.cand = arguments.cand; variables.demo = arguments.demo; variables.proc = new bxrig.Proc(); variables.ready = true; return this; }
     function id() { return variables.cand; }
     function icon() { return variables.cand == "maven" ? "wrench" : "gear"; }
     function title() { return uCase( left( variables.cand, 1 ) ) & mid( variables.cand, 2, 20 ); }
@@ -33,9 +33,9 @@ class SdkProvider {
             have = variables.cand == "maven" ? [ "3.9.9", "3.9.8" ] : [ "9.9.1" ];
             def = variables.cand == "maven" ? "3.9.9" : "9.9.1";
         } else {
-            variables.ready = ( variables.sys.bx( [ "sdk", "status" ] ).installed ?: false );
-            for ( var a in ( variables.sys.bx( [ "sdk", "available", variables.cand ] ).available ?: [] ) ) avail.append( a.version );
-            var l = variables.sys.bx( [ "sdk", "list", variables.cand ] );
+            variables.ready = ( variables.proc.selfData( [ "sdk", "status" ] ).installed ?: false );
+            for ( var a in ( variables.proc.selfData( [ "sdk", "available", variables.cand ] ).available ?: [] ) ) avail.append( a.version );
+            var l = variables.proc.selfData( [ "sdk", "list", variables.cand ] );
             have = l.versions ?: [];
             def = l.default ?: "";
         }

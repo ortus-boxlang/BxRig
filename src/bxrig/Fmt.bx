@@ -3,6 +3,7 @@
 //   kb( n )          "812 KB", "37 MB", "1.5 GB"     n in kilobytes (what `du -sk` reports); MB shown whole, GB with one decimal
 //   age( seconds )   "3 hours ago", "yesterday"      the long form, for timelines and cards
 //   ageShort( s )    "5 min ago", "3 days ago"       the short form, for dashboard rows
+//   span( s )        "90s", "1h", "2d"                a duration as one word
 // The two size functions differ on purpose: one takes bytes, the other kilobytes, and disk sizes read better without decimals above 1 MB.
 class Fmt {
     function bytes( n ) {
@@ -31,6 +32,15 @@ class Fmt {
         if ( a < 60 * 86400 ) return int( a / ( 7 * 86400 ) ) & " weeks ago";
         if ( a < 730 * 86400 ) return int( a / ( 30 * 86400 ) ) & " months ago";
         return int( a / ( 365 * 86400 ) ) & " years ago";
+    }
+
+    // 90 -> "1m", 5400 -> "1h", 200000 -> "2d": a duration as one short word.
+    function span( seconds ) {
+        var s = max( 0, arguments.seconds );
+        if ( s < 90 ) return s & "s";
+        if ( s < 5400 ) return round( s / 60 ) & "m";
+        if ( s < 129600 ) return round( s / 3600 ) & "h";
+        return int( s / 86400 ) & "d";
     }
 
     function ageShort( seconds ) {

@@ -1,6 +1,6 @@
 // Java Manager: your Java homes (BxRig installs, SDKMAN, the system) through `bxrig java`. Install, set the default, remove.
 class JavaProvider {
-    function init( demo = false ) { variables.demo = arguments.demo; variables.sys = new bxrig.TuiSys(); variables.view = "homes"; return this; }
+    function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.Proc(); variables.view = "homes"; return this; }
     function id() { return "java"; }
     function icon() { return "coffee"; }
     function title() { return "Java"; }
@@ -37,14 +37,14 @@ class JavaProvider {
 
     function load( q = "" ) {
         if ( variables.view == "available" ) return loadAvailable();
-        var homes = variables.demo ? demoHomes() : ( variables.sys.bx( [ "java", "list" ] ).homes ?: [] );
+        var homes = variables.demo ? demoHomes() : ( variables.proc.selfData( [ "java", "list" ] ).homes ?: [] );
         var rows = [];
         for ( var h in homes ) { h.mark = ( h.default ? "*" : " " ) & ( h.active ? ">" : " " ); rows.append( h ); }
         return rows;
     }
 
     function loadAvailable() {
-        var src = variables.demo ? [ { vendor: "Temurin", version: "25.0.5.0+8", id: "25.0.5.0+8-tem", installed: false }, { vendor: "Temurin", version: "21.0.13.0+9", id: "21.0.13.0+9-tem", installed: true }, { vendor: "Temurin", version: "17.0.21.0+9", id: "17.0.21.0+9-tem", installed: false }, { vendor: "Corretto", version: "21.0.13.0+10", id: "21.0.13.0+10-amzn", installed: false }, { vendor: "GraalVM CE", version: "21.0.2", id: "21.0.2-graalce", installed: false } ] : ( variables.sys.bx( [ "sdk", "available", "java" ] ).available ?: [] );
+        var src = variables.demo ? [ { vendor: "Temurin", version: "25.0.5.0+8", id: "25.0.5.0+8-tem", installed: false }, { vendor: "Temurin", version: "21.0.13.0+9", id: "21.0.13.0+9-tem", installed: true }, { vendor: "Temurin", version: "17.0.21.0+9", id: "17.0.21.0+9-tem", installed: false }, { vendor: "Corretto", version: "21.0.13.0+10", id: "21.0.13.0+10-amzn", installed: false }, { vendor: "GraalVM CE", version: "21.0.2", id: "21.0.2-graalce", installed: false } ] : ( variables.proc.selfData( [ "sdk", "available", "java" ] ).available ?: [] );
         var rows = [];
         for ( var a in src ) rows.append( { mark: a.installed ? "●" : " ", vendor: a.vendor, version: a.version, id: a.id, installed: a.installed, default: false } );
         return rows;

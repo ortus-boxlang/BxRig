@@ -18,7 +18,7 @@ class Refresh {
         variables.out = new bxrig.Out( variables.cli, "refresh" );
         variables.inst = new bxrig.Installer( arguments.runner );
         variables.proc = variables.inst.proc();
-        variables.cfg = new bxrig.ConfigService().quiet( true );
+        variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }
 
@@ -35,7 +35,7 @@ class Refresh {
 
     // One unit of work: an entry (a file) or a command.
     function entryUnit( component, e ) {
-        var st = variables.cfg.configState( arguments.e );
+        var st = variables.config.configState( arguments.e );
         return { kind: "file", component: arguments.component, name: arguments.e.name, target: arguments.e.target, state: st, entry: arguments.e };
     }
 
@@ -49,7 +49,7 @@ class Refresh {
         var u = [];
         var c = arguments.component;
         var starter = structKeyExists( arguments.opts, "starter" );
-        var cfgHome = variables.cfg.cfgHome();
+        var cfgHome = variables.config.cfgHome();
         if ( c == "hyprland" ) {
             u.append( cmdUnit( c, "the shortcut module (keys apply)", [ variables.environ.self(), "keys", "apply" ] ) );
             u.append( cmdUnit( c, "look.lua (appearance apply)", [ variables.environ.self(), "appearance", "apply" ] ) );
@@ -111,7 +111,7 @@ class Refresh {
         for ( var u in units ) {
             if ( u.kind == "file" ) {
                 if ( u.state == "clean" ) continue;
-                var code = variables.cfg.configApply( u.entry, true, false, arguments.force );
+                var code = variables.config.configApply( u.entry, true, false, arguments.force );
                 if ( code == 0 ) done.append( u.name );
                 else if ( code == 8 && u.state == "drifted" ) kept.append( u.name );
                 else failed.append( u.name );

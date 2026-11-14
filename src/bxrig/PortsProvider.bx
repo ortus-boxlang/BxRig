@@ -1,7 +1,7 @@
 // Ports and Processes: what listens on which port, who owns it, and a way to stop it. Reads `ss -ltnpH` and `ps`; kill and stop ask first.
 // Rows: { port, proto, process, pid, user, up, command, conflict, dev, system }. A port with two different owners is a conflict (shown red).
 class PortsProvider {
-    function init( demo = false ) { variables.demo = arguments.demo; variables.sys = new bxrig.TuiSys(); return this; }
+    function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.Proc(); variables.fmt = new bxrig.Fmt(); return this; }
     function id() { return "ports"; }
     function icon() { return "plug"; }
     function title() { return "Ports"; }
@@ -71,7 +71,7 @@ class PortsProvider {
             var pk = e.port & "";
             if ( !structKeyExists( owners, pk ) ) owners[ pk ] = {};
             owners[ pk ][ e.pid & "" ] = true;
-            rows.append( { port: e.port, proto: "tcp", process: len( e.process ) ? e.process : "?", pid: e.pid, user: info.user, up: variables.sys.span( info.etimes ), command: len( info.args ) ? info.args : "(not visible)", conflict: false, dev: isDev( e.port ), system: info.user == "root" } );
+            rows.append( { port: e.port, proto: "tcp", process: len( e.process ) ? e.process : "?", pid: e.pid, user: info.user, up: variables.fmt.span( info.etimes ), command: len( info.args ) ? info.args : "(not visible)", conflict: false, dev: isDev( e.port ), system: info.user == "root" } );
         }
         for ( var r in rows ) r.conflict = structCount( owners[ r.port & "" ] ) > 1;
         arraySort( rows, function( a, b ) { return a.port - b.port; } );
@@ -82,8 +82,8 @@ class PortsProvider {
 
     function load( q = "" ) {
         if ( variables.demo ) return demoRows();
-        var ss = variables.sys.run( "ss", [ "-ltnpH" ], 10 );
-        var ps = variables.sys.run( "ps", [ "-eo", "pid=,user:32=,etimes=,args=" ], 10 );
+        var ss = variables.proc.run( "ss", [ "-ltnpH" ], 10 );
+        var ps = variables.proc.run( "ps", [ "-eo", "pid=,user:32=,etimes=,args=" ], 10 );
         return build( ss.output, ps.output );
     }
 

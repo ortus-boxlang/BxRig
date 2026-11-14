@@ -1,7 +1,7 @@
 // BoxLang Central: the BoxLang versions bvm has installed, with install and switch. Reads `bvm list` and `bvm current`.
 // The output format of bvm is read leniently (every version number on a line); verify on a machine with bvm working.
 class BoxlangProvider {
-    function init( demo = false ) { variables.demo = arguments.demo; variables.sys = new bxrig.TuiSys(); return this; }
+    function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.Proc(); return this; }
     function id() { return "boxlang"; }
     function icon() { return "archive"; }
     function title() { return "BoxLang"; }
@@ -39,8 +39,8 @@ class BoxlangProvider {
 
     function load( q = "" ) {
         if ( variables.demo ) return [ { version: "1.8.0", active: true, mark: "*", state: "active" }, { version: "1.7.2", active: false, mark: " ", state: "" }, { version: "1.6.0", active: false, mark: " ", state: "" }, { version: "1.9.0-snapshot", active: false, mark: " ", state: "snapshot" } ];
-        var cur = trim( variables.sys.run( "bvm", [ "current" ], 10 ).output );
+        var cur = trim( variables.proc.run( "bvm", [ "current" ], 10 ).output );
         var m = reFind( "[0-9]+\.[0-9]+\.[0-9]+(-snapshot)?", cur, 1, true );
-        return parseList( variables.sys.run( "bvm", [ "list" ], 10 ).output, isArray( m.match ) && m.match.len() ? m.match[ 1 ] : "" );
+        return parseList( variables.proc.run( "bvm", [ "list" ], 10 ).output, isArray( m.match ) && m.match.len() ? m.match[ 1 ] : "" );
     }
 }

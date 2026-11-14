@@ -18,15 +18,14 @@ class Theme {
         variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
         variables.out = new bxrig.Out( variables.cli, "theme" );
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.proc = variables.inst.proc();
-        variables.cfgSvc = new bxrig.ConfigService().quiet( true );
+        variables.proc = new bxrig.Proc( arguments.runner );
+        variables.config = new bxrig.ConfigService().quiet( true );
         variables.tc = new bxrig.ThemeColors();
         variables.td = new bxrig.ThemeData();
         return this;
     }
 
-    function cfg() { return variables.cfgSvc.cfgHome(); }
+    function cfg() { return variables.config.cfgHome(); }
     function outDir() { return cfg() & "/bxrig/theme"; }
     function stateFile() { return cfg() & "/bxrig/theme.json"; }
     function modes() { return [ "theme", "dark", "light", "auto" ]; }
@@ -134,7 +133,7 @@ class Theme {
         ];
         // Rofi reads config.rasi: a stub that imports the generated theme, written only when you have none.
         out.append( { name: "theme-rofi-config", target: cfg() & "/rofi/config.rasi", mode: "644", content: '@theme "' & d & '/rofi.rasi"' & chr( 10 ) } );
-        if ( len( arguments.neovimText ) ) out.append( { name: "theme-neovim", target: variables.cfgSvc.stateDir() & "/current/theme/neovim.lua", mode: "644", content: arguments.neovimText } );
+        if ( len( arguments.neovimText ) ) out.append( { name: "theme-neovim", target: variables.config.stateDir() & "/current/theme/neovim.lua", mode: "644", content: arguments.neovimText } );
         return out;
     }
 
@@ -152,7 +151,7 @@ class Theme {
             var t = find( name );
             if ( !len( t.neovimText ) ) continue;
             var e = { name: "nvim-theme-" & name, target: cfg() & "/bxrig/nvim-themes/" & name & ".lua", mode: "644", content: t.neovimText };
-            if ( variables.cfgSvc.configState( e ) != "clean" && variables.cfgSvc.configWrite( e, e.content, "theme", true, false ) == 0 ) n++;
+            if ( variables.config.configState( e ) != "clean" && variables.config.configWrite( e, e.content, "theme", true, false ) == 0 ) n++;
         }
         return n;
     }
@@ -166,7 +165,7 @@ class Theme {
         var p = variables.tc.parse( t.colorsText );
         var n = 0;
         if ( !p.ok ) return 0;
-        for ( var e in files( p.colors, t.neovimText ) ) if ( variables.cfgSvc.configState( e ) == "missing" && variables.cfgSvc.configWrite( e, e.content, "theme", true, false ) == 0 ) n++;
+        for ( var e in files( p.colors, t.neovimText ) ) if ( variables.config.configState( e ) == "missing" && variables.config.configWrite( e, e.content, "theme", true, false ) == 0 ) n++;
         syncNvim();
         return n;
     }
@@ -262,8 +261,8 @@ class Theme {
         if ( arguments.dry ) return variables.out.say( "ok", data, arguments.asJson, [ "Plan: theme " & t.name & " (" & ( data.light ? "light" : "dark" ) & ", mode " & m & ")", "Files: " & entries.map( function( e ) { return e.target; } ).toList( ", " ), "Nothing was changed." ], true );
         data.written = []; data.unchanged = []; data.failed = [];
         for ( var e in entries ) {
-            if ( variables.cfgSvc.configState( e ) == "clean" ) { data.unchanged.append( e.name ); continue; }
-            if ( variables.cfgSvc.configWrite( e, e.content, "theme", true, false ) == 0 ) data.written.append( e.name ); else data.failed.append( e.name );
+            if ( variables.config.configState( e ) == "clean" ) { data.unchanged.append( e.name ); continue; }
+            if ( variables.config.configWrite( e, e.content, "theme", true, false ) == 0 ) data.written.append( e.name ); else data.failed.append( e.name );
         }
         if ( data.failed.len() ) return variables.out.say( "failed", data, arguments.asJson, [ "error: could not write " & data.failed.toList( ", " ) ] );
         writeState( t.name, stateMode );
@@ -314,7 +313,7 @@ class Theme {
             for ( var k in colors ) merged[ k ] = colors[ k ];
             cfgJson[ "workbench.colorCustomizations" ] = merged;
             var e2 = { name: "vscode-" & replace( u.app, " ", "-", "all" ), target: u.file, mode: "644", content: jsonSerialize( cfgJson ) & chr( 10 ) };
-            if ( variables.cfgSvc.configWrite( e2, e2.content, "theme", true, false ) != 0 ) return variables.out.say( "failed", d, arguments.asJson, [ "error: could not write " & u.file ] );
+            if ( variables.config.configWrite( e2, e2.content, "theme", true, false ) != 0 ) return variables.out.say( "failed", d, arguments.asJson, [ "error: could not write " & u.file ] );
         }
         return variables.out.say( "ok", d, arguments.asJson, [ "VS Code now uses the " & t.name & " colours (" & plan.len() & " file(s); a backup of each is in the config history)." ] & skipped );
     }
@@ -340,7 +339,7 @@ class Theme {
             var t = find( st.name );
             var p = t.found ? variables.tc.parse( t.colorsText ) : { ok: false };
             if ( p.ok ) for ( var e in files( p.colors, t.neovimText ) ) {
-                var s = variables.cfgSvc.configState( e );
+                var s = variables.config.configState( e );
                 data.files.append( { name: e.name, target: e.target, state: s } );
                 lines.append( "  " & e.name & ": " & s );
             }
@@ -395,7 +394,7 @@ class Theme {
         return code;
     }
 
-    function cfgTmp() { return variables.cfgSvc.stateDir() & "/theme-clone-" & createUUID(); }
+    function cfgTmp() { return variables.config.stateDir() & "/theme-clone-" & createUUID(); }
 
     // `import PATH`: a local folder in the same format.
     function importDir( path, name = "", force = false, asJson = false ) {

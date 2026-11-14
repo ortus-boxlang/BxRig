@@ -14,8 +14,7 @@ class Vm {
         variables.cli = arguments.cli;
         variables.text = new bxrig.Text();
         variables.fmt = new bxrig.Fmt();
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.proc = variables.inst.proc();
+        variables.proc = new bxrig.Proc( arguments.runner );
         variables.config = new bxrig.ConfigService().quiet( true );
         variables.data = new bxrig.VmData();
         return this;

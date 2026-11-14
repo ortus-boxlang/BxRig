@@ -10,7 +10,7 @@ class Shortcuts {
         return this;
     }
 
-    function overridesFile() { return new bxrig.ConfigService().quiet( true ).cfgHome() & "/bxrig/shortcuts.json"; }
+    function overridesFile() { return new bxrig.Env().config( "shortcuts.json" ); }
 
     function loadOverrides() {
         var f = overridesFile();

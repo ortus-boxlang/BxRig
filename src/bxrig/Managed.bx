@@ -1,0 +1,11 @@
+// The files BxRig manages by name for `bxrig config list|diff|apply|restore|history`: the settings file, the shortcut files and the starter configs.
+// One place that knows which classes own them, so Main.bx does not. Each entry is { name, target, mode, content }.
+class Managed {
+    function entries( cfgHome ) {
+        var nl = chr( 10 );
+        var out = { bxrig: { name: "bxrig", target: arguments.cfgHome & "/bxrig/bxrig.json", mode: "600", content: '{' & nl & '  "schema_version": 1,' & nl & '  "desktop": "auto"' & nl & '}' & nl } };
+        for ( var se in new bxrig.Shortcuts().entries( arguments.cfgHome ) ) out[ se.name ] = se;
+        for ( var ne in new bxrig.Starter().entries() ) out[ ne.name ] = ne;
+        return out;
+    }
+}

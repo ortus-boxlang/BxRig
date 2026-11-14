@@ -189,9 +189,7 @@ class {
           dryRun = structKeyExists( args.options, "dry-run" );
           force = structKeyExists( args.options, "force" );
           nl = chr( 10 );
-          var managed = { "bxrig": { name: "bxrig", target: config.cfgHome() & "/bxrig/bxrig.json", mode: "600", content: '{' & nl & '  "schema_version": 1,' & nl & '  "desktop": "auto"' & nl & '}' & nl } };
-          for ( var se in new bxrig.Shortcuts().entries( config.cfgHome() ) ) managed[se.name] = se;
-          for ( var ne in new bxrig.Starter().entries() ) managed[ne.name] = ne;
+          var managed = new bxrig.Managed().entries( config.cfgHome() );
           if ( cfgVerb == "list" || cfgVerb == "history" ) {
            rows = [];
            if ( cfgVerb == "list" ) {

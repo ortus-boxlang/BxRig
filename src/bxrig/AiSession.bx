@@ -10,8 +10,7 @@ class AiSession {
     function init( cli, runner = "" ) {
         variables.text = new bxrig.Text();
         variables.cli = arguments.cli;
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.proc = variables.inst.proc();
+        variables.proc = new bxrig.Proc( arguments.runner );
         variables.ai = new bxrig.Ai( arguments.cli, arguments.runner );
         variables.agents = new bxrig.AiAgents();
         return this;

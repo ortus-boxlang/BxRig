@@ -21,13 +21,12 @@ class Appearance {
         variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
         variables.out = new bxrig.Out( variables.cli, "appearance" );
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.proc = variables.inst.proc();
-        variables.cfgSvc = new bxrig.ConfigService().quiet( true );
+        variables.proc = new bxrig.Proc( arguments.runner );
+        variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }
 
-    function cfg() { return variables.cfgSvc.cfgHome(); }
+    function cfg() { return variables.config.cfgHome(); }
     function stateFile() { return cfg() & "/bxrig/appearance.json"; }
     function lookFile() { return cfg() & "/bxrig/theme/look.lua"; }
     function bar() { return "main"; }
@@ -120,7 +119,7 @@ class Appearance {
     // Writes look.lua and reloads Hyprland. Returns "reloaded", "written" (no Hyprland running) or "failed".
     function applyLook( s ) {
         var e = { name: "appearance-look", target: lookFile(), mode: "644", content: lookLua( arguments.s ) };
-        if ( variables.cfgSvc.configState( e ) != "clean" && variables.cfgSvc.configWrite( e, e.content, "appearance", true, false ) != 0 ) return "failed";
+        if ( variables.config.configState( e ) != "clean" && variables.config.configWrite( e, e.content, "appearance", true, false ) != 0 ) return "failed";
         if ( len( getSystemSetting( "HYPRLAND_INSTANCE_SIGNATURE", "" ) ) && variables.proc.has( "hyprctl" ) ) return variables.proc.exec( [ "hyprctl", "reload" ], 20 ).exitCode == 0 ? "reloaded" : "failed";
         return "written";
     }

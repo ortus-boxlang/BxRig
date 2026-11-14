@@ -1,6 +1,6 @@
 // Storage: NAS shares and cloud remotes with their mount state. Reads `nas list` and `cloud status`.
 class StorageProvider {
-    function init( demo = false ) { variables.demo = arguments.demo; variables.sys = new bxrig.TuiSys(); return this; }
+    function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.Proc(); return this; }
     function id() { return "storage"; }
     function icon() { return "hdd"; }
     function title() { return "Storage"; }
@@ -24,11 +24,11 @@ class StorageProvider {
     function load( q = "" ) {
         if ( variables.demo ) return [ { mark: "●", name: "syno/backups", kind: "smb", state: "mounted", where: "/mnt/nas/backups", nas: "syno", share: "backups" }, { mark: "●", name: "syno/media", kind: "nfs", state: "mounted", where: "/mnt/nas/media", nas: "syno", share: "media" }, { mark: "○", name: "syno/photos", kind: "smb", state: "not mounted", where: "/mnt/nas/photos", nas: "syno", share: "photos" }, { mark: "●", name: "gdrive", kind: "cloud", state: "mounted", where: "~/Cloud/gdrive", nas: "", share: "" } ];
         var rows = [];
-        for ( var n in ( variables.sys.bx( [ "nas", "list" ] ).nas ?: [] ) ) {
+        for ( var n in ( variables.proc.selfData( [ "nas", "list" ] ).nas ?: [] ) ) {
             var shares = n.shares ?: {};
             for ( var sh in structKeyArray( shares ) ) rows.append( { mark: "○", name: n.name & "/" & sh, kind: n.protocol ?: "nas", state: ( shares[ sh ].mounted ?: false ) ? "mounted" : "not mounted", where: shares[ sh ].mountpoint ?: "", nas: n.name, share: sh } );
         }
-        for ( var c in ( variables.sys.bx( [ "cloud", "status" ] ).mounts ?: [] ) ) rows.append( { mark: "●", name: c.name ?: "", kind: "cloud", state: ( c.mounted ?: false ) ? "mounted" : "not mounted", where: c.path ?: "", nas: "", share: "" } );
+        for ( var c in ( variables.proc.selfData( [ "cloud", "status" ] ).mounts ?: [] ) ) rows.append( { mark: "●", name: c.name ?: "", kind: "cloud", state: ( c.mounted ?: false ) ? "mounted" : "not mounted", where: c.path ?: "", nas: "", share: "" } );
         for ( var r in rows ) r.mark = r.state == "mounted" ? "●" : "○";
         return rows;
     }

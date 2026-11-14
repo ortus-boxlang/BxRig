@@ -1,6 +1,6 @@
 // Version Managers: one row per tool with its manager and what is active. Enter on a row opens that tool's page. Built from the same sources as the deep pages.
 class VersionsProvider {
-    function init( demo = false ) { variables.demo = arguments.demo; variables.sys = new bxrig.TuiSys(); return this; }
+    function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.Proc(); return this; }
     function id() { return "versions"; }
     function icon() { return "tags"; }
     function title() { return "Versions"; }
@@ -27,8 +27,8 @@ class VersionsProvider {
         if ( variables.demo ) return [
             { tool: "BoxLang", manager: "bvm", active: "1.8.0", extra: "3 installed", page: "boxlang" }, { tool: "MatchBox", manager: "mvm", active: "0.14.0", extra: "", page: "" },
             { tool: "Java", manager: "bxrig java", active: "21.0.13", extra: "3 homes", page: "java" }, { tool: "Node", manager: "nvm", active: "22.11.0", extra: "5 versions", page: "" } ];
-        var st = variables.sys.bx( [ "boxlang", "status" ] );
-        var homes = variables.sys.bx( [ "java", "list" ] ).homes ?: [];
+        var st = variables.proc.selfData( [ "boxlang", "status" ] );
+        var homes = variables.proc.selfData( [ "java", "list" ] ).homes ?: [];
         var javaAct = "-";
         for ( var h in homes ) if ( h.default || h.active ) { javaAct = h.version; break; }
         var node = nodeActive();

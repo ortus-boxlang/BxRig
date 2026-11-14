@@ -1,6 +1,6 @@
 // Shortcuts: every shortcut BxRig manages, with search; rebind one (it asks for the keys and shows the plan), reset it, check conflicts. Reads `keys show`.
 class ShortcutsProvider {
-    function init( demo = false ) { variables.demo = arguments.demo; variables.sys = new bxrig.TuiSys(); return this; }
+    function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.Proc(); return this; }
     function id() { return "shortcuts"; }
     function icon() { return "keyboard"; }
     function title() { return "Shortcuts"; }
@@ -22,7 +22,7 @@ class ShortcutsProvider {
     }
 
     function load( q = "" ) {
-        var src = variables.demo ? [ { id: "launcher", action: "Launcher", keys: "Super+Space", custom: false, how: "hyprland" }, { id: "terminal", action: "Terminal", keys: "Super+Return", custom: false, how: "hyprland" }, { id: "ai-shell", action: "Pull-down AI", keys: "Super+grave", custom: true, how: "hyprland" }, { id: "clipboard", action: "Clipboard history", keys: "Super+V", custom: false, how: "hyprland" } ] : ( variables.sys.bx( [ "keys", "show" ] ).shortcuts ?: [] );
+        var src = variables.demo ? [ { id: "launcher", action: "Launcher", keys: "Super+Space", custom: false, how: "hyprland" }, { id: "terminal", action: "Terminal", keys: "Super+Return", custom: false, how: "hyprland" }, { id: "ai-shell", action: "Pull-down AI", keys: "Super+grave", custom: true, how: "hyprland" }, { id: "clipboard", action: "Clipboard history", keys: "Super+V", custom: false, how: "hyprland" } ] : ( variables.proc.selfData( [ "keys", "show" ] ).shortcuts ?: [] );
         var rows = [];
         for ( var s in src ) rows.append( { id: s.id, action: s.action, keys: len( s.keys ) ? s.keys : "unbound", custom: s.custom, origin: s.custom ? "yours" : "default", how: s.how ?: "" } );
         return rows;

@@ -17,7 +17,7 @@ count 'function validName('        src/bxrig 9
 count 'function dataHome('         src/bxrig 2
 count 'function home()'            src/bxrig 4
 count 'function env('              src/bxrig 1
-count 'function self()'            src/bxrig 2
+count 'function self()'            src/bxrig 1
 count '"Usage: bxrig'              src/Main.bx 4
 count '"Usage: bxrig'              src/bxrig 16
 count 'fail() { echo "FAIL'        tests 4
