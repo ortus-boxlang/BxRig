@@ -4,6 +4,7 @@
 // Exit codes: list 0; install 0 done, 2 without --yes, 4 precondition (root, no base64).
 class Assets {
     function init( cli, runner = "" ) {
+        variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
         variables.inst = new bxrig.Installer( arguments.runner );
         variables.data = new bxrig.AssetData();
@@ -13,10 +14,10 @@ class Assets {
     // Where each image goes: wallpapers in ~/Pictures/BxRig, the app icon in the user's icon theme (hicolor/SIZExSIZE/apps/bxrig.png and
     // hicolor/scalable/apps/bxrig.svg, under XDG_DATA_HOME), the logo in ~/.local/share/bxrig.
     function target( name ) {
-        var home = getSystemSetting( "HOME", "" );
+        var home = variables.environ.home();
         if ( left( name, 11 ) == "wallpapers/" ) return home & "/Pictures/BxRig/" & mid( name, 12, len( name ) );
         if ( left( name, 6 ) == "icons/" ) {
-            var data = getSystemSetting( "XDG_DATA_HOME", home & "/.local/share" );
+            var data = variables.environ.xdgData();
             if ( name == "icons/bxrig.svg" ) return data & "/icons/hicolor/scalable/apps/bxrig.svg";
             var px = listFirst( mid( name, 7, len( name ) ), "." );
             return data & "/icons/hicolor/" & px & "x" & px & "/apps/bxrig.png";

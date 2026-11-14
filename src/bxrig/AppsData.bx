@@ -13,6 +13,9 @@
 // Every external command is optional: a missing pacman, checkupdates, flatpak or network gives an empty list and a sentence in state().
 class AppsData {
     function init( cli = {}, demo = false ) {
+        variables.desk = new bxrig.DesktopEntry();
+        variables.proc = new bxrig.Proc();
+        variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
         variables.demo = arguments.demo;
         variables.sys = new bxrig.TuiSys();
@@ -23,79 +26,17 @@ class AppsData {
         return this;
     }
 
-    function env( name, fallback ) { var v = getSystemSetting( arguments.name, "" ); return len( v ) ? v : arguments.fallback; }
-    function home() { return getSystemSetting( "HOME", "" ); }
     function isDemo() { return variables.demo; }
     function notes() { return variables.notes; }
     function note( text ) { if ( !arrayFind( variables.notes, arguments.text ) ) variables.notes.append( arguments.text ); }
     function selfName() { return variables.sys.self(); }
 
-    // The Exec line without field codes (%f %U ...); %% is a literal percent sign.
-    function cleanExec( exec ) {
-        var t = replace( arguments.exec, "%%", chr( 1 ), "all" );
-        t = reReplace( t, "%[a-zA-Z]", "", "all" );
-        return trim( replace( reReplace( t, " +", " ", "all" ), chr( 1 ), "%", "all" ) );
-    }
-
-    function has( cmd ) { return variables.sys.has( arguments.cmd ); }
     function cacheDir() {
-        var base = env( "BXRIG_CACHE_HOME", len( getSystemSetting( "XDG_CACHE_HOME", "" ) ) ? getSystemSetting( "XDG_CACHE_HOME", "" ) & "/bxrig" : home() & "/.cache/bxrig" );
+        var base = variables.environ.get( "BXRIG_CACHE_HOME", len( getSystemSetting( "XDG_CACHE_HOME", "" ) ) ? getSystemSetting( "XDG_CACHE_HOME", "" ) & "/bxrig" : variables.environ.home() & "/.cache/bxrig" );
         return base & "/apps";
     }
 
     // ---- desktop entries ----
-    function desktopDirs() {
-        var d = env( "BXRIG_DESKTOP_DIRS", "" );
-        if ( len( d ) ) return listToArray( d, ":" );
-        var out = [ "/usr/share/applications", "/usr/local/share/applications", home() & "/.local/share/applications" ];
-        return out;
-    }
-
-    // The keys of the [Desktop Entry] group that matter here.
-    function parseDesktop( file ) {
-        var e = { name: "", exec: "", icon: "", type: "", hidden: false, comment: "", categories: "" };
-        try {
-            var inEntry = false;
-            for ( var raw in listToArray( fileRead( arguments.file ), chr( 10 ), true ) ) {
-                var line = trim( raw );
-                if ( left( line, 1 ) == "[" ) { inEntry = line == "[Desktop Entry]"; continue; }
-                if ( !inEntry || !find( "=", line ) ) continue;
-                var at = find( "=", line );
-                var key = left( line, at - 1 );
-                var val = mid( line, at + 1, len( line ) );
-                if ( compare( key, "Name" ) == 0 && !len( e.name ) ) e.name = val;
-                else if ( compare( key, "Exec" ) == 0 && !len( e.exec ) ) e.exec = val;
-                else if ( compare( key, "Icon" ) == 0 && !len( e.icon ) ) e.icon = val;
-                else if ( compare( key, "Comment" ) == 0 && !len( e.comment ) ) e.comment = val;
-                else if ( compare( key, "Categories" ) == 0 ) e.categories = val;
-                else if ( compare( key, "Type" ) == 0 ) e.type = val;
-                else if ( ( compare( key, "NoDisplay" ) == 0 || compare( key, "Hidden" ) == 0 ) && lCase( val ) == "true" ) e.hidden = true;
-                // BxRig's own launchers (`launchers on`) are shortcuts to its pages, not apps you installed
-                else if ( compare( key, "X-BxRig-Launcher" ) == 0 ) e.hidden = true;
-            }
-        } catch ( any x ) {}
-        return e;
-    }
-
-    // [ { file, name, exec, icon, comment, categories } ] of the visible applications; a later folder wins for the same file name.
-    function desktopEntries() {
-        var byFile = {};
-        for ( var d in desktopDirs() ) {
-            if ( !directoryExists( d ) ) continue;
-            var names = [];
-            try { names = directoryList( d, false, "name" ); } catch ( any e ) { continue; }
-            for ( var f in names ) {
-                if ( right( f, 8 ) != ".desktop" ) continue;
-                var e = parseDesktop( d & "/" & f );
-                if ( e.hidden || e.type != "Application" || !len( e.name ) ) { structDelete( byFile, f ); continue; }
-                e.file = d & "/" & f;
-                byFile[ f ] = e;
-            }
-        }
-        var out = [];
-        for ( var k in structKeyArray( byFile ) ) out.append( byFile[ k ] );
-        return out;
-    }
 
     // ---- pacman ----
     function pacman( args, timeout = 60 ) { return variables.sys.run( "pacman", arguments.args, arguments.timeout ); }
@@ -177,9 +118,9 @@ class AppsData {
     function installed( all = false ) {
         if ( variables.demo ) return demoInstalled();
         var rows = [];
-        var pacmanOk = has( "pacman" );
+        var pacmanOk = variables.proc.has( "pacman" );
         if ( !pacmanOk ) note( "pacman was not found, so installed apps cannot be listed here." );
-        var entries = desktopEntries();
+        var entries = variables.desk.entries( variables.desk.dirs( false ) );
         var foreign = {};
         var fr = pacmanOk ? pacman( [ "-Qm" ], 30 ) : { exitCode: 1, output: "" };
         if ( fr.exitCode == 0 ) for ( var l in listToArray( fr.output, chr( 10 ) ) ) { var fp = listToArray( trim( l ), " " ); if ( fp.len() ) foreign[ fp[ 1 ] ] = true; }
@@ -233,7 +174,7 @@ class AppsData {
     function installedNames() {
         var out = {};
         if ( variables.demo ) { for ( var r in demoInstalled() ) out[ r.pkg ] = true; out.thunderbird = true; return out; }
-        if ( !has( "pacman" ) ) return out;
+        if ( !variables.proc.has( "pacman" ) ) return out;
         for ( var l in listToArray( pacman( [ "-Qq" ], 30 ).output, chr( 10 ) ) ) if ( len( trim( l ) ) ) out[ trim( l ) ] = true;
         return out;
     }
@@ -241,7 +182,7 @@ class AppsData {
     // Flatpak apps, only when flatpak exists.
     function flatpakRows() {
         var out = [];
-        if ( !has( "flatpak" ) ) return out;
+        if ( !variables.proc.has( "flatpak" ) ) return out;
         var r = variables.sys.run( "flatpak", [ "list", "--app", "--columns=application,name,version,size" ], 30 );
         if ( r.exitCode != 0 ) return out;
         for ( var line in listToArray( r.output, chr( 10 ) ) ) {
@@ -400,7 +341,7 @@ class AppsData {
         if ( variables.demo ) return demoDetails( arguments.row );
         var r = arguments.row;
         var pkg = r.pkg ?: "";
-        if ( !len( pkg ) || !reFind( "^[a-z0-9@._+-]{1,100}$", pkg ) || !has( "pacman" ) ) return {};
+        if ( !len( pkg ) || !reFind( "^[a-z0-9@._+-]{1,100}$", pkg ) || !variables.proc.has( "pacman" ) ) return {};
         var q = pacman( [ r.kind == "installed" || r.kind == "update" ? "-Qi" : "-Si", pkg ], 20 );
         if ( q.exitCode != 0 ) return {};
         var parsed = parseQi( q.output );
@@ -416,7 +357,7 @@ class AppsData {
             out.lines = [ "This also removes 3 unused dependencies that only " & p & " needed.", "Your files and settings in your home folder stay." ];
             return out;
         }
-        if ( !reFind( "^[a-z0-9@._+-]{1,100}$", p ) || !has( "pacman" ) ) return out;
+        if ( !reFind( "^[a-z0-9@._+-]{1,100}$", p ) || !variables.proc.has( "pacman" ) ) return out;
         var qi = parseQi( pacman( [ "-Qi", p ], 20 ).output );
         if ( structKeyExists( qi, p ) && structKeyExists( qi[ p ], "requiredBy" ) ) out.dependents = qi[ p ].requiredBy.len();
         var rp = pacman( [ "-Rns", "--print", "--print-format", "%n", p ], 20 );

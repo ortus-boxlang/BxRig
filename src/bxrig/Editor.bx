@@ -17,24 +17,16 @@
 // Exit: 0 done (or already there), 2 plan without --yes, 4 precondition, 6 a command failed.
 class Editor {
     function init( cli, runner = "" ) {
+        variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
         variables.inst = new bxrig.Installer( arguments.runner );
+        variables.proc = variables.inst.proc();
         variables.cfgSvc = new bxrig.ConfigService().quiet( true );
         variables.td = new bxrig.TemplateData();
         return this;
     }
 
-    function say( command, code, data, asJson, lines = [] ) {
-        if ( arguments.asJson ) println( variables.cli.envelope( arguments.command, arguments.code, arguments.data, false ) );
-        else for ( var l in arguments.lines ) println( l );
-        return arguments.code;
-    }
-
-    function tryExec( argv, timeout = 60 ) {
-        try { return variables.inst.exec( arguments.argv, arguments.timeout ); } catch ( any e ) { return { exitCode: 127, output: e.message }; }
-    }
-
-    function target() { return getSystemSetting( "XDG_CONFIG_HOME", getSystemSetting( "HOME", "" ) & "/.config" ) & "/nvim"; }
+    function target() { return variables.environ.xdgConfig( "nvim" ); }
 
     // The relative path in the nvim folder of each layer file, and the template that holds its text.
     function layerFiles() {
@@ -92,7 +84,7 @@ class Editor {
         var th = new bxrig.Theme( variables.cli );
         th.ensure();
         directoryCreate( getDirectoryFromPath( link ), true, true );
-        return tryExec( [ "ln", "-s", variables.cfgSvc.stateDir() & "/current/theme/neovim.lua", link ], 15 ).exitCode == 0;
+        return variables.proc.exec( [ "ln", "-s", variables.cfgSvc.stateDir() & "/current/theme/neovim.lua", link ], 15 ).exitCode == 0;
     }
 
     // Everything the layer puts in dir. Returns { written, kept, failed, extras, hook, link }.
@@ -111,38 +103,38 @@ class Editor {
     function lazyvim( yes, asJson ) {
         var cmd = "editor lazyvim";
         var dir = target();
-        if ( directoryExists( dir ) || fileExists( dir ) ) return say( cmd, 4, { error: dir & " exists", target: dir }, arguments.asJson, [ "error: " & dir & " already exists, so it was left alone. Move it first (mv " & dir & " " & dir & ".bak) and run this again.", "To add only the BoxLang plugin to it: bxrig editor boxlang --yes" ] );
+        if ( directoryExists( dir ) || fileExists( dir ) ) return variables.cli.say( cmd, 4, { error: dir & " exists", target: dir }, arguments.asJson, [ "error: " & dir & " already exists, so it was left alone. Move it first (mv " & dir & " " & dir & ".bak) and run this again.", "To add only the BoxLang plugin to it: bxrig editor boxlang --yes" ] );
         var pkgs = [];
-        for ( var p in [ "neovim", "git", "ripgrep", "fd", "lazygit" ] ) if ( tryExec( [ "pacman", "-Q", p ], 15 ).exitCode != 0 ) pkgs.append( p );
+        for ( var p in [ "neovim", "git", "ripgrep", "fd", "lazygit" ] ) if ( variables.proc.exec( [ "pacman", "-Q", p ], 15 ).exitCode != 0 ) pkgs.append( p );
         var data = { target: dir, packages: pkgs, layer: layerFiles() };
-        if ( !arguments.yes ) return say( cmd, 2, data, arguments.asJson, [ "Plan:" & ( pkgs.len() ? " sudo pacman -S --needed " & pkgs.toList( " " ) & ";" : "" ) & " git clone https://github.com/LazyVim/starter " & dir & "; remove " & dir & "/.git; add the BxRig layer (" & layerFiles().len() & " files: transparency, BoxLang syntax, theme following, no news popups) and the neo-tree extra", "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.say( cmd, 2, data, arguments.asJson, [ "Plan:" & ( pkgs.len() ? " sudo pacman -S --needed " & pkgs.toList( " " ) & ";" : "" ) & " git clone https://github.com/LazyVim/starter " & dir & "; remove " & dir & "/.git; add the BxRig layer (" & layerFiles().len() & " files: transparency, BoxLang syntax, theme following, no news popups) and the neo-tree extra", "Nothing was changed. Add --yes to apply." ] );
         if ( pkgs.len() ) {
             var argv = [ "sudo", "pacman", "-S", "--needed", "--noconfirm" ];
             for ( var q in pkgs ) argv.append( q );
-            var ins = tryExec( argv, 1800 );
-            if ( ins.exitCode != 0 ) return say( cmd, 6, { error: trim( ins.output ) }, arguments.asJson, [ "error: could not install " & pkgs.toList( ", " ) & ": " & trim( ins.output ) ] );
+            var ins = variables.proc.exec( argv, 1800 );
+            if ( ins.exitCode != 0 ) return variables.cli.say( cmd, 6, { error: trim( ins.output ) }, arguments.asJson, [ "error: could not install " & pkgs.toList( ", " ) & ": " & trim( ins.output ) ] );
         }
-        var clone = tryExec( [ "git", "clone", "https://github.com/LazyVim/starter", dir ], 300 );
-        if ( clone.exitCode != 0 ) return say( cmd, 6, { error: trim( clone.output ) }, arguments.asJson, [ "error: git clone failed: " & trim( clone.output ) ] );
-        tryExec( [ "rm", "-rf", dir & "/.git" ], 30 );
+        var clone = variables.proc.exec( [ "git", "clone", "https://github.com/LazyVim/starter", dir ], 300 );
+        if ( clone.exitCode != 0 ) return variables.cli.say( cmd, 6, { error: trim( clone.output ) }, arguments.asJson, [ "error: git clone failed: " & trim( clone.output ) ] );
+        variables.proc.exec( [ "rm", "-rf", dir & "/.git" ], 30 );
         var l = layer( dir );
         data.layer_result = l;
-        if ( l.failed.len() ) return say( cmd, 6, data, arguments.asJson, [ "error: the starter is in " & dir & " but these layer files could not be written: " & l.failed.toList( ", " ) ] );
-        return say( cmd, 0, data, arguments.asJson, [ "LazyVim starter is in " & dir & " with the BxRig layer (" & l.written.len() & " files) and BoxLang syntax.", "Start nvim; it installs its plugins on the first run. Then run :LazyHealth." ] );
+        if ( l.failed.len() ) return variables.cli.say( cmd, 6, data, arguments.asJson, [ "error: the starter is in " & dir & " but these layer files could not be written: " & l.failed.toList( ", " ) ] );
+        return variables.cli.say( cmd, 0, data, arguments.asJson, [ "LazyVim starter is in " & dir & " with the BxRig layer (" & l.written.len() & " files) and BoxLang syntax.", "Start nvim; it installs its plugins on the first run. Then run :LazyHealth." ] );
     }
 
     function boxlang( yes, asJson ) {
         var cmd = "editor boxlang";
         var dir = target();
-        if ( !directoryExists( dir & "/lua/plugins" ) ) return say( cmd, 4, { error: "no LazyVim config", target: dir }, arguments.asJson, [ "error: " & dir & "/lua/plugins was not found, so there is no LazyVim config to add the plugin to. Run `bxrig editor lazyvim --yes` for a new one." ] );
+        if ( !directoryExists( dir & "/lua/plugins" ) ) return variables.cli.say( cmd, 4, { error: "no LazyVim config", target: dir }, arguments.asJson, [ "error: " & dir & "/lua/plugins was not found, so there is no LazyVim config to add the plugin to. Run `bxrig editor lazyvim --yes` for a new one." ] );
         var e = entryFor( dir, "lua/plugins/boxlang.lua" );
         var st = variables.cfgSvc.configState( e );
         var data = { target: e.target, state: st };
-        if ( st == "clean" ) return say( cmd, 0, data, arguments.asJson, [ "Already in place: " & e.target ] );
-        if ( st == "drifted" || st == "blocked" ) return say( cmd, 4, data, arguments.asJson, [ "error: " & e.target & " exists and is not the BxRig file, so it was left alone." ] );
-        if ( !arguments.yes ) return say( cmd, 2, data, arguments.asJson, [ "Plan: write " & e.target & " (ortus-boxlang/vim-boxlang). Nothing else changes.", "Nothing was changed. Add --yes to apply." ] );
-        if ( variables.cfgSvc.configWrite( e, e.content, "apply", true, false ) != 0 ) return say( cmd, 6, data, arguments.asJson, [ "error: could not write " & e.target ] );
-        return say( cmd, 0, data, arguments.asJson, [ "BoxLang plugin added: " & e.target & ". Restart nvim; it installs the plugin on the first run." ] );
+        if ( st == "clean" ) return variables.cli.say( cmd, 0, data, arguments.asJson, [ "Already in place: " & e.target ] );
+        if ( st == "drifted" || st == "blocked" ) return variables.cli.say( cmd, 4, data, arguments.asJson, [ "error: " & e.target & " exists and is not the BxRig file, so it was left alone." ] );
+        if ( !arguments.yes ) return variables.cli.say( cmd, 2, data, arguments.asJson, [ "Plan: write " & e.target & " (ortus-boxlang/vim-boxlang). Nothing else changes.", "Nothing was changed. Add --yes to apply." ] );
+        if ( variables.cfgSvc.configWrite( e, e.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, 6, data, arguments.asJson, [ "error: could not write " & e.target ] );
+        return variables.cli.say( cmd, 0, data, arguments.asJson, [ "BoxLang plugin added: " & e.target & ". Restart nvim; it installs the plugin on the first run." ] );
     }
 
     function status( asJson ) {
@@ -161,15 +153,15 @@ class Editor {
             data.theme_link = variables.cfgSvc.pathKind( link );
             lines.append( "  lua/plugins/theme.lua: " & data.theme_link );
         }
-        return say( cmd, 0, data, arguments.asJson, lines );
+        return variables.cli.say( cmd, 0, data, arguments.asJson, lines );
     }
 
     function refresh( force, yes, asJson ) {
         var cmd = "editor refresh";
         var dir = target();
-        if ( !directoryExists( dir ) ) return say( cmd, 4, { error: "no nvim config", target: dir }, arguments.asJson, [ "error: " & dir & " was not found (bxrig editor lazyvim --yes creates it)" ] );
-        if ( !arguments.yes ) return say( cmd, 2, { target: dir, force: arguments.force }, arguments.asJson, [ "Plan: rewrite the BxRig layer files in " & dir & " that are unchanged" & ( arguments.force ? ", and the ones you changed too (backed up first)" : " (files you changed are kept)" ), "Nothing was changed. Add --yes to apply." ] );
+        if ( !directoryExists( dir ) ) return variables.cli.say( cmd, 4, { error: "no nvim config", target: dir }, arguments.asJson, [ "error: " & dir & " was not found (bxrig editor lazyvim --yes creates it)" ] );
+        if ( !arguments.yes ) return variables.cli.say( cmd, 2, { target: dir, force: arguments.force }, arguments.asJson, [ "Plan: rewrite the BxRig layer files in " & dir & " that are unchanged" & ( arguments.force ? ", and the ones you changed too (backed up first)" : " (files you changed are kept)" ), "Nothing was changed. Add --yes to apply." ] );
         var l = layer( dir, arguments.force );
-        return say( cmd, l.failed.len() ? 6 : 0, l, arguments.asJson, [ "Layer: " & l.written.len() & " written, " & l.kept.len() & " kept" & ( l.failed.len() ? ", failed: " & l.failed.toList( ", " ) : "" ) ] );
+        return variables.cli.say( cmd, l.failed.len() ? 6 : 0, l, arguments.asJson, [ "Layer: " & l.written.len() & " written, " & l.kept.len() & " kept" & ( l.failed.len() ? ", failed: " & l.failed.toList( ", " ) : "" ) ] );
     }
 }

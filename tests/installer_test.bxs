@@ -74,5 +74,9 @@ check( "script: one script step, URL and args are separate arguments", sb.steps.
 rootRunner = function( argv, timeout ) { return { exitCode: 0, timeout: false, output: "0" + chr( 10 ) }; };
 userRunner = function( argv, timeout ) { return { exitCode: 0, timeout: false, output: "1000" }; };
 check( "isRoot", new bxrig.Installer( rootRunner ).isRoot() && !new bxrig.Installer( userRunner ).isRoot() );
+calls = [];
+h = inst.hasCommand( "sudo" );
+check( "hasCommand asks command -v (the tool is never run, so a tool without --version still counts as installed)", h && calls.len() == 1 && find( "command -v", calls[ 1 ] ) > 0 && !find( "--version", calls[ 1 ] ) );
+check( "hasCommand passes the name as an argument, not inside a shell string", find( "_ sudo", calls[ 1 ] ) > 0 );
 if ( failures > 0 ) { println( failures & " failed" ); CLIExit( 1 ); }
 println( "installer tests passed" );

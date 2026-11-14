@@ -5,27 +5,22 @@
 class Quicklook {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
+        variables.out = new bxrig.Out( variables.cli, "quicklook" );
         variables.inst = new bxrig.Installer( arguments.runner );
         return this;
     }
 
-    function say( code, data, asJson, lines ) {
-        if ( arguments.asJson ) println( variables.cli.envelope( "quicklook", arguments.code, arguments.data ) );
-        else for ( var l in arguments.lines ) println( l );
-        return arguments.code;
-    }
-
     function run( path, dryRun, asJson ) {
         var target = len( arguments.path ) ? arguments.path : getSystemSetting( "PWD", "." );
-        if ( !fileExists( target ) && !directoryExists( target ) ) return say( 4, { error: "No such file or folder: " & target }, arguments.asJson, [ "error: no such file or folder: " & target ] );
+        if ( !fileExists( target ) && !directoryExists( target ) ) return variables.out.say( 4, { error: "No such file or folder: " & target }, arguments.asJson, [ "error: no such file or folder: " & target ] );
         var have = variables.inst.exec( [ "sh", "-c", "command -v kiview" ], 10 ).exitCode == 0;
-        if ( !have ) return say( 4, { error: "kiview is not installed" }, arguments.asJson, [ "error: kiview is not installed. Install it: bxrig install kiview" ] );
+        if ( !have ) return variables.out.say( 4, { error: "kiview is not installed" }, arguments.asJson, [ "error: kiview is not installed. Install it: bxrig install kiview" ] );
         // a file or a chosen path is a selection (-s); a folder with no path given is the overview
         var argv = len( arguments.path ) ? [ "kiview", "-s", target ] : [ "kiview", target ];
         var data = { path: target, argv: argv };
-        if ( arguments.dryRun ) return say( 0, data, arguments.asJson, [ "Dry run: " & argv.toList( " " ), "Nothing was started." ] );
+        if ( arguments.dryRun ) return variables.out.say( 0, data, arguments.asJson, [ "Dry run: " & argv.toList( " " ), "Nothing was started." ] );
         var r = variables.inst.exec( argv, 3600 );
-        if ( r.exitCode != 0 ) return say( 6, { error: "kiview failed (exit " & r.exitCode & ")" }, arguments.asJson, [ "error: kiview failed (exit " & r.exitCode & ")" ] );
-        return say( 0, data, arguments.asJson, [] );
+        if ( r.exitCode != 0 ) return variables.out.say( 6, { error: "kiview failed (exit " & r.exitCode & ")" }, arguments.asJson, [ "error: kiview failed (exit " & r.exitCode & ")" ] );
+        return variables.out.say( 0, data, arguments.asJson, [] );
     }
 }

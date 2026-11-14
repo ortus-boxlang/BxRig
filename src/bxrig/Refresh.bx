@@ -13,26 +13,14 @@
 // Exit: 0 done (or nothing to do), 2 plan or bad usage, 4 precondition, 6 a command failed.
 class Refresh {
     function init( cli, runner = "" ) {
+        variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
+        variables.out = new bxrig.Out( variables.cli, "refresh" );
         variables.inst = new bxrig.Installer( arguments.runner );
+        variables.proc = variables.inst.proc();
         variables.cfg = new bxrig.ConfigService().quiet( true );
         return this;
     }
-
-    function self() { return getSystemSetting( "BXRIG_SELF", "bxrig" ); }
-    function home() { return getSystemSetting( "HOME", "" ); }
-
-    function tryExec( argv, timeout = 60 ) {
-        try { return variables.inst.exec( arguments.argv, arguments.timeout ); } catch ( any e ) { return { exitCode: 127, output: e.message }; }
-    }
-
-    function has( name ) { return tryExec( [ "sh", "-c", 'command -v "$1"', "_", arguments.name ], 10 ).exitCode == 0; }
-    function say( code, data, asJson, lines = [], dry = false ) {
-        if ( arguments.asJson ) println( variables.cli.envelope( "refresh", arguments.code, arguments.data, arguments.dry ) );
-        else for ( var l in arguments.lines ) println( l );
-        return arguments.code;
-    }
-    function fail( code, msg, asJson ) { return say( arguments.code, { error: arguments.msg }, arguments.asJson, [ "error: " & arguments.msg ] ); }
 
     function components() {
         return [
@@ -63,32 +51,32 @@ class Refresh {
         var starter = structKeyExists( arguments.opts, "starter" );
         var cfgHome = variables.cfg.cfgHome();
         if ( c == "hyprland" ) {
-            u.append( cmdUnit( c, "the shortcut module (keys apply)", [ self(), "keys", "apply" ] ) );
-            u.append( cmdUnit( c, "look.lua (appearance apply)", [ self(), "appearance", "apply" ] ) );
-            u.append( cmdUnit( c, "monitors.lua (display apply)", [ self(), "display", "apply" ] ) );
+            u.append( cmdUnit( c, "the shortcut module (keys apply)", [ variables.environ.self(), "keys", "apply" ] ) );
+            u.append( cmdUnit( c, "look.lua (appearance apply)", [ variables.environ.self(), "appearance", "apply" ] ) );
+            u.append( cmdUnit( c, "monitors.lua (display apply)", [ variables.environ.self(), "display", "apply" ] ) );
             if ( starter ) for ( var e in new bxrig.Starter( true ).entries() ) if ( e.name == "hyprland" ) u.append( entryUnit( c, e ) );
         } else if ( c == "noctalia" ) {
-            u.append( cmdUnit( c, "the palette (theme set " & currentTheme() & ")", [ self(), "theme", "set", currentTheme() ] ) );
-            u.append( cmdUnit( c, "your appearance settings (appearance apply)", [ self(), "appearance", "apply" ] ) );
+            u.append( cmdUnit( c, "the palette (theme set " & currentTheme() & ")", [ variables.environ.self(), "theme", "set", currentTheme() ] ) );
+            u.append( cmdUnit( c, "your appearance settings (appearance apply)", [ variables.environ.self(), "appearance", "apply" ] ) );
             if ( starter ) for ( var n in new bxrig.Starter( true ).entries() ) if ( n.name != "hyprland" ) u.append( entryUnit( c, n ) );
         } else if ( c == "terminals" ) {
             var tc = new bxrig.TerminalConfig( true );
             var ids = [];
-            for ( var t in tc.terminals() ) if ( has( t.cmd ) ) ids.append( t.id );
+            for ( var t in tc.terminals() ) if ( variables.proc.has( t.cmd ) ) ids.append( t.id );
             for ( var te in tc.entries( ids, cfgHome ) ) u.append( entryUnit( c, te ) );
-            u.append( cmdUnit( c, "the theme includes (theme set " & currentTheme() & ")", [ self(), "theme", "set", currentTheme() ] ) );
+            u.append( cmdUnit( c, "the theme includes (theme set " & currentTheme() & ")", [ variables.environ.self(), "theme", "set", currentTheme() ] ) );
         } else if ( c == "shell" ) {
             var sc = new bxrig.ShellConfig( true );
             var sh = listLast( getSystemSetting( "SHELL", "/usr/bin/zsh" ), "/" );
             if ( !arrayFind( sc.shells(), sh ) ) sh = sc.defaultShell();
-            var rcFile = home() & "/" & ( sh == "zsh" ? ".zshrc" : ".bashrc" );
+            var rcFile = variables.environ.home() & "/" & ( sh == "zsh" ? ".zshrc" : ".bashrc" );
             var rcText = ( sh != "fish" && fileExists( rcFile ) ) ? fileRead( rcFile ) : "";
-            for ( var se in sc.entries( sh, cfgHome, home(), rcText ) ) u.append( entryUnit( c, se ) );
+            for ( var se in sc.entries( sh, cfgHome, variables.environ.home(), rcText ) ) u.append( entryUnit( c, se ) );
         } else if ( c == "nvim" ) {
-            u.append( cmdUnit( c, "the Neovim layer (editor refresh)", [ self(), "editor", "refresh" ] ) );
+            u.append( cmdUnit( c, "the Neovim layer (editor refresh)", [ variables.environ.self(), "editor", "refresh" ] ) );
         } else if ( c == "theme" ) {
-            u.append( cmdUnit( c, "theme set " & currentTheme(), [ self(), "theme", "set", currentTheme() ] ) );
-            u.append( cmdUnit( c, "appearance apply", [ self(), "appearance", "apply" ] ) );
+            u.append( cmdUnit( c, "theme set " & currentTheme(), [ variables.environ.self(), "theme", "set", currentTheme() ] ) );
+            u.append( cmdUnit( c, "appearance apply", [ variables.environ.self(), "appearance", "apply" ] ) );
         }
         return u;
     }
@@ -104,9 +92,9 @@ class Refresh {
     function run( words, opts = {}, yes = false, dry = false, force = false, asJson = false ) {
         var what = arguments.words.len() == 1 ? arguments.words[ 1 ] : "";
         var ids = components().map( function( x ) { return x.id; } );
-        if ( what == "list" ) return say( 0, { components: components() }, arguments.asJson, components().map( function( x ) { return x.id & "   " & x.owns; } ) );
-        if ( what != "all" && !arrayFind( ids, what ) ) return fail( 2, "Usage: bxrig refresh " & ids.toList( "|" ) & "|all|list [--starter] [--force] [--yes] [--dry-run]", arguments.asJson );
-        if ( variables.inst.isRoot() ) return fail( 4, "run as a regular user: these are your own files", arguments.asJson );
+        if ( what == "list" ) return variables.out.say( 0, { components: components() }, arguments.asJson, components().map( function( x ) { return x.id & "   " & x.owns; } ) );
+        if ( what != "all" && !arrayFind( ids, what ) ) return variables.out.fail( 2, "Usage: bxrig refresh " & ids.toList( "|" ) & "|all|list [--starter] [--force] [--yes] [--dry-run]", arguments.asJson );
+        if ( variables.inst.isRoot() ) return variables.out.fail( 4, "run as a regular user: these are your own files", arguments.asJson );
         var comps = what == "all" ? ids : [ what ];
         var units = [];
         for ( var c in comps ) for ( var x in unitsFor( c, arguments.opts ) ) units.append( x );
@@ -115,7 +103,7 @@ class Refresh {
             var lines = [ ( arguments.dry ? "Dry run: " : "Plan: " ) & "refresh " & what ];
             for ( var r in rows ) lines.append( "  " & r.component & ": " & r.name & ( r.kind == "file" ? " -> " & r.target : "" ) & "   " & r.result );
             lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return say( arguments.dry ? 0 : 2, { component: what, units: rows, force: arguments.force }, arguments.asJson, lines, arguments.dry );
+            return variables.out.say( arguments.dry ? 0 : 2, { component: what, units: rows, force: arguments.force }, arguments.asJson, lines, arguments.dry );
         }
         var done = [];
         var kept = [];
@@ -130,16 +118,16 @@ class Refresh {
             } else {
                 var argv = duplicate( u.argv );
                 if ( u.argv[ 2 ] == "keys" || u.argv[ 2 ] == "editor" ) { argv.append( "--yes" ); if ( arguments.force ) argv.append( "--force" ); }
-                var rr = tryExec( argv, 300 );
+                var rr = variables.proc.exec( argv, 300 );
                 if ( rr.exitCode == 0 ) done.append( u.name ); else failed.append( u.name & " (exit " & rr.exitCode & ")" );
             }
         }
-        if ( ( what == "noctalia" || what == "all" ) && has( "noctalia" ) ) tryExec( [ "noctalia", "msg", "config-reload" ], 15 );
+        if ( ( what == "noctalia" || what == "all" ) && variables.proc.has( "noctalia" ) ) variables.proc.exec( [ "noctalia", "msg", "config-reload" ], 15 );
         var out = [];
         for ( var d in done ) out.append( "refreshed: " & d );
         for ( var k in kept ) out.append( "kept (you edited it): " & k & "   run with --force to overwrite it, a backup is taken" );
         for ( var f in failed ) out.append( "failed: " & f );
         if ( !out.len() ) out.append( "Everything was already as BxRig ships it." );
-        return say( failed.len() ? 6 : 0, { component: what, refreshed: done, kept: kept, failed: failed }, arguments.asJson, out );
+        return variables.out.say( failed.len() ? 6 : 0, { component: what, refreshed: done, kept: kept, failed: failed }, arguments.asJson, out );
     }
 }

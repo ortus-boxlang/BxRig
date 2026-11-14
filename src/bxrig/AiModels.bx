@@ -10,43 +10,34 @@ class AiModels {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
         variables.inst = new bxrig.Installer( arguments.runner );
+        variables.proc = variables.inst.proc();
         return this;
     }
 
-    function say( command, code, data, asJson, lines = [] ) {
-        if ( arguments.asJson ) println( variables.cli.envelope( arguments.command, arguments.code, arguments.data, false ) );
-        else for ( var l in arguments.lines ) println( l );
-        return arguments.code;
-    }
-
-    function tryExec( argv, timeout = 60 ) {
-        try { return variables.inst.exec( arguments.argv, arguments.timeout ); } catch ( any e ) { return { exitCode: 127, output: e.message }; }
-    }
-
-    function hasOllama() { return tryExec( [ "sh", "-c", 'command -v ollama' ], 10 ).exitCode == 0; }
+    function hasOllama() { return variables.proc.has( "ollama" ); }
     function validModel( name ) { return reFind( "^[A-Za-z0-9._:/-]{1,100}$", arguments.name ) > 0; }
 
     function missing( cmd, asJson ) {
-        return say( arguments.cmd, 4, { error: "Ollama is not installed" }, arguments.asJson, [ "error: Ollama is not installed. Install it: bxrig install ollama" ] );
+        return variables.cli.say( arguments.cmd, 4, { error: "Ollama is not installed" }, arguments.asJson, [ "error: Ollama is not installed. Install it: bxrig install ollama" ] );
     }
 
     // `ai models list|ps`
     function show( what, asJson ) {
         var cmd = "ai models " & arguments.what;
         if ( !hasOllama() ) return missing( cmd, arguments.asJson );
-        var r = tryExec( [ "ollama", arguments.what ], 30 );
-        if ( r.exitCode != 0 ) return say( cmd, 6, { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ), "Is the service running? bxrig ai models enable" ] );
-        return say( cmd, 0, { output: trim( r.output ) }, arguments.asJson, [ trim( r.output ) ] );
+        var r = variables.proc.exec( [ "ollama", arguments.what ], 30 );
+        if ( r.exitCode != 0 ) return variables.cli.say( cmd, 6, { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ), "Is the service running? bxrig ai models enable" ] );
+        return variables.cli.say( cmd, 0, { output: trim( r.output ) }, arguments.asJson, [ trim( r.output ) ] );
     }
 
     // `ai models pull NAME`
     function pull( name, asJson ) {
         var cmd = "ai models pull";
-        if ( !validModel( arguments.name ) ) return say( cmd, 4, { error: "Bad model name" }, arguments.asJson, [ "error: a model name is letters, digits and . _ : / - (for example qwen3:8b)" ] );
+        if ( !validModel( arguments.name ) ) return variables.cli.say( cmd, 4, { error: "Bad model name" }, arguments.asJson, [ "error: a model name is letters, digits and . _ : / - (for example qwen3:8b)" ] );
         if ( !hasOllama() ) return missing( cmd, arguments.asJson );
         if ( arguments.asJson ) {
-            var r = tryExec( [ "ollama", "pull", arguments.name ], 7200 );
-            return say( cmd, r.exitCode == 0 ? 0 : 6, { model: arguments.name, output: trim( r.output ) }, true );
+            var r = variables.proc.exec( [ "ollama", "pull", arguments.name ], 7200 );
+            return variables.cli.say( cmd, r.exitCode == 0 ? 0 : 6, { model: arguments.name, output: trim( r.output ) }, true );
         }
         var run = systemExecute( "ollama", [ "pull", arguments.name ], 0, false, ".", "", "", true, {}, true );
         if ( run.exitCode != 0 ) println( "Is the service running? bxrig ai models enable" );
@@ -56,21 +47,21 @@ class AiModels {
     // `ai models rm NAME --yes`
     function remove( name, yes, asJson ) {
         var cmd = "ai models rm";
-        if ( !validModel( arguments.name ) ) return say( cmd, 4, { error: "Bad model name" }, arguments.asJson, [ "error: bad model name" ] );
+        if ( !validModel( arguments.name ) ) return variables.cli.say( cmd, 4, { error: "Bad model name" }, arguments.asJson, [ "error: bad model name" ] );
         if ( !hasOllama() ) return missing( cmd, arguments.asJson );
-        if ( !arguments.yes ) return say( cmd, 2, { model: arguments.name }, arguments.asJson, [ "Plan: delete the model " & arguments.name & " from disk.", "Nothing was changed. Add --yes to apply." ] );
-        var r = tryExec( [ "ollama", "rm", arguments.name ], 120 );
-        if ( r.exitCode != 0 ) return say( cmd, 6, { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
-        return say( cmd, 0, { model: arguments.name }, arguments.asJson, [ trim( r.output ) ] );
+        if ( !arguments.yes ) return variables.cli.say( cmd, 2, { model: arguments.name }, arguments.asJson, [ "Plan: delete the model " & arguments.name & " from disk.", "Nothing was changed. Add --yes to apply." ] );
+        var r = variables.proc.exec( [ "ollama", "rm", arguments.name ], 120 );
+        if ( r.exitCode != 0 ) return variables.cli.say( cmd, 6, { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+        return variables.cli.say( cmd, 0, { model: arguments.name }, arguments.asJson, [ trim( r.output ) ] );
     }
 
-    function serviceActive() { return trim( tryExec( [ "systemctl", "is-active", "ollama" ], 10 ).output ) == "active"; }
+    function serviceActive() { return trim( variables.proc.exec( [ "systemctl", "is-active", "ollama" ], 10 ).output ) == "active"; }
 
     // `ai models status`
     function status( asJson ) {
         var inst = hasOllama();
         var active = inst && serviceActive();
-        return say( "ai models status", 0, { installed: inst, service_active: active }, arguments.asJson, [ "Ollama: " & ( inst ? "installed" : "not installed" ), "Service: " & ( active ? "running" : "not running" ) ] );
+        return variables.cli.say( "ai models status", 0, { installed: inst, service_active: active }, arguments.asJson, [ "Ollama: " & ( inst ? "installed" : "not installed" ), "Service: " & ( active ? "running" : "not running" ) ] );
     }
 
     // `ai models enable [--yes]`
@@ -78,9 +69,9 @@ class AiModels {
         var cmd = "ai models enable";
         if ( !hasOllama() ) return missing( cmd, arguments.asJson );
         var argv = [ "sudo", "systemctl", "enable", "--now", "ollama" ];
-        if ( !arguments.yes || arguments.dryRun ) return say( cmd, arguments.dryRun ? 0 : 2, { command: argv }, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": " & argv.toList( " " ), "Nothing was changed." & ( arguments.dryRun ? "" : " Add --yes to apply." ) ] );
-        var r = tryExec( argv, 120 );
-        if ( r.exitCode != 0 ) return say( cmd, 6, { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
-        return say( cmd, 0, {}, arguments.asJson, [ "The Ollama service is enabled and running." ] );
+        if ( !arguments.yes || arguments.dryRun ) return variables.cli.say( cmd, arguments.dryRun ? 0 : 2, { command: argv }, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": " & argv.toList( " " ), "Nothing was changed." & ( arguments.dryRun ? "" : " Add --yes to apply." ) ] );
+        var r = variables.proc.exec( argv, 120 );
+        if ( r.exitCode != 0 ) return variables.cli.say( cmd, 6, { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+        return variables.cli.say( cmd, 0, {}, arguments.asJson, [ "The Ollama service is enabled and running." ] );
     }
 }

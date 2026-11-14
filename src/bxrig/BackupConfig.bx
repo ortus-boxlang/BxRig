@@ -15,28 +15,18 @@
 // Exit: 0 ok, 2 bad usage or a plan without --yes, 4 precondition (no such snapshot), 6 a command failed.
 class BackupConfig {
     function init( cli, runner = "" ) {
+        variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
+        variables.out = new bxrig.Out( variables.cli, "backup" );
         variables.inst = new bxrig.Installer( arguments.runner );
+        variables.proc = variables.inst.proc();
         variables.cfgSvc = new bxrig.ConfigService().quiet( true );
         return this;
     }
 
-    function self() { return getSystemSetting( "BXRIG_SELF", "bxrig" ); }
-    function home() { return getSystemSetting( "HOME", "" ); }
-    function dataHome() { return getSystemSetting( "BXRIG_DATA_HOME", home() & "/.local/share/bxrig" ); }
+    function dataHome() { return getSystemSetting( "BXRIG_DATA_HOME", variables.environ.home() & "/.local/share/bxrig" ); }
     function storeDir() { return dataHome() & "/backups/config"; }
     function settingsFile() { return variables.cfgSvc.cfgHome() & "/bxrig/backup.json"; }
-
-    function tryExec( argv, timeout = 60 ) {
-        try { return variables.inst.exec( arguments.argv, arguments.timeout ); } catch ( any e ) { return { exitCode: 127, output: e.message }; }
-    }
-
-    function say( code, data, asJson, lines = [], dry = false ) {
-        if ( arguments.asJson ) println( variables.cli.envelope( "backup", arguments.code, arguments.data, arguments.dry ) );
-        else for ( var l in arguments.lines ) println( l );
-        return arguments.code;
-    }
-    function fail( code, msg, asJson ) { return say( arguments.code, { error: arguments.msg }, arguments.asJson, [ "error: " & arguments.msg ] ); }
 
     // ---- settings (shared file with the data backups and the NAS targets) ----
     function defaultPaths() {
@@ -107,32 +97,32 @@ class BackupConfig {
         var work = getTempDirectory() & "/bxrig-bk-" & createUUID();
         var files = work & "/files";
         directoryCreate( files, true, true );
-        var paths = trackedPaths().filter( function( p ) { return fileExists( home() & "/" & p ) || directoryExists( home() & "/" & p ); } );
+        var paths = trackedPaths().filter( function( p ) { return fileExists( variables.environ.home() & "/" & p ) || directoryExists( variables.environ.home() & "/" & p ); } );
         if ( paths.len() ) {
-            var argv = [ "bash", "-c", 'tar -cf - -C "$1" --exclude=.git --exclude=node_modules --exclude="*.log" "${@:3}" | tar -xf - -C "$2"', "_", home(), files ];
+            var argv = [ "bash", "-c", 'tar -cf - -C "$1" --exclude=.git --exclude=node_modules --exclude="*.log" "${@:3}" | tar -xf - -C "$2"', "_", variables.environ.home(), files ];
             for ( var p in paths ) argv.append( p );
-            var r = tryExec( argv, 300 );
-            if ( r.exitCode != 0 ) { tryExec( [ "rm", "-rf", work ], 30 ); return { code: 6, error: "could not copy your files: " & trim( r.output ) }; }
+            var r = variables.proc.exec( argv, 300 );
+            if ( r.exitCode != 0 ) { variables.proc.exec( [ "rm", "-rf", work ], 30 ); return { code: 6, error: "could not copy your files: " & trim( r.output ) }; }
         }
-        var pk = tryExec( [ "pacman", "-Qqe" ], 30 );
-        var fo = tryExec( [ "pacman", "-Qqm" ], 30 );
+        var pk = variables.proc.exec( [ "pacman", "-Qqe" ], 30 );
+        var fo = variables.proc.exec( [ "pacman", "-Qqm" ], 30 );
         fileWrite( work & "/packages.txt", pk.exitCode == 0 ? trim( pk.output ) & chr( 10 ) : "" );
         fileWrite( work & "/foreign.txt", fo.exitCode == 0 ? trim( fo.output ) & chr( 10 ) : "" );
         var hasSecrets = false;
         if ( arguments.withSecrets ) {
-            var sr = tryExec( [ self(), "secrets", "export", work & "/secrets.bxs", "--yes" ], 300 );
-            if ( sr.exitCode != 0 ) { tryExec( [ "rm", "-rf", work ], 30 ); return { code: 6, error: "the secrets bundle failed (it needs a passphrase): " & trim( sr.output ) }; }
+            var sr = variables.proc.exec( [ variables.environ.self(), "secrets", "export", work & "/secrets.bxs", "--yes" ], 300 );
+            if ( sr.exitCode != 0 ) { variables.proc.exec( [ "rm", "-rf", work ], 30 ); return { code: 6, error: "the secrets bundle failed (it needs a passphrase): " & trim( sr.output ) }; }
             hasSecrets = true;
         }
-        var count = tryExec( [ "sh", "-c", 'find "$1" -type f | wc -l', "_", files ], 30 );
-        var meta = { id: id, time: dateTimeFormat( now(), "yyyy-MM-dd'T'HH:mm:ss" ), reason: len( arguments.reason ) ? arguments.reason : "manual", files: int( val( trim( count.output ) ) ), packages: listToArray( trim( pk.output ), chr( 10 ) ).len(), foreign: listToArray( trim( fo.output ), chr( 10 ) ).len(), secrets: hasSecrets, host: trim( tryExec( [ "uname", "-n" ], 5 ).output ), paths: paths };
+        var count = variables.proc.exec( [ "sh", "-c", 'find "$1" -type f | wc -l', "_", files ], 30 );
+        var meta = { id: id, time: dateTimeFormat( now(), "yyyy-MM-dd'T'HH:mm:ss" ), reason: len( arguments.reason ) ? arguments.reason : "manual", files: int( val( trim( count.output ) ) ), packages: listToArray( trim( pk.output ), chr( 10 ) ).len(), foreign: listToArray( trim( fo.output ), chr( 10 ) ).len(), secrets: hasSecrets, host: trim( variables.proc.exec( [ "uname", "-n" ], 5 ).output ), paths: paths };
         fileWrite( work & "/meta.json", jsonSerialize( meta ) );
         directoryCreate( storeDir(), true, true );
-        var tr = tryExec( [ "tar", "-czf", archive( id ), "-C", work, "." ], 300 );
-        tryExec( [ "rm", "-rf", work ], 30 );
+        var tr = variables.proc.exec( [ "tar", "-czf", archive( id ), "-C", work, "." ], 300 );
+        variables.proc.exec( [ "rm", "-rf", work ], 30 );
         if ( tr.exitCode != 0 ) return { code: 6, error: "tar failed: " & trim( tr.output ) };
-        tryExec( [ "chmod", "600", archive( id ) ], 5 );
-        meta.size = int( val( trim( tryExec( [ "stat", "-c", "%s", archive( id ) ], 5 ).output ) ) );
+        variables.proc.exec( [ "chmod", "600", archive( id ) ], 5 );
+        meta.size = int( val( trim( variables.proc.exec( [ "stat", "-c", "%s", archive( id ) ], 5 ).output ) ) );
         fileWrite( metaFile( id ), jsonSerialize( meta ) );
         pruneTo( readSettings().config.keep );
         return { code: 0, id: id, meta: meta };
@@ -160,21 +150,21 @@ class BackupConfig {
     // ---- commands ----
     function nowCmd( opts, asJson ) {
         var r = take( arguments.opts.reason ?: "manual", structKeyExists( arguments.opts, "with-secrets" ), arguments.asJson );
-        if ( r.code != 0 ) return fail( r.code, r.error, arguments.asJson );
-        return say( 0, { snapshot: r.meta }, arguments.asJson, [ "Snapshot " & r.id & ": " & r.meta.files & " files, " & r.meta.packages & " packages, " & human( r.meta.size ) & ( r.meta.secrets ? ", with the encrypted secrets" : "" ), "Restore it with: bxrig backup config restore " & r.id ] );
+        if ( r.code != 0 ) return variables.out.fail( r.code, r.error, arguments.asJson );
+        return variables.out.say( 0, { snapshot: r.meta }, arguments.asJson, [ "Snapshot " & r.id & ": " & r.meta.files & " files, " & r.meta.packages & " packages, " & human( r.meta.size ) & ( r.meta.secrets ? ", with the encrypted secrets" : "" ), "Restore it with: bxrig backup config restore " & r.id ] );
     }
 
     function listCmd( asJson ) {
         var all = snapshots();
-        return say( 0, { snapshots: all }, arguments.asJson, all.len() ? all.map( function( m ) { return m.id & "   " & m.reason & "   " & m.files & " files   " & m.packages & " packages   " & human( m.size ?: 0 ); } ) : [ "No snapshots yet. Take one: bxrig backup config now" ] );
+        return variables.out.say( 0, { snapshots: all }, arguments.asJson, all.len() ? all.map( function( m ) { return m.id & "   " & m.reason & "   " & m.files & " files   " & m.packages & " packages   " & human( m.size ?: 0 ); } ) : [ "No snapshots yet. Take one: bxrig backup config now" ] );
     }
 
     // Extracts a snapshot to a new temp directory. Returns its path or "".
     function extract( id ) {
         var dir = getTempDirectory() & "/bxrig-bkx-" & createUUID();
         directoryCreate( dir, true, true );
-        var r = tryExec( [ "tar", "-xzf", archive( arguments.id ), "-C", dir ], 300 );
-        if ( r.exitCode != 0 ) { tryExec( [ "rm", "-rf", dir ], 30 ); return ""; }
+        var r = variables.proc.exec( [ "tar", "-xzf", archive( arguments.id ), "-C", dir ], 300 );
+        if ( r.exitCode != 0 ) { variables.proc.exec( [ "rm", "-rf", dir ], 30 ); return ""; }
         return dir;
     }
 
@@ -182,50 +172,50 @@ class BackupConfig {
         var base = arguments.dir & "/files";
         var out = [];
         if ( !directoryExists( base ) ) return out;
-        var r = tryExec( [ "sh", "-c", 'cd "$1" && find . -type f | sed "s|^\./||" | sort', "_", base ], 60 );
+        var r = variables.proc.exec( [ "sh", "-c", 'cd "$1" && find . -type f | sed "s|^\./||" | sort', "_", base ], 60 );
         for ( var f in listToArray( trim( r.output ), chr( 10 ) ) ) if ( len( f ) ) out.append( f );
         return out;
     }
 
     function stateOf( dir, rel ) {
-        var cur = home() & "/" & arguments.rel;
+        var cur = variables.environ.home() & "/" & arguments.rel;
         if ( !fileExists( cur ) ) return "missing";
-        return tryExec( [ "cmp", "-s", arguments.dir & "/files/" & arguments.rel, cur ], 10 ).exitCode == 0 ? "same" : "changed";
+        return variables.proc.exec( [ "cmp", "-s", arguments.dir & "/files/" & arguments.rel, cur ], 10 ).exitCode == 0 ? "same" : "changed";
     }
 
     function showCmd( id, asJson ) {
-        if ( !validId( arguments.id ) || !fileExists( archive( arguments.id ) ) ) return fail( 4, "no snapshot " & arguments.id & " (bxrig backup config list)", arguments.asJson );
+        if ( !validId( arguments.id ) || !fileExists( archive( arguments.id ) ) ) return variables.out.fail( 4, "no snapshot " & arguments.id & " (bxrig backup config list)", arguments.asJson );
         var dir = extract( arguments.id );
         var files = relFiles( dir );
         var meta = jsonDeserialize( fileRead( metaFile( arguments.id ) ) );
-        tryExec( [ "rm", "-rf", dir ], 30 );
-        return say( 0, { snapshot: meta, files: files }, arguments.asJson, [ meta.id & "   " & meta.time & "   " & meta.reason & "   " & meta.packages & " packages" & ( meta.secrets ? ", encrypted secrets inside" : "" ) ] & files );
+        variables.proc.exec( [ "rm", "-rf", dir ], 30 );
+        return variables.out.say( 0, { snapshot: meta, files: files }, arguments.asJson, [ meta.id & "   " & meta.time & "   " & meta.reason & "   " & meta.packages & " packages" & ( meta.secrets ? ", encrypted secrets inside" : "" ) ] & files );
     }
 
     function diffCmd( id, asJson ) {
-        if ( !validId( arguments.id ) || !fileExists( archive( arguments.id ) ) ) return fail( 4, "no snapshot " & arguments.id & " (bxrig backup config list)", arguments.asJson );
+        if ( !validId( arguments.id ) || !fileExists( archive( arguments.id ) ) ) return variables.out.fail( 4, "no snapshot " & arguments.id & " (bxrig backup config list)", arguments.asJson );
         var dir = extract( arguments.id );
         var rows = [];
         for ( var rel in relFiles( dir ) ) rows.append( { file: rel, state: stateOf( dir, rel ) } );
-        var pk = tryExec( [ "pacman", "-Qqe" ], 30 );
+        var pk = variables.proc.exec( [ "pacman", "-Qqe" ], 30 );
         var have = {};
         for ( var n in listToArray( trim( pk.output ), chr( 10 ) ) ) have[ n ] = true;
         var missing = [];
         if ( fileExists( dir & "/packages.txt" ) ) for ( var p in listToArray( trim( fileRead( dir & "/packages.txt" ) ), chr( 10 ) ) ) if ( len( p ) && !structKeyExists( have, p ) ) missing.append( p );
-        tryExec( [ "rm", "-rf", dir ], 30 );
+        variables.proc.exec( [ "rm", "-rf", dir ], 30 );
         var changed = rows.filter( function( r ) { return r.state != "same"; } );
         var lines = changed.map( function( r ) { return ( r.state == "missing" ? "missing now  " : "changed      " ) & r.file; } );
         lines.append( rows.len() - changed.len() & " files are the same." );
         if ( missing.len() ) lines.append( missing.len() & " packages from the snapshot are not installed: " & missing.toList( ", " ) );
-        return say( 0, { id: arguments.id, files: rows, missing_packages: missing }, arguments.asJson, lines );
+        return variables.out.say( 0, { id: arguments.id, files: rows, missing_packages: missing }, arguments.asJson, lines );
     }
 
     function restoreCmd( id, opts, yes, dry, asJson ) {
-        if ( !validId( arguments.id ) || !fileExists( archive( arguments.id ) ) ) return fail( 4, "no snapshot " & arguments.id & " (bxrig backup config list)", arguments.asJson );
+        if ( !validId( arguments.id ) || !fileExists( archive( arguments.id ) ) ) return variables.out.fail( 4, "no snapshot " & arguments.id & " (bxrig backup config list)", arguments.asJson );
         var only = arguments.opts.only ?: "";
-        if ( len( only ) && !validPath( only ) ) return fail( 2, "--only is a path under your home, for example .config/hypr", arguments.asJson );
+        if ( len( only ) && !validPath( only ) ) return variables.out.fail( 2, "--only is a path under your home, for example .config/hypr", arguments.asJson );
         var dir = extract( arguments.id );
-        if ( !len( dir ) ) return fail( 6, "could not read the snapshot", arguments.asJson );
+        if ( !len( dir ) ) return variables.out.fail( 6, "could not read the snapshot", arguments.asJson );
         var todo = [];
         for ( var rel in relFiles( dir ) ) {
             if ( len( only ) && rel != only && left( rel, len( only ) + 1 ) != only & "/" ) continue;
@@ -237,7 +227,7 @@ class BackupConfig {
         var foreignPk = [];
         if ( wantPk ) {
             var inst = {};
-            for ( var n in listToArray( trim( tryExec( [ "pacman", "-Qq" ], 30 ).output ), chr( 10 ) ) ) inst[ n ] = true;
+            for ( var n in listToArray( trim( variables.proc.exec( [ "pacman", "-Qq" ], 30 ).output ), chr( 10 ) ) ) inst[ n ] = true;
             for ( var p in listToArray( trim( fileRead( dir & "/packages.txt" ) ), chr( 10 ) ) ) if ( len( p ) && !structKeyExists( inst, p ) ) missingPk.append( p );
             var fo = {};
             for ( var f2 in listToArray( trim( fileRead( dir & "/foreign.txt" ) ), chr( 10 ) ) ) if ( len( f2 ) ) fo[ f2 ] = true;
@@ -251,64 +241,64 @@ class BackupConfig {
             lines.append( "A safety snapshot of your files as they are now is taken first." );
             if ( wantPk ) { lines.append( "  packages: sudo pacman -S --needed " & missingPk.len() & " from the repositories" ); if ( foreignPk.len() ) lines.append( "  not installed here (AUR or local), install them with yay: " & foreignPk.toList( " " ) ); }
             lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            tryExec( [ "rm", "-rf", dir ], 30 );
-            return say( arguments.dry ? 0 : 2, d, arguments.asJson, lines, arguments.dry );
+            variables.proc.exec( [ "rm", "-rf", dir ], 30 );
+            return variables.out.say( arguments.dry ? 0 : 2, d, arguments.asJson, lines, arguments.dry );
         }
         var safety = take( "before restoring " & arguments.id, false, true );
-        if ( safety.code != 0 ) { tryExec( [ "rm", "-rf", dir ], 30 ); return fail( 6, "could not take the safety snapshot, nothing was restored: " & safety.error, arguments.asJson ); }
+        if ( safety.code != 0 ) { variables.proc.exec( [ "rm", "-rf", dir ], 30 ); return variables.out.fail( 6, "could not take the safety snapshot, nothing was restored: " & safety.error, arguments.asJson ); }
         var restored = [];
         for ( var t2 in todo ) {
-            var dest = home() & "/" & t2.file;
+            var dest = variables.environ.home() & "/" & t2.file;
             directoryCreate( getDirectoryFromPath( dest ), true, true );
-            var cp = tryExec( [ "cp", "-p", dir & "/files/" & t2.file, dest ], 30 );
+            var cp = variables.proc.exec( [ "cp", "-p", dir & "/files/" & t2.file, dest ], 30 );
             if ( cp.exitCode == 0 ) restored.append( t2.file );
         }
-        tryExec( [ "rm", "-rf", dir ], 30 );
+        variables.proc.exec( [ "rm", "-rf", dir ], 30 );
         var lines2 = [ "Restored " & restored.len() & " of " & todo.len() & " files. The state before is snapshot " & safety.id & "." ];
         if ( wantPk && missingPk.len() ) {
             var pacArgv = [ "sudo", "pacman", "-S", "--needed", "--noconfirm" ];
             for ( var mp in missingPk ) pacArgv.append( mp );
-            var pr = tryExec( pacArgv, 1800 );
+            var pr = variables.proc.exec( pacArgv, 1800 );
             lines2.append( pr.exitCode == 0 ? "Installed " & missingPk.len() & " packages." : "Some packages failed: " & trim( pr.output ) );
         }
         if ( foreignPk.len() ) lines2.append( "Install these with yay: " & foreignPk.toList( " " ) );
         d.restored = restored;
         d.safety = safety.id;
-        return say( restored.len() == todo.len() ? 0 : 6, d, arguments.asJson, lines2 );
+        return variables.out.say( restored.len() == todo.len() ? 0 : 6, d, arguments.asJson, lines2 );
     }
 
     function autoCmd( args, asJson ) {
         var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "status";
         var s = readSettings();
         if ( v == "on" || v == "off" ) { s.config.auto = v == "on"; writeSettings( s ); }
-        else if ( v != "status" ) return fail( 2, "Usage: bxrig backup config auto on|off|status", arguments.asJson );
-        return say( 0, { auto: s.config.auto }, arguments.asJson, [ "automatic config snapshots: " & ( s.config.auto ? "on (before updates, init, refresh and system update)" : "off" ) ] );
+        else if ( v != "status" ) return variables.out.fail( 2, "Usage: bxrig backup config auto on|off|status", arguments.asJson );
+        return variables.out.say( 0, { auto: s.config.auto }, arguments.asJson, [ "automatic config snapshots: " & ( s.config.auto ? "on (before updates, init, refresh and system update)" : "off" ) ] );
     }
 
     function pruneCmd( opts, yes, dry, asJson ) {
         var keep = val( arguments.opts.keep ?: readSettings().config.keep );
-        if ( keep < 1 || keep > 1000 ) return fail( 2, "--keep is a number from 1 to 1000", arguments.asJson );
+        if ( keep < 1 || keep > 1000 ) return variables.out.fail( 2, "--keep is a number from 1 to 1000", arguments.asJson );
         var all = snapshots();
         var gone = [];
         for ( var gi = keep + 1; gi <= all.len(); gi++ ) gone.append( all[ gi ].id );
-        if ( !arguments.yes || arguments.dry ) return say( arguments.dry ? 0 : 2, { keep: keep, remove: gone }, arguments.asJson, [ ( arguments.dry ? "Dry run: " : "Plan: " ) & "keep the newest " & keep & " snapshots, remove " & gone.len() & ( gone.len() ? ": " & gone.toList( ", " ) : "" ), "Nothing was changed." & ( arguments.dry ? "" : " Add --yes to apply." ) ], arguments.dry );
+        if ( !arguments.yes || arguments.dry ) return variables.out.say( arguments.dry ? 0 : 2, { keep: keep, remove: gone }, arguments.asJson, [ ( arguments.dry ? "Dry run: " : "Plan: " ) & "keep the newest " & keep & " snapshots, remove " & gone.len() & ( gone.len() ? ": " & gone.toList( ", " ) : "" ), "Nothing was changed." & ( arguments.dry ? "" : " Add --yes to apply." ) ], arguments.dry );
         var removed = pruneTo( keep );
         var s = readSettings(); s.config.keep = keep; writeSettings( s );
-        return say( 0, { keep: keep, removed: removed }, arguments.asJson, [ "Removed " & removed.len() & " snapshots." ] );
+        return variables.out.say( 0, { keep: keep, removed: removed }, arguments.asJson, [ "Removed " & removed.len() & " snapshots." ] );
     }
 
     function pathsCmd( args, asJson ) {
         var v = arguments.args.len() ? arguments.args[ 1 ] : "list";
         var s = readSettings();
-        if ( v == "list" || v == "paths" ) return say( 0, { paths: trackedPaths() }, arguments.asJson, trackedPaths().map( function( p ) { return "~/" & p; } ) );
-        if ( arguments.args.len() != 2 || !validPath( arguments.args[ 2 ] ) ) return fail( 2, "Usage: bxrig backup config paths | add PATH | remove PATH (a path under your home, for example .config/zed)", arguments.asJson );
+        if ( v == "list" || v == "paths" ) return variables.out.say( 0, { paths: trackedPaths() }, arguments.asJson, trackedPaths().map( function( p ) { return "~/" & p; } ) );
+        if ( arguments.args.len() != 2 || !validPath( arguments.args[ 2 ] ) ) return variables.out.fail( 2, "Usage: bxrig backup config paths | add PATH | remove PATH (a path under your home, for example .config/zed)", arguments.asJson );
         var p = arguments.args[ 2 ];
-        if ( reFind( "^\.ssh/(id_|.*key)", p ) || findNoCase( "gnupg", p ) ) return fail( 2, "keys are never added to a config snapshot (use backup data for ~/.ssh)", arguments.asJson );
+        if ( reFind( "^\.ssh/(id_|.*key)", p ) || findNoCase( "gnupg", p ) ) return variables.out.fail( 2, "keys are never added to a config snapshot (use backup data for ~/.ssh)", arguments.asJson );
         if ( v == "add" ) { if ( !arrayFind( s.config.paths, p ) ) s.config.paths.append( p ); s.config.removed = s.config.removed.filter( function( x ) { return x != p; } ); }
         else if ( v == "remove" ) { s.config.paths = s.config.paths.filter( function( x ) { return x != p; } ); if ( arrayFind( defaultPaths(), p ) && !arrayFind( s.config.removed, p ) ) s.config.removed.append( p ); }
-        else return fail( 2, "Usage: bxrig backup config paths | add PATH | remove PATH", arguments.asJson );
+        else return variables.out.fail( 2, "Usage: bxrig backup config paths | add PATH | remove PATH", arguments.asJson );
         writeSettings( s );
-        return say( 0, { paths: trackedPaths() }, arguments.asJson, [ v == "add" ? "Added ~/" & p : "Removed ~/" & p ] );
+        return variables.out.say( 0, { paths: trackedPaths() }, arguments.asJson, [ v == "add" ? "Added ~/" & p : "Removed ~/" & p ] );
     }
 
     function run( words, opts = {}, yes = false, dry = false, asJson = false ) {
@@ -323,6 +313,6 @@ class BackupConfig {
         if ( verb == "auto" ) return autoCmd( rest, arguments.asJson );
         if ( verb == "prune" ) return pruneCmd( arguments.opts, arguments.yes, arguments.dry, arguments.asJson );
         if ( verb == "paths" || verb == "add" || verb == "remove" ) return pathsCmd( verb == "paths" ? rest : arguments.words, arguments.asJson );
-        return fail( 2, "Usage: bxrig backup config now | list | show ID | diff ID | restore ID [--only=PATH] [--packages] | auto on|off|status | prune [--keep=N] | paths | add PATH | remove PATH", arguments.asJson );
+        return variables.out.fail( 2, "Usage: bxrig backup config now | list | show ID | diff ID | restore ID [--only=PATH] [--packages] | auto on|off|status | prune [--keep=N] | paths | add PATH | remove PATH", arguments.asJson );
     }
 }

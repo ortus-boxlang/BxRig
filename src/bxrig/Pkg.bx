@@ -13,21 +13,8 @@ class Pkg {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
         variables.inst = new bxrig.Installer( arguments.runner );
+        variables.proc = variables.inst.proc();
         return this;
-    }
-
-    function say( command, code, data, asJson, lines = [], dryRun = false ) {
-        if ( arguments.asJson ) println( variables.cli.envelope( arguments.command, arguments.code, arguments.data, arguments.dryRun ) );
-        else for ( var l in arguments.lines ) println( l );
-        return arguments.code;
-    }
-
-    function fail( command, code, msg, asJson ) {
-        return say( arguments.command, arguments.code, { error: arguments.msg }, arguments.asJson, [ "error: " & arguments.msg ] );
-    }
-
-    function tryExec( argv, timeout = 60 ) {
-        try { return variables.inst.exec( arguments.argv, arguments.timeout ); } catch ( any e ) { return { exitCode: 127, output: e.message, timeout: false }; }
     }
 
     function aurBase() { return getSystemSetting( "BXRIG_AUR_URL", "https://aur.archlinux.org/rpc/v5" ); }
@@ -39,7 +26,7 @@ class Pkg {
     // Names pacman has installed, as a set.
     function installedSet() {
         var s = {};
-        var r = tryExec( [ "pacman", "-Qq" ], 30 );
+        var r = variables.proc.exec( [ "pacman", "-Qq" ], 30 );
         if ( r.exitCode == 0 ) for ( var n in listToArray( r.output, chr( 10 ) ) ) if ( len( trim( n ) ) ) s[ trim( n ) ] = true;
         return s;
     }
@@ -55,7 +42,7 @@ class Pkg {
     // pacman -Ss output: "repo/name version [group] [installed]" then an indented description line.
     function searchRepo( text, installed ) {
         var out = [];
-        var r = tryExec( [ "pacman", "-Ss", "--color", "never", arguments.text ], 30 );
+        var r = variables.proc.exec( [ "pacman", "-Ss", "--color", "never", arguments.text ], 30 );
         if ( r.exitCode != 0 && !len( trim( r.output ) ) ) return out;
         var cur = {};
         for ( var raw in listToArray( r.output, chr( 10 ), true ) ) {
@@ -72,7 +59,7 @@ class Pkg {
     }
 
     function aurGet( path ) {
-        var r = tryExec( [ "curl", "-fsS", "-m", "20", aurBase() & path ], 30 );
+        var r = variables.proc.exec( [ "curl", "-fsS", "-m", "20", aurBase() & path ], 30 );
         if ( r.exitCode != 0 ) return { ok: false, error: "the AUR did not answer (" & left( trim( r.output ), 80 ) & ")", results: [] };
         // The RPC's keys are capitalized (Name, Version, ...). MatchBox keeps one spelling per key name, so they are lower cased in the text
         // first; otherwise they leak into our own lower case keys when the rows are serialized.
@@ -109,8 +96,8 @@ class Pkg {
 
     function search( text, source, limit, asJson ) {
         var cmd = "pkg search";
-        if ( !len( trim( arguments.text ) ) || !validText( arguments.text ) ) return fail( cmd, 2, "Usage: bxrig pkg search TEXT [--source=all|repo|aur] [--limit=N] (letters, digits and . _ + - only)", arguments.asJson );
-        if ( !arrayFind( [ "all", "repo", "aur" ], arguments.source ) ) return fail( cmd, 2, "--source must be all, repo or aur", arguments.asJson );
+        if ( !len( trim( arguments.text ) ) || !validText( arguments.text ) ) return variables.cli.fail( cmd, 2, "Usage: bxrig pkg search TEXT [--source=all|repo|aur] [--limit=N] (letters, digits and . _ + - only)", arguments.asJson );
+        if ( !arrayFind( [ "all", "repo", "aur" ], arguments.source ) ) return variables.cli.fail( cmd, 2, "--source must be all, repo or aur", arguments.asJson );
         var inst = installedSet();
         var rows = [];
         var notes = [];
@@ -127,41 +114,41 @@ class Pkg {
         if ( !rows.len() ) lines.append( "No packages match " & arguments.text );
         else lines.append( total & " found" & ( total > rows.len() ? ", showing " & rows.len() : "" ) & ". * = installed. Install: bxrig pkg install NAME" );
         for ( var n in notes ) lines.append( "note: " & n );
-        return say( cmd, 0, { query: arguments.text, total: total, results: rows, notes: notes }, arguments.asJson, lines );
+        return variables.cli.say( cmd, 0, { query: arguments.text, total: total, results: rows, notes: notes }, arguments.asJson, lines );
     }
 
     // Where a name can be had: "repo" when pacman knows it, "aur" when the AUR does, "" otherwise.
     function origin( name ) {
-        if ( tryExec( [ "pacman", "-Si", arguments.name ], 20 ).exitCode == 0 ) return "repo";
+        if ( variables.proc.exec( [ "pacman", "-Si", arguments.name ], 20 ).exitCode == 0 ) return "repo";
         var g = aurGet( "/info?arg[]=" & arguments.name );
         return g.ok && g.results.len() ? "aur" : "";
     }
 
     function info( name, asJson ) {
         var cmd = "pkg info";
-        if ( !validName( arguments.name ) ) return fail( cmd, 2, "Usage: bxrig pkg info NAME", arguments.asJson );
+        if ( !validName( arguments.name ) ) return variables.cli.fail( cmd, 2, "Usage: bxrig pkg info NAME", arguments.asJson );
         var inst = installedSet();
         var o = origin( arguments.name );
-        if ( !len( o ) ) return fail( cmd, 4, arguments.name & " was not found in the repos or the AUR", arguments.asJson );
+        if ( !len( o ) ) return variables.cli.fail( cmd, 4, arguments.name & " was not found in the repos or the AUR", arguments.asJson );
         var d = { name: arguments.name, source: o, installed: structKeyExists( inst, arguments.name ), details: "" };
-        if ( o == "repo" ) d.details = trim( tryExec( [ "pacman", "-Si", arguments.name ], 20 ).output );
+        if ( o == "repo" ) d.details = trim( variables.proc.exec( [ "pacman", "-Si", arguments.name ], 20 ).output );
         else { var g = aurGet( "/info?arg[]=" & arguments.name ); var x = g.results[ 1 ]; d.details = "AUR " & x.name & " " & x.version & chr( 10 ) & ( x.description ?: "" ) & chr( 10 ) & "Maintainer: " & ( x.maintainer ?: "orphaned" ) & "  Votes: " & ( x.numvotes ?: 0 ) & "  URL: " & ( x.url ?: "" ); d.maintainer = x.maintainer ?: ""; }
-        return say( cmd, 0, d, arguments.asJson, [ d.details, d.installed ? "(installed)" : "(not installed)" ] );
+        return variables.cli.say( cmd, 0, d, arguments.asJson, [ d.details, d.installed ? "(installed)" : "(not installed)" ] );
     }
 
     function installed( explicit, asJson ) {
         var cmd = "pkg installed";
-        var r = tryExec( [ "pacman", arguments.explicit ? "-Qe" : "-Q" ], 30 );
+        var r = variables.proc.exec( [ "pacman", arguments.explicit ? "-Qe" : "-Q" ], 30 );
         var rows = [];
         for ( var l in listToArray( r.output, chr( 10 ) ) ) { var parts = listToArray( trim( l ), " " ); if ( parts.len() >= 2 ) rows.append( { name: parts[ 1 ], version: parts[ 2 ] } ); }
-        return say( cmd, r.exitCode == 0 ? 0 : 4, { packages: rows, explicit: arguments.explicit }, arguments.asJson, rows.map( function( p ) { return p.name & " " & p.version; } ) );
+        return variables.cli.say( cmd, r.exitCode == 0 ? 0 : 4, { packages: rows, explicit: arguments.explicit }, arguments.asJson, rows.map( function( p ) { return p.name & " " & p.version; } ) );
     }
 
     // ---- install ----
     function install( names, forceAur, yes, dryRun, asJson ) {
         var cmd = "pkg install";
-        if ( !arguments.names.len() ) return fail( cmd, 2, "Usage: bxrig pkg install NAME... [--aur] [--yes] [--dry-run]", arguments.asJson );
-        for ( var n in arguments.names ) if ( !validName( n ) ) return fail( cmd, 2, "Bad package name: " & n, arguments.asJson );
+        if ( !arguments.names.len() ) return variables.cli.fail( cmd, 2, "Usage: bxrig pkg install NAME... [--aur] [--yes] [--dry-run]", arguments.asJson );
+        for ( var n in arguments.names ) if ( !validName( n ) ) return variables.cli.fail( cmd, 2, "Bad package name: " & n, arguments.asJson );
         var inst = installedSet();
         var apps = [];
         var skipped = [];
@@ -173,26 +160,26 @@ class Pkg {
             if ( !len( o ) ) { unknown.append( nm ); continue; }
             apps.append( { id: nm, source: o == "repo" ? "pacman" : "aur", targets: [ nm ] } );
         }
-        if ( unknown.len() ) return say( cmd, 4, { error: "not found: " & unknown.toList( ", " ), unknown: unknown }, arguments.asJson, [ "error: not found in the repos or the AUR: " & unknown.toList( ", " ) & " (bxrig pkg search TEXT)" ] );
+        if ( unknown.len() ) return variables.cli.say( cmd, 4, { error: "not found: " & unknown.toList( ", " ), unknown: unknown }, arguments.asJson, [ "error: not found in the repos or the AUR: " & unknown.toList( ", " ) & " (bxrig pkg search TEXT)" ] );
         var built = variables.inst.steps( apps, variables.inst.isRoot() );
         var hasAur = apps.filter( function( a ) { return a.source == "aur"; } ).len() > 0;
         var data = { packages: apps.map( function( a ) { return { name: a.id, source: a.source == "pacman" ? "repo" : "aur" }; } ), skipped: skipped, steps: built.steps };
-        if ( !apps.len() ) return say( cmd, 0, data, arguments.asJson, [ "Nothing to do: " & skipped.map( function( s ) { return s.name; } ).toList( ", " ) & " already installed." ] );
+        if ( !apps.len() ) return variables.cli.say( cmd, 0, data, arguments.asJson, [ "Nothing to do: " & skipped.map( function( s ) { return s.name; } ).toList( ", " ) & " already installed." ] );
         if ( !arguments.yes || arguments.dryRun ) {
             var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": install " & apps.map( function( a ) { return a.id & " (" & ( a.source == "pacman" ? "repo" : "AUR" ) & ")"; } ).toList( ", " ) ];
             for ( var st in built.steps ) for ( var c in st.commands ) lines.append( "  " & st.kind & ": " & c.toList( " " ) );
             if ( hasAur ) lines.append( "AUR packages are built from user-submitted scripts. Read one first with: yay -G NAME" );
             lines.append( arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return say( cmd, arguments.dryRun ? 0 : 2, data, arguments.asJson, lines, arguments.dryRun );
+            return variables.cli.say( cmd, arguments.dryRun ? 0 : 2, data, arguments.asJson, lines, arguments.dryRun );
         }
-        if ( hasAur && variables.inst.isRoot() ) return fail( cmd, 4, "AUR packages are never built as root", arguments.asJson );
-        if ( hasAur && !variables.inst.hasCommand( "yay" ) ) return fail( cmd, 4, "yay is not installed (the BxRig installer adds it); AUR packages need it", arguments.asJson );
+        if ( hasAur && variables.inst.isRoot() ) return variables.cli.fail( cmd, 4, "AUR packages are never built as root", arguments.asJson );
+        if ( hasAur && !variables.inst.hasCommand( "yay" ) ) return variables.cli.fail( cmd, 4, "yay is not installed (the BxRig installer adds it); AUR packages need it", arguments.asJson );
         var res = variables.inst.run( built.steps );
         var code = variables.inst.exitCode( res );
         var out = res.done.map( function( d ) { return "Installed: " & d.id; } );
         for ( var f in res.failed ) out.append( "Failed: " & f.id & ": " & f.error );
         data.done = res.done; data.failed = res.failed;
-        return say( cmd, code, data, arguments.asJson, out );
+        return variables.cli.say( cmd, code, data, arguments.asJson, out );
     }
 
     // ---- remove ----
@@ -213,27 +200,27 @@ class Pkg {
         if ( !todo.len() ) {
             var why = blocked.map( function( b ) { return b.name & ": " & b.reason; } ).toList( "; " );
             var sk = skipped.map( function( s ) { return s.name & ": " & s.reason; } ).toList( "; " );
-            return say( arguments.cmd, blocked.len() ? 4 : 0, data, arguments.asJson, [ blocked.len() ? "error: nothing removed (" & why & ")" : "Nothing to do (" & sk & ")." ] );
+            return variables.cli.say( arguments.cmd, blocked.len() ? 4 : 0, data, arguments.asJson, [ blocked.len() ? "error: nothing removed (" & why & ")" : "Nothing to do (" & sk & ")." ] );
         }
         if ( !arguments.yes || arguments.dryRun ) {
             var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": remove " & todo.toList( ", " ) & " with their unused dependencies and system config files (pacman -Rns). Your files in ~/.config and ~/.local are not touched." ];
             for ( var b in blocked ) lines.append( "  skipped " & b.name & ": " & b.reason );
             for ( var s in skipped ) lines.append( "  skipped " & s.name & ": " & s.reason );
             lines.append( arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return say( arguments.cmd, arguments.dryRun ? 0 : 2, data, arguments.asJson, lines, arguments.dryRun );
+            return variables.cli.say( arguments.cmd, arguments.dryRun ? 0 : 2, data, arguments.asJson, lines, arguments.dryRun );
         }
         var done = [];
         var failed = [];
         for ( var t in todo ) {
             var argv = duplicate( pac );
             for ( var a in [ "-Rns", "--noconfirm", t ] ) argv.append( a );
-            var r = tryExec( argv, 600 );
+            var r = variables.proc.exec( argv, 600 );
             if ( r.exitCode == 0 ) done.append( t ); else failed.append( { name: t, error: trim( r.output ) } );
         }
         data.done = done; data.failed = failed;
         var lines2 = done.map( function( d ) { return "Removed: " & d; } );
         for ( var f in failed ) lines2.append( "Failed: " & f.name & ": " & left( f.error, 160 ) );
-        return say( arguments.cmd, !failed.len() ? 0 : ( done.len() ? 7 : 5 ), data, arguments.asJson, lines2 );
+        return variables.cli.say( arguments.cmd, !failed.len() ? 0 : ( done.len() ? 7 : 5 ), data, arguments.asJson, lines2 );
     }
 
     function merge( a, b ) {
@@ -244,7 +231,7 @@ class Pkg {
     }
 
     function remove( names, yes, dryRun, asJson ) {
-        if ( !arguments.names.len() ) return fail( "pkg remove", 2, "Usage: bxrig pkg remove NAME... [--yes] [--dry-run]", arguments.asJson );
+        if ( !arguments.names.len() ) return variables.cli.fail( "pkg remove", 2, "Usage: bxrig pkg remove NAME... [--yes] [--dry-run]", arguments.asJson );
         return removeNames( arguments.names, arguments.yes, arguments.dryRun, arguments.asJson );
     }
 
@@ -252,7 +239,7 @@ class Pkg {
     // anything else is taken as a package name.
     function removeApps( ids, yes, dryRun, asJson ) {
         var cmd = "remove";
-        if ( !arguments.ids.len() ) return fail( cmd, 2, "Usage: bxrig remove ID_OR_PACKAGE... [--yes] [--dry-run]", arguments.asJson );
+        if ( !arguments.ids.len() ) return variables.cli.fail( cmd, 2, "Usage: bxrig remove ID_OR_PACKAGE... [--yes] [--dry-run]", arguments.asJson );
         var cat = new bxrig.Catalog();
         var data = cat.load();
         var pk = new bxrig.Packages( variables.cli, data );
@@ -271,13 +258,13 @@ class Pkg {
         var gone = launchers.filter( function( l ) { return fileExists( l.path ); } );
         var extra = { apps: apps, launchers: gone, manual: manual };
         if ( !pkgs.len() && !gone.len() ) {
-            if ( manual.len() ) return say( cmd, 4, extra, arguments.asJson, manual.map( function( m ) { return "error: " & m.id & " " & m.note; } ) );
-            return say( cmd, 0, extra, arguments.asJson, [ "Nothing to do: nothing of that is installed." ] );
+            if ( manual.len() ) return variables.cli.say( cmd, 4, extra, arguments.asJson, manual.map( function( m ) { return "error: " & m.id & " " & m.note; } ) );
+            return variables.cli.say( cmd, 0, extra, arguments.asJson, [ "Nothing to do: nothing of that is installed." ] );
         }
         if ( !pkgs.len() ) {
-            if ( !arguments.yes || arguments.dryRun ) return say( cmd, arguments.dryRun ? 0 : 2, extra, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": remove the web app launchers " & gone.map( function( g ) { return g.id; } ).toList( ", " ), arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dryRun );
+            if ( !arguments.yes || arguments.dryRun ) return variables.cli.say( cmd, arguments.dryRun ? 0 : 2, extra, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": remove the web app launchers " & gone.map( function( g ) { return g.id; } ).toList( ", " ), arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dryRun );
             for ( var g in gone ) fileDelete( g.path );
-            return say( cmd, 0, extra, arguments.asJson, gone.map( function( g ) { return "Removed web app: " & g.id; } ) );
+            return variables.cli.say( cmd, 0, extra, arguments.asJson, gone.map( function( g ) { return "Removed web app: " & g.id; } ) );
         }
         if ( arguments.yes && !arguments.dryRun ) for ( var g2 in gone ) fileDelete( g2.path );
         return removeNames( pkgs, arguments.yes, arguments.dryRun, arguments.asJson, cmd, extra );

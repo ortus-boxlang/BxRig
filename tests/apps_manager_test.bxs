@@ -19,7 +19,7 @@ check( "pacman -Qi: blocks, sizes, dependencies", qi.vlc.version == "3.0-1" && q
 up = data.parseUpdates( "repo firefox 133.0-1 -> 133.0.3-1" & chr( 10 ) & "aur code-bin 1.0-1 -> 1.1-1" & chr( 10 ) & "junk" );
 check( "updates: repo and AUR lines", up.done && up.rows.len() == 2 && up.rows[ 1 ].newVersion == "133.0.3-1" && up.rows[ 2 ].source == "AUR" && !up.missing );
 check( "updates: no checkupdates is said, not hidden", data.parseUpdates( "NOCHECKUPDATES" ).missing );
-check( "Exec: field codes go, %% stays", data.cleanExec( "firefox %u --x %% %F" ) == "firefox --x %" );
+check( "Exec: field codes go, %% stays", new bxrig.DesktopEntry().cleanExec( "firefox %u --x %% %F" ) == "firefox --x %" );
 
 // ---- the model
 m = new bxrig.AppsModel( data ).load();

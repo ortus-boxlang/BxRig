@@ -13,24 +13,13 @@
 class PlasmaPanels {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
+        variables.out = new bxrig.Out( variables.cli, "plasma panels" );
         variables.inst = new bxrig.Installer( arguments.runner );
+        variables.proc = variables.inst.proc();
         variables.config = new bxrig.ConfigService();
         return this;
     }
 
-    function say( code, data, asJson, lines = [], dryRun = false ) {
-        if ( arguments.asJson ) println( variables.cli.envelope( "plasma panels", arguments.code, arguments.data, arguments.dryRun ) );
-        else for ( var l in arguments.lines ) println( l );
-        return arguments.code;
-    }
-
-    function tryExec( argv, timeout = 60 ) {
-        try { return variables.inst.exec( arguments.argv, arguments.timeout ); } catch ( any e ) { return { exitCode: 127, output: e.message, timeout: false }; }
-    }
-
-    function has( name ) { return tryExec( [ "sh", "-c", 'command -v "$1"', "_", arguments.name ], 10 ).exitCode == 0; }
-
-    function home() { return getSystemSetting( "HOME", "" ); }
     function rcFile() { return variables.config.cfgHome() & "/plasma-org.kde.plasma.desktop-appletsrc"; }
     function stateDir() { return variables.config.cfgHome() & "/bxrig/plasma-panels"; }
     function scriptFile() { return stateDir() & "/layout.js"; }
@@ -88,12 +77,12 @@ class PlasmaPanels {
     }
 
     function plasmaRunning() {
-        for ( var qd in [ "qdbus6", "qdbus" ] ) if ( has( qd ) ) return tryExec( [ qd, "org.kde.plasmashell" ], 15 ).exitCode == 0;
+        for ( var qd in [ "qdbus6", "qdbus" ] ) if ( variables.proc.has( qd ) ) return variables.proc.exec( [ qd, "org.kde.plasmashell" ], 15 ).exitCode == 0;
         return false;
     }
 
     function qdbus() {
-        for ( var qd in [ "qdbus6", "qdbus" ] ) if ( has( qd ) ) return qd;
+        for ( var qd in [ "qdbus6", "qdbus" ] ) if ( variables.proc.has( qd ) ) return qd;
         return "";
     }
 
@@ -108,14 +97,14 @@ class PlasmaPanels {
 
     function desktops( n, yes, dryRun, asJson ) {
         var count = isNumeric( arguments.n ) ? int( val( arguments.n ) ) : 0;
-        if ( count < 1 || count > 20 ) return say( 4, { error: "desktops must be 1 to 20" }, arguments.asJson, [ "error: the number of desktops must be 1 to 20" ] );
-        if ( !has( "kwriteconfig6" ) ) return say( 4, { error: "kwriteconfig6 was not found" }, arguments.asJson, [ "error: kwriteconfig6 was not found (this needs KDE Plasma)" ] );
+        if ( count < 1 || count > 20 ) return variables.out.say( 4, { error: "desktops must be 1 to 20" }, arguments.asJson, [ "error: the number of desktops must be 1 to 20" ] );
+        if ( !variables.proc.has( "kwriteconfig6" ) ) return variables.out.say( 4, { error: "kwriteconfig6 was not found" }, arguments.asJson, [ "error: kwriteconfig6 was not found (this needs KDE Plasma)" ] );
         var data = { desktops: count };
-        if ( !arguments.yes || arguments.dryRun ) return say( arguments.dryRun ? 0 : 2, data, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": " & count & " virtual desktops in one row (kwinrc [Desktops] Number and Rows)", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dryRun );
-        tryExec( [ "kwriteconfig6", "--file", "kwinrc", "--group", "Desktops", "--key", "Number", count ], 20 );
-        tryExec( [ "kwriteconfig6", "--file", "kwinrc", "--group", "Desktops", "--key", "Rows", "1" ], 20 );
-        if ( qdbus() != "" ) tryExec( [ qdbus(), "org.kde.KWin", "/KWin", "reconfigure" ], 20 );
-        return say( 0, data, arguments.asJson, [ count & " virtual desktops." ] );
+        if ( !arguments.yes || arguments.dryRun ) return variables.out.say( arguments.dryRun ? 0 : 2, data, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": " & count & " virtual desktops in one row (kwinrc [Desktops] Number and Rows)", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dryRun );
+        variables.proc.exec( [ "kwriteconfig6", "--file", "kwinrc", "--group", "Desktops", "--key", "Number", count ], 20 );
+        variables.proc.exec( [ "kwriteconfig6", "--file", "kwinrc", "--group", "Desktops", "--key", "Rows", "1" ], 20 );
+        if ( qdbus() != "" ) variables.proc.exec( [ qdbus(), "org.kde.KWin", "/KWin", "reconfigure" ], 20 );
+        return variables.out.say( 0, data, arguments.asJson, [ count & " virtual desktops." ] );
     }
 
     function apply( o, yes, dryRun, asJson ) {
@@ -125,36 +114,36 @@ class PlasmaPanels {
         var data = { desktops: op.desktops, agenda: op.agenda, weather: op.weather, preset: op.preset, widgets: topWidgets( op ).map( function( w ) { return w.id; } ), applied_now: live, script: scriptFile() };
         if ( !arguments.yes || arguments.dryRun ) {
             var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": replace your Plasma panels with a top status panel and a bottom dock", "  top: " & topWidgets( op ).map( function( w ) { return w.id == "sep" ? "|" : ( w.id == "flex" ? "<spacer>" : listLast( w.id, "." ) ); } ).toList( " " ), "  bottom: icons-only task manager", "  " & op.desktops & " virtual desktops, Colorizer preset " & op.preset, live ? "Plasma is running: the layout is applied now." : "Plasma is not running: the layout is applied at your next Plasma login.", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ];
-            return say( arguments.dryRun ? 0 : 2, data, arguments.asJson, lines, arguments.dryRun );
+            return variables.out.say( arguments.dryRun ? 0 : 2, data, arguments.asJson, lines, arguments.dryRun );
         }
         var saved = backup();
         if ( !directoryExists( stateDir() ) ) directoryCreate( stateDir(), true );
         fileWrite( scriptFile(), js );
         desktops( op.desktops, true, false, false );
         if ( live ) {
-            var r = tryExec( [ qdbus(), "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", js ], 120 );
-            if ( r.exitCode != 0 ) return say( 6, { error: "Plasma refused the layout script: " & trim( r.output ) }, arguments.asJson, [ "error: Plasma refused the layout script: " & trim( r.output ) ] );
+            var r = variables.proc.exec( [ qdbus(), "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", js ], 120 );
+            if ( r.exitCode != 0 ) return variables.out.say( 6, { error: "Plasma refused the layout script: " & trim( r.output ) }, arguments.asJson, [ "error: Plasma refused the layout script: " & trim( r.output ) ] );
             if ( fileExists( autostartFile() ) ) fileDelete( autostartFile() );
-            tryExec( [ "dbus-send", "--session", "--type=signal", "/preset", "luisbocanegra.panel.colorizer.all.preset", "string:/usr/share/plasma/plasmoids/luisbocanegra.panel.colorizer/contents/ui/presets/" & op.preset ], 20 );
-            return say( 0, data, arguments.asJson, [ "Plasma panels applied. Backup of the old layout: " & saved & ". Undo: bxrig plasma panels undo --yes" ] );
+            variables.proc.exec( [ "dbus-send", "--session", "--type=signal", "/preset", "luisbocanegra.panel.colorizer.all.preset", "string:/usr/share/plasma/plasmoids/luisbocanegra.panel.colorizer/contents/ui/presets/" & op.preset ], 20 );
+            return variables.out.say( 0, data, arguments.asJson, [ "Plasma panels applied. Backup of the old layout: " & saved & ". Undo: bxrig plasma panels undo --yes" ] );
         }
         var dir = getDirectoryFromPath( autostartFile() );
         if ( !directoryExists( dir ) ) directoryCreate( dir, true );
-        fileWrite( autostartFile(), "[Desktop Entry]" & chr( 10 ) & "Type=Application" & chr( 10 ) & "Name=BxRig Plasma panels (one time)" & chr( 10 ) & "Exec=bxrig plasma panels apply --yes --preset=" & replace( op.preset, " ", "-", "all" ) & chr( 10 ) & "X-KDE-autostart-after=panel" & chr( 10 ) );
-        return say( 0, data, arguments.asJson, [ "Plasma is not running here. The layout is saved (" & scriptFile() & ") and a one-time autostart entry applies it at your next Plasma login." ] );
+        fileWrite( autostartFile(), new bxrig.DesktopEntry().render( [ "Type=Application", "Name=BxRig Plasma panels (one time)", "Exec=bxrig plasma panels apply --yes --preset=" & replace( op.preset, " ", "-", "all" ), "X-KDE-autostart-after=panel" ] ) );
+        return variables.out.say( 0, data, arguments.asJson, [ "Plasma is not running here. The layout is saved (" & scriptFile() & ") and a one-time autostart entry applies it at your next Plasma login." ] );
     }
 
     function undo( yes, asJson ) {
         var saved = stateDir() & "/backup/plasma-org.kde.plasma.desktop-appletsrc";
-        if ( !fileExists( saved ) ) return say( 4, { error: "no backup" }, arguments.asJson, [ "error: there is no backup (the panels were never changed by BxRig)" ] );
-        if ( !arguments.yes ) return say( 2, { backup: saved }, arguments.asJson, [ "Plan: put back " & saved & " as your Plasma panel layout", "Nothing was changed. Add --yes to apply." ] );
+        if ( !fileExists( saved ) ) return variables.out.say( 4, { error: "no backup" }, arguments.asJson, [ "error: there is no backup (the panels were never changed by BxRig)" ] );
+        if ( !arguments.yes ) return variables.out.say( 2, { backup: saved }, arguments.asJson, [ "Plan: put back " & saved & " as your Plasma panel layout", "Nothing was changed. Add --yes to apply." ] );
         fileCopy( saved, rcFile(), true );
         if ( fileExists( autostartFile() ) ) fileDelete( autostartFile() );
-        return say( 0, { restored: saved }, arguments.asJson, [ "Your old panel layout is back. Log out and in (or restart the Plasma shell) to see it." ] );
+        return variables.out.say( 0, { restored: saved }, arguments.asJson, [ "Your old panel layout is back. Log out and in (or restart the Plasma shell) to see it." ] );
     }
 
     function status( asJson ) {
         var data = { backup: fileExists( stateDir() & "/backup/plasma-org.kde.plasma.desktop-appletsrc" ), layout_saved: fileExists( scriptFile() ), queued: fileExists( autostartFile() ), plasma_running: plasmaRunning() };
-        return say( 0, data, arguments.asJson, [ "Layout saved: " & data.layout_saved, "Waiting for the next Plasma login: " & data.queued, "Backup of the old layout: " & data.backup, "Plasma running: " & data.plasma_running ] );
+        return variables.out.say( 0, data, arguments.asJson, [ "Layout saved: " & data.layout_saved, "Waiting for the next Plasma login: " & data.queued, "Backup of the old layout: " & data.backup, "Plasma running: " & data.plasma_running ] );
     }
 }

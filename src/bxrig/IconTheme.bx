@@ -9,16 +9,16 @@
 // opts (tests): { home, share, noGsettings }. The folders searched: ~/.local/share/icons, ~/.icons, /usr/share/icons (BXRIG_SHARE_DIR replaces /usr/share).
 class IconTheme {
     function init( opts = {} ) {
+        variables.environ = new bxrig.Env( structKeyExists( arguments.opts, "home" ) ? { HOME: arguments.opts.home, BXRIG_CONFIG_HOME: "", XDG_CONFIG_HOME: "", XDG_DATA_HOME: "", XDG_CACHE_HOME: "", XDG_STATE_HOME: "" } : {} );
         variables.opts = arguments.opts;
         variables.picked = "";
         return this;
     }
 
-    function env( name, fallback ) { var v = getSystemSetting( arguments.name, "" ); return len( v ) ? v : arguments.fallback; }
-    function home() { return variables.opts.home ?: env( "HOME", "" ); }
-    function share() { return variables.opts.share ?: env( "BXRIG_SHARE_DIR", "/usr/share" ); }
-    function userShare() { return structKeyExists( variables.opts, "home" ) ? variables.opts.home & "/.local/share" : env( "XDG_DATA_HOME", home() & "/.local/share" ); }
-    function cfgHome() { return structKeyExists( variables.opts, "home" ) ? variables.opts.home & "/.config" : env( "XDG_CONFIG_HOME", home() & "/.config" ); }
+    function home() { return variables.opts.home ?: variables.environ.get( "HOME", "" ); }
+    function share() { return variables.opts.share ?: variables.environ.get( "BXRIG_SHARE_DIR", "/usr/share" ); }
+    function userShare() { return structKeyExists( variables.opts, "home" ) ? variables.opts.home & "/.local/share" : variables.environ.get( "XDG_DATA_HOME", home() & "/.local/share" ); }
+    function cfgHome() { return structKeyExists( variables.opts, "home" ) ? variables.opts.home & "/.config" : variables.environ.xdgConfig(); }
     function roots() { return [ userShare() & "/icons", home() & "/.icons", share() & "/icons" ]; }
 
     function valid( n ) { return len( arguments.n ) > 0 && reFind( "^[A-Za-z0-9_.-]+$", arguments.n ) > 0; }
@@ -85,7 +85,7 @@ class IconTheme {
     // The theme to use. Cached for this object.
     function name() {
         if ( len( variables.picked ) ) return variables.picked;
-        var tries = [ env( "BXRIG_ICON_THEME", "" ), savedSetting(), gtkSetting() ];
+        var tries = [ variables.environ.get( "BXRIG_ICON_THEME", "" ), savedSetting(), gtkSetting() ];
         for ( var t in tries ) if ( installed( t ) ) { variables.picked = usable( t ); return variables.picked; }
         var g = gsettingsSetting();
         if ( installed( g ) ) { variables.picked = usable( g ); return variables.picked; }

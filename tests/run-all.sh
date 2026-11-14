@@ -24,7 +24,8 @@ else echo "skip  .bxs tests (no matchbox)"; fi
 for item in "${queue[@]}"; do
   while (( $(jobs -rp | wc -l) >= jobs )); do wait -n || true; done
   t="${item#*:}"; n="$(basename "$t")"
-  if [[ "$item" == sh:* ]]; then run_one "$n" bash "$t" "$binary" &
+  if [[ "$item" == sh:* ]]; then
+    case "$n" in package-manager-test.sh|bootstrap-test.sh|web-install-test.sh|config-test.sh) run_one "$n" bash "$t" & ;; *) run_one "$n" bash "$t" "$binary" & ;; esac
   else run_one "$n" bash -c "cd '$root/src' && '$mb' '$t'" & fi
 done
 wait

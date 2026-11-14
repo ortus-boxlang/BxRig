@@ -18,31 +18,19 @@
 // Exit: 0 done, 2 bad usage, 4 precondition (a font or file that is not there), 6 a command failed.
 class Appearance {
     function init( cli, runner = "" ) {
+        variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
+        variables.out = new bxrig.Out( variables.cli, "appearance" );
         variables.inst = new bxrig.Installer( arguments.runner );
+        variables.proc = variables.inst.proc();
         variables.cfgSvc = new bxrig.ConfigService().quiet( true );
         return this;
     }
 
     function cfg() { return variables.cfgSvc.cfgHome(); }
-    function home() { return getSystemSetting( "HOME", "" ); }
     function stateFile() { return cfg() & "/bxrig/appearance.json"; }
     function lookFile() { return cfg() & "/bxrig/theme/look.lua"; }
     function bar() { return "main"; }
-
-    function say( code, data, asJson, lines = [], dry = false ) {
-        if ( arguments.asJson ) println( variables.cli.envelope( "appearance", arguments.code, arguments.data, arguments.dry ) );
-        else for ( var l in arguments.lines ) println( l );
-        return arguments.code;
-    }
-
-    function fail( code, msg, asJson ) { return say( arguments.code, { error: arguments.msg }, arguments.asJson, [ "error: " & arguments.msg ] ); }
-
-    function tryExec( argv, timeout = 30 ) {
-        try { return variables.inst.exec( arguments.argv, arguments.timeout ); } catch ( any e ) { return { exitCode: 127, output: e.message }; }
-    }
-
-    function has( name ) { return tryExec( [ "sh", "-c", 'command -v "$1"', "_", arguments.name ], 10 ).exitCode == 0; }
 
     // ---- tables ----
     // Nerd Font families (names read from the installed packages in the Arch test container) and the Arch package of each.
@@ -95,10 +83,10 @@ class Appearance {
 
     // ---- appliers ----
     function noctalia( words ) {
-        if ( !has( "noctalia" ) ) return { exitCode: 127, output: "noctalia was not found" };
+        if ( !variables.proc.has( "noctalia" ) ) return { exitCode: 127, output: "noctalia was not found" };
         var argv = [ "noctalia", "msg" ];
         for ( var w in arguments.words ) argv.append( w );
-        return tryExec( argv, 30 );
+        return variables.proc.exec( argv, 30 );
     }
 
     // PATH VALUE (a TOML value: strings are written with single quotes inside, as `config-set shell.font_family "'Noto Sans'"`).
@@ -133,12 +121,12 @@ class Appearance {
     function applyLook( s ) {
         var e = { name: "appearance-look", target: lookFile(), mode: "644", content: lookLua( arguments.s ) };
         if ( variables.cfgSvc.configState( e ) != "clean" && variables.cfgSvc.configWrite( e, e.content, "appearance", true, false ) != 0 ) return "failed";
-        if ( len( getSystemSetting( "HYPRLAND_INSTANCE_SIGNATURE", "" ) ) && has( "hyprctl" ) ) return tryExec( [ "hyprctl", "reload" ], 20 ).exitCode == 0 ? "reloaded" : "failed";
+        if ( len( getSystemSetting( "HYPRLAND_INSTANCE_SIGNATURE", "" ) ) && variables.proc.has( "hyprctl" ) ) return variables.proc.exec( [ "hyprctl", "reload" ], 20 ).exitCode == 0 ? "reloaded" : "failed";
         return "written";
     }
 
     function installedFamily( family ) {
-        return tryExec( [ "sh", "-c", 'fc-list : family | grep -qiF -- "$1"', "_", arguments.family ], 20 ).exitCode == 0;
+        return variables.proc.exec( [ "sh", "-c", 'fc-list : family | grep -qiF -- "$1"', "_", arguments.family ], 20 ).exitCode == 0;
     }
 
     // ---- commands ----
@@ -147,13 +135,13 @@ class Appearance {
         var lines = [ arguments.setting & ": " & arguments.value ];
         for ( var k in arguments.applied ) lines.append( "  " & k & ": " & arguments.applied[ k ] );
         for ( var n in arguments.notes ) lines.append( "note: " & n );
-        return say( 0, data, arguments.asJson, lines, arguments.dry );
+        return variables.out.say( 0, data, arguments.asJson, lines, arguments.dry );
     }
 
     // One Noctalia setting: shows the command with --dry-run, else runs it. Returns "applied", "saved" (no Noctalia) or "failed: why".
     function pushSet( sets, dry ) {
         var res = [];
-        if ( !has( "noctalia" ) ) return "saved only (Noctalia was not found; `bxrig appearance apply` pushes what is saved once it runs)";
+        if ( !variables.proc.has( "noctalia" ) ) return "saved only (Noctalia was not found; `bxrig appearance apply` pushes what is saved once it runs)";
         for ( var s in arguments.sets ) {
             if ( arguments.dry ) { res.append( "noctalia msg config-set " & s[ 1 ] & " " & s[ 2 ] ); continue; }
             var r = cfgSet( s[ 1 ], s[ 2 ] );
@@ -185,7 +173,7 @@ class Appearance {
         if ( v == "clock" && arguments.args.len() == 2 ) {
             var wantClock = arguments.args[ 2 ];
             var hit = clocks().filter( function( c ) { return c.id == wantClock; } );
-            if ( !hit.len() ) return fail( 2, "unknown clock format " & arguments.args[ 2 ] & " (" & clocks().map( function( c ) { return c.id; } ).toList( ", " ) & ")", arguments.asJson );
+            if ( !hit.len() ) return variables.out.fail( 2, "unknown clock format " & arguments.args[ 2 ] & " (" & clocks().map( function( c ) { return c.id; } ).toList( ", " ) & ")", arguments.asJson );
             s.bar.clock = hit[ 1 ].id;
             var c1 = pushSet( [ [ "widget.clock.format", q( hit[ 1 ].format ) ] ], arguments.dry );
             if ( !arguments.dry ) writeState( s );
@@ -198,7 +186,7 @@ class Appearance {
             if ( !arguments.dry ) writeState( s );
             return result( "bar battery percent", arguments.args[ 2 ], { noctalia: bt }, [], arguments.asJson, arguments.dry );
         }
-        return fail( 2, "Usage: bxrig appearance bar show|hide|toggle | position top|bottom|left|right | style opaque|glassy|clear | clock ID | battery on|off", arguments.asJson );
+        return variables.out.fail( 2, "Usage: bxrig appearance bar show|hide|toggle | position top|bottom|left|right | style opaque|glassy|clear | clock ID | battery on|off", arguments.asJson );
     }
 
     function dockCmd( args, dry, asJson ) {
@@ -222,7 +210,7 @@ class Appearance {
             if ( !arguments.dry ) writeState( s );
             return result( "dock position", arguments.args[ 2 ], { noctalia: p }, [], arguments.asJson, arguments.dry );
         }
-        return fail( 2, "Usage: bxrig appearance dock show|hide|toggle | mode autohide|always|off | position top|bottom|left|right", arguments.asJson );
+        return variables.out.fail( 2, "Usage: bxrig appearance dock show|hide|toggle | mode autohide|always|off | position top|bottom|left|right", arguments.asJson );
     }
 
     function windowsCmd( args, dry, asJson ) {
@@ -240,7 +228,7 @@ class Appearance {
         }
         else if ( v == "opacity" && structKeyExists( opacities(), x ) ) { s.windows.opacity = x; label = "window opacity"; }
         else if ( v == "one-window-ratio" && arrayFind( [ "on", "off" ], x ) ) { s.windows.one_window_ratio = x; label = "one-window ratio"; }
-        else return fail( 2, "Usage: bxrig appearance windows gaps on|off | corners theme|sharp|rounded | opacity opaque|transparent|glassy | one-window-ratio on|off", arguments.asJson );
+        else return variables.out.fail( 2, "Usage: bxrig appearance windows gaps on|off | corners theme|sharp|rounded | opacity opaque|transparent|glassy | one-window-ratio on|off", arguments.asJson );
         if ( arguments.dry ) { applied.hyprland = "would write " & lookFile() & " and run hyprctl reload"; return result( label, x, applied, notes, arguments.asJson, true ); }
         writeState( s );
         applied.hyprland = applyLook( s );
@@ -249,7 +237,7 @@ class Appearance {
     }
 
     function animationsCmd( args, dry, asJson ) {
-        if ( arguments.args.len() != 1 || !arrayFind( [ "on", "off" ], arguments.args[ 1 ] ) ) return fail( 2, "Usage: bxrig appearance animations on|off", arguments.asJson );
+        if ( arguments.args.len() != 1 || !arrayFind( [ "on", "off" ], arguments.args[ 1 ] ) ) return variables.out.fail( 2, "Usage: bxrig appearance animations on|off", arguments.asJson );
         var on = arguments.args[ 1 ] == "on";
         var s = readState();
         s.animations = arguments.args[ 1 ];
@@ -261,11 +249,11 @@ class Appearance {
     }
 
     function layoutCmd( args, dry, asJson ) {
-        if ( arguments.args.len() != 1 || !arrayFind( [ "dwindle", "scrolling", "floating" ], arguments.args[ 1 ] ) ) return fail( 2, "Usage: bxrig appearance layout dwindle|scrolling|floating", arguments.asJson );
+        if ( arguments.args.len() != 1 || !arrayFind( [ "dwindle", "scrolling", "floating" ], arguments.args[ 1 ] ) ) return variables.out.fail( 2, "Usage: bxrig appearance layout dwindle|scrolling|floating", arguments.asJson );
         var l = arguments.args[ 1 ];
         var applied = {};
         if ( l == "floating" ) {
-            applied.windows = arguments.dry ? "would run: bxrig layout float" : ( tryExec( [ getSystemSetting( "BXRIG_SELF", "bxrig" ), "layout", "float" ], 30 ).exitCode == 0 ? "floated" : "failed" );
+            applied.windows = arguments.dry ? "would run: bxrig layout float" : ( variables.proc.exec( [ getSystemSetting( "BXRIG_SELF", "bxrig" ), "layout", "float" ], 30 ).exitCode == 0 ? "floated" : "failed" );
             return result( "layout", l, applied, [ "floating floats the windows of the current workspace now; tiling comes back with `appearance layout dwindle`" ], arguments.asJson, arguments.dry );
         }
         var s = readState();
@@ -288,18 +276,18 @@ class Appearance {
             var cur = readState().font;
             var lines = rows.map( function( f ) { return ( f.family == cur ? "* " : "  " ) & f.id & repeatString( " ", max( 1, 11 - len( f.id ) ) ) & f.label & "  (" & f.family & ")" & ( f.installed ? "" : "  not installed: bxrig appearance font install " & f.id ); } );
             if ( len( cur ) ) lines.append( "Current: " & cur );
-            return say( 0, { fonts: rows, current: cur }, arguments.asJson, lines );
+            return variables.out.say( 0, { fonts: rows, current: cur }, arguments.asJson, lines );
         }
         if ( v == "install" && arguments.args.len() == 2 ) {
             var wantFont = arguments.args[ 2 ];
             var hit = fonts().filter( function( f ) { return f.id == wantFont; } );
-            if ( !hit.len() ) return fail( 2, "unknown font " & arguments.args[ 2 ] & " (bxrig appearance font list)", arguments.asJson );
+            if ( !hit.len() ) return variables.out.fail( 2, "unknown font " & arguments.args[ 2 ] & " (bxrig appearance font list)", arguments.asJson );
             return new bxrig.Pkg( variables.cli ).install( [ hit[ 1 ].pkg ], false, arguments.yes, arguments.dry, arguments.asJson );
         }
         var family = v;
         for ( var f in fonts() ) if ( f.id == v ) family = f.family;
-        if ( arguments.args.len() != 1 ) return fail( 2, "Usage: bxrig appearance font list | install ID [--yes] | ID_OR_FAMILY", arguments.asJson );
-        if ( !installedFamily( family ) ) return fail( 4, family & " is not installed" & ( arrayFind( fonts().map( function( f ) { return f.id; } ), v ) ? " (bxrig appearance font install " & v & " --yes)" : " (see: fc-list : family)" ), arguments.asJson );
+        if ( arguments.args.len() != 1 ) return variables.out.fail( 2, "Usage: bxrig appearance font list | install ID [--yes] | ID_OR_FAMILY", arguments.asJson );
+        if ( !installedFamily( family ) ) return variables.out.fail( 4, family & " is not installed" & ( arrayFind( fonts().map( function( f ) { return f.id; } ), v ) ? " (bxrig appearance font install " & v & " --yes)" : " (see: fc-list : family)" ), arguments.asJson );
         var s = readState();
         s.font = family;
         var applied = { noctalia: pushSet( [ [ "shell.font_family", q( family ) ] ], arguments.dry ) };
@@ -314,10 +302,10 @@ class Appearance {
 
     // ---- backgrounds ----
     function imageDirs() {
-        var out = [ home() & "/Pictures/BxRig" ];
+        var out = [ variables.environ.home() & "/Pictures/BxRig" ];
         var t = readThemeState();
         if ( len( t ) ) out.append( t );
-        out.append( home() & "/Pictures" );
+        out.append( variables.environ.home() & "/Pictures" );
         return out;
     }
 
@@ -353,7 +341,7 @@ class Appearance {
         var v = arguments.args.len() ? arguments.args[ 1 ] : "list";
         if ( v == "list" ) {
             var imgs = images();
-            return say( 0, { images: imgs }, arguments.asJson, imgs.len() ? imgs.map( function( i ) { return i.name & "   " & i.path; } ) : [ "No images in ~/Pictures/BxRig, ~/Pictures or the theme's backgrounds folder" ] );
+            return variables.out.say( 0, { images: imgs }, arguments.asJson, imgs.len() ? imgs.map( function( i ) { return i.name & "   " & i.path; } ) : [ "No images in ~/Pictures/BxRig, ~/Pictures or the theme's backgrounds folder" ] );
         }
         if ( v == "next" || v == "random" ) {
             var r = arguments.dry ? { exitCode: 0, output: "" } : noctalia( [ "wallpaper-" & v ] );
@@ -364,11 +352,11 @@ class Appearance {
             var path = "";
             if ( left( want, 1 ) == "/" && fileExists( want ) ) path = want;
             else for ( var i in images() ) if ( i.name == want ) { path = i.path; break; }
-            if ( !len( path ) ) return fail( 4, "no image " & want & " (bxrig appearance background list)", arguments.asJson );
+            if ( !len( path ) ) return variables.out.fail( 4, "no image " & want & " (bxrig appearance background list)", arguments.asJson );
             var w = arguments.dry ? { exitCode: 0, output: "" } : noctalia( [ "wallpaper-set", path ] );
             return result( "background", path, { noctalia: w.exitCode == 0 ? ( arguments.dry ? "noctalia msg wallpaper-set " & path : "applied" ) : "failed: " & trim( w.output ) }, [], arguments.asJson, arguments.dry );
         }
-        return fail( 2, "Usage: bxrig appearance background list | set NAME_OR_PATH | next | random", arguments.asJson );
+        return variables.out.fail( 2, "Usage: bxrig appearance background list | set NAME_OR_PATH | next | random", arguments.asJson );
     }
 
     function status( asJson ) {
@@ -379,7 +367,7 @@ class Appearance {
                       "Windows:    gaps " & ( s.windows.gaps ?: "on" ) & ", corners " & ( s.windows.corners ?: "theme" ) & ", opacity " & ( s.windows.opacity ?: "(default)" ) & ", one-window ratio " & ( s.windows.one_window_ratio ?: "off" ),
                       "Animations: " & ( len( s.animations ) ? s.animations : "on" ),
                       "Layout:     " & ( len( s.layout ) ? s.layout : "dwindle" ) ];
-        return say( 0, s, arguments.asJson, lines );
+        return variables.out.say( 0, s, arguments.asJson, lines );
     }
 
     // `apply`: pushes everything remembered in appearance.json to Noctalia and Hyprland again (after a fresh Noctalia state, or a first login).
@@ -403,7 +391,7 @@ class Appearance {
 
     // The entry point: appearance GROUP ARGS...
     function run( words, dry, yes, asJson ) {
-        if ( !arguments.words.len() ) return fail( 2, "Usage: bxrig appearance status | bar ... | dock ... | windows ... | animations on|off | layout ... | font ... | background ...", arguments.asJson );
+        if ( !arguments.words.len() ) return variables.out.fail( 2, "Usage: bxrig appearance status | bar ... | dock ... | windows ... | animations on|off | layout ... | font ... | background ...", arguments.asJson );
         var g = arguments.words[ 1 ];
         var rest = arguments.words.slice( 2 );
         if ( g == "status" && !rest.len() ) return status( arguments.asJson );
@@ -415,6 +403,6 @@ class Appearance {
         if ( g == "layout" ) return layoutCmd( rest, arguments.dry, arguments.asJson );
         if ( g == "font" ) return fontCmd( rest, arguments.dry, arguments.asJson, arguments.yes );
         if ( g == "background" ) return backgroundCmd( rest, arguments.dry, arguments.asJson );
-        return fail( 2, "unknown group " & g & ". Usage: bxrig appearance status | bar ... | dock ... | windows ... | animations ... | layout ... | font ... | background ...", arguments.asJson );
+        return variables.out.fail( 2, "unknown group " & g & ". Usage: bxrig appearance status | bar ... | dock ... | windows ... | animations ... | layout ... | font ... | background ...", arguments.asJson );
     }
 }

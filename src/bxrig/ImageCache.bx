@@ -13,22 +13,21 @@ class ImageCache {
     // opts (tests and callers that know better): { base, allowHttp, maxTime, capKb, maxBytes }. The environment covers the same things:
     // BXRIG_CACHE_HOME, BXRIG_IMAGE_ALLOW_HTTP=1, BXRIG_IMAGE_MAX_TIME (seconds, default 15), BXRIG_IMAGE_CAP_KB (default 204800).
     function init( opts = {} ) {
+        variables.environ = new bxrig.Env();
         variables.opts = arguments.opts;
         variables.maxBytes = arguments.opts.maxBytes ?: 5242880;
-        variables.capKb = arguments.opts.capKb ?: int( val( env( "BXRIG_IMAGE_CAP_KB", "204800" ) ) );
-        variables.maxTime = arguments.opts.maxTime ?: int( val( env( "BXRIG_IMAGE_MAX_TIME", "15" ) ) );
+        variables.capKb = arguments.opts.capKb ?: int( val( variables.environ.get( "BXRIG_IMAGE_CAP_KB", "204800" ) ) );
+        variables.maxTime = arguments.opts.maxTime ?: int( val( variables.environ.get( "BXRIG_IMAGE_MAX_TIME", "15" ) ) );
         variables.failSeconds = 6 * 3600;
         variables.pendingSeconds = max( 60, variables.maxTime * 4 );
         return this;
     }
 
-    function env( name, fallback ) { var v = getSystemSetting( arguments.name, "" ); return len( v ) ? v : arguments.fallback; }
-
     function base() {
         if ( structKeyExists( variables.opts, "base" ) ) return variables.opts.base;
-        var home = env( "HOME", "" );
-        var xdg = env( "XDG_CACHE_HOME", home & "/.cache" );
-        return env( "BXRIG_CACHE_HOME", xdg & "/bxrig" );
+        var home = variables.environ.get( "HOME", "" );
+        var xdg = variables.environ.get( "XDG_CACHE_HOME", home & "/.cache" );
+        return variables.environ.get( "BXRIG_CACHE_HOME", xdg & "/bxrig" );
     }
 
     function dir( kind ) { return base() & "/images/" & reReplace( arguments.kind, "[^a-z0-9_-]", "", "all" ); }
@@ -38,7 +37,7 @@ class ImageCache {
     function allowed( url ) {
         var u = arguments.url;
         if ( left( u, 8 ) == "https://" && len( u ) < 2000 && !reFind( "[\s'" & chr( 34 ) & "]", u ) ) return true;
-        return ( ( variables.opts.allowHttp ?: false ) || env( "BXRIG_IMAGE_ALLOW_HTTP", "" ) == "1" ) && left( u, 7 ) == "http://" && len( u ) < 2000 && !reFind( "[\s'" & chr( 34 ) & "]", u );
+        return ( ( variables.opts.allowHttp ?: false ) || variables.environ.get( "BXRIG_IMAGE_ALLOW_HTTP", "" ) == "1" ) && left( u, 7 ) == "http://" && len( u ) < 2000 && !reFind( "[\s'" & chr( 34 ) & "]", u );
     }
 
     // The file that holds the picture once it is cached, or "".

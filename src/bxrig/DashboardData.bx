@@ -7,13 +7,14 @@
 // BXRIG_POWER_DIR replaces /sys/class/power_supply (the same switch SystemState uses).
 class DashboardData {
     function init( cli, runner = "" ) {
+        variables.proc = new bxrig.Proc();
+        variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
         variables.runner = arguments.runner;
         return this;
     }
 
     function readText( file ) { try { return fileExists( arguments.file ) ? trim( fileRead( arguments.file ) ) : ""; } catch ( any e ) { return ""; } }
-    function self() { return getSystemSetting( "BXRIG_SELF", "bxrig" ); }
 
     function osName() {
         for ( var l in listToArray( readText( "/etc/os-release" ), chr( 10 ) ) ) if ( left( l, 12 ) == "PRETTY_NAME=" ) return replace( mid( l, 13, 100 ), chr( 34 ), "", "all" );
@@ -76,7 +77,7 @@ class DashboardData {
     function dbMachines() {
         var rows = [];
         try {
-            var r = systemExecute( self(), [ "db", "list", "--json" ], 40, true );
+            var r = variables.proc.self( [ "db", "list", "--json" ], 40 );
             var j = jsonDeserialize( r.output );
             var list = structKeyExists( j.data, "databases" ) ? j.data.databases : [];
             for ( var d in list ) rows.append( { kind: "db", name: len( d.name ) ? d.name : d.container, engine: d.engine ?: "", state: left( d.status, 2 ) == "Up" ? "running" : "stopped", port: d.port ?: 0 } );
@@ -87,7 +88,7 @@ class DashboardData {
     function vmMachines() {
         var rows = [];
         try {
-            var r = systemExecute( self(), [ "vm", "list", "--json" ], 40, true );
+            var r = variables.proc.self( [ "vm", "list", "--json" ], 40 );
             var j = jsonDeserialize( r.output );
             var list = structKeyExists( j.data, "vms" ) ? j.data.vms : [];
             for ( var m in list ) rows.append( { kind: "vm", name: m.name, engine: m.what ?: "", state: m.state == "running" ? "running" : "stopped", port: 0 } );

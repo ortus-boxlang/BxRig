@@ -8,19 +8,24 @@ count() { # pattern, path, max   (counts matching lines, fixed string)
   local n; n="$(grep -rF --include='*.bx' --include='*.sh' -- "$1" "$root/$2" 2>/dev/null | wc -l)"
   if (( n > $3 )); then echo "FAIL: '$1' in $2 is $n, allowed $3"; fails=$((fails+1)); elif (( n < $3 )); then echo "note: '$1' in $2 is $n, lower the maximum from $3"; fi
 }
-count 'function say('              src/bxrig 56
-count 'function fail('             src/bxrig 16
-count 'function tryExec('          src/bxrig 30
-count 'function has('              src/bxrig 26
-count 'function merge('            src/bxrig 12
+count 'function say('              src/bxrig 2
+count 'function fail('             src/bxrig 2
+count 'function tryExec('          src/bxrig 0
+count 'function has('              src/bxrig 1
+count 'function merge('            src/bxrig 5
 count 'function validName('        src/bxrig 9
-count 'function dataHome('         src/bxrig 6
-count 'function home()'            src/bxrig 18
-count 'function env('              src/bxrig 8
-count 'function self()'            src/bxrig 10
+count 'function dataHome('         src/bxrig 2
+count 'function home()'            src/bxrig 4
+count 'function env('              src/bxrig 1
+count 'function self()'            src/bxrig 2
 count '"Usage: bxrig'              src/Main.bx 56
 count 'fail() { echo "FAIL'        tests 67
 count 'jsonDeserialize( fileRead(' src/bxrig 37
-count 'getSystemSetting( "HOME"'   src/bxrig 39
+count 'getSystemSetting( "HOME"'   src/bxrig 12
+# every test file is run by CI (a new test cannot be forgotten)
+for t in "$root"/tests/*-test.sh "$root"/tests/*_test.bxs "$root"/tests/catalog_check.bxs; do
+  [[ -f "$t" ]] || continue
+  grep -q "$(basename "$t")" "$root/.github/workflows/ci.yml" || { echo "FAIL: $(basename "$t") is not listed in .github/workflows/ci.yml"; fails=$((fails+1)); }
+done
 (( fails == 0 )) || exit 1
 echo "dry-test: ok"

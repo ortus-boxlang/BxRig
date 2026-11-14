@@ -18,6 +18,8 @@
 // opts (tests): { share, home, iconBase, cache: {ImageCache opts} }. Environment: BXRIG_SHARE_DIR replaces /usr/share.
 class AppIcons {
     function init( opts = {} ) {
+        variables.desk = new bxrig.DesktopEntry();
+        variables.environ = new bxrig.Env( structKeyExists( arguments.opts, "home" ) ? { HOME: arguments.opts.home, BXRIG_CONFIG_HOME: "", XDG_CONFIG_HOME: "", XDG_DATA_HOME: "", XDG_CACHE_HOME: "", XDG_STATE_HOME: "" } : {} );
         variables.opts = arguments.opts;
         variables.cache = new bxrig.ImageCache( arguments.opts.cache ?: {} );
         variables.seen = {};
@@ -27,10 +29,9 @@ class AppIcons {
         return this;
     }
 
-    function env( name, fallback ) { var v = getSystemSetting( arguments.name, "" ); return len( v ) ? v : arguments.fallback; }
-    function share() { return variables.opts.share ?: env( "BXRIG_SHARE_DIR", "/usr/share" ); }
-    function home() { return variables.opts.home ?: env( "HOME", "" ); }
-    function userShare() { return structKeyExists( variables.opts, "home" ) ? variables.opts.home & "/.local/share" : env( "XDG_DATA_HOME", home() & "/.local/share" ); }
+    function share() { return variables.opts.share ?: variables.environ.get( "BXRIG_SHARE_DIR", "/usr/share" ); }
+    function home() { return variables.opts.home ?: variables.environ.get( "HOME", "" ); }
+    function userShare() { return structKeyExists( variables.opts, "home" ) ? variables.opts.home & "/.local/share" : variables.environ.get( "XDG_DATA_HOME", home() & "/.local/share" ); }
     function iconBase() { return variables.opts.iconBase ?: "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png"; }
 
     // "Visual Studio Code" -> "visual-studio-code"
@@ -50,27 +51,14 @@ class AppIcons {
         return out;
     }
 
-    // Icon= of the [Desktop Entry] group of a .desktop file.
-    function readIconName( desktopFile ) {
-        try {
-            var inMain = false;
-            for ( var line in listToArray( fileRead( arguments.desktopFile ), chr( 10 ) ) ) {
-                var l = trim( line );
-                if ( left( l, 1 ) == "[" ) { if ( l == "[Desktop Entry]" ) inMain = true; else if ( inMain ) break; continue; }
-                if ( inMain && left( l, 5 ) == "Icon=" ) return trim( mid( l, 6, 400 ) );
-            }
-        } catch ( any e ) {}
-        return "";
-    }
-
     function isPicture( path ) { var e = lCase( listLast( arguments.path, "." ) ); return arrayFind( [ "png", "jpg", "jpeg", "webp", "gif" ], e ) > 0; }
 
     // The icon theme names to look in, in this order: the current theme and what it Inherits, hicolor, then every other theme folder.
     function themeNames( root ) {
         var names = [];
-        var cur = env( "BXRIG_ICON_THEME", "" );
+        var cur = variables.environ.get( "BXRIG_ICON_THEME", "" );
         if ( !len( cur ) ) {
-            for ( var f in [ home() & "/.config/gtk-3.0/settings.ini", home() & "/.config/gtk-4.0/settings.ini" ] ) {
+            for ( var f in [ variables.environ.xdgConfig( "gtk-3.0/settings.ini" ), variables.environ.xdgConfig( "gtk-4.0/settings.ini" ) ] ) {
                 if ( len( cur ) || !fileExists( f ) ) continue;
                 try { for ( var line in listToArray( fileRead( f ), chr( 10 ) ) ) if ( left( trim( line ), 20 ) == "gtk-icon-theme-name=" || left( trim( line ), 21 ) == "gtk-icon-theme-name =" ) cur = trim( listLast( trim( line ), "=" ) ); } catch ( any e ) {}
             }
@@ -167,7 +155,7 @@ class AppIcons {
         for ( var nm in names( arguments.name ) ) {
             for ( var d in [ userShare() & "/applications/" & nm & ".desktop", share() & "/applications/" & nm & ".desktop" ] ) {
                 if ( !fileExists( d ) ) continue;
-                var iname = readIconName( d );
+                var iname = variables.desk.iconName( d );
                 var hit = themed( iname );
                 if ( !len( hit ) ) hit = rasterize( svgOf( iname ) );
                 if ( len( hit ) ) return hit;

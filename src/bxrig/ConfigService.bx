@@ -1,6 +1,7 @@
 // Safe config files: atomic replace, backups, journal, drift, lock (docs/architecture/COMMAND-CONTRACT.md section 6).
 class ConfigService {
     function init() {
+     variables.environ = new bxrig.Env();
      variables.silent = false;
      return this;
     }
@@ -10,14 +11,14 @@ class ConfigService {
      return this;
     }
     // Prints one progress line unless quiet( true ) was set.
-    function say( text ) {
+    function progress( text ) {
      if ( !variables.silent ) println( arguments.text );
     }
     function cfgHome() {
-     return getSystemSetting( "BXRIG_CONFIG_HOME", getSystemSetting( "HOME", "" ) & "/.config" );
+     return variables.environ.xdgConfig();
     }
     function stateDir() {
-     return getSystemSetting( "BXRIG_STATE_HOME", getSystemSetting( "HOME", "" ) & "/.local/state" ) & "/bxrig";
+     return variables.environ.state();
     }
     function pathKind( path ) {
      if ( fileExists( path ) || directoryExists( path ) ) {
@@ -114,20 +115,20 @@ class ConfigService {
     function configWrite( entry, content, action, yes, dryRun ) {
      kind = pathKind( entry.target );
      if ( kind == "link" || kind == "other" ) {
-      say( entry.name & ": refusing to write, target is a symlink or special file: " & entry.target );
+      progress( entry.name & ": refusing to write, target is a symlink or special file: " & entry.target );
       return 8;
      }
-     say( action & " " & entry.name & " -> " & entry.target );
+     progress( action & " " & entry.name & " -> " & entry.target );
      if ( !yes ) {
-      say( "Nothing changed. Pass --yes to proceed." );
+      progress( "Nothing changed. Pass --yes to proceed." );
       return 2;
      }
      if ( dryRun ) {
-      say( "Dry run, nothing changed." );
+      progress( "Dry run, nothing changed." );
       return 0;
      }
      if ( !lockTake() ) {
-      say( "Another BxRig run holds the lock: " & stateDir() & "/lock (a file; remove it if no run is active)" );
+      progress( "Another BxRig run holds the lock: " & stateDir() & "/lock (a file; remove it if no run is active)" );
       return 8;
      }
      code = 0;
@@ -137,16 +138,16 @@ class ConfigService {
       writeAtomic( entry.target, content, entry.mode );
       after = fileHashOf( entry.target );
       if ( after != hashOf( content ) ) {
-       say( entry.name & ": verification failed after write" );
+       progress( entry.name & ": verification failed after write" );
        code = 9;
       } else {
-       if ( modeOf( entry.target ) != entry.mode ) say( "warning: mode is " & modeOf( entry.target ) & ", expected " & entry.mode );
+       if ( modeOf( entry.target ) != entry.mode ) progress( "warning: mode is " & modeOf( entry.target ) & ", expected " & entry.mode );
        id = recordJournal( entry, action, before, backup, after );
        pruneHistory( entry.name );
-       say( entry.name & ": " & action & " done (journal " & id & ")" );
+       progress( entry.name & ": " & action & " done (journal " & id & ")" );
       }
      } catch ( any e ) {
-      say( entry.name & ": failed: " & e.message );
+      progress( entry.name & ": failed: " & e.message );
       code = 9;
      }
      lockDrop();
@@ -156,11 +157,11 @@ class ConfigService {
      st = configState( entry );
      if ( st == "blocked" ) return configWrite( entry, entry.content, "apply", yes, dryRun );
      if ( st == "clean" ) {
-      say( entry.name & ": unchanged" );
+      progress( entry.name & ": unchanged" );
       return 0;
      }
      if ( st == "drifted" && !force ) {
-      say( entry.name & ": target was changed outside BxRig. Run 'config diff " & entry.name & "', then --force to overwrite (a backup is kept)." );
+      progress( entry.name & ": target was changed outside BxRig. Run 'config diff " & entry.name & "', then --force to overwrite (a backup is kept)." );
       return 8;
      }
      return configWrite( entry, entry.content, "apply", yes, dryRun );
@@ -168,17 +169,17 @@ class ConfigService {
     function configRestore( entry, id, yes, dryRun ) {
      found = journalEntries( entry.name ).filter( function( e ) { return e.id == id; } );
      if ( !found.len() ) {
-      say( "Unknown journal id for " & entry.name & ": " & id );
+      progress( "Unknown journal id for " & entry.name & ": " & id );
       return 3;
      }
      rec = found[1];
      if ( !len( rec.backup ) || !fileExists( rec.backup ) ) {
-      say( id & ": no backup to restore (the file did not exist before, or the backup was pruned)" );
+      progress( id & ": no backup to restore (the file did not exist before, or the backup was pruned)" );
       return 3;
      }
      old = fileRead( rec.backup );
      if ( hashOf( old ) != rec.before ) {
-      say( id & ": backup does not match its recorded hash, refusing" );
+      progress( id & ": backup does not match its recorded hash, refusing" );
       return 8;
      }
      return configWrite( entry, old, "restore", yes, dryRun );

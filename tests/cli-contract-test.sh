@@ -18,4 +18,6 @@ for c in version desktop-list tui-list web-list optional-list profile-list; do
 done
 [[ "$("$bin" version --json | jq -r .data.version)" == "$(jq -r .version "$(dirname "$0")/../box.json")" ]] || fail 'json version differs from box.json'
 "$bin" desktop-list | grep -Fq 'Visual Studio Code' || fail 'plain list rows'
+set +e; "$bin" nosuchcommand >/dev/null 2>&1; c=$?; set -e; [[ $c == 2 ]] || fail "an unknown command exits 2 (got $c)"
+set +e; "$bin" version --nosuchflag >/dev/null 2>&1; c=$?; set -e; [[ $c == 2 ]] || fail "an unknown flag exits 2 (got $c)"
 echo 'cli contract tests passed'

@@ -9,25 +9,16 @@
 // Exit: 0 done, 2 plan without --yes, 4 precondition, 5 the hub did not answer or refused, 6 a write failed.
 class Skills {
     function init( cli, runner = "" ) {
+        variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
+        variables.out = new bxrig.Out( variables.cli, "skills" );
         variables.inst = new bxrig.Installer( arguments.runner );
+        variables.proc = variables.inst.proc();
         variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }
 
-    function say( code, data, asJson, lines = [] ) {
-        if ( arguments.asJson ) println( variables.cli.envelope( "skills", arguments.code, arguments.data ) );
-        else for ( var l in arguments.lines ) println( l );
-        return arguments.code;
-    }
-
-    function tryExec( argv, timeout = 60 ) {
-        try { return variables.inst.exec( arguments.argv, arguments.timeout ); } catch ( any e ) { return { exitCode: 127, output: e.message, timeout: false }; }
-    }
-
-    function has( name ) { return tryExec( [ "sh", "-c", 'command -v "$1"', "_", arguments.name ], 10 ).exitCode == 0; }
-    function home() { return getSystemSetting( "HOME", "" ); }
-    function store() { return getSystemSetting( "BXRIG_SKILLS_DIR", home() & "/.agents/skills" ); }
+    function store() { return getSystemSetting( "BXRIG_SKILLS_DIR", variables.environ.home() & "/.agents/skills" ); }
     function hub() { return getSystemSetting( "BXRIG_SKILLS_URL", "https://skills.boxlang.io" ); }
     function manifestFile() { return variables.config.cfgHome() & "/bxrig/skills.json"; }
 
@@ -40,10 +31,10 @@ class Skills {
 
     function agents() {
         return [
-            { id: "claude-code", cmd: "claude", dir: home() & "/.claude/skills" },
-            { id: "codex-cli", cmd: "codex", dir: home() & "/.codex/skills" },
-            { id: "gemini-cli", cmd: "gemini", dir: home() & "/.gemini/skills" },
-            { id: "opencode-cli", cmd: "opencode", dir: home() & "/.config/opencode/skills" }
+            { id: "claude-code", cmd: "claude", dir: variables.environ.home() & "/.claude/skills" },
+            { id: "codex-cli", cmd: "codex", dir: variables.environ.home() & "/.codex/skills" },
+            { id: "gemini-cli", cmd: "gemini", dir: variables.environ.home() & "/.gemini/skills" },
+            { id: "opencode-cli", cmd: "opencode", dir: variables.environ.xdgConfig( "opencode/skills" ) }
         ];
     }
 
@@ -60,7 +51,7 @@ class Skills {
 
     // ---- the hub ----
     function get( path ) {
-        var r = tryExec( [ "curl", "-fsSL", "--max-time", "30", hub() & arguments.path ], 60 );
+        var r = variables.proc.exec( [ "curl", "-fsSL", "--max-time", "30", hub() & arguments.path ], 60 );
         if ( r.exitCode != 0 ) return { ok: false, error: "the skills hub did not answer" };
         try { return { ok: true, data: jsonDeserialize( r.output ) }; } catch ( any e ) { return { ok: false, error: "unexpected answer from the skills hub" }; }
     }
@@ -76,10 +67,10 @@ class Skills {
 
     function search( text, tag, asJson ) {
         var r = listHub( arguments.text, arguments.tag );
-        if ( !r.ok ) return say( 5, { error: r.error }, arguments.asJson, [ "error: " & r.error ] );
+        if ( !r.ok ) return variables.out.say( 5, { error: r.error }, arguments.asJson, [ "error: " & r.error ] );
         var lines = r.rows.map( function( s ) { return s.ref & "  [" & s.audit & "]  " & s.description; } );
         if ( !r.rows.len() ) lines = [ "No skills found." ];
-        return say( 0, { skills: r.rows, total: r.total }, arguments.asJson, lines );
+        return variables.out.say( 0, { skills: r.rows, total: r.total }, arguments.asJson, lines );
     }
 
     // OWNER/REPO/SLUG, OWNER/REPO/CATEGORY/NAME or an alias to { owner, repo, slug } (an empty struct when it is not one)
@@ -94,11 +85,11 @@ class Skills {
 
     function show( ref, asJson ) {
         var p = parseRef( arguments.ref );
-        if ( structIsEmpty( p ) ) return say( 4, { error: "bad reference" }, arguments.asJson, [ "error: use OWNER/REPO/SLUG (for example ortus-boxlang/skills/boxlang-developer~language-fundamentals)" ] );
+        if ( structIsEmpty( p ) ) return variables.out.say( 4, { error: "bad reference" }, arguments.asJson, [ "error: use OWNER/REPO/SLUG (for example ortus-boxlang/skills/boxlang-developer~language-fundamentals)" ] );
         var g = get( "/api/skills/" & p.owner & "/" & p.repo & "/" & p.slug );
-        if ( !g.ok || g.data.error ?: false ) return say( 5, { error: "not found" }, arguments.asJson, [ "error: " & ( g.ok ? "that skill was not found" : g.error ) ] );
+        if ( !g.ok || g.data.error ?: false ) return variables.out.say( 5, { error: "not found" }, arguments.asJson, [ "error: " & ( g.ok ? "that skill was not found" : g.error ) ] );
         var s = g.data.data;
-        return say( 0, { skill: s }, arguments.asJson, [ p.owner & "/" & p.repo & "/" & p.slug, ( s.description ?: "" ), "audit: " & ( s.audit_status ?: "" ), "install: bxrig skills install " & arguments.ref & " --yes" ] );
+        return variables.out.say( 0, { skill: s }, arguments.asJson, [ p.owner & "/" & p.repo & "/" & p.slug, ( s.description ?: "" ), "audit: " & ( s.audit_status ?: "" ), "install: bxrig skills install " & arguments.ref & " --yes" ] );
     }
 
     // ---- the store ----
@@ -135,7 +126,7 @@ class Skills {
         }
         var p = parseRef( arguments.what );
         if ( structIsEmpty( p ) ) return { ok: false, error: "unknown skill or bad reference: " & arguments.what };
-        var rr = tryExec( [ "curl", "-sSL", "--max-time", "30", "-X", "POST", "-H", "Content-Type: application/json", "-d", serializeJSON( { owner: p.owner, repo: p.repo, skill: p.slug } ), "-w", chr( 10 ) & "%{http_code}", hub() & "/api/install" ], 60 );
+        var rr = variables.proc.exec( [ "curl", "-sSL", "--max-time", "30", "-X", "POST", "-H", "Content-Type: application/json", "-d", serializeJSON( { owner: p.owner, repo: p.repo, skill: p.slug } ), "-w", chr( 10 ) & "%{http_code}", hub() & "/api/install" ], 60 );
         if ( rr.exitCode != 0 ) return { ok: false, error: "the skills hub did not answer" };
         var body = left( rr.output, len( rr.output ) - len( listLast( rr.output, chr( 10 ) ) ) - 1 );
         var code = trim( listLast( rr.output, chr( 10 ) ) );
@@ -157,42 +148,42 @@ class Skills {
         var m = loadManifest();
         var made = []; var kept = []; var used = [];
         for ( var a in agents() ) {
-            if ( !has( a.cmd ) && !directoryExists( a.dir ) ) continue;
+            if ( !variables.proc.has( a.cmd ) && !directoryExists( a.dir ) ) continue;
             used.append( a.id );
             if ( !directoryExists( a.dir ) ) directoryCreate( a.dir, true );
             for ( var name in structKeyArray( m.skills ) ) {
                 var target = a.dir & "/" & name;
                 var src = store() & "/" & name;
                 if ( !directoryExists( src ) ) continue;
-                if ( tryExec( [ "test", "-L", target ], 10 ).exitCode == 0 ) { kept.append( a.id & ":" & name ); continue; }
+                if ( variables.proc.exec( [ "test", "-L", target ], 10 ).exitCode == 0 ) { kept.append( a.id & ":" & name ); continue; }
                 if ( directoryExists( target ) || fileExists( target ) ) { kept.append( a.id & ":" & name & " (yours, left alone)" ); continue; }
-                if ( tryExec( [ "ln", "-s", src, target ], 10 ).exitCode == 0 ) made.append( a.id & ":" & name );
+                if ( variables.proc.exec( [ "ln", "-s", src, target ], 10 ).exitCode == 0 ) made.append( a.id & ":" & name );
             }
         }
-        return say( 0, { agents: used, linked: made, kept: kept }, arguments.asJson, [ "Linked " & made.len() & " skills into " & ( used.len() ? used.toList( ", " ) : "no agent (none found)" ) & "." ] );
+        return variables.out.say( 0, { agents: used, linked: made, kept: kept }, arguments.asJson, [ "Linked " & made.len() & " skills into " & ( used.len() ? used.toList( ", " ) : "no agent (none found)" ) & "." ] );
     }
 
     function install( what, yes, dryRun, asJson ) {
         var list = arguments.what.len() ? arguments.what : [ "bxrig" ];
-        for ( var w in list ) if ( w != "bxrig" && structIsEmpty( parseRef( w ) ) ) return say( 4, { error: "bad reference " & w }, arguments.asJson, [ "error: unknown skill or bad reference: " & w ] );
+        for ( var w in list ) if ( w != "bxrig" && structIsEmpty( parseRef( w ) ) ) return variables.out.say( 4, { error: "bad reference " & w }, arguments.asJson, [ "error: unknown skill or bad reference: " & w ] );
         var data = { install: list, store: store() };
-        if ( !arguments.yes || arguments.dryRun ) return say( arguments.dryRun ? 0 : 2, data, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": install " & list.toList( ", " ) & " into " & store() & " and link them into your agents' skills folders", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes || arguments.dryRun ) return variables.out.say( arguments.dryRun ? 0 : 2, data, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": install " & list.toList( ", " ) & " into " & store() & " and link them into your agents' skills folders", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ] );
         var m = loadManifest();
         var done = [];
         for ( var w2 in list ) {
             var r = installOne( w2, m );
-            if ( !r.ok ) { saveManifest( m ); return say( 5, { error: r.error, installed: done }, arguments.asJson, [ "error: " & r.error ] ); }
+            if ( !r.ok ) { saveManifest( m ); return variables.out.say( 5, { error: r.error, installed: done }, arguments.asJson, [ "error: " & r.error ] ); }
             for ( var n in r.names ) done.append( n );
         }
         saveManifest( m );
         link( false );
-        return say( 0, { installed: done }, arguments.asJson, [ "Installed skills: " & done.toList( ", " ) ] );
+        return variables.out.say( 0, { installed: done }, arguments.asJson, [ "Installed skills: " & done.toList( ", " ) ] );
     }
 
     function installed( asJson ) {
         var m = loadManifest();
         var rows = structKeyArray( m.skills ).sort( "text" ).map( function( n ) { return { name: n, source: m.skills[ n ].source, ref: m.skills[ n ].ref ?: "" }; } );
-        return say( 0, { skills: rows, store: store() }, arguments.asJson, rows.len() ? rows.map( function( r ) { return r.name & "  (" & r.source & ( len( r.ref ) ? ": " & r.ref : "" ) & ")"; } ) : [ "No skills installed. Try: bxrig skills install bxrig --yes" ] );
+        return variables.out.say( 0, { skills: rows, store: store() }, arguments.asJson, rows.len() ? rows.map( function( r ) { return r.name & "  (" & r.source & ( len( r.ref ) ? ": " & r.ref : "" ) & ")"; } ) : [ "No skills installed. Try: bxrig skills install bxrig --yes" ] );
     }
 
     // `update`: re-install everything BxRig installed (the embedded skills come with this program, the hub ones are fetched again)
@@ -205,29 +196,29 @@ class Skills {
             else if ( structKeyExists( m.skills[ n ], "ref" ) ) refs.append( m.skills[ n ].ref );
         }
         if ( embedded ) refs.prepend( "bxrig" );
-        if ( !refs.len() ) return say( 0, { installed: [] }, arguments.asJson, [ "Nothing to update." ] );
+        if ( !refs.len() ) return variables.out.say( 0, { installed: [] }, arguments.asJson, [ "Nothing to update." ] );
         return install( refs, arguments.yes, false, arguments.asJson );
     }
 
     function remove( name, yes, asJson ) {
         var m = loadManifest();
-        if ( !structKeyExists( m.skills, arguments.name ) ) return say( 4, { error: "not installed" }, arguments.asJson, [ "error: " & arguments.name & " was not installed by BxRig" ] );
-        if ( !arguments.yes ) return say( 2, { remove: arguments.name }, arguments.asJson, [ "Plan: remove the skill " & arguments.name & " and its links", "Nothing was changed. Add --yes to apply." ] );
+        if ( !structKeyExists( m.skills, arguments.name ) ) return variables.out.say( 4, { error: "not installed" }, arguments.asJson, [ "error: " & arguments.name & " was not installed by BxRig" ] );
+        if ( !arguments.yes ) return variables.out.say( 2, { remove: arguments.name }, arguments.asJson, [ "Plan: remove the skill " & arguments.name & " and its links", "Nothing was changed. Add --yes to apply." ] );
         for ( var a in agents() ) {
             var t = a.dir & "/" & arguments.name;
-            if ( tryExec( [ "test", "-L", t ], 10 ).exitCode == 0 ) tryExec( [ "rm", "-f", t ], 10 );
+            if ( variables.proc.exec( [ "test", "-L", t ], 10 ).exitCode == 0 ) variables.proc.exec( [ "rm", "-f", t ], 10 );
         }
         if ( directoryExists( store() & "/" & arguments.name ) ) directoryDelete( store() & "/" & arguments.name, true );
         structDelete( m.skills, arguments.name );
         saveManifest( m );
-        return say( 0, { removed: arguments.name }, arguments.asJson, [ "Removed " & arguments.name ] );
+        return variables.out.say( 0, { removed: arguments.name }, arguments.asJson, [ "Removed " & arguments.name ] );
     }
 
     function status( asJson ) {
         var m = loadManifest();
-        var rows = agents().map( function( a ) { return { agent: a.id, folder: a.dir, present: has( a.cmd ) || directoryExists( a.dir ) }; } );
+        var rows = agents().map( function( a ) { return { agent: a.id, folder: a.dir, present: variables.proc.has( a.cmd ) || directoryExists( a.dir ) }; } );
         var lines = [ "Store: " & store() & " (" & structCount( m.skills ) & " skills)" ];
         for ( var r in rows ) lines.append( ( r.present ? "ok    " : "none  " ) & r.agent & ": " & r.folder );
-        return say( 0, { store: store(), skills: structCount( m.skills ), agents: rows }, arguments.asJson, lines );
+        return variables.out.say( 0, { store: store(), skills: structCount( m.skills ), agents: rows }, arguments.asJson, lines );
     }
 }

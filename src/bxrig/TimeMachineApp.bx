@@ -175,7 +175,7 @@ class TimeMachineApp {
         variables.mode = "result";
     }
 
-    function say( text ) { variables.message = arguments.text; }
+    function flash( text ) { variables.message = arguments.text; }
 
     function leave() { variables.mode = variables.browse.files.len() && variables.mode == "confirm" && structKeyExists( variables.modal.intent, "fromBrowse" ) ? "browse" : "timeline"; }
 

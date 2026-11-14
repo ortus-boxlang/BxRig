@@ -10,6 +10,7 @@ class AiShell {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
         variables.inst = new bxrig.Installer( arguments.runner );
+        variables.proc = variables.inst.proc();
         variables.ai = new bxrig.Ai( arguments.cli, arguments.runner );
         variables.agents = new bxrig.AiAgents();
         return this;
@@ -18,12 +19,6 @@ class AiShell {
     function windowClass() { return "com.bxrig.ai"; }
     function workspaceName() { return "ai"; }
 
-    function say( command, code, data, asJson, lines = [], dryRun = false ) {
-        if ( arguments.asJson ) println( variables.cli.envelope( arguments.command, arguments.code, arguments.data, arguments.dryRun ) );
-        else for ( var l in arguments.lines ) println( l );
-        return arguments.code;
-    }
-
     function backend( forced = "" ) {
         if ( len( arguments.forced ) ) return arguments.forced;
         if ( len( getSystemSetting( "HYPRLAND_INSTANCE_SIGNATURE", "" ) ) ) return "hyprland";
@@ -31,14 +26,10 @@ class AiShell {
         return "";
     }
 
-    function tryExec( argv, timeout = 20 ) {
-        try { return variables.inst.exec( arguments.argv, arguments.timeout ); } catch ( any e ) { return { exitCode: 127, output: e.message }; }
-    }
-
     function detach( argv ) {
         var run = [ "sh", "-c", 'setsid "$@" >/dev/null 2>&1 &', "_" ];
         for ( var p in arguments.argv ) run.append( p );
-        return tryExec( run, 10 );
+        return variables.proc.exec( run, 10 );
     }
 
     // What the shell runs: the default agent through `secrets run`, else your login shell.
@@ -67,7 +58,7 @@ class AiShell {
 
     // ---- Hyprland ----
     function hasWindow() {
-        var r = tryExec( [ "hyprctl", "clients", "-j" ], 10 );
+        var r = variables.proc.exec( [ "hyprctl", "clients", "-j" ], 10 );
         if ( r.exitCode != 0 ) return false;
         try { for ( var c in jsonDeserialize( r.output ) ) if ( ( c.class ?: "" ) == windowClass() ) return true; } catch ( any e ) {}
         return false;
@@ -90,17 +81,17 @@ class AiShell {
             steps.append( [ "hyprctl", "dispatch", "resizewindowpixel", "exact 100% 45%" & sel ] );
             steps.append( [ "hyprctl", "dispatch", "movewindowpixel", "exact 0 0" & sel ] );
             if ( !arguments.dryRun ) {
-                for ( var i = 1; i <= 20; i++ ) { if ( hasWindow() ) break; tryExec( [ "sleep", "0.2" ], 5 ); }
-                tryExec( steps[ 2 ], 10 ); tryExec( steps[ 3 ], 10 );
+                for ( var i = 1; i <= 20; i++ ) { if ( hasWindow() ) break; variables.proc.exec( [ "sleep", "0.2" ], 5 ); }
+                variables.proc.exec( steps[ 2 ], 10 ); variables.proc.exec( steps[ 3 ], 10 );
             }
             return { code: 0, action: "opened", label: inn.label, steps: steps };
         }
         var t1 = [ "hyprctl", "dispatch", "togglespecialworkspace", workspaceName() ];
         steps.append( t1 );
         if ( !arguments.dryRun ) {
-            var r = tryExec( t1, 10 );
+            var r = variables.proc.exec( t1, 10 );
             // Hyprland's Lua mode may want the Lua form of the same dispatcher
-            if ( r.exitCode != 0 ) r = tryExec( [ "hyprctl", "dispatch", 'hl.dsp.workspace.toggle_special("' & workspaceName() & '")' ], 10 );
+            if ( r.exitCode != 0 ) r = variables.proc.exec( [ "hyprctl", "dispatch", 'hl.dsp.workspace.toggle_special("' & workspaceName() & '")' ], 10 );
             if ( r.exitCode != 0 ) return { code: 6, error: "hyprctl could not toggle the special workspace: " & trim( r.output ) };
         }
         return { code: 0, action: "toggled", label: "", steps: steps };
@@ -108,7 +99,7 @@ class AiShell {
 
     // ---- Yakuake ----
     function yakuakeRunning() {
-        var r = tryExec( [ "dbus-send", "--session", "--print-reply", "--dest=org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus.NameHasOwner", "string:org.kde.yakuake" ], 10 );
+        var r = variables.proc.exec( [ "dbus-send", "--session", "--print-reply", "--dest=org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus.NameHasOwner", "string:org.kde.yakuake" ], 10 );
         return r.exitCode == 0 && find( "boolean true", r.output ) > 0;
     }
 
@@ -136,7 +127,7 @@ class AiShell {
         detach( [ "yakuake" ] );
         for ( var n = 1; n <= 25; n++ ) {
             if ( yakuakeRunning() ) return { error: "", code: 0, steps: [ [ "yakuake" ] ] };
-            tryExec( [ "sleep", "0.2" ], 5 );
+            variables.proc.exec( [ "sleep", "0.2" ], 5 );
         }
         return { error: "Yakuake did not start", code: 6, steps: [ [ "yakuake" ] ] };
     }
@@ -147,9 +138,9 @@ class AiShell {
         var add = yakuakeCall( "/yakuake/sessions", "addSession" );
         var run = yakuakeCall( "/yakuake/sessions", "runCommand", [ "string:" & quoted( plan.argv ) ] );
         if ( !arguments.dryRun ) {
-            var first = tryExec( add, 10 );
+            var first = variables.proc.exec( add, 10 );
             if ( first.exitCode != 0 ) return { error: "Yakuake refused a new tab: " & trim( first.output ), steps: [], label: "" };
-            var second = tryExec( run, 10 );
+            var second = variables.proc.exec( run, 10 );
             if ( second.exitCode != 0 ) return { error: "Yakuake refused the command: " & trim( second.output ), steps: [], label: "" };
             var st = stateFile();
             if ( len( st ) ) fileWrite( st, "tab" & chr( 10 ) );
@@ -177,7 +168,7 @@ class AiShell {
         var toggle = yakuakeCall( "/yakuake/window", "toggleWindowState" );
         steps.append( toggle );
         if ( !arguments.dryRun ) {
-            var done = tryExec( toggle, 10 );
+            var done = variables.proc.exec( toggle, 10 );
             if ( done.exitCode != 0 ) return { code: 6, error: "Yakuake could not toggle: " & trim( done.output ) };
         }
         return { code: 0, action: haveTab ? "toggled" : "opened", label: shown, steps: steps };
@@ -187,16 +178,16 @@ class AiShell {
     function run( action, forced, dryRun, asJson ) {
         var cmd = "ai shell";
         var be = backend( arguments.forced );
-        if ( !arrayFind( [ "hyprland", "yakuake" ], be ) ) return say( cmd, 4, { error: "No backend" }, arguments.asJson, [ "error: the pull-down AI shell needs a Hyprland session or KDE Plasma (Yakuake). Use --backend=hyprland or --backend=yakuake to choose." ] );
+        if ( !arrayFind( [ "hyprland", "yakuake" ], be ) ) return variables.cli.say( cmd, 4, { error: "No backend" }, arguments.asJson, [ "error: the pull-down AI shell needs a Hyprland session or KDE Plasma (Yakuake). Use --backend=hyprland or --backend=yakuake to choose." ] );
         if ( arguments.action == "status" ) {
             var present = be == "hyprland" ? hasWindow() : yakuakeRunning();
-            return say( cmd, 0, { backend: be, running: present }, arguments.asJson, [ "Backend: " & be, "Window: " & ( present ? "open" : "not started" ) ] );
+            return variables.cli.say( cmd, 0, { backend: be, running: present }, arguments.asJson, [ "Backend: " & be, "Window: " & ( present ? "open" : "not started" ) ] );
         }
-        if ( arguments.action != "toggle" ) return say( cmd, 2, {}, arguments.asJson, [ "Usage: bxrig ai shell [toggle|status] [--backend=hyprland|yakuake] [--dry-run] [--json]" ] );
+        if ( arguments.action != "toggle" ) return variables.cli.say( cmd, 2, {}, arguments.asJson, [ "Usage: bxrig ai shell [toggle|status] [--backend=hyprland|yakuake] [--dry-run] [--json]" ] );
         var r = be == "hyprland" ? hyprlandToggle( arguments.dryRun ) : yakuakeToggle( arguments.dryRun );
-        if ( r.code != 0 ) return say( cmd, r.code, { error: r.error, backend: be }, arguments.asJson, [ "error: " & r.error ] );
+        if ( r.code != 0 ) return variables.cli.say( cmd, r.code, { error: r.error, backend: be }, arguments.asJson, [ "error: " & r.error ] );
         var data = { backend: be, action: r.action, runs: r.label, steps: r.steps };
         var msg = arguments.dryRun ? "Dry run: " & r.steps.map( function( s ) { return s.toList( " " ); } ).toList( " ; " ) : "AI shell " & r.action & ( len( r.label ) ? " (" & r.label & ")" : "" ) & ".";
-        return say( cmd, 0, data, arguments.asJson, [ msg ], arguments.dryRun );
+        return variables.cli.say( cmd, 0, data, arguments.asJson, [ msg ], arguments.dryRun );
     }
 }

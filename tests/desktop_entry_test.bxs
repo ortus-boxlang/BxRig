@@ -1,0 +1,43 @@
+// DesktopEntry: one parser (exact-case keys, only [Desktop Entry]), one folder list, one writer.
+// Run from src/: (cd src && matchbox ../tests/desktop_entry_test.bxs)
+failures = 0;
+function check( label, ok ) { if ( ok ) println( "ok   " & label ); else { println( "FAIL " & label ); failures++; } }
+tmp = getTempDirectory() & "/bxrig-desktop-entry-" & left( createUUID(), 8 );
+directoryCreate( tmp & "/a", true ); directoryCreate( tmp & "/b", true );
+nl = chr( 10 );
+function put( f, text ) { fileWrite( f, text ); }
+put( tmp & "/a/foo.desktop", "[Desktop Entry]" & nl & "Type=Application" & nl & "Name=Foo" & nl & "Name[de]=Fuh" & nl & "Exec=foo %U" & nl & "Icon=foo-icon" & nl & "Categories=Utility;" & nl & "[Desktop Action x]" & nl & "Name=Not me" & nl & "Icon=other" & nl );
+put( tmp & "/a/lower.desktop", "[Desktop Entry]" & nl & "type=Application" & nl & "name=Lower" & nl & "exec=lower" & nl );
+put( tmp & "/a/hidden.desktop", "[Desktop Entry]" & nl & "Type=Application" & nl & "Name=Hidden" & nl & "Exec=h" & nl & "NoDisplay=true" & nl );
+put( tmp & "/a/launcher.desktop", "[Desktop Entry]" & nl & "Type=Application" & nl & "Name=BxRig Apps" & nl & "Exec=bxrig tui apps" & nl & "X-BxRig-Launcher=tui" & nl );
+put( tmp & "/a/noexec.desktop", "[Desktop Entry]" & nl & "Type=Application" & nl & "Name=NoExec" & nl );
+put( tmp & "/a/dir.desktop", "[Desktop Entry]" & nl & "Type=Directory" & nl & "Name=Folder" & nl );
+put( tmp & "/b/foo.desktop", "[Desktop Entry]" & nl & "Type=Application" & nl & "Name=Foo two" & nl & "Exec=foo2" & nl );
+put( tmp & "/a/gone.desktop", "[Desktop Entry]" & nl & "Type=Application" & nl & "Name=Gone" & nl & "Exec=g" & nl );
+put( tmp & "/b/gone.desktop", "[Desktop Entry]" & nl & "Type=Application" & nl & "Name=Gone" & nl & "Exec=g" & nl & "NoDisplay=true" & nl );
+d = new bxrig.DesktopEntry();
+e = d.parse( tmp & "/a/foo.desktop" );
+check( "parse: name, exec, icon, categories, type", e.name == "Foo" && e.exec == "foo %U" && e.icon == "foo-icon" && e.categories == "Utility;" && e.type == "Application" );
+check( "parse: Name[de] is not Name and other groups do not count", e.name == "Foo" && e.icon == "foo-icon" );
+l = d.parse( tmp & "/a/lower.desktop" );
+check( "parse: keys are exact-case, so lower-case keys are not read", l.name == "" && l.type == "" );
+check( "parse: NoDisplay hides", d.parse( tmp & "/a/hidden.desktop" ).hidden );
+check( "parse: X-BxRig-Launcher marks a BxRig launcher", d.parse( tmp & "/a/launcher.desktop" ).launcher && !e.launcher );
+check( "parse: a missing file is an empty entry, not an error", d.parse( tmp & "/nope.desktop" ).name == "" );
+check( "iconName", d.iconName( tmp & "/a/foo.desktop" ) == "foo-icon" );
+check( "cleanExec drops field codes and keeps %%", d.cleanExec( "firefox %u --x %% %F" ) == "firefox --x %" );
+names = d.entries( [ tmp & "/a", tmp & "/b" ] ).map( function( x ) { return x.name; } ).sort( "text" ).toList( "," );
+check( "entries: apps only, later folder wins, hidden removes, launchers and directories are left out", names == "Foo two,NoExec" );
+check( "entries: a hidden entry in a later folder removes the earlier one", !find( "Gone", names ) && !find( "Hidden", names ) );
+names2 = d.entries( [ tmp & "/a" ], true ).map( function( x ) { return x.name; } ).sort( "text" ).toList( "," );
+check( "entries: launchers: true includes BxRig's launchers", find( "BxRig Apps", names2 ) > 0 );
+names3 = d.entries( [ tmp & "/a" ], false, true ).map( function( x ) { return x.name; } ).sort( "text" ).toList( "," );
+check( "entries: needExec drops an entry without Exec", !find( "NoExec", names3 ) && find( "Foo", names3 ) > 0 );
+dd = new bxrig.DesktopEntry( new bxrig.Env( { HOME: "/h", BXRIG_APPS_DIRS: "" } ) ).dirs();
+check( "dirs: system, local, user and Flatpak", dd.len() == 5 && dd[ 3 ] == "/h/.local/share/applications" && find( "flatpak", dd[ 4 ] ) > 0 );
+check( "dirs(false) leaves Flatpak out", new bxrig.DesktopEntry( new bxrig.Env( { HOME: "/h" } ) ).dirs( false ).len() == 3 );
+check( "dirs: BXRIG_APPS_DIRS and the older BXRIG_DESKTOP_DIRS replace the list", new bxrig.DesktopEntry( new bxrig.Env( { HOME: "/h", BXRIG_APPS_DIRS: "/x:/y" } ) ).dirs().len() == 2 && new bxrig.DesktopEntry( new bxrig.Env( { HOME: "/h", BXRIG_DESKTOP_DIRS: "/z" } ) ).dirs()[ 1 ] == "/z" );
+check( "render: header, then the lines in order", d.render( [ "Type=Application", "Name=X" ] ) == "[Desktop Entry]" & nl & "Type=Application" & nl & "Name=X" & nl );
+directoryDelete( tmp, true );
+if ( failures > 0 ) { println( failures & " failed" ); exit( 1 ); }
+println( "desktop entry tests passed" );

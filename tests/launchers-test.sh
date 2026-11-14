@@ -30,7 +30,7 @@ f="$apps/bxrig-tui-databases.desktop"
 grep -qx 'Name=BxRig Databases' "$f" || fail "name: $(cat "$f")"
 grep -qx 'Icon=bxrig' "$f" || fail 'icon name'
 grep -qx 'Categories=X-BxRig-Develop;' "$f" || fail 'categories'
-dirf="$tmp/data/desktop-directories/bxrig.directory"; menuf="$tmp/home/.config/menus/applications-merged/bxrig.menu"
+dirf="$tmp/data/desktop-directories/bxrig.directory"; menuf="$tmp/cfg/menus/applications-merged/bxrig.menu"
 grep -qx 'Name=BxRig' "$dirf" || fail 'the submenu folder'
 grep -q '<Category>X-BxRig</Category>' "$menuf" || fail 'the menu merge'
 run "$binary" launchers status --json | jq -e '.data.submenu == true' >/dev/null || fail 'status submenu'

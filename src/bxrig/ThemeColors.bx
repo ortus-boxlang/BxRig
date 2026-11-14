@@ -197,7 +197,6 @@ class ThemeColors {
         return header( "##" ) & out.toList( nl() ) & nl();
     }
 
-
     // ---- more of the machine: GTK and Qt apps, tmux, fzf, launchers, VS Code ----
     function hex8( h, a = "ff" ) { return "##" & a & strip( arguments.h ); }
 

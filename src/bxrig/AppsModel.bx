@@ -277,7 +277,7 @@ class AppsModel {
     function openIntent( r ) {
         var row = arguments.r;
         return {
-            action: "exec", title: "Open " & row.name, argv: [ "sh", "-c", "nohup sh -c " & chr( 34 ) & "$1" & chr( 34 ) & " >/dev/null 2>&1 </dev/null &", "_", variables.data.cleanExec( row.exec ) ],
+            action: "exec", title: "Open " & row.name, argv: [ "sh", "-c", "nohup sh -c " & chr( 34 ) & "$1" & chr( 34 ) & " >/dev/null 2>&1 </dev/null &", "_", new bxrig.DesktopEntry().cleanExec( row.exec ) ],
             plan: [ row.name & " opens in its own window.", "Closing this screen is not needed." ]
         };
     }

@@ -32,17 +32,12 @@ class Installer {
 
     // True when the effective user is root (uid 0).
     function isRoot() {
-        var r = exec( [ "id", "-u" ], 10 );
-        return r.exitCode == 0 && trim( r.output ) == "0";
+        return variables.procs.isRoot();
     }
 
-    // True when a command can be started (runs `name --version`; no shell involved).
+    // True when a command is installed (`command -v`; use Proc.works for a version check).
     function hasCommand( name ) {
-        try {
-            return exec( [ name, "--version" ], 10 ).exitCode == 0;
-        } catch ( any e ) {
-            return false;
-        }
+        return variables.procs.has( arguments.name );
     }
 
     // The https clone URL for a catalog pkgbuild repo ("owner/name" on GitHub).
@@ -53,9 +48,8 @@ class Installer {
     // The launcher file for a web app: a .desktop entry that opens the URL in a frameless brave window.
     function launcherFile( app, home ) {
         var url = replace( app.url, "%", "%%", "all" );
-        var content = "[Desktop Entry]" & chr( 10 ) & "Type=Application" & chr( 10 ) & "Name=" & app.name & chr( 10 )
-            & "Comment=" & ( app.description ?: app.name ) & chr( 10 ) & "Exec=brave --app=" & url & chr( 10 )
-            & "Icon=brave-browser" & chr( 10 ) & "Categories=Network;" & chr( 10 );
+        var content = new bxrig.DesktopEntry().render( [ "Type=Application", "Name=" & app.name, "Comment=" & ( app.description ?: app.name ),
+            "Exec=brave --app=" & url, "Icon=brave-browser", "Categories=Network;" ] );
         return { path: home & "/.local/share/applications/bxrig-" & app.id & ".desktop", content: content };
     }
 

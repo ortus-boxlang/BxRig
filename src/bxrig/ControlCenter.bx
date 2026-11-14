@@ -10,12 +10,12 @@
 // Exit: 0 after leaving, 2 for an unknown page or usage, 4 when there is no terminal.
 class ControlCenter {
     function init( cli, runner = "" ) {
+        variables.proc = new bxrig.Proc();
+        variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
         variables.runner = arguments.runner;
         return this;
     }
-
-    function self() { return getSystemSetting( "BXRIG_SELF", "bxrig" ); }
 
     function pageIds() { return new bxrig.ControlCenterPages().ids(); }
 
@@ -56,7 +56,7 @@ class ControlCenter {
     }
 
     function runCli( args ) {
-        try { return systemExecute( self(), arguments.args, 1800, true ); } catch ( any e ) { return { exitCode: 127, output: e.message }; }
+        return variables.proc.self( arguments.args, 1800 );
     }
 
     function withFlag( args, flag ) {
@@ -68,9 +68,7 @@ class ControlCenter {
 
     // Runs a program (argv array) and returns { exitCode, output }.
     function runArgv( argv ) {
-        var rest = [];
-        for ( var i = 2; i <= arguments.argv.len(); i++ ) rest.append( arguments.argv[ i ] );
-        try { return systemExecute( arguments.argv[ 1 ], rest, 1800, true ); } catch ( any e ) { return { exitCode: 127, output: e.message }; }
+        return variables.proc.exec( arguments.argv, 1800 );
     }
 
     function handle( app, intent ) {

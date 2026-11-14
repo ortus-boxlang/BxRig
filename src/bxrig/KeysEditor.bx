@@ -15,12 +15,6 @@ class KeysEditor {
         return this;
     }
 
-    function say( command, code, data, asJson, lines = [] ) {
-        if ( arguments.asJson ) println( variables.cli.envelope( arguments.command, arguments.code, arguments.data, false ) );
-        else for ( var l in arguments.lines ) println( l );
-        return arguments.code;
-    }
-
     function file() { return variables.sc.overridesFile(); }
 
     // The combos of the hl.bind lines in your Hyprland files (bxrig.lua is ours and skipped): [ { combo, file, line } ].
@@ -78,7 +72,7 @@ class KeysEditor {
         for ( var w in sc.within ) lines.append( "Two BxRig bindings share " & w.combo & ": " & w.ids.toList( ", " ) );
         for ( var u in sc.user ) lines.append( u.id & " (" & u.combo & ") is also bound in your " & u.file & " line " & u.line );
         if ( !lines.len() ) lines.append( "No conflicts." );
-        return say( "keys conflicts", 0, { ok: !( sc.within.len() || sc.user.len() ), within: sc.within, user: sc.user }, arguments.asJson, lines );
+        return variables.cli.say( "keys conflicts", 0, { ok: !( sc.within.len() || sc.user.len() ), within: sc.within, user: sc.user }, arguments.asJson, lines );
     }
 
     function writeOverrides( data ) {
@@ -91,30 +85,30 @@ class KeysEditor {
         var cmd = "keys set";
         var row = {};
         for ( var r in variables.sc.table() ) if ( r.id == arguments.id ) row = r;
-        if ( structIsEmpty( row ) ) return say( cmd, 4, { error: "Unknown binding" }, arguments.asJson, [ "error: unknown binding " & arguments.id & ". See: bxrig keys show" ] );
-        if ( row.kind == "remap" ) return say( cmd, 4, { error: "Not editable" }, arguments.asJson, [ "error: " & arguments.id & " is a Cmd-style remap handled by xremap; only the bindings can be changed" ] );
+        if ( structIsEmpty( row ) ) return variables.cli.say( cmd, 4, { error: "Unknown binding" }, arguments.asJson, [ "error: unknown binding " & arguments.id & ". See: bxrig keys show" ] );
+        if ( row.kind == "remap" ) return variables.cli.say( cmd, 4, { error: "Not editable" }, arguments.asJson, [ "error: " & arguments.id & " is a Cmd-style remap handled by xremap; only the bindings can be changed" ] );
         var parsed = variables.sc.parseKeys( arguments.keys );
-        if ( !parsed.ok ) return say( cmd, 4, { error: parsed.error }, arguments.asJson, [ "error: " & parsed.error ] );
+        if ( !parsed.ok ) return variables.cli.say( cmd, 4, { error: parsed.error }, arguments.asJson, [ "error: " & parsed.error ] );
         var combo = variables.sc.normalize( arguments.keys );
-        for ( var other in variables.sc.table() ) if ( other.id != arguments.id && variables.sc.normalize( other.keys ) == combo ) return say( cmd, 4, { error: "Used by " & other.id }, arguments.asJson, [ "error: " & arguments.keys & " is already used by " & other.id & " (" & other.action & ")" ] );
+        for ( var other in variables.sc.table() ) if ( other.id != arguments.id && variables.sc.normalize( other.keys ) == combo ) return variables.cli.say( cmd, 4, { error: "Used by " & other.id }, arguments.asJson, [ "error: " & arguments.keys & " is already used by " & other.id & " (" & other.action & ")" ] );
         var clash = userBinds().filter( function( ub ) { return ub.combo == combo; } );
-        if ( clash.len() && !arguments.force ) return say( cmd, 4, { error: "Used in your files", file: clash[ 1 ].file, line: clash[ 1 ].line }, arguments.asJson, [ "error: " & arguments.keys & " is already bound in your " & clash[ 1 ].file & " line " & clash[ 1 ].line & " (add --force to use it anyway)" ] );
+        if ( clash.len() && !arguments.force ) return variables.cli.say( cmd, 4, { error: "Used in your files", file: clash[ 1 ].file, line: clash[ 1 ].line }, arguments.asJson, [ "error: " & arguments.keys & " is already bound in your " & clash[ 1 ].file & " line " & clash[ 1 ].line & " (add --force to use it anyway)" ] );
         var data = { id: arguments.id, keys: arguments.keys, was: row.keys };
-        if ( !arguments.yes ) return say( cmd, 2, data, arguments.asJson, [ "Plan: " & row.action & " changes from " & ( len( row.keys ) ? row.keys : "no keys" ) & " to " & arguments.keys, "Nothing was changed. Add --yes to apply, then: bxrig keys apply --yes" ] );
+        if ( !arguments.yes ) return variables.cli.say( cmd, 2, data, arguments.asJson, [ "Plan: " & row.action & " changes from " & ( len( row.keys ) ? row.keys : "no keys" ) & " to " & arguments.keys, "Nothing was changed. Add --yes to apply, then: bxrig keys apply --yes" ] );
         var cur = variables.sc.loadOverrides();
         cur[ arguments.id ] = arguments.keys;
-        if ( !writeOverrides( cur ) ) return say( cmd, 6, { error: "Could not write " & file() }, arguments.asJson, [ "error: could not write " & file() ] );
-        return say( cmd, 0, data, arguments.asJson, [ row.action & " is now " & arguments.keys & ". Write it into the Hyprland and Plasma settings: bxrig keys apply --yes" ] );
+        if ( !writeOverrides( cur ) ) return variables.cli.say( cmd, 6, { error: "Could not write " & file() }, arguments.asJson, [ "error: could not write " & file() ] );
+        return variables.cli.say( cmd, 0, data, arguments.asJson, [ row.action & " is now " & arguments.keys & ". Write it into the Hyprland and Plasma settings: bxrig keys apply --yes" ] );
     }
 
     // `keys reset ID`
     function reset( id, yes, asJson ) {
         var cmd = "keys reset";
         var cur = variables.sc.loadOverrides();
-        if ( !structKeyExists( cur, arguments.id ) ) return say( cmd, 4, { error: "No override" }, arguments.asJson, [ "error: " & arguments.id & " has no custom keys" ] );
-        if ( !arguments.yes ) return say( cmd, 2, { id: arguments.id }, arguments.asJson, [ "Plan: " & arguments.id & " goes back to its default keys.", "Nothing was changed. Add --yes to apply." ] );
+        if ( !structKeyExists( cur, arguments.id ) ) return variables.cli.say( cmd, 4, { error: "No override" }, arguments.asJson, [ "error: " & arguments.id & " has no custom keys" ] );
+        if ( !arguments.yes ) return variables.cli.say( cmd, 2, { id: arguments.id }, arguments.asJson, [ "Plan: " & arguments.id & " goes back to its default keys.", "Nothing was changed. Add --yes to apply." ] );
         structDelete( cur, arguments.id );
-        if ( !writeOverrides( cur ) ) return say( cmd, 6, { error: "Could not write " & file() }, arguments.asJson, [ "error: could not write " & file() ] );
-        return say( cmd, 0, { id: arguments.id }, arguments.asJson, [ arguments.id & " is back to its default keys. Write it: bxrig keys apply --yes" ] );
+        if ( !writeOverrides( cur ) ) return variables.cli.say( cmd, 6, { error: "Could not write " & file() }, arguments.asJson, [ "error: could not write " & file() ] );
+        return variables.cli.say( cmd, 0, { id: arguments.id }, arguments.asJson, [ arguments.id & " is back to its default keys. Write it: bxrig keys apply --yes" ] );
     }
 }

@@ -14,7 +14,9 @@
 class Display {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
+        variables.out = new bxrig.Out( variables.cli, "display" );
         variables.inst = new bxrig.Installer( arguments.runner );
+        variables.proc = variables.inst.proc();
         variables.cfgSvc = new bxrig.ConfigService().quiet( true );
         return this;
     }
@@ -23,23 +25,10 @@ class Display {
     function stateFile() { return cfg() & "/bxrig/display.json"; }
     function monitorsFile() { return cfg() & "/bxrig/theme/monitors.lua"; }
 
-    function tryExec( argv, timeout = 30 ) {
-        try { return variables.inst.exec( arguments.argv, arguments.timeout ); } catch ( any e ) { return { exitCode: 127, output: e.message }; }
-    }
-
-    function has( name ) { return tryExec( [ "sh", "-c", 'command -v "$1"', "_", arguments.name ], 10 ).exitCode == 0; }
-    function inHyprland() { return len( getSystemSetting( "HYPRLAND_INSTANCE_SIGNATURE", "" ) ) > 0 && has( "hyprctl" ); }
-    function inPlasma() { return findNoCase( "KDE", getSystemSetting( "XDG_CURRENT_DESKTOP", "" ) ) > 0 && has( "kscreen-doctor" ); }
+    function inHyprland() { return len( getSystemSetting( "HYPRLAND_INSTANCE_SIGNATURE", "" ) ) > 0 && variables.proc.has( "hyprctl" ); }
+    function inPlasma() { return findNoCase( "KDE", getSystemSetting( "XDG_CURRENT_DESKTOP", "" ) ) > 0 && variables.proc.has( "kscreen-doctor" ); }
     function internal( name ) { return reFind( "^(eDP|LVDS|DSI)-", arguments.name ) > 0; }
     function safeName( name ) { return reFind( "^[A-Za-z0-9._-]+$", arguments.name ) > 0; }
-
-    function say( code, data, asJson, lines = [], dry = false ) {
-        if ( arguments.asJson ) println( variables.cli.envelope( "display", arguments.code, arguments.data, arguments.dry ) );
-        else for ( var l in arguments.lines ) println( l );
-        return arguments.code;
-    }
-
-    function fail( code, msg, asJson ) { return say( arguments.code, { error: arguments.msg }, arguments.asJson, [ "error: " & arguments.msg ] ); }
 
     // ---- state ----
     function readState() {
@@ -60,7 +49,7 @@ class Display {
     function monitors() {
         var out = [];
         if ( inHyprland() ) {
-            var r = tryExec( [ "hyprctl", "monitors", "all", "-j" ], 20 );
+            var r = variables.proc.exec( [ "hyprctl", "monitors", "all", "-j" ], 20 );
             if ( r.exitCode == 0 ) {
                 try {
                     for ( var m in jsonDeserialize( r.output ) ) {
@@ -111,7 +100,7 @@ class Display {
     function applyHyprland( s ) {
         var e = { name: "display-monitors", target: monitorsFile(), mode: "644", content: lua( arguments.s ) };
         if ( variables.cfgSvc.configState( e ) != "clean" && variables.cfgSvc.configWrite( e, e.content, "display", true, false ) != 0 ) return "failed";
-        if ( inHyprland() ) return tryExec( [ "hyprctl", "reload" ], 20 ).exitCode == 0 ? "reloaded" : "failed";
+        if ( inHyprland() ) return variables.proc.exec( [ "hyprctl", "reload" ], 20 ).exitCode == 0 ? "reloaded" : "failed";
         return "written";
     }
 
@@ -134,7 +123,7 @@ class Display {
             for ( var a in plasmaArgs( n, s.monitors[ n ] ) ) args.append( a );
         }
         if ( args.len() == 1 ) return "nothing to apply";
-        var r = tryExec( args, 30 );
+        var r = variables.proc.exec( args, 30 );
         return r.exitCode == 0 ? "applied" : "failed: " & trim( r.output );
     }
 
@@ -150,7 +139,7 @@ class Display {
         var lines = [ arguments.setting & ": " & arguments.value ];
         for ( var k in arguments.applied ) lines.append( "  " & k & ": " & arguments.applied[ k ] );
         for ( var n in arguments.notes ) lines.append( "note: " & n );
-        return say( 0, data, arguments.asJson, lines, arguments.dry );
+        return variables.out.say( 0, data, arguments.asJson, lines, arguments.dry );
     }
 
     // ---- commands ----
@@ -160,7 +149,7 @@ class Display {
         var lines = [];
         for ( var m in ms ) lines.append( m.name & ( m.internal ? " (laptop panel)" : "" ) & ( m.disabled ? "  off" : "  " & m.width & "x" & m.height & "@" & m.refresh & "  scale " & m.scale & "  rotation " & m.rotation & "  at " & m.x & "," & m.y ) & ( len( m.description ) ? "   " & m.description : "" ) );
         if ( !ms.len() ) lines.append( "No monitors read (they are listed from inside Hyprland)." );
-        return say( 0, { monitors: ms, saved: s }, arguments.asJson, lines );
+        return variables.out.say( 0, { monitors: ms, saved: s }, arguments.asJson, lines );
     }
 
     function entry( s, name ) {
@@ -169,23 +158,23 @@ class Display {
     }
 
     function monitorCmd( verb, args, dry, asJson ) {
-        if ( arguments.args.len() != 2 ) return fail( 2, "Usage: bxrig display " & arguments.verb & " NAME VALUE (names: bxrig display list)", arguments.asJson );
+        if ( arguments.args.len() != 2 ) return variables.out.fail( 2, "Usage: bxrig display " & arguments.verb & " NAME VALUE (names: bxrig display list)", arguments.asJson );
         var name = arguments.args[ 1 ];
         var value = arguments.args[ 2 ];
-        if ( !known( name ) ) return fail( 4, "no monitor " & name & " (bxrig display list)", arguments.asJson );
+        if ( !known( name ) ) return variables.out.fail( 4, "no monitor " & name & " (bxrig display list)", arguments.asJson );
         var s = readState();
         var m = entry( s, name );
         if ( arguments.verb == "scale" ) {
-            if ( value != "auto" && !( isNumeric( value ) && val( value ) >= 0.5 && val( value ) <= 4 ) ) return fail( 2, "scale is auto or a number from 0.5 to 4", arguments.asJson );
+            if ( value != "auto" && !( isNumeric( value ) && val( value ) >= 0.5 && val( value ) <= 4 ) ) return variables.out.fail( 2, "scale is auto or a number from 0.5 to 4", arguments.asJson );
             m.scale = value;
         } else if ( arguments.verb == "rotate" ) {
-            if ( !arrayFind( [ "0", "90", "180", "270" ], value ) ) return fail( 2, "rotate is 0, 90, 180 or 270", arguments.asJson );
+            if ( !arrayFind( [ "0", "90", "180", "270" ], value ) ) return variables.out.fail( 2, "rotate is 0, 90, 180 or 270", arguments.asJson );
             m.rotation = int( val( value ) );
         } else if ( arguments.verb == "mode" ) {
-            if ( value != "preferred" && !reFind( "^[0-9]+x[0-9]+(@[0-9.]+)?$", value ) ) return fail( 2, "mode is preferred or WIDTHxHEIGHT[@RATE]", arguments.asJson );
+            if ( value != "preferred" && !reFind( "^[0-9]+x[0-9]+(@[0-9.]+)?$", value ) ) return variables.out.fail( 2, "mode is preferred or WIDTHxHEIGHT[@RATE]", arguments.asJson );
             m.mode = value;
         } else {
-            if ( value != "auto" && !reFind( "^-?[0-9]+x-?[0-9]+$", value ) ) return fail( 2, "position is auto or XxY (for example 1920x0)", arguments.asJson );
+            if ( value != "auto" && !reFind( "^-?[0-9]+x-?[0-9]+$", value ) ) return variables.out.fail( 2, "position is auto or XxY (for example 1920x0)", arguments.asJson );
             m.position = value;
         }
         if ( !arguments.dry ) writeState( s );
@@ -194,14 +183,14 @@ class Display {
 
     function mirrorCmd( args, dry, asJson ) {
         var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
-        if ( v != "on" && v != "off" ) return fail( 2, "Usage: bxrig display mirror on|off", arguments.asJson );
+        if ( v != "on" && v != "off" ) return variables.out.fail( 2, "Usage: bxrig display mirror on|off", arguments.asJson );
         var s = readState();
         if ( v == "on" ) {
             var src = "";
             var targets = [];
             for ( var m in monitors() ) { if ( m.internal ) src = m.name; else targets.append( m.name ); }
-            if ( !len( src ) ) return fail( 4, "there is no laptop panel to mirror", arguments.asJson );
-            if ( !targets.len() ) return fail( 4, "there is no external monitor to mirror it to", arguments.asJson );
+            if ( !len( src ) ) return variables.out.fail( 4, "there is no laptop panel to mirror", arguments.asJson );
+            if ( !targets.len() ) return variables.out.fail( 4, "there is no external monitor to mirror it to", arguments.asJson );
             s.mirror = { on: true, source: src, targets: targets };
         } else {
             s.mirror = { on: false };
@@ -212,12 +201,12 @@ class Display {
 
     function laptopCmd( args, dry, asJson ) {
         var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
-        if ( v != "on" && v != "off" ) return fail( 2, "Usage: bxrig display laptop on|off", arguments.asJson );
+        if ( v != "on" && v != "off" ) return variables.out.fail( 2, "Usage: bxrig display laptop on|off", arguments.asJson );
         var s = readState();
         var panels = monitors().filter( function( m ) { return m.internal; } ).map( function( m ) { return m.name; } );
         if ( !panels.len() ) for ( var n in s.monitors ) if ( internal( n ) ) panels.append( n );
-        if ( !panels.len() ) return fail( 4, "no laptop panel was found (eDP, LVDS or DSI)", arguments.asJson );
-        if ( v == "off" && monitors().filter( function( m ) { return !m.internal && !m.disabled; } ).len() == 0 && monitors().len() ) return fail( 4, "turning the panel off would leave no monitor on; connect an external one first", arguments.asJson );
+        if ( !panels.len() ) return variables.out.fail( 4, "no laptop panel was found (eDP, LVDS or DSI)", arguments.asJson );
+        if ( v == "off" && monitors().filter( function( m ) { return !m.internal && !m.disabled; } ).len() == 0 && monitors().len() ) return variables.out.fail( 4, "turning the panel off would leave no monitor on; connect an external one first", arguments.asJson );
         for ( var p in panels ) {
             var e = entry( s, p );
             e.disabled = v == "off";
@@ -231,14 +220,14 @@ class Display {
         var v = arguments.args.len() ? arguments.args[ 1 ] : "";
         var argv = [];
         var how = "";
-        if ( ( v == "up" || v == "down" ) && arguments.args.len() == 1 && has( "noctalia" ) ) { argv = [ "noctalia", "msg", "brightness-" & v ]; how = "noctalia"; }
+        if ( ( v == "up" || v == "down" ) && arguments.args.len() == 1 && variables.proc.has( "noctalia" ) ) { argv = [ "noctalia", "msg", "brightness-" & v ]; how = "noctalia"; }
         else if ( v == "up" || v == "down" ) { argv = [ "brightnessctl", "set", v == "up" ? "5%+" : "5%-" ]; how = "brightnessctl"; }
         else if ( v == "set" && arguments.args.len() == 2 && isNumeric( arguments.args[ 2 ] ) && val( arguments.args[ 2 ] ) >= 1 && val( arguments.args[ 2 ] ) <= 100 ) { argv = [ "brightnessctl", "set", int( val( arguments.args[ 2 ] ) ) & "%" ]; how = "brightnessctl"; }
-        else return fail( 2, "Usage: bxrig display brightness up|down | set 1..100", arguments.asJson );
-        if ( how == "brightnessctl" && !has( "brightnessctl" ) ) return fail( 4, "brightnessctl is not installed (bxrig install brightnessctl)", arguments.asJson );
+        else return variables.out.fail( 2, "Usage: bxrig display brightness up|down | set 1..100", arguments.asJson );
+        if ( how == "brightnessctl" && !variables.proc.has( "brightnessctl" ) ) return variables.out.fail( 4, "brightnessctl is not installed (bxrig install brightnessctl)", arguments.asJson );
         if ( arguments.dry ) return result( "brightness", v, { command: argv.toList( " " ) }, [], arguments.asJson, true );
-        var r = tryExec( argv, 20 );
-        if ( r.exitCode != 0 ) return say( 6, { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+        var r = variables.proc.exec( argv, 20 );
+        if ( r.exitCode != 0 ) return variables.out.say( 6, { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
         return result( "brightness", v, { via: how }, [], arguments.asJson, false );
     }
 
@@ -259,6 +248,6 @@ class Display {
             if ( !arguments.dry ) writeState( empty );
             return result( "reset", "forgot the saved display settings", { desktop: applyAll( empty, arguments.dry ) }, [], arguments.asJson, arguments.dry );
         }
-        return fail( 2, "Usage: bxrig display list | scale NAME V | rotate NAME DEG | mode NAME M | position NAME XxY | mirror on|off | laptop on|off | brightness up|down|set N | apply | reset", arguments.asJson );
+        return variables.out.fail( 2, "Usage: bxrig display list | scale NAME V | rotate NAME DEG | mode NAME M | position NAME XxY | mirror on|off | laptop on|off | brightness up|down|set N | apply | reset", arguments.asJson );
     }
 }

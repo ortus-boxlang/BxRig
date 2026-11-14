@@ -16,7 +16,7 @@ class Time {
     function init( cli, runner = "" ) {
         variables.environ = new bxrig.Env();
         variables.cli = arguments.cli;
-        variables.out = variables.cli.scoped( "time" );
+        variables.out = new bxrig.Out( variables.cli, "time" );
         variables.inst = new bxrig.Installer( arguments.runner );
         variables.proc = variables.inst.proc();
         return this;

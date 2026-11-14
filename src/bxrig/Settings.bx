@@ -6,19 +6,11 @@
 class Settings {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
+        variables.out = new bxrig.Out( variables.cli, "settings" );
         variables.inst = new bxrig.Installer( arguments.runner );
+        variables.proc = variables.inst.proc();
         variables.config = new bxrig.ConfigService().quiet( true );
         return this;
-    }
-
-    function say( code, data, asJson, lines = [] ) {
-        if ( arguments.asJson ) println( variables.cli.envelope( "settings", arguments.code, arguments.data ) );
-        else for ( var l in arguments.lines ) println( l );
-        return arguments.code;
-    }
-
-    function tryExec( argv, timeout = 120 ) {
-        try { return variables.inst.exec( arguments.argv, arguments.timeout ); } catch ( any e ) { return { exitCode: 127, output: e.message, timeout: false }; }
     }
 
     function root() { return variables.config.cfgHome(); }
@@ -39,17 +31,17 @@ class Settings {
 
     function exportFile( file, force, asJson ) {
         var list = files();
-        if ( !list.len() ) return say( 4, { error: "nothing to export" }, arguments.asJson, [ "error: there are no BxRig settings to export yet" ] );
-        if ( fileExists( arguments.file ) && !arguments.force ) return say( 4, { error: "file exists" }, arguments.asJson, [ "error: " & arguments.file & " exists (add --force to replace it)" ] );
+        if ( !list.len() ) return variables.out.say( 4, { error: "nothing to export" }, arguments.asJson, [ "error: there are no BxRig settings to export yet" ] );
+        if ( fileExists( arguments.file ) && !arguments.force ) return variables.out.say( 4, { error: "file exists" }, arguments.asJson, [ "error: " & arguments.file & " exists (add --force to replace it)" ] );
         var argv = [ "tar", "-czf", arguments.file, "-C", root() ];
         for ( var f in list ) argv.append( f );
-        var r = tryExec( argv, 120 );
-        if ( r.exitCode != 0 ) return say( 6, { error: trim( r.output ) }, arguments.asJson, [ "error: tar failed" ] );
-        return say( 0, { file: arguments.file, files: list }, arguments.asJson, [ "Exported " & list.len() & " files to " & arguments.file & ". Secrets are not included (bxrig secrets export)." ] );
+        var r = variables.proc.exec( argv, 120 );
+        if ( r.exitCode != 0 ) return variables.out.say( 6, { error: trim( r.output ) }, arguments.asJson, [ "error: tar failed" ] );
+        return variables.out.say( 0, { file: arguments.file, files: list }, arguments.asJson, [ "Exported " & list.len() & " files to " & arguments.file & ". Secrets are not included (bxrig secrets export)." ] );
     }
 
     function entries( file ) {
-        var r = tryExec( [ "tar", "-tzf", arguments.file ], 60 );
+        var r = variables.proc.exec( [ "tar", "-tzf", arguments.file ], 60 );
         if ( r.exitCode != 0 ) return { ok: false, error: "not a readable archive" };
         var list = [];
         for ( var l in listToArray( r.output, chr( 10 ) ) ) {
@@ -62,16 +54,16 @@ class Settings {
     }
 
     function importFile( file, yes, asJson ) {
-        if ( !fileExists( arguments.file ) ) return say( 4, { error: "no such file" }, arguments.asJson, [ "error: no such file: " & arguments.file ] );
+        if ( !fileExists( arguments.file ) ) return variables.out.say( 4, { error: "no such file" }, arguments.asJson, [ "error: no such file: " & arguments.file ] );
         var e = entries( arguments.file );
-        if ( !e.ok ) return say( 4, { error: e.error }, arguments.asJson, [ "error: " & e.error ] );
+        if ( !e.ok ) return variables.out.say( 4, { error: e.error }, arguments.asJson, [ "error: " & e.error ] );
         var clash = e.files.filter( function( f ) { return fileExists( root() & "/" & f ); } );
         var data = { file: arguments.file, files: e.files, existing: clash };
-        if ( !arguments.yes ) return say( 2, data, arguments.asJson, [ "Plan: import " & e.files.len() & " files into " & root() & "/bxrig (" & clash.len() & " exist and are backed up first)", "Nothing was changed. Add --yes to apply." ] );
-        var stamp = trim( tryExec( [ "date", "+%Y%m%d-%H%M%S" ], 10 ).output );
+        if ( !arguments.yes ) return variables.out.say( 2, data, arguments.asJson, [ "Plan: import " & e.files.len() & " files into " & root() & "/bxrig (" & clash.len() & " exist and are backed up first)", "Nothing was changed. Add --yes to apply." ] );
+        var stamp = trim( variables.proc.exec( [ "date", "+%Y%m%d-%H%M%S" ], 10 ).output );
         for ( var f in clash ) fileCopy( root() & "/" & f, root() & "/" & f & ".bak-" & stamp );
-        var r = tryExec( [ "tar", "-xzf", arguments.file, "-C", root() ], 120 );
-        if ( r.exitCode != 0 ) return say( 6, { error: trim( r.output ) }, arguments.asJson, [ "error: extracting failed" ] );
-        return say( 0, data, arguments.asJson, [ "Imported " & e.files.len() & " files (" & clash.len() & " backed up as .bak-" & stamp & "). Run: bxrig init --from-system to re-apply." ] );
+        var r = variables.proc.exec( [ "tar", "-xzf", arguments.file, "-C", root() ], 120 );
+        if ( r.exitCode != 0 ) return variables.out.say( 6, { error: trim( r.output ) }, arguments.asJson, [ "error: extracting failed" ] );
+        return variables.out.say( 0, data, arguments.asJson, [ "Imported " & e.files.len() & " files (" & clash.len() & " backed up as .bak-" & stamp & "). Run: bxrig init --from-system to re-apply." ] );
     }
 }

@@ -1,6 +1,6 @@
 -- Written by bxrig (editor lazyvim). Every theme's colourscheme plugin is listed (lazy, not loaded) so `bxrig theme set` never has to
 -- clone anything while you work: the specs come from the theme files `bxrig theme` keeps in ~/.config/bxrig/nvim-themes/.
-local dir = (os.getenv("BXRIG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.config")) .. "/bxrig/nvim-themes"
+local dir = (os.getenv("BXRIG_CONFIG_HOME") or os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.config")) .. "/bxrig/nvim-themes"
 local specs = {}
 for _, file in ipairs(vim.fn.glob(dir .. "/*.lua", false, true)) do
   local ok, theme = pcall(dofile, file)

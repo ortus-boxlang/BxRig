@@ -30,7 +30,7 @@ icons = new bxrig.AppIcons( { share: tmp & "/share", home: tmp & "/home", iconBa
 check( "slug: kebab case", icons.slug( "Visual Studio Code" ) == "visual-studio-code" && icons.slug( "  Foo__Bar!! " ) == "foo-bar" );
 check( "names: the packaging suffixes are tried without", icons.names( "slack-desktop" ).len() == 2 && icons.names( "slack-desktop" )[ 2 ] == "slack" && icons.names( "firefox" ).len() == 1 );
 check( "installed: the .desktop Icon is found, the biggest size of hicolor first", icons.iconFor( "foo" ) == tmp & "/share/icons/hicolor/128x128/apps/foo-icon.png" );
-check( "installed: only the [Desktop Entry] group counts", icons.readIconName( tmp & "/share/applications/foo.desktop" ) == "foo-icon" );
+check( "installed: only the [Desktop Entry] group counts", new bxrig.DesktopEntry().iconName( tmp & "/share/applications/foo.desktop" ) == "foo-icon" );
 check( "installed: an absolute Icon path", icons.iconFor( "abs" ) == tmp & "/share/elsewhere/abs.png" );
 check( "installed: other icon themes and the apps/SIZE layout", icons.themed( "brz" ) == tmp & "/share/icons/breeze/apps/48/brz.png" );
 check( "installed: pixmaps", icons.iconFor( "pix" ) == tmp & "/share/pixmaps/pix.png" );
