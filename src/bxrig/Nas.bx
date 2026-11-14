@@ -70,13 +70,13 @@ class Nas {
             for ( var s in arguments.shown ) lines.append( "  " & s );
             for ( var c in arguments.cmds ) lines.append( "  " & c.toList( " " ) );
             lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return variables.out.say( arguments.dry ? 0 : 2, d, arguments.asJson, lines, arguments.dry );
+            return variables.out.say( arguments.dry ? "ok" : "plan", d, arguments.asJson, lines, arguments.dry );
         }
         for ( var x in arguments.cmds ) {
             var r = variables.proc.exec( x, 600 );
-            if ( r.exitCode != 0 ) return variables.out.say( 6, { error: trim( r.output ), step: x.toList( " " ) }, arguments.asJson, [ "error: " & x.toList( " " ) & ": " & trim( r.output ) ] );
+            if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ), step: x.toList( " " ) }, arguments.asJson, [ "error: " & x.toList( " " ) & ": " & trim( r.output ) ] );
         }
-        return variables.out.say( 0, d, arguments.asJson, [ arguments.title & ": done" ] );
+        return variables.out.say( "ok", d, arguments.asJson, [ arguments.title & ": done" ] );
     }
 
     // A private temp file holding text (mode 600). Returns its path.
@@ -94,7 +94,7 @@ class Nas {
     }
 
     function discoverCmd( asJson ) {
-        if ( !variables.proc.has( "avahi-browse" ) ) return variables.out.fail( 4, "avahi-browse was not found (bxrig nas setup --yes)", arguments.asJson );
+        if ( !variables.proc.has( "avahi-browse" ) ) return variables.out.fail( "precondition", "avahi-browse was not found (bxrig nas setup --yes)", arguments.asJson );
         var found = {};
         var out = [];
         for ( var svc in [ "_smb._tcp", "_nfs._tcp" ] ) {
@@ -110,21 +110,21 @@ class Nas {
             }
         }
         var lines = out.len() ? out.map( function( n ) { return n.name & "   " & n.host & "   " & n.address & "   " & n.protocols.toList( "," ); } ) : [ "No NAS found on the network. Add one by address: bxrig nas add NAME --host=IP" ];
-        return variables.out.say( 0, { nas: out }, arguments.asJson, lines );
+        return variables.out.say( "ok", { nas: out }, arguments.asJson, lines );
     }
 
     // ---- records ----
     function addCmd( name, opts, yes, dry, asJson ) {
-        if ( !validName( arguments.name ) ) return variables.out.fail( 2, "NAME is lower case letters, digits and dashes, starting with a letter (for example synology)", arguments.asJson );
+        if ( !validName( arguments.name ) ) return variables.out.fail( "usage", "NAME is lower case letters, digits and dashes, starting with a letter (for example synology)", arguments.asJson );
         var host = arguments.opts.host ?: "";
         var proto = lCase( arguments.opts.protocol ?: "smb" );
         var user = arguments.opts.user ?: "";
         var vers = arguments.opts.vers ?: "";
-        if ( !validHost( host ) ) return variables.out.fail( 2, "--host is required (a name or an IP address, for example synology.local or 192.168.1.20)", arguments.asJson );
-        if ( !arrayFind( [ "smb", "nfs" ], proto ) ) return variables.out.fail( 2, "--protocol is smb or nfs (for SFTP, FTP and the cloud see backup data setup)", arguments.asJson );
-        if ( proto == "smb" && !len( user ) ) return variables.out.fail( 2, "SMB needs --user", arguments.asJson );
-        if ( len( user ) && !validUser( user ) ) return variables.out.fail( 2, "that user name has characters a mount cannot take", arguments.asJson );
-        if ( len( vers ) && !reFind( "^[0-9](\.[0-9](\.[0-9])?)?$", vers ) ) return variables.out.fail( 2, "--vers looks like 3, 3.0 or 3.1.1", arguments.asJson );
+        if ( !validHost( host ) ) return variables.out.fail( "usage", "--host is required (a name or an IP address, for example synology.local or 192.168.1.20)", arguments.asJson );
+        if ( !arrayFind( [ "smb", "nfs" ], proto ) ) return variables.out.fail( "usage", "--protocol is smb or nfs (for SFTP, FTP and the cloud see backup data setup)", arguments.asJson );
+        if ( proto == "smb" && !len( user ) ) return variables.out.fail( "usage", "SMB needs --user", arguments.asJson );
+        if ( len( user ) && !validUser( user ) ) return variables.out.fail( "usage", "that user name has characters a mount cannot take", arguments.asJson );
+        if ( len( vers ) && !reFind( "^[0-9](\.[0-9](\.[0-9])?)?$", vers ) ) return variables.out.fail( "usage", "--vers looks like 3, 3.0 or 3.1.1", arguments.asJson );
         var s = read();
         var rec = structKeyExists( s.nas, arguments.name ) ? s.nas[ arguments.name ] : { shares: {} };
         rec.host = host; rec.protocol = proto; rec.user = user; rec.vers = vers;
@@ -133,14 +133,14 @@ class Nas {
         if ( proto == "smb" ) {
             if ( structKeyExists( arguments.opts, "password-file" ) ) { pw = fileExists( arguments.opts[ "password-file" ] ) ? reReplace( fileRead( arguments.opts[ "password-file" ] ), "[\r\n]+$", "" ) : ""; }
             else if ( structKeyExists( arguments.opts, "ask-password" ) ) pw = secrets().ask( "Password for " & user & "@" & host & ": " );
-            if ( !len( pw ) && !len( secrets().fetch( secretKey( arguments.name ) ) ) ) return variables.out.fail( 2, "SMB needs a password: add --ask-password (typed hidden) or --password-file=FILE", arguments.asJson );
+            if ( !len( pw ) && !len( secrets().fetch( secretKey( arguments.name ) ) ) ) return variables.out.fail( "usage", "SMB needs a password: add --ask-password (typed hidden) or --password-file=FILE", arguments.asJson );
         }
         var d = { name: arguments.name, host: host, protocol: proto, user: user, vers: vers, password_key: proto == "smb" ? secretKey( arguments.name ) : "" };
-        if ( arguments.dry ) return variables.out.say( 0, d, arguments.asJson, [ "Dry run: would save the NAS " & arguments.name & " (" & proto & "://" & host & ")" ], true );
-        if ( len( pw ) ) { var err = secrets().store( secretKey( arguments.name ), pw ); if ( len( err ) ) return variables.out.fail( 6, "could not store the password: " & err, arguments.asJson ); }
+        if ( arguments.dry ) return variables.out.say( "ok", d, arguments.asJson, [ "Dry run: would save the NAS " & arguments.name & " (" & proto & "://" & host & ")" ], true );
+        if ( len( pw ) ) { var err = secrets().store( secretKey( arguments.name ), pw ); if ( len( err ) ) return variables.out.fail( "failed", "could not store the password: " & err, arguments.asJson ); }
         s.nas[ arguments.name ] = rec;
         write( s );
-        return variables.out.say( 0, d, arguments.asJson, [ "Saved " & arguments.name & " (" & proto & "://" & host & ")." & ( proto == "smb" ? " The password is in your keyring." : "" ), "Next: bxrig nas shares " & arguments.name ] );
+        return variables.out.say( "ok", d, arguments.asJson, [ "Saved " & arguments.name & " (" & proto & "://" & host & ")." & ( proto == "smb" ? " The password is in your keyring." : "" ), "Next: bxrig nas shares " & arguments.name ] );
     }
 
     function listCmd( asJson ) {
@@ -148,54 +148,54 @@ class Nas {
         var rows = [];
         for ( var n in structKeyArray( s.nas ) ) { var r = s.nas[ n ]; rows.append( { name: n, host: r.host, protocol: r.protocol, user: r.user ?: "", shares: structKeyArray( r.shares ?: {} ) } ); }
         arraySort( rows, function( a, b ) { return compare( a.name, b.name ); } );
-        return variables.out.say( 0, { nas: rows }, arguments.asJson, rows.len() ? rows.map( function( r ) { return r.name & "   " & r.protocol & "://" & r.host & ( len( r.user ) ? "   " & r.user : "" ) & "   shares: " & ( r.shares.len() ? r.shares.toList( ", " ) : "none yet" ); } ) : [ "No NAS yet. Find one: bxrig nas discover" ] );
+        return variables.out.say( "ok", { nas: rows }, arguments.asJson, rows.len() ? rows.map( function( r ) { return r.name & "   " & r.protocol & "://" & r.host & ( len( r.user ) ? "   " & r.user : "" ) & "   shares: " & ( r.shares.len() ? r.shares.toList( ", " ) : "none yet" ); } ) : [ "No NAS yet. Find one: bxrig nas discover" ] );
     }
 
     function showCmd( name, asJson ) {
         var r = get( arguments.name );
-        if ( structIsEmpty( r ) ) return variables.out.fail( 4, "no NAS called " & arguments.name & " (bxrig nas list)", arguments.asJson );
+        if ( structIsEmpty( r ) ) return variables.out.fail( "precondition", "no NAS called " & arguments.name & " (bxrig nas list)", arguments.asJson );
         var lines = [ arguments.name & ": " & r.protocol & "://" & r.host & ( len( r.user ?: "" ) ? "   user " & r.user : "" ) & ( len( r.vers ?: "" ) ? "   version " & r.vers : "   version negotiated" ) ];
         for ( var sh in structKeyArray( r.shares ?: {} ) ) lines.append( "  " & sh & " -> " & r.shares[ sh ].mountpoint & ( ( r.shares[ sh ].auto ?: false ) ? "   automatic" : "" ) );
-        return variables.out.say( 0, { name: arguments.name, nas: r }, arguments.asJson, lines );
+        return variables.out.say( "ok", { name: arguments.name, nas: r }, arguments.asJson, lines );
     }
 
     function removeCmd( name, yes, dry, asJson ) {
         var r = get( arguments.name );
-        if ( structIsEmpty( r ) ) return variables.out.fail( 4, "no NAS called " & arguments.name, arguments.asJson );
+        if ( structIsEmpty( r ) ) return variables.out.fail( "precondition", "no NAS called " & arguments.name, arguments.asJson );
         var mounted = structKeyArray( r.shares ?: {} ).filter( function( sh ) { return r.shares[ sh ].auto ?: false; } );
-        if ( mounted.len() ) return variables.out.fail( 4, "turn the automatic mounts off first: " & mounted.map( function( sh ) { return "bxrig nas auto off " & name & " " & sh; } ).toList( "; " ), arguments.asJson );
-        if ( !arguments.yes || arguments.dry ) return variables.out.say( arguments.dry ? 0 : 2, { name: arguments.name }, arguments.asJson, [ ( arguments.dry ? "Dry run: " : "Plan: " ) & "forget the NAS " & arguments.name & " and its stored password (the files on the NAS are not touched)", "Nothing was changed." & ( arguments.dry ? "" : " Add --yes to apply." ) ], arguments.dry );
+        if ( mounted.len() ) return variables.out.fail( "precondition", "turn the automatic mounts off first: " & mounted.map( function( sh ) { return "bxrig nas auto off " & name & " " & sh; } ).toList( "; " ), arguments.asJson );
+        if ( !arguments.yes || arguments.dry ) return variables.out.say( arguments.dry ? "ok" : "plan", { name: arguments.name }, arguments.asJson, [ ( arguments.dry ? "Dry run: " : "Plan: " ) & "forget the NAS " & arguments.name & " and its stored password (the files on the NAS are not touched)", "Nothing was changed." & ( arguments.dry ? "" : " Add --yes to apply." ) ], arguments.dry );
         var s = read();
         structDelete( s.nas, arguments.name );
         write( s );
         secrets().drop( secretKey( arguments.name ) );
-        return variables.out.say( 0, { name: arguments.name, removed: true }, arguments.asJson, [ "Forgot " & arguments.name & "." ] );
+        return variables.out.say( "ok", { name: arguments.name, removed: true }, arguments.asJson, [ "Forgot " & arguments.name & "." ] );
     }
 
     // ---- shares ----
     function sharesCmd( name, asJson ) {
         var r = get( arguments.name );
-        if ( structIsEmpty( r ) ) return variables.out.fail( 4, "no NAS called " & arguments.name & " (bxrig nas list)", arguments.asJson );
+        if ( structIsEmpty( r ) ) return variables.out.fail( "precondition", "no NAS called " & arguments.name & " (bxrig nas list)", arguments.asJson );
         var shares = [];
         if ( r.protocol == "nfs" ) {
-            if ( !variables.proc.has( "showmount" ) ) return variables.out.fail( 4, "showmount was not found (bxrig nas setup --yes)", arguments.asJson );
+            if ( !variables.proc.has( "showmount" ) ) return variables.out.fail( "precondition", "showmount was not found (bxrig nas setup --yes)", arguments.asJson );
             var nr = variables.proc.exec( [ "showmount", "-e", "--no-headers", r.host ], 20 );
-            if ( nr.exitCode != 0 ) return variables.out.fail( 4, "could not read the exports of " & r.host & ": " & trim( nr.output ), arguments.asJson );
+            if ( nr.exitCode != 0 ) return variables.out.fail( "precondition", "could not read the exports of " & r.host & ": " & trim( nr.output ), arguments.asJson );
             for ( var line in listToArray( trim( nr.output ), chr( 10 ) ) ) { var t = trim( line ); if ( len( t ) ) shares.append( { name: listFirst( t, " " & chr( 9 ) ), kind: "export" } ); }
         } else {
-            if ( !variables.proc.has( "smbclient" ) ) return variables.out.fail( 4, "smbclient was not found (bxrig nas setup --yes)", arguments.asJson );
+            if ( !variables.proc.has( "smbclient" ) ) return variables.out.fail( "precondition", "smbclient was not found (bxrig nas setup --yes)", arguments.asJson );
             var pw = secrets().fetch( secretKey( arguments.name ) );
             var auth = privateTemp( "username = " & r.user & chr( 10 ) & "password = " & pw & chr( 10 ) );
             var sr = variables.proc.exec( [ "smbclient", "-g", "-L", r.host, "-A", auth ], 30 );
             try { fileDelete( auth ); } catch ( any e ) {}
-            if ( sr.exitCode != 0 ) return variables.out.fail( 4, "could not list the shares of " & r.host & " (wrong password or SMB turned off?): " & trim( listFirst( sr.output, chr( 10 ) ) ), arguments.asJson );
+            if ( sr.exitCode != 0 ) return variables.out.fail( "precondition", "could not list the shares of " & r.host & " (wrong password or SMB turned off?): " & trim( listFirst( sr.output, chr( 10 ) ) ), arguments.asJson );
             for ( var ln in listToArray( sr.output, chr( 10 ) ) ) {
                 var p = listToArray( ln, "|", true );
                 if ( p.len() >= 2 && p[ 1 ] == "Disk" && !reFind( "\$$", p[ 2 ] ) ) shares.append( { name: p[ 2 ], kind: "share", comment: p.len() > 2 ? p[ 3 ] : "" } );
             }
         }
         var lines = shares.len() ? shares.map( function( x ) { return x.name & ( len( x.comment ?: "" ) ? "   " & x.comment : "" ); } ) : [ "No shares found." ];
-        return variables.out.say( 0, { name: arguments.name, shares: shares }, arguments.asJson, lines );
+        return variables.out.say( "ok", { name: arguments.name, shares: shares }, arguments.asJson, lines );
     }
 
     // ---- mounts ----
@@ -224,18 +224,18 @@ class Nas {
     // `mount`/`unmount`/`auto` all start the same way: the NAS, the share, and the plan text.
     function mountCmd( verb, name, share, yes, dry, asJson ) {
         var r = get( arguments.name );
-        if ( structIsEmpty( r ) ) return variables.out.fail( 4, "no NAS called " & arguments.name & " (bxrig nas list)", arguments.asJson );
-        if ( !validShare( arguments.share ) ) return variables.out.fail( 2, "that share name has characters a mount cannot take", arguments.asJson );
+        if ( structIsEmpty( r ) ) return variables.out.fail( "precondition", "no NAS called " & arguments.name & " (bxrig nas list)", arguments.asJson );
+        if ( !validShare( arguments.share ) ) return variables.out.fail( "usage", "that share name has characters a mount cannot take", arguments.asJson );
         var mp = mountPoint( arguments.name, arguments.share );
         var d = { name: arguments.name, share: arguments.share, mountpoint: mp, protocol: r.protocol };
         if ( arguments.verb == "unmount" ) return finish( "unmount " & mp, [], [ [ "sudo", "umount", mp ] ], arguments.yes, arguments.dry, arguments.asJson, d );
         var tool = r.protocol == "smb" ? "mount.cifs" : "mount.nfs";
-        if ( !arguments.dry && !variables.proc.has( tool ) ) return variables.out.fail( 4, tool & " was not found (bxrig nas setup --yes)", arguments.asJson );
+        if ( !arguments.dry && !variables.proc.has( tool ) ) return variables.out.fail( "precondition", tool & " was not found (bxrig nas setup --yes)", arguments.asJson );
         var cmds = [];
         var shown = [];
         var tmp = "";
         if ( r.protocol == "smb" ) {
-            if ( !len( secrets().fetch( secretKey( arguments.name ) ) ) ) return variables.out.fail( 4, "the password of " & arguments.name & " is not in the keyring (bxrig nas add " & arguments.name & " --host=" & r.host & " --user=" & r.user & " --ask-password)", arguments.asJson );
+            if ( !len( secrets().fetch( secretKey( arguments.name ) ) ) ) return variables.out.fail( "precondition", "the password of " & arguments.name & " is not in the keyring (bxrig nas add " & arguments.name & " --host=" & r.host & " --user=" & r.user & " --ask-password)", arguments.asJson );
             shown.append( "SMB mounts are read as root, so the password is also kept in " & credFile( arguments.name ) & " (root only, mode 600)" );
             if ( arguments.yes && !arguments.dry ) { var cc = credCommands( arguments.name, r ); tmp = cc.tmp; for ( var c in cc.cmds ) cmds.append( c ); }
             else cmds.append( [ "sudo", "install", "-Dm600", "-o", "root", "-g", "root", "TEMPFILE", credFile( arguments.name ) ] );
@@ -258,17 +258,17 @@ class Nas {
     }
 
     function autoCmd( args, yes, dry, asJson ) {
-        if ( arguments.args.len() != 3 || !arrayFind( [ "on", "off" ], arguments.args[ 1 ] ) ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "nas auto" ), arguments.asJson );
+        if ( arguments.args.len() != 3 || !arrayFind( [ "on", "off" ], arguments.args[ 1 ] ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "nas auto" ), arguments.asJson );
         var v = arguments.args[ 1 ];
         var nm = arguments.args[ 2 ];
         var share = arguments.args[ 3 ];
         var r = get( nm );
-        if ( structIsEmpty( r ) ) return variables.out.fail( 4, "no NAS called " & nm & " (bxrig nas list)", arguments.asJson );
-        if ( !validShare( share ) ) return variables.out.fail( 2, "that share name has characters a mount cannot take", arguments.asJson );
+        if ( structIsEmpty( r ) ) return variables.out.fail( "precondition", "no NAS called " & nm & " (bxrig nas list)", arguments.asJson );
+        if ( !validShare( share ) ) return variables.out.fail( "usage", "that share name has characters a mount cannot take", arguments.asJson );
         var mp = mountPoint( nm, share );
         var mnt = unitName( mp, "mount" );
         var aut = unitName( mp, "automount" );
-        if ( !len( mnt ) ) return variables.out.fail( 4, "systemd-escape was not found", arguments.asJson );
+        if ( !len( mnt ) ) return variables.out.fail( "precondition", "systemd-escape was not found", arguments.asJson );
         var d = { name: nm, share: share, mountpoint: mp, mount_unit: mnt, automount_unit: aut };
         if ( v == "off" ) {
             var offCmds = [ [ "sudo", "systemctl", "disable", "--now", aut ], [ "sudo", "systemctl", "stop", mnt ], [ "sudo", "rm", "-f", unitDir() & "/" & mnt, unitDir() & "/" & aut ], [ "sudo", "systemctl", "daemon-reload" ] ];
@@ -276,7 +276,7 @@ class Nas {
             if ( code == 0 && arguments.yes && !arguments.dry ) { var so = read(); if ( structKeyExists( so.nas[ nm ].shares, share ) ) so.nas[ nm ].shares[ share ].auto = false; write( so ); }
             return code;
         }
-        if ( r.protocol == "smb" && !len( secrets().fetch( secretKey( nm ) ) ) ) return variables.out.fail( 4, "the password of " & nm & " is not in the keyring", arguments.asJson );
+        if ( r.protocol == "smb" && !len( secrets().fetch( secretKey( nm ) ) ) ) return variables.out.fail( "precondition", "the password of " & nm & " is not in the keyring", arguments.asJson );
         var mountUnit = "## Written by `bxrig nas auto on`. Remove with `bxrig nas auto off " & nm & " " & share & "`." & chr( 10 ) & "[Unit]" & chr( 10 ) & "Description=" & nm & " " & share & " (BxRig NAS)" & chr( 10 ) & "After=network-online.target" & chr( 10 ) & "Wants=network-online.target" & chr( 10 ) & chr( 10 )
             & "[Mount]" & chr( 10 ) & "What=" & source( r, share ) & chr( 10 ) & "Where=" & mp & chr( 10 ) & "Type=" & ( r.protocol == "smb" ? "cifs" : "nfs" ) & chr( 10 ) & "Options=" & mountOptions( r, nm ) & ",nofail" & chr( 10 ) & "TimeoutSec=20" & chr( 10 );
         var autoUnit = "## Written by `bxrig nas auto on`." & chr( 10 ) & "[Unit]" & chr( 10 ) & "Description=Automount " & nm & " " & share & chr( 10 ) & chr( 10 ) & "[Automount]" & chr( 10 ) & "Where=" & mp & chr( 10 ) & "TimeoutIdleSec=600" & chr( 10 ) & chr( 10 ) & "[Install]" & chr( 10 ) & "WantedBy=multi-user.target" & chr( 10 );
@@ -310,7 +310,7 @@ class Nas {
     // ---- test ----
     function testCmd( name, shareName, asJson ) {
         var r = get( arguments.name );
-        if ( structIsEmpty( r ) ) return variables.out.fail( 4, "no NAS called " & arguments.name & " (bxrig nas list)", arguments.asJson );
+        if ( structIsEmpty( r ) ) return variables.out.fail( "precondition", "no NAS called " & arguments.name & " (bxrig nas list)", arguments.asJson );
         var port = r.protocol == "smb" ? "445" : "2049";
         var checks = [];
         var forced = getSystemSetting( "BXRIG_NAS_REACH", "" );
@@ -336,7 +336,7 @@ class Nas {
         }
         var bad = checks.filter( function( c ) { return !c.ok; } );
         var lines = checks.map( function( c ) { return ( c.ok ? "ok    " : "FAIL  " ) & c.id & ": " & c.note; } );
-        return variables.out.say( bad.len() ? 4 : 0, { name: arguments.name, checks: checks }, arguments.asJson, lines );
+        return variables.out.say( bad.len() ? "precondition" : "ok", { name: arguments.name, checks: checks }, arguments.asJson, lines );
     }
 
     function sharesCmdQuiet( name ) {
@@ -355,19 +355,19 @@ class Nas {
 
     // ---- sync (plain mirror) ----
     function syncCmd( args, opts, yes, dry, asJson ) {
-        if ( arguments.args.len() != 2 || !structKeyExists( arguments.opts, "to" ) ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "nas sync" ), arguments.asJson );
+        if ( arguments.args.len() != 2 || !structKeyExists( arguments.opts, "to" ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "nas sync" ), arguments.asJson );
         var nm = arguments.args[ 1 ];
         var src = arguments.args[ 2 ];
         var r = get( nm );
-        if ( structIsEmpty( r ) ) return variables.out.fail( 4, "no NAS called " & nm, arguments.asJson );
+        if ( structIsEmpty( r ) ) return variables.out.fail( "precondition", "no NAS called " & nm, arguments.asJson );
         var to = arguments.opts.to;
         var share = listFirst( to, "/" );
         var sub = len( to ) > len( share ) ? mid( to, len( share ) + 2, len( to ) ) : "";
-        if ( !validShare( share ) || find( "..", sub ) > 0 ) return variables.out.fail( 2, "--to is SHARE or SHARE/PATH", arguments.asJson );
-        if ( !directoryExists( src ) ) return variables.out.fail( 4, src & " is not a folder", arguments.asJson );
+        if ( !validShare( share ) || find( "..", sub ) > 0 ) return variables.out.fail( "usage", "--to is SHARE or SHARE/PATH", arguments.asJson );
+        if ( !directoryExists( src ) ) return variables.out.fail( "precondition", src & " is not a folder", arguments.asJson );
         var mp = mountPoint( nm, share );
-        if ( !variables.proc.has( "rsync" ) ) return variables.out.fail( 4, "rsync was not found (bxrig nas setup --yes)", arguments.asJson );
-        if ( variables.proc.exec( [ "findmnt", "-n", mp ], 5 ).exitCode != 0 && !arguments.dry ) return variables.out.fail( 4, mp & " is not mounted (bxrig nas mount " & nm & " " & share & " --yes, or turn auto on)", arguments.asJson );
+        if ( !variables.proc.has( "rsync" ) ) return variables.out.fail( "precondition", "rsync was not found (bxrig nas setup --yes)", arguments.asJson );
+        if ( variables.proc.exec( [ "findmnt", "-n", mp ], 5 ).exitCode != 0 && !arguments.dry ) return variables.out.fail( "precondition", mp & " is not mounted (bxrig nas mount " & nm & " " & share & " --yes, or turn auto on)", arguments.asJson );
         var del = structKeyExists( arguments.opts, "delete" );
         var dest = mp & ( len( sub ) ? "/" & sub : "" ) & "/";
         var argv = [ "rsync", "-a", "--info=stats1" ];
@@ -380,24 +380,24 @@ class Nas {
 
     // ---- use as a backup target ----
     function useCmd( args, opts, yes, dry, asJson ) {
-        if ( arguments.args.len() != 2 ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "nas use" ), arguments.asJson );
+        if ( arguments.args.len() != 2 ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "nas use" ), arguments.asJson );
         var nm = arguments.args[ 1 ];
         var share = arguments.args[ 2 ];
         var r = get( nm );
-        if ( structIsEmpty( r ) ) return variables.out.fail( 4, "no NAS called " & nm, arguments.asJson );
-        if ( !validShare( share ) ) return variables.out.fail( 2, "that share name has characters a mount cannot take", arguments.asJson );
+        if ( structIsEmpty( r ) ) return variables.out.fail( "precondition", "no NAS called " & nm, arguments.asJson );
+        if ( !validShare( share ) ) return variables.out.fail( "usage", "that share name has characters a mount cannot take", arguments.asJson );
         var path = arguments.opts.path ?: "bxrig-backup";
-        if ( !reFind( "^[A-Za-z0-9._/-]+$", path ) || find( "..", path ) > 0 ) return variables.out.fail( 2, "--path is a folder name on the share", arguments.asJson );
+        if ( !reFind( "^[A-Za-z0-9._/-]+$", path ) || find( "..", path ) > 0 ) return variables.out.fail( "usage", "--path is a folder name on the share", arguments.asJson );
         var mp = mountPoint( nm, share );
         var key = "nas-" & nm;
         var d = { target: key, type: "nas", nas: nm, share: share, path: path, repository: mp & "/" & path };
-        if ( arguments.dry ) return variables.out.say( 0, d, arguments.asJson, [ "Dry run: would make " & mp & "/" & path & " a backup target called " & key ], true );
+        if ( arguments.dry ) return variables.out.say( "ok", d, arguments.asJson, [ "Dry run: would make " & mp & "/" & path & " a backup target called " & key ], true );
         var b = { targets: {} };
         if ( fileExists( backupFile() ) ) { try { b = jsonDeserialize( fileRead( backupFile() ) ); if ( !structKeyExists( b, "targets" ) ) b.targets = {}; } catch ( any e ) {} }
         b.targets[ key ] = { type: "nas", nas: nm, share: share, path: path };
         directoryCreate( getDirectoryFromPath( backupFile() ), true, true );
         fileWrite( backupFile(), jsonSerialize( b ) & chr( 10 ) );
-        return variables.out.say( 0, d, arguments.asJson, [ "Backup target " & key & ": " & mp & "/" & path, "Next: bxrig backup data setup" ] );
+        return variables.out.say( "ok", d, arguments.asJson, [ "Backup target " & key & ": " & mp & "/" & path, "Next: bxrig backup data setup" ] );
     }
 
     function run( words, opts = {}, dry = false, yes = false, asJson = false ) {
@@ -416,6 +416,6 @@ class Nas {
         if ( verb == "test" && rest.len() >= 1 && rest.len() <= 2 ) return testCmd( rest[ 1 ], rest.len() == 2 ? rest[ 2 ] : "", arguments.asJson );
         if ( verb == "sync" ) return syncCmd( rest, arguments.opts, arguments.yes, arguments.dry, arguments.asJson );
         if ( verb == "use" ) return useCmd( rest, arguments.opts, arguments.yes, arguments.dry, arguments.asJson );
-        return variables.out.fail( 2, new bxrig.CommandSpec().usage( "nas" ), arguments.asJson );
+        return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "nas" ), arguments.asJson );
     }
 }

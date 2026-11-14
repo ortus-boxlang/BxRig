@@ -157,6 +157,6 @@ class BackupTimeline {
             var last = r.points.len() ? ago( t.now - r.points[ 1 ].epoch ) : ( len( r.error ) ? r.error : "none yet" );
             lines.append( r.label & "   " & r.points.len() & " backups   latest: " & last );
         }
-        return variables.out.say( 0, t, arguments.asJson, lines );
+        return variables.out.say( "ok", t, arguments.asJson, lines );
     }
 }

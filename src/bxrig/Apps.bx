@@ -22,7 +22,7 @@ class Apps {
 
     function list( asJson ) {
         var rows = all();
-        return variables.cli.say( "apps list", 0, { apps: rows }, arguments.asJson, rows.map( function( r ) { return r.name & "  (" & r.id & ")"; } ) );
+        return variables.cli.say( "apps list", "ok", { apps: rows }, arguments.asJson, rows.map( function( r ) { return r.name & "  (" & r.id & ")"; } ) );
     }
 
     // `apps`

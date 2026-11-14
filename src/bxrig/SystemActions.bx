@@ -30,15 +30,15 @@ class SystemActions {
     }
 
     function run( verb, yes, dryRun, asJson ) {
-        if ( !arrayFind( verbs(), arguments.verb ) ) return variables.out.say( 2, { error: "unknown action " & arguments.verb }, arguments.asJson, [ new bxrig.CommandSpec().usage( "system" ) ] );
+        if ( !arrayFind( verbs(), arguments.verb ) ) return variables.out.say( "usage", { error: "unknown action " & arguments.verb }, arguments.asJson, [ new bxrig.CommandSpec().usage( "system" ) ] );
         var c = command( arguments.verb );
-        if ( structIsEmpty( c ) ) return variables.out.say( 4, { error: "nothing here can do " & arguments.verb }, arguments.asJson, [ "error: " & arguments.verb & " needs Noctalia (in Hyprland) or systemd (loginctl, systemctl), and neither was found" ] );
+        if ( structIsEmpty( c ) ) return variables.out.say( "precondition", { error: "nothing here can do " & arguments.verb }, arguments.asJson, [ "error: " & arguments.verb & " needs Noctalia (in Hyprland) or systemd (loginctl, systemctl), and neither was found" ] );
         var data = { action: arguments.verb, via: c.via, command: c.argv.toList( " " ) };
         if ( arguments.dryRun || ( needsYes( arguments.verb ) && !arguments.yes ) ) {
             var dry = arguments.dryRun;
-            return variables.out.say( dry ? 0 : 2, data, arguments.asJson, [ ( dry ? "Dry run" : "Plan" ) & ": " & arguments.verb & " with `" & data.command & "`" & ( needsYes( arguments.verb ) ? " (ends your session)" : "" ), dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], dry );
+            return variables.out.say( dry ? "ok" : "plan", data, arguments.asJson, [ ( dry ? "Dry run" : "Plan" ) & ": " & arguments.verb & " with `" & data.command & "`" & ( needsYes( arguments.verb ) ? " (ends your session)" : "" ), dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], dry );
         }
         var r = variables.proc.exec( c.argv, 30 );
-        return variables.out.say( r.exitCode == 0 ? 0 : 6, data, arguments.asJson, [ r.exitCode == 0 ? arguments.verb & ": done" : "error: " & arguments.verb & " failed: " & trim( r.output ) ] );
+        return variables.out.say( r.exitCode == 0 ? "ok" : "failed", data, arguments.asJson, [ r.exitCode == 0 ? arguments.verb & ": done" : "error: " & arguments.verb & " failed: " & trim( r.output ) ] );
     }
 }

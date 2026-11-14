@@ -24,27 +24,27 @@ class Tweaks {
             var lines = [ ( arguments.dry ? "Dry run: " : "Plan: " ) & arguments.title ];
             for ( var c in arguments.cmds ) lines.append( "  " & c.toList( " " ) );
             lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return variables.cli.say( arguments.cmd, arguments.dry ? 0 : 2, d, arguments.asJson, lines, arguments.dry );
+            return variables.cli.say( arguments.cmd, arguments.dry ? "ok" : "plan", d, arguments.asJson, lines, arguments.dry );
         }
         for ( var x in arguments.cmds ) {
             var r = variables.proc.exec( x, 900 );
-            if ( r.exitCode != 0 ) return variables.cli.say( arguments.cmd, 6, { error: trim( r.output ), step: x.toList( " " ) }, arguments.asJson, [ "error: " & x.toList( " " ) & ": " & trim( r.output ) ] );
+            if ( r.exitCode != 0 ) return variables.cli.say( arguments.cmd, "failed", { error: trim( r.output ), step: x.toList( " " ) }, arguments.asJson, [ "error: " & x.toList( " " ) & ": " & trim( r.output ) ] );
         }
-        return variables.cli.say( arguments.cmd, 0, d, arguments.asJson, [ arguments.title & ": done" ] );
+        return variables.cli.say( arguments.cmd, "ok", d, arguments.asJson, [ arguments.title & ": done" ] );
     }
 
     // ---- toggle ----
     function toggle( words, dry, asJson ) {
         var what = arguments.words.len() ? arguments.words[ 1 ] : "";
-        if ( what != "stay-awake" ) return variables.cli.fail( "toggle", 2, new bxrig.CommandSpec().usage( "toggle stay-awake" ), arguments.asJson );
+        if ( what != "stay-awake" ) return variables.cli.fail( "toggle", "usage", new bxrig.CommandSpec().usage( "toggle stay-awake" ), arguments.asJson );
         var state = arguments.words.len() > 1 ? arguments.words[ 2 ] : "toggle";
-        if ( !arrayFind( [ "on", "off", "toggle" ], state ) || arguments.words.len() > 2 ) return variables.cli.fail( "toggle", 2, new bxrig.CommandSpec().usage( "toggle stay-awake" ), arguments.asJson );
+        if ( !arrayFind( [ "on", "off", "toggle" ], state ) || arguments.words.len() > 2 ) return variables.cli.fail( "toggle", "usage", new bxrig.CommandSpec().usage( "toggle stay-awake" ), arguments.asJson );
         var verb = state == "on" ? "caffeine-enable" : state == "off" ? "caffeine-disable" : "caffeine-toggle";
-        if ( arguments.dry ) return variables.cli.say( "toggle", 0, { toggle: what, command: "noctalia msg " & verb }, arguments.asJson, [ "would run: noctalia msg " & verb ], true );
-        if ( !variables.proc.has( "noctalia" ) ) return variables.cli.fail( "toggle", 4, "stay awake needs Noctalia (Hyprland); on Plasma use System Settings > Power Management", arguments.asJson );
+        if ( arguments.dry ) return variables.cli.say( "toggle", "ok", { toggle: what, command: "noctalia msg " & verb }, arguments.asJson, [ "would run: noctalia msg " & verb ], true );
+        if ( !variables.proc.has( "noctalia" ) ) return variables.cli.fail( "toggle", "precondition", "stay awake needs Noctalia (Hyprland); on Plasma use System Settings > Power Management", arguments.asJson );
         var r = variables.proc.exec( [ "noctalia", "msg", verb ], 15 );
-        if ( r.exitCode != 0 ) return variables.cli.say( "toggle", 6, { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
-        return variables.cli.say( "toggle", 0, { toggle: what, state: state }, arguments.asJson, [ "stay-awake: " & state ] );
+        if ( r.exitCode != 0 ) return variables.cli.say( "toggle", "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+        return variables.cli.say( "toggle", "ok", { toggle: what, state: state }, arguments.asJson, [ "stay-awake: " & state ] );
     }
 
     // ---- dns ----
@@ -75,11 +75,11 @@ class Tweaks {
     function validIp( ip ) { return reFind( "^[0-9]{1,3}(\.[0-9]{1,3}){3}$", arguments.ip ) > 0 || reFind( "^[0-9a-fA-F:]+$", arguments.ip ) > 0 && find( ":", arguments.ip ) > 0; }
 
     function dns( words, yes, dry, asJson ) {
-        if ( !variables.proc.has( "nmcli" ) ) return variables.cli.fail( "dns", 4, "NetworkManager (nmcli) was not found", arguments.asJson );
+        if ( !variables.proc.has( "nmcli" ) ) return variables.cli.fail( "dns", "precondition", "NetworkManager (nmcli) was not found", arguments.asJson );
         var conns = activeConnections();
         if ( !arguments.words.len() ) {
             var rows = conns.map( function( c ) { return { connection: c, dns: currentDns( c ) }; } );
-            return variables.cli.say( "dns", 0, { connections: rows }, arguments.asJson, rows.len() ? rows.map( function( r ) { return r.connection & ": " & ( len( r.dns ) ? r.dns : "from DHCP" ); } ) : [ "No active connection." ] );
+            return variables.cli.say( "dns", "ok", { connections: rows }, arguments.asJson, rows.len() ? rows.map( function( r ) { return r.connection & ": " & ( len( r.dns ) ? r.dns : "from DHCP" ); } ) : [ "No active connection." ] );
         }
         var what = arguments.words[ 1 ];
         var p = presets();
@@ -89,11 +89,11 @@ class Tweaks {
         else if ( what == "dhcp" && arguments.words.len() == 1 ) { v4 = ""; v6 = ""; }
         else if ( what == "custom" && arguments.words.len() == 2 ) {
             var ips = listToArray( replace( arguments.words[ 2 ], ",", " ", "all" ), " " );
-            for ( var ip in ips ) if ( !validIp( ip ) ) return variables.cli.fail( "dns", 2, ip & " is not an IP address", arguments.asJson );
+            for ( var ip in ips ) if ( !validIp( ip ) ) return variables.cli.fail( "dns", "usage", ip & " is not an IP address", arguments.asJson );
             for ( var i2 in ips ) { if ( find( ":", i2 ) ) v6 = trim( v6 & " " & i2 ); else v4 = trim( v4 & " " & i2 ); }
-            if ( !ips.len() ) return variables.cli.fail( "dns", 2, "give at least one IP address", arguments.asJson );
-        } else return variables.cli.fail( "dns", 2, new bxrig.CommandSpec().usage( "dns" ), arguments.asJson );
-        if ( !conns.len() ) return variables.cli.fail( "dns", 4, "no active network connection", arguments.asJson );
+            if ( !ips.len() ) return variables.cli.fail( "dns", "usage", "give at least one IP address", arguments.asJson );
+        } else return variables.cli.fail( "dns", "usage", new bxrig.CommandSpec().usage( "dns" ), arguments.asJson );
+        if ( !conns.len() ) return variables.cli.fail( "dns", "precondition", "no active network connection", arguments.asJson );
         var auto = what == "dhcp" ? "no" : "yes";
         var cmds = [];
         for ( var c in conns ) {
@@ -132,22 +132,22 @@ class Tweaks {
             if ( r.exitCode == 0 ) for ( var n in listToArray( trim( r.output ), chr( 10 ) ) ) if ( kernelName( n ) && !arrayFind( inst, n ) && !reFind( "-(nvidia|zfs|headers|rc)", n ) ) avail.append( n );
             var lines = [ "running: " & running, "installed: " & inst.toList( ", " ) ];
             lines.append( "available: " & ( avail.len() ? avail.toList( ", " ) : "none found" ) );
-            return variables.cli.say( "kernel", 0, { running: running, installed: inst, available: avail }, arguments.asJson, lines );
+            return variables.cli.say( "kernel", "ok", { running: running, installed: inst, available: avail }, arguments.asJson, lines );
         }
-        if ( ( verb != "install" && verb != "remove" ) || arguments.words.len() != 2 ) return variables.cli.fail( "kernel", 2, new bxrig.CommandSpec().usage( "kernel" ), arguments.asJson );
+        if ( ( verb != "install" && verb != "remove" ) || arguments.words.len() != 2 ) return variables.cli.fail( "kernel", "usage", new bxrig.CommandSpec().usage( "kernel" ), arguments.asJson );
         var name = arguments.words[ 2 ];
-        if ( !kernelName( name ) ) return variables.cli.fail( "kernel", 2, name & " is not a kernel package name (for example linux-cachyos-lts)", arguments.asJson );
+        if ( !kernelName( name ) ) return variables.cli.fail( "kernel", "usage", name & " is not a kernel package name (for example linux-cachyos-lts)", arguments.asJson );
         var pkgs = [ name, name & "-headers" ];
         if ( verb == "install" ) {
-            if ( variables.proc.exec( [ "pacman", "-Si", name ], 20 ).exitCode != 0 ) return variables.cli.fail( "kernel", 4, name & " is not in the repositories (bxrig kernel list)", arguments.asJson );
-            if ( arrayFind( installedKernels(), name ) ) return variables.cli.say( "kernel", 0, { installed: name }, arguments.asJson, [ name & " is already installed." ] );
+            if ( variables.proc.exec( [ "pacman", "-Si", name ], 20 ).exitCode != 0 ) return variables.cli.fail( "kernel", "precondition", name & " is not in the repositories (bxrig kernel list)", arguments.asJson );
+            if ( arrayFind( installedKernels(), name ) ) return variables.cli.say( "kernel", "ok", { installed: name }, arguments.asJson, [ name & " is already installed." ] );
             return runPlan( "kernel", "install the " & name & " kernel and its headers (choose it in the boot menu afterwards)", [ [ "sudo", "pacman", "-S", "--needed", "--noconfirm", pkgs[ 1 ], pkgs[ 2 ] ] ], arguments.yes, arguments.dry, arguments.asJson, { kernel: name } );
         }
         var inst2 = installedKernels();
-        if ( !arrayFind( inst2, name ) ) return variables.cli.fail( "kernel", 4, name & " is not installed", arguments.asJson );
-        if ( inst2.len() < 2 ) return variables.cli.fail( "kernel", 4, "it is the only kernel installed: add another one first", arguments.asJson );
+        if ( !arrayFind( inst2, name ) ) return variables.cli.fail( "kernel", "precondition", name & " is not installed", arguments.asJson );
+        if ( inst2.len() < 2 ) return variables.cli.fail( "kernel", "precondition", "it is the only kernel installed: add another one first", arguments.asJson );
         var run = trim( variables.proc.exec( [ "uname", "-r" ], 5 ).output );
-        if ( runningKernelIs( name, run ) ) return variables.cli.fail( "kernel", 4, name & " is the running kernel (" & run & "): boot another one first", arguments.asJson );
+        if ( runningKernelIs( name, run ) ) return variables.cli.fail( "kernel", "precondition", name & " is the running kernel (" & run & "): boot another one first", arguments.asJson );
         return runPlan( "kernel", "remove the " & name & " kernel", [ [ "sudo", "pacman", "-Rns", "--noconfirm", pkgs[ 1 ], pkgs[ 2 ] ] ], arguments.yes, arguments.dry, arguments.asJson, { kernel: name } );
     }
 }

@@ -73,7 +73,7 @@ class Packages {
         }
         if ( asJson ) println( variables.cli.envelope( "profile-list", 0, rows ) );
         else for ( var r in rows ) println( r.id & ": " & r.title & " (" & r["default"] & " default, " & r.optional & " optional) - " & r.blurb );
-        return 0;
+        return new bxrig.Exit().ok();
     }
 
     // Turns a command line into a resolver request. Returns { bad, usage, req }; bad means a usage error (exit 2).
@@ -211,11 +211,11 @@ class Packages {
         var app = new bxrig.Catalog().find( variables.cat, id );
         if ( structIsEmpty( app ) ) {
             println( "Unknown catalog id: " & id );
-            return 3;
+            return new bxrig.Exit().timeout();
         }
         var targets = structKeyExists( app, "targets" ) ? app.targets : [];
         if ( asJson ) println( variables.cli.envelope( "package-source", 0, { id: id, source: app.source, targets: targets, tier: app.tier, group: app.group } ) );
         else println( id & ": " & app.source & ( targets.len() ? " (" & targets.toList( " " ) & ")" : "" ) & "  tier: " & app.tier & "  group: " & app.group );
-        return 0;
+        return new bxrig.Exit().ok();
     }
 }

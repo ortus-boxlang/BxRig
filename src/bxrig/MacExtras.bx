@@ -29,13 +29,13 @@ class MacExtras {
     function qdbus() { for ( var q in [ "qdbus6", "qdbus" ] ) if ( variables.proc.has( q ) ) return q; return ""; }
 
     function need( command, tool, hint, asJson ) {
-        return variables.cli.say( arguments.command, 4, { error: arguments.tool & " was not found" }, arguments.asJson, [ "error: " & arguments.tool & " was not found. " & arguments.hint ] );
+        return variables.cli.say( arguments.command, "precondition", { error: arguments.tool & " was not found" }, arguments.asJson, [ "error: " & arguments.tool & " was not found. " & arguments.hint ] );
     }
 
     function run( command, argv, ok, asJson, timeout = 600 ) {
         var r = variables.proc.exec( arguments.argv, arguments.timeout );
-        if ( r.exitCode != 0 ) return variables.cli.say( arguments.command, 6, { error: trim( r.output ) }, arguments.asJson, [ "error: " & arguments.argv[ 1 ] & " failed (exit " & r.exitCode & ")" ] );
-        return variables.cli.say( arguments.command, 0, { argv: arguments.argv }, arguments.asJson, arguments.ok == "" ? [] : [ arguments.ok ] );
+        if ( r.exitCode != 0 ) return variables.cli.say( arguments.command, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & arguments.argv[ 1 ] & " failed (exit " & r.exitCode & ")" ] );
+        return variables.cli.say( arguments.command, "ok", { argv: arguments.argv }, arguments.asJson, arguments.ok == "" ? [] : [ arguments.ok ] );
     }
 
     function emoji( asJson ) {
@@ -56,7 +56,7 @@ class MacExtras {
         if ( !variables.proc.has( "hyprctl" ) ) return need( "window", "hyprctl", "This needs Hyprland.", arguments.asJson );
         if ( arguments.action == "minimize" ) return run( "window", [ "hyprctl", "dispatch", "movetoworkspacesilent", "special:minimized" ], "", arguments.asJson );
         if ( arguments.action == "restore" ) return run( "window", [ "hyprctl", "dispatch", "togglespecialworkspace", "minimized" ], "", arguments.asJson );
-        return variables.cli.say( "window", 2, {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "window" ) ] );
+        return variables.cli.say( "window", "usage", {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "window" ) ] );
     }
 
     function overview( setup, asJson ) {
@@ -69,9 +69,9 @@ class MacExtras {
             if ( !variables.proc.has( "hyprpm" ) ) return need( "overview", "hyprpm", "It ships with Hyprland.", arguments.asJson );
             for ( var step in [ [ "hyprpm", "update" ], [ "hyprpm", "add", "https://github.com/hyprwm/hyprland-plugins" ], [ "hyprpm", "enable", "hyprexpo" ] ] ) {
                 var r = variables.proc.exec( step, 1800 );
-                if ( r.exitCode != 0 && step[ 2 ] != "add" ) return variables.cli.say( "overview", 6, { error: trim( r.output ) }, arguments.asJson, [ "error: " & step.toList( " " ) & " failed" ] );
+                if ( r.exitCode != 0 && step[ 2 ] != "add" ) return variables.cli.say( "overview", "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & step.toList( " " ) & " failed" ] );
             }
-            return variables.cli.say( "overview", 0, { plugin: "hyprexpo" }, arguments.asJson, [ "hyprexpo is enabled. Open the overview: bxrig overview" ] );
+            return variables.cli.say( "overview", "ok", { plugin: "hyprexpo" }, arguments.asJson, [ "hyprexpo is enabled. Open the overview: bxrig overview" ] );
         }
         return run( "overview", [ "hyprctl", "dispatch", "hyprexpo:expo", "toggle" ], "", arguments.asJson );
     }
@@ -121,15 +121,15 @@ class MacExtras {
             variables.proc.exec( [ "kwriteconfig6", "--file", "kwinrc", "--group", "NightColor", "--key", "Active", on ? "true" : "false" ], 20 );
             if ( on ) variables.proc.exec( [ "kwriteconfig6", "--file", "kwinrc", "--group", "NightColor", "--key", "Mode", "Automatic" ], 20 );
             if ( qdbus() != "" ) variables.proc.exec( [ qdbus(), "org.kde.KWin", "/KWin", "reconfigure" ], 20 );
-            return variables.cli.say( cmd, 0, { plasma_night_light: on }, arguments.asJson, [ "Plasma Night Light " & ( on ? "on (automatic sunrise and sunset)" : "off" ) & "." ] );
+            return variables.cli.say( cmd, "ok", { plasma_night_light: on }, arguments.asJson, [ "Plasma Night Light " & ( on ? "on (automatic sunrise and sunset)" : "off" ) & "." ] );
         }
         if ( arguments.action == "status" ) {
             var s = variables.proc.exec( [ "systemctl", "--user", "is-active", "bxrig-wlsunset.service" ], 15 );
-            return variables.cli.say( cmd, 0, { active: trim( s.output ) == "active" }, arguments.asJson, [ "Night shift: " & trim( s.output ) ] );
+            return variables.cli.say( cmd, "ok", { active: trim( s.output ) == "active" }, arguments.asJson, [ "Night shift: " & trim( s.output ) ] );
         }
         if ( arguments.action == "off" ) {
             variables.proc.exec( [ "systemctl", "--user", "disable", "--now", "bxrig-wlsunset.service" ], 30 );
-            return variables.cli.say( cmd, 0, { active: false }, arguments.asJson, [ "Night shift is off." ] );
+            return variables.cli.say( cmd, "ok", { active: false }, arguments.asJson, [ "Night shift is off." ] );
         }
         if ( arguments.action == "toggle" ) {
             var cur = variables.proc.exec( [ "systemctl", "--user", "is-active", "bxrig-wlsunset.service" ], 15 );
@@ -139,17 +139,17 @@ class MacExtras {
         var ll = [];
         if ( len( arguments.location ) ) {
             var parts = listToArray( arguments.location, "," );
-            if ( parts.len() != 2 || !isNumeric( parts[ 1 ] ) || !isNumeric( parts[ 2 ] ) ) return variables.cli.say( cmd, 4, { error: "location must be LAT,LON" }, arguments.asJson, [ "error: --location must be LAT,LON, for example 40.7,-74.0" ] );
+            if ( parts.len() != 2 || !isNumeric( parts[ 1 ] ) || !isNumeric( parts[ 2 ] ) ) return variables.cli.say( cmd, "precondition", { error: "location must be LAT,LON" }, arguments.asJson, [ "error: --location must be LAT,LON, for example 40.7,-74.0" ] );
             ll = [ parts[ 1 ], parts[ 2 ] ];
         } else ll = zoneCoords( tz() );
-        if ( ll.len() != 2 ) return variables.cli.say( cmd, 4, { error: "no coordinates for your time zone" }, arguments.asJson, [ "error: no coordinates found for your time zone; pass --location=LAT,LON" ] );
+        if ( ll.len() != 2 ) return variables.cli.say( cmd, "precondition", { error: "no coordinates for your time zone" }, arguments.asJson, [ "error: no coordinates found for your time zone; pass --location=LAT,LON" ] );
         var entry = { name: "wlsunset-unit", target: unitFile(), mode: "644", content: "[Unit]" & chr( 10 ) & "Description=BxRig night shift (wlsunset)" & chr( 10 ) & "After=graphical-session.target" & chr( 10 ) & chr( 10 ) & "[Service]" & chr( 10 ) & "ExecStart=wlsunset -l " & ll[ 1 ] & " -L " & ll[ 2 ] & " -t 3500 -T 6500" & chr( 10 ) & "Restart=on-failure" & chr( 10 ) & chr( 10 ) & "[Install]" & chr( 10 ) & "WantedBy=graphical-session.target" & chr( 10 ) };
         var st = variables.config.configState( entry );
         if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( entry, entry.content, "apply", true, false );
         variables.proc.exec( [ "systemctl", "--user", "daemon-reload" ], 30 );
         var r = variables.proc.exec( [ "systemctl", "--user", "enable", "--now", "bxrig-wlsunset.service" ], 60 );
-        if ( r.exitCode != 0 ) return variables.cli.say( cmd, 6, { error: trim( r.output ) }, arguments.asJson, [ "error: could not start the night shift service" ] );
-        return variables.cli.say( cmd, 0, { active: true, latitude: ll[ 1 ], longitude: ll[ 2 ] }, arguments.asJson, [ "Night shift on: warm at sunset, cool at sunrise (" & ll[ 1 ] & ", " & ll[ 2 ] & ")." ] );
+        if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: could not start the night shift service" ] );
+        return variables.cli.say( cmd, "ok", { active: true, latitude: ll[ 1 ], longitude: ll[ 2 ] }, arguments.asJson, [ "Night shift on: warm at sunset, cool at sunrise (" & ll[ 1 ] & ", " & ll[ 2 ] & ")." ] );
     }
 
     // ---- GPU ----
@@ -179,7 +179,7 @@ class MacExtras {
         if ( arrayFind( vendors, "nvidia" ) ) lines.append( "note: for local AI install ollama-cuda; CachyOS normally installs the NVIDIA driver itself (chwd)." );
         if ( arrayFind( vendors, "amd" ) ) lines.append( "note: for local AI install ollama-rocm." );
         if ( missing.len() ) lines.append( "Install: sudo pacman -S --needed " & missing.toList( " " ) );
-        return variables.cli.say( cmd, missing.len() ? 4 : 0, { gpus: cards, vendors: vendors, packages: rows, missing: missing }, arguments.asJson, lines );
+        return variables.cli.say( cmd, missing.len() ? "precondition" : "ok", { gpus: cards, vendors: vendors, packages: rows, missing: missing }, arguments.asJson, lines );
     }
 
     // ---- input devices and gestures ----
@@ -194,7 +194,7 @@ class MacExtras {
             ( d.libinput_gestures ? "ok    " : "FIX   " ) & "libinput-gestures" & ( d.libinput_gestures ? "" : ": bxrig install libinput-gestures" ),
             ( d.in_input_group ? "ok    " : "FIX   " ) & "you are in the input group" & ( d.in_input_group ? "" : ": sudo gpasswd -a $USER input, then log out and in" )
         ];
-        return variables.cli.say( "input doctor", 0, d, arguments.asJson, lines );
+        return variables.cli.say( "input doctor", "ok", d, arguments.asJson, lines );
     }
 
     function gesturesFile() { return variables.config.cfgHome() & "/libinput-gestures.conf"; }
@@ -212,12 +212,12 @@ class MacExtras {
         if ( !variables.proc.has( "libinput-gestures-setup" ) ) return need( cmd, "libinput-gestures-setup", "Install it: bxrig install libinput-gestures", arguments.asJson );
         var entry = { name: "libinput-gestures", target: gesturesFile(), mode: "644", content: gesturesText() };
         var data = { file: gesturesFile() };
-        if ( !arguments.yes || arguments.dryRun ) return variables.cli.say( cmd, arguments.dryRun ? 0 : 2, data, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": write " & gesturesFile() & " (3-finger swipe left/right: workspaces, up: overview) and start libinput-gestures at login", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes || arguments.dryRun ) return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", data, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": write " & gesturesFile() & " (3-finger swipe left/right: workspaces, up: overview) and start libinput-gestures at login", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ] );
         var st = variables.config.configState( entry );
         if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( entry, entry.content, "apply", true, false );
         variables.proc.exec( [ "libinput-gestures-setup", "autostart" ], 30 );
         variables.proc.exec( [ "libinput-gestures-setup", "start" ], 30 );
-        return variables.cli.say( cmd, 0, data, arguments.asJson, [ "Gestures set up. You must be in the input group (bxrig input doctor)." ] );
+        return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Gestures set up. You must be in the input group (bxrig input doctor)." ] );
     }
 
     // ---- AirPlay ----
@@ -227,20 +227,20 @@ class MacExtras {
         var cmd = "airplay";
         if ( arguments.action == "status" ) {
             var s = variables.proc.exec( [ "systemctl", "--user", "is-active", "bxrig-airplay.service" ], 15 );
-            return variables.cli.say( cmd, 0, { active: trim( s.output ) == "active" }, arguments.asJson, [ "AirPlay receiver: " & trim( s.output ) ] );
+            return variables.cli.say( cmd, "ok", { active: trim( s.output ) == "active" }, arguments.asJson, [ "AirPlay receiver: " & trim( s.output ) ] );
         }
         if ( arguments.action == "off" ) {
             variables.proc.exec( [ "systemctl", "--user", "disable", "--now", "bxrig-airplay.service" ], 30 );
-            return variables.cli.say( cmd, 0, { active: false }, arguments.asJson, [ "AirPlay receiver is off." ] );
+            return variables.cli.say( cmd, "ok", { active: false }, arguments.asJson, [ "AirPlay receiver is off." ] );
         }
-        if ( arguments.action != "on" ) return variables.cli.say( cmd, 2, {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "airplay" ) ] );
+        if ( arguments.action != "on" ) return variables.cli.say( cmd, "usage", {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "airplay" ) ] );
         if ( !variables.proc.has( "uxplay" ) ) return need( cmd, "uxplay", "Install it: bxrig install uxplay", arguments.asJson );
         var entry = { name: "airplay-unit", target: airplayUnit(), mode: "644", content: "[Unit]" & chr( 10 ) & "Description=BxRig AirPlay receiver (UxPlay)" & chr( 10 ) & "After=graphical-session.target" & chr( 10 ) & chr( 10 ) & "[Service]" & chr( 10 ) & "ExecStart=uxplay -n BxRig" & chr( 10 ) & "Restart=on-failure" & chr( 10 ) & chr( 10 ) & "[Install]" & chr( 10 ) & "WantedBy=graphical-session.target" & chr( 10 ) };
         var st = variables.config.configState( entry );
         if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( entry, entry.content, "apply", true, false );
         variables.proc.exec( [ "systemctl", "--user", "daemon-reload" ], 30 );
         var r = variables.proc.exec( [ "systemctl", "--user", "enable", "--now", "bxrig-airplay.service" ], 60 );
-        if ( r.exitCode != 0 ) return variables.cli.say( cmd, 6, { error: trim( r.output ) }, arguments.asJson, [ "error: could not start the AirPlay receiver" ] );
-        return variables.cli.say( cmd, 0, { active: true }, arguments.asJson, [ "AirPlay receiver on as BxRig. It needs avahi: sudo systemctl enable --now avahi-daemon" ] );
+        if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: could not start the AirPlay receiver" ] );
+        return variables.cli.say( cmd, "ok", { active: true }, arguments.asJson, [ "AirPlay receiver on as BxRig. It needs avahi: sudo systemctl enable --now avahi-daemon" ] );
     }
 }

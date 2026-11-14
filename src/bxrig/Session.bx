@@ -76,11 +76,11 @@ class Session {
     function show( asJson ) {
         var all = sessions();
         var data = { sessions: all, preselected: current(), autologin: autologin(), state_file: stateFile() };
-        if ( asJson ) { println( variables.cli.envelope( "session show", 0, data ) ); return 0; }
+        if ( asJson ) { println( variables.cli.envelope( "session show", 0, data ) ); return new bxrig.Exit().ok(); }
         for ( var s in all ) println( s.file & "  " & s.name & ( current() == s.path || current() == s.file ? "  (preselected)" : "" ) );
         println( "login screen starts on: " & ( len( data.preselected ) ? data.preselected : "the last session used" ) );
         if ( len( data.autologin ) ) println( "automatic login: " & data.autologin );
-        return 0;
+        return new bxrig.Exit().ok();
     }
 
     // `session set hyprland|plasma`

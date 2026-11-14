@@ -149,9 +149,9 @@ class Installer {
 
     // 0 nothing failed, 7 some done and some failed, else 5 when pacman failed, 6 for AUR or PKGBUILD only.
     function exitCode( result ) {
-        if ( !result.failed.len() ) return 0;
-        if ( result.done.len() ) return 7;
-        for ( var f in result.failed ) if ( f.source == "pacman" ) return 5;
-        return 6;
+        if ( !result.failed.len() ) return new bxrig.Exit().ok();
+        if ( result.done.len() ) return new bxrig.Exit().partial();
+        for ( var f in result.failed ) if ( f.source == "pacman" ) return new bxrig.Exit().official();
+        return new bxrig.Exit().failed();
     }
 }

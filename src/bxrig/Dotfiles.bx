@@ -215,7 +215,7 @@ class Dotfiles {
         if ( p.code != 0 ) return variables.cli.say( "dotfiles plan", p.code, { error: p.error }, arguments.asJson, [ "error: " & p.error ] );
         var lines = summary( p );
         lines.append( "Nothing in your home directory was changed. Apply with: bxrig dotfiles apply " & arguments.repo & " --yes" );
-        return variables.cli.say( "dotfiles plan", 0, planData( p ), arguments.asJson, lines );
+        return variables.cli.say( "dotfiles plan", "ok", planData( p ), arguments.asJson, lines );
     }
 
     // ---- apply ----
@@ -270,24 +270,24 @@ class Dotfiles {
             if ( !arguments.asJson ) for ( var l in lines ) println( l );
             if ( !confirm( "Replace the " & p.conflicts.len() & " files you already have (originals are backed up)?" ) ) {
                 var m = "Nothing was changed: the files you already have were not approved (use --overwrite to approve them).";
-                return variables.cli.say( cmd, 2, variables.text.merge( data, { approved: false } ), arguments.asJson, [ m ] );
+                return variables.cli.say( cmd, "usage", variables.text.merge( data, { approved: false } ), arguments.asJson, [ m ] );
             }
             lines = [];
         }
         if ( p.installTool ) {
             var ins = variables.inst.exec( [ "sudo", "pacman", "-S", "--needed", "--noconfirm", p.tool ], 1800 );
-            if ( ins.exitCode != 0 ) return variables.cli.say( cmd, 4, variables.text.merge( data, { error: "Could not install " & p.tool } ), arguments.asJson, [ "error: could not install " & p.tool & " (" & trim( ins.output ) & ")" ] );
+            if ( ins.exitCode != 0 ) return variables.cli.say( cmd, "precondition", variables.text.merge( data, { error: "Could not install " & p.tool } ), arguments.asJson, [ "error: could not install " & p.tool & " (" & trim( ins.output ) & ")" ] );
         }
         var stamp = trim( variables.inst.exec( [ "date", "+%Y%m%d-%H%M%S" ], 10 ).output );
         var backups = [];
         try { backups = backUp( p.conflicts, stamp ); } catch ( any e ) {
             restoreBackups( backups );
-            return variables.cli.say( cmd, 6, variables.text.merge( data, { error: e.message } ), arguments.asJson, [ "error: " & e.message ] );
+            return variables.cli.say( cmd, "failed", variables.text.merge( data, { error: e.message } ), arguments.asJson, [ "error: " & e.message ] );
         }
         var failed = runMethod( p );
         if ( len( failed ) ) {
             restoreBackups( backups );
-            return variables.cli.say( cmd, 6, variables.text.merge( data, { error: failed } ), arguments.asJson, [ "error: " & failed ] );
+            return variables.cli.say( cmd, "failed", variables.text.merge( data, { error: failed } ), arguments.asJson, [ "error: " & failed ] );
         }
         var links = [];
         if ( p.method == "links" || p.method == "stow" ) for ( var f in p.fresh ) links.append( { target: f.target, source: f.source } );
@@ -301,7 +301,7 @@ class Dotfiles {
         }
         variables.config.writeAtomic( journalFile(), jsonSerialize( { repo: p.repo, method: p.method, clone: p.clone, applied: now() & "", stamp: stamp, links: links, backups: backups, stow: p.method == "stow" ? stowPackages( p.clone ) : [] } ) & chr( 10 ), "600" );
         var out = [ "Applied your dotfiles (" & p.method & "): " & ( p.fresh.len() + p.conflicts.len() ) & " files" & ( backups.len() ? ", " & backups.len() & " existing files backed up to " & backupRoot() & "/" & stamp : "" ) & ".", "Undo with: bxrig dotfiles undo --yes" ];
-        return variables.cli.say( cmd, 0, variables.text.merge( data, { applied: true, backups: backups.map( function( b ) { return b.backup; } ) } ), arguments.asJson, out );
+        return variables.cli.say( cmd, "ok", variables.text.merge( data, { applied: true, backups: backups.map( function( b ) { return b.backup; } ) } ), arguments.asJson, out );
     }
 
     // Does the work for the method. Returns "" or an error message.
@@ -341,8 +341,8 @@ class Dotfiles {
 
     function status( asJson ) {
         var j = journal();
-        if ( structIsEmpty( j ) ) return variables.cli.say( "dotfiles status", 0, { applied: false }, arguments.asJson, [ "No dotfiles have been applied by BxRig." ] );
-        return variables.cli.say( "dotfiles status", 0, { applied: true, repo: j.repo, method: j.method, when: j.applied, links: j.links.len(), backups: j.backups.len() }, arguments.asJson,
+        if ( structIsEmpty( j ) ) return variables.cli.say( "dotfiles status", "ok", { applied: false }, arguments.asJson, [ "No dotfiles have been applied by BxRig." ] );
+        return variables.cli.say( "dotfiles status", "ok", { applied: true, repo: j.repo, method: j.method, when: j.applied, links: j.links.len(), backups: j.backups.len() }, arguments.asJson,
             [ "Dotfiles from " & j.repo & " (" & j.method & "), applied " & j.applied, "  " & j.links.len() & " links, " & j.backups.len() & " original files backed up in " & backupRoot() & "/" & j.stamp ] );
     }
 
@@ -350,7 +350,7 @@ class Dotfiles {
     function undo( yes, dryRun, asJson ) {
         var cmd = "dotfiles undo";
         var j = journal();
-        if ( structIsEmpty( j ) ) return variables.cli.say( cmd, 4, { error: "Nothing to undo: no dotfiles have been applied by BxRig" }, arguments.asJson, [ "error: nothing to undo: no dotfiles have been applied by BxRig" ] );
+        if ( structIsEmpty( j ) ) return variables.cli.say( cmd, "precondition", { error: "Nothing to undo: no dotfiles have been applied by BxRig" }, arguments.asJson, [ "error: nothing to undo: no dotfiles have been applied by BxRig" ] );
         var what = [ "remove " & j.links.len() & " links into the dotfiles repository", "put back " & j.backups.len() & " original files" ];
         if ( j.method == "chezmoi" || j.method == "yadm" ) what = [ "put back " & j.backups.len() & " original files (files " & j.method & " created stay; use " & j.method & " itself to remove them)" ];
         if ( !arguments.yes || arguments.dryRun ) {
@@ -369,6 +369,6 @@ class Dotfiles {
         }
         var back = restoreBackups( j.backups );
         fileDelete( journalFile() );
-        return variables.cli.say( cmd, 0, { removed: removed, restored: back }, arguments.asJson, [ "Removed " & removed & " links and restored " & back & " original files." ] );
+        return variables.cli.say( cmd, "ok", { removed: removed, restored: back }, arguments.asJson, [ "Removed " & removed & " links and restored " & back & " original files." ] );
     }
 }

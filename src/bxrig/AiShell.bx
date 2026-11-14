@@ -178,16 +178,16 @@ class AiShell {
     function run( action, forced, dryRun, asJson ) {
         var cmd = "ai shell";
         var be = backend( arguments.forced );
-        if ( !arrayFind( [ "hyprland", "yakuake" ], be ) ) return variables.cli.say( cmd, 4, { error: "No backend" }, arguments.asJson, [ "error: the pull-down AI shell needs a Hyprland session or KDE Plasma (Yakuake). Use --backend=hyprland or --backend=yakuake to choose." ] );
+        if ( !arrayFind( [ "hyprland", "yakuake" ], be ) ) return variables.cli.say( cmd, "precondition", { error: "No backend" }, arguments.asJson, [ "error: the pull-down AI shell needs a Hyprland session or KDE Plasma (Yakuake). Use --backend=hyprland or --backend=yakuake to choose." ] );
         if ( arguments.action == "status" ) {
             var present = be == "hyprland" ? hasWindow() : yakuakeRunning();
-            return variables.cli.say( cmd, 0, { backend: be, running: present }, arguments.asJson, [ "Backend: " & be, "Window: " & ( present ? "open" : "not started" ) ] );
+            return variables.cli.say( cmd, "ok", { backend: be, running: present }, arguments.asJson, [ "Backend: " & be, "Window: " & ( present ? "open" : "not started" ) ] );
         }
-        if ( arguments.action != "toggle" ) return variables.cli.say( cmd, 2, {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "ai shell" ) ] );
+        if ( arguments.action != "toggle" ) return variables.cli.say( cmd, "usage", {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "ai shell" ) ] );
         var r = be == "hyprland" ? hyprlandToggle( arguments.dryRun ) : yakuakeToggle( arguments.dryRun );
         if ( r.code != 0 ) return variables.cli.say( cmd, r.code, { error: r.error, backend: be }, arguments.asJson, [ "error: " & r.error ] );
         var data = { backend: be, action: r.action, runs: r.label, steps: r.steps };
         var msg = arguments.dryRun ? "Dry run: " & r.steps.map( function( s ) { return s.toList( " " ); } ).toList( " ; " ) : "AI shell " & r.action & ( len( r.label ) ? " (" & r.label & ")" : "" ) & ".";
-        return variables.cli.say( cmd, 0, data, arguments.asJson, [ msg ], arguments.dryRun );
+        return variables.cli.say( cmd, "ok", data, arguments.asJson, [ msg ], arguments.dryRun );
     }
 }

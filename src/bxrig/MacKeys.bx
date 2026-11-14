@@ -15,16 +15,16 @@ class MacKeys {
 
     function status( asJson ) {
         var on = active();
-        return variables.cli.say( "keys mac status", 0, { installed: fileExists( unitFile() ), active: on }, arguments.asJson, [ "Mac-style keys: " & ( on ? "on" : "off" ) & ( fileExists( unitFile() ) ? "" : " (not set up: bxrig setup xremap)" ) ] );
+        return variables.cli.say( "keys mac status", "ok", { installed: fileExists( unitFile() ), active: on }, arguments.asJson, [ "Mac-style keys: " & ( on ? "on" : "off" ) & ( fileExists( unitFile() ) ? "" : " (not set up: bxrig setup xremap)" ) ] );
     }
 
     function set( on, yes, asJson ) {
         var cmd = "keys mac " & ( arguments.on ? "on" : "off" );
-        if ( !fileExists( unitFile() ) ) return variables.cli.say( cmd, 4, { error: "xremap is not set up" }, arguments.asJson, [ "error: xremap is not set up. Run: bxrig setup xremap --yes" ] );
+        if ( !fileExists( unitFile() ) ) return variables.cli.say( cmd, "precondition", { error: "xremap is not set up" }, arguments.asJson, [ "error: xremap is not set up. Run: bxrig setup xremap --yes" ] );
         var argv = [ "systemctl", "--user", arguments.on ? "enable" : "disable", "--now", "xremap" ];
-        if ( !arguments.yes ) return variables.cli.say( cmd, 2, { command: argv }, arguments.asJson, [ "Plan: " & argv.toList( " " ), "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", { command: argv }, arguments.asJson, [ "Plan: " & argv.toList( " " ), "Nothing was changed. Add --yes to apply." ] );
         var r = variables.proc.exec( argv, 30 );
-        if ( r.exitCode != 0 ) return variables.cli.say( cmd, 6, { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
-        return variables.cli.say( cmd, 0, { active: arguments.on }, arguments.asJson, [ "Mac-style keys are " & ( arguments.on ? "on." : "off. Super+C and Super+V are plain Super shortcuts again." ) ] );
+        if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+        return variables.cli.say( cmd, "ok", { active: arguments.on }, arguments.asJson, [ "Mac-style keys are " & ( arguments.on ? "on." : "off. Super+C and Super+V are plain Super shortcuts again." ) ] );
     }
 }

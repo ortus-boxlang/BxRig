@@ -75,20 +75,20 @@ class Power {
         lines.append( "profile: " & ( len( data.profile ) ? data.profile : "unknown (power-profiles-daemon not available)" ) );
         lines.append( "lid: " & data.lid );
         lines.append( "services: power-profiles-daemon " & ( data.power_profiles_daemon ? "on" : "off" ) & ", upower " & ( data.upower ? "on" : "off" ) );
-        return variables.out.say( 0, data, arguments.asJson, lines );
+        return variables.out.say( "ok", data, arguments.asJson, lines );
     }
 
     function profileCmd( args, dry, asJson ) {
-        if ( !arguments.args.len() ) return variables.out.say( 0, { profile: currentProfile() }, arguments.asJson, [ len( currentProfile() ) ? currentProfile() : "unknown" ] );
+        if ( !arguments.args.len() ) return variables.out.say( "ok", { profile: currentProfile() }, arguments.asJson, [ len( currentProfile() ) ? currentProfile() : "unknown" ] );
         var want = arguments.args[ 1 ];
         var map = profiles();
-        if ( arguments.args.len() != 1 || !structKeyExists( map, want ) ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "power profile" ), arguments.asJson );
-        if ( !variables.proc.has( "powerprofilesctl" ) ) return variables.out.fail( 4, "power-profiles-daemon is not installed (bxrig power setup)", arguments.asJson );
+        if ( arguments.args.len() != 1 || !structKeyExists( map, want ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "power profile" ), arguments.asJson );
+        if ( !variables.proc.has( "powerprofilesctl" ) ) return variables.out.fail( "precondition", "power-profiles-daemon is not installed (bxrig power setup)", arguments.asJson );
         var argv = [ "powerprofilesctl", "set", map[ want ] ];
-        if ( arguments.dry ) return variables.out.say( 0, { profile: want, command: argv.toList( " " ) }, arguments.asJson, [ "would run: " & argv.toList( " " ) ], true );
+        if ( arguments.dry ) return variables.out.say( "ok", { profile: want, command: argv.toList( " " ) }, arguments.asJson, [ "would run: " & argv.toList( " " ) ], true );
         var r = variables.proc.exec( argv, 15 );
-        if ( r.exitCode != 0 ) return variables.out.say( 6, { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
-        return variables.out.say( 0, { profile: want }, arguments.asJson, [ "profile: " & want ] );
+        if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+        return variables.out.say( "ok", { profile: want }, arguments.asJson, [ "profile: " & want ] );
     }
 
     // The logind drop-in for a lid action.
@@ -101,37 +101,37 @@ class Power {
 
     function lidCmd( args, yes, dry, asJson ) {
         var want = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
-        if ( !arrayFind( [ "suspend", "lock", "ignore" ], want ) ) return variables.out.fail( 2, new bxrig.CommandSpec().usage( "power lid" ), arguments.asJson );
+        if ( !arrayFind( [ "suspend", "lock", "ignore" ], want ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "power lid" ), arguments.asJson );
         var tmp = getTempDirectory() & "/bxrig-lid-" & createUUID() & ".conf";
         var cmds = [ [ "sudo", "install", "-Dm644", tmp, lidFile() ] ];
         var plan = [ "Plan: closing the lid will " & want, "  write " & lidFile(), "  sudo install ...", "  note: logind reads it on the next login or reboot (it is not restarted here, that would end your session)" ];
         var data = { action: want, file: lidFile(), commands: cmds.map( function( c ) { return c.toList( " " ); } ) };
         if ( !arguments.yes || arguments.dry ) {
             plan.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return variables.out.say( arguments.dry ? 0 : 2, data, arguments.asJson, plan, arguments.dry );
+            return variables.out.say( arguments.dry ? "ok" : "plan", data, arguments.asJson, plan, arguments.dry );
         }
         fileWrite( tmp, lidConf( want ) );
         var r = variables.proc.exec( cmds[ 1 ], 30 );
         try { fileDelete( tmp ); } catch ( any e ) {}
-        if ( r.exitCode != 0 ) return variables.out.say( 6, { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
-        return variables.out.say( 0, data, arguments.asJson, [ "lid: " & want, "written: " & lidFile(), "Applies from the next login or reboot." ] );
+        if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+        return variables.out.say( "ok", data, arguments.asJson, [ "lid: " & want, "written: " & lidFile(), "Applies from the next login or reboot." ] );
     }
 
     function setupCmd( yes, dry, force, asJson ) {
-        if ( !batteries().len() && !arguments.force ) return variables.out.say( 0, { skipped: "no battery" }, arguments.asJson, [ "No battery found: this is a desktop, so there is nothing to set up. (--force installs the tools anyway.)" ] );
+        if ( !batteries().len() && !arguments.force ) return variables.out.say( "ok", { skipped: "no battery" }, arguments.asJson, [ "No battery found: this is a desktop, so there is nothing to set up. (--force installs the tools anyway.)" ] );
         var steps = [ [ "sudo", "pacman", "-S", "--needed", "--noconfirm", "power-profiles-daemon", "upower" ], [ "sudo", "systemctl", "enable", "--now", "power-profiles-daemon.service", "upower.service" ] ];
         var data = { steps: steps.map( function( s ) { return s.toList( " " ); } ) };
         if ( !arguments.yes || arguments.dry ) {
             var lines = [ arguments.dry ? "Dry run: laptop power tools" : "Plan: laptop power tools" ];
             for ( var s in steps ) lines.append( "  " & s.toList( " " ) );
             lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return variables.out.say( arguments.dry ? 0 : 2, data, arguments.asJson, lines, arguments.dry );
+            return variables.out.say( arguments.dry ? "ok" : "plan", data, arguments.asJson, lines, arguments.dry );
         }
         for ( var st in steps ) {
             var r = variables.proc.exec( st, 300 );
-            if ( r.exitCode != 0 ) return variables.out.say( 6, { error: trim( r.output ), step: st.toList( " " ) }, arguments.asJson, [ "error: " & st.toList( " " ) & ": " & trim( r.output ) ] );
+            if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ), step: st.toList( " " ) }, arguments.asJson, [ "error: " & st.toList( " " ) & ": " & trim( r.output ) ] );
         }
-        return variables.out.say( 0, data, arguments.asJson, [ "power-profiles-daemon and upower are installed and running.", "Choose a profile: bxrig power profile balanced" ] );
+        return variables.out.say( "ok", data, arguments.asJson, [ "power-profiles-daemon and upower are installed and running.", "Choose a profile: bxrig power profile balanced" ] );
     }
 
     function doctorCmd( asJson ) {
@@ -151,7 +151,7 @@ class Power {
         if ( bats.len() ) add( "hibernation", swap >= ram && ram > 0, swap >= ram && ram > 0 ? "disk swap is " & round( swap / 1048576 ) & " GB, enough for " & round( ram / 1048576 ) & " GB of RAM" : "hibernation needs disk swap at least the size of RAM (RAM " & round( ram / 1048576 ) & " GB, swap " & round( swap / 1048576 ) & " GB); suspend works without it" );
         var bad = checks.filter( function( c ) { return !c.ok; } );
         var lines = checks.map( function( c ) { return ( c.ok ? "ok    " : "warn  " ) & c.id & ": " & c.note; } );
-        return variables.out.say( 0, { checks: checks, problems: bad.len() }, arguments.asJson, lines );
+        return variables.out.say( "ok", { checks: checks, problems: bad.len() }, arguments.asJson, lines );
     }
 
     function run( words, dry = false, yes = false, asJson = false, force = false ) {
@@ -163,6 +163,6 @@ class Power {
         if ( verb == "lid" ) return lidCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
         if ( verb == "setup" ) return setupCmd( arguments.yes, arguments.dry, arguments.force, arguments.asJson );
         if ( verb == "doctor" ) return doctorCmd( arguments.asJson );
-        return variables.out.fail( 2, new bxrig.CommandSpec().usage( "power" ), arguments.asJson );
+        return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "power" ), arguments.asJson );
     }
 }

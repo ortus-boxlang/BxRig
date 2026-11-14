@@ -43,11 +43,11 @@ class Update {
 
     function channel( name, asJson ) {
         var d = load();
-        if ( !len( arguments.name ) ) return variables.out.say( 0, { channel: d.channel, channels: channels() }, arguments.asJson, [ "Update channel: " & d.channel & " (stable = tagged releases, beta = bleeding-edge builds of every push)" ] );
-        if ( !arrayFind( channels(), arguments.name ) ) return variables.out.say( 4, { error: "unknown channel" }, arguments.asJson, [ "error: unknown channel " & arguments.name & " (use stable or beta)" ] );
+        if ( !len( arguments.name ) ) return variables.out.say( "ok", { channel: d.channel, channels: channels() }, arguments.asJson, [ "Update channel: " & d.channel & " (stable = tagged releases, beta = bleeding-edge builds of every push)" ] );
+        if ( !arrayFind( channels(), arguments.name ) ) return variables.out.say( "precondition", { error: "unknown channel" }, arguments.asJson, [ "error: unknown channel " & arguments.name & " (use stable or beta)" ] );
         d.channel = arguments.name;
         save( d );
-        return variables.out.say( 0, { channel: d.channel }, arguments.asJson, [ "Update channel set to " & d.channel & ". Check: bxrig update check" ] );
+        return variables.out.say( "ok", { channel: d.channel }, arguments.asJson, [ "Update channel set to " & d.channel & ". Check: bxrig update check" ] );
     }
 
     // The running binary: BXRIG_SELF, else the first bxrig on PATH, resolved.
@@ -100,9 +100,9 @@ class Update {
     }
 
     function propsFailure( p, chan, asJson ) {
-        if ( arguments.p.error == "signature" ) return variables.out.say( 5, { error: "signature" }, arguments.asJson, [ "error: the release information for " & arguments.chan & " has an invalid signature. Nothing was changed." ] );
-        if ( arguments.p.error == "unsigned" ) return variables.out.say( 5, { error: "unsigned" }, arguments.asJson, [ "error: the release information for " & arguments.chan & " is not signed. Nothing was changed." ] );
-        return variables.out.say( 5, { error: "unreachable" }, arguments.asJson, [ "error: could not reach " & base() & "/" & arguments.chan & "/" ] );
+        if ( arguments.p.error == "signature" ) return variables.out.say( "official", { error: "signature" }, arguments.asJson, [ "error: the release information for " & arguments.chan & " has an invalid signature. Nothing was changed." ] );
+        if ( arguments.p.error == "unsigned" ) return variables.out.say( "official", { error: "unsigned" }, arguments.asJson, [ "error: the release information for " & arguments.chan & " is not signed. Nothing was changed." ] );
+        return variables.out.say( "official", { error: "unreachable" }, arguments.asJson, [ "error: could not reach " & base() & "/" & arguments.chan & "/" ] );
     }
 
     function pendingSystem() {
@@ -128,7 +128,7 @@ class Update {
         var lines = [ newer ? "A BxRig update is available on " & d.channel & " (" & ( p.version ?: "" ) & ", " & ( p.commit ?: "" ) & "). Install it: bxrig update apply --yes" : "BxRig is up to date on " & d.channel & "." ];
         if ( system > 0 ) lines.append( system & " system package updates are waiting: bxrig system update" );
         if ( arguments.doNotify && ( newer || system > 0 ) ) notify( "BxRig updates", ( newer ? "A new BxRig build is available. " : "" ) & ( system > 0 ? system & " system updates." : "" ) );
-        return variables.out.say( newer ? 10 : 0, data, arguments.asJson, lines );
+        return variables.out.say( newer ? "update" : "ok", data, arguments.asJson, lines );
     }
 
     function apply( yes, asJson ) {
@@ -136,41 +136,41 @@ class Update {
         var p = props( d.channel );
         if ( !p.ok ) return propsFailure( p, d.channel, arguments.asJson );
         var target = selfPath();
-        if ( !len( target ) ) return variables.out.say( 4, { error: "cannot find the installed bxrig" }, arguments.asJson, [ "error: cannot find the installed bxrig binary" ] );
+        if ( !len( target ) ) return variables.out.say( "precondition", { error: "cannot find the installed bxrig" }, arguments.asJson, [ "error: cannot find the installed bxrig binary" ] );
         var data = { channel: d.channel, target: target, latest: p.version ?: "" };
-        if ( structKeyExists( p, "sha256" ) && sha( target ) == p.sha256 ) return variables.out.say( 0, variables.text.merge( data, { updated: false } ), arguments.asJson, [ "Already on the latest " & d.channel & " build." ] );
-        if ( !arguments.yes ) return variables.out.say( 2, data, arguments.asJson, [ "Plan: replace " & target & " with the " & d.channel & " build " & ( p.version ?: "" ), "Nothing was changed. Add --yes to apply." ] );
+        if ( structKeyExists( p, "sha256" ) && sha( target ) == p.sha256 ) return variables.out.say( "ok", variables.text.merge( data, { updated: false } ), arguments.asJson, [ "Already on the latest " & d.channel & " build." ] );
+        if ( !arguments.yes ) return variables.out.say( "plan", data, arguments.asJson, [ "Plan: replace " & target & " with the " & d.channel & " build " & ( p.version ?: "" ), "Nothing was changed. Add --yes to apply." ] );
         var tmp = target & ".new-" & left( createUUID(), 8 );
         var dl = variables.proc.exec( [ "curl", "-fsSL", "--max-time", "600", "-o", tmp, base() & "/" & d.channel & "/bxrig-linux-x86_64" ], 700 );
         var sum = variables.proc.exec( [ "curl", "-fsSL", "--max-time", "30", base() & "/" & d.channel & "/bxrig-linux-x86_64.sha256" ], 60 );
-        if ( dl.exitCode != 0 || sum.exitCode != 0 ) { if ( fileExists( tmp ) ) fileDelete( tmp ); return variables.out.say( 5, { error: "download failed" }, arguments.asJson, [ "error: the download failed" ] ); }
+        if ( dl.exitCode != 0 || sum.exitCode != 0 ) { if ( fileExists( tmp ) ) fileDelete( tmp ); return variables.out.say( "official", { error: "download failed" }, arguments.asJson, [ "error: the download failed" ] ); }
         var got = sha( tmp );
-        if ( listFirst( trim( sum.output ), " " ) != got || ( structKeyExists( p, "sha256" ) && p.sha256 != got ) ) { fileDelete( tmp ); return variables.out.say( 5, { error: "checksum mismatch" }, arguments.asJson, [ "error: the SHA-256 does not match; nothing was replaced" ] ); }
+        if ( listFirst( trim( sum.output ), " " ) != got || ( structKeyExists( p, "sha256" ) && p.sha256 != got ) ) { fileDelete( tmp ); return variables.out.say( "official", { error: "checksum mismatch" }, arguments.asJson, [ "error: the SHA-256 does not match; nothing was replaced" ] ); }
         variables.proc.exec( [ "chmod", "755", tmp ], 10 );
         var mv = variables.proc.exec( [ "mv", "-f", tmp, target ], 30 );
-        if ( mv.exitCode != 0 ) { if ( fileExists( tmp ) ) fileDelete( tmp ); return variables.out.say( 6, { error: trim( mv.output ) }, arguments.asJson, [ "error: could not replace " & target ] ); }
-        return variables.out.say( 0, variables.text.merge( data, { updated: true } ), arguments.asJson, [ "Updated " & target & " to the " & d.channel & " build " & ( p.version ?: "" ) & "." ] );
+        if ( mv.exitCode != 0 ) { if ( fileExists( tmp ) ) fileDelete( tmp ); return variables.out.say( "failed", { error: trim( mv.output ) }, arguments.asJson, [ "error: could not replace " & target ] ); }
+        return variables.out.say( "ok", variables.text.merge( data, { updated: true } ), arguments.asJson, [ "Updated " & target & " to the " & d.channel & " build " & ( p.version ?: "" ) & "." ] );
     }
 
     function unit( kind ) { return variables.config.cfgHome() & "/systemd/user/bxrig-update-check." & arguments.kind; }
 
     function notifications( action, asJson ) {
         var d = load();
-        if ( arguments.action == "status" ) return variables.out.say( 0, { enabled: d.notify }, arguments.asJson, [ "Update notifications: " & ( d.notify ? "on (daily)" : "off" ) ] );
+        if ( arguments.action == "status" ) return variables.out.say( "ok", { enabled: d.notify }, arguments.asJson, [ "Update notifications: " & ( d.notify ? "on (daily)" : "off" ) ] );
         if ( arguments.action == "off" ) {
             variables.proc.exec( [ "systemctl", "--user", "disable", "--now", "bxrig-update-check.timer" ], 30 );
             d.notify = false; save( d );
-            return variables.out.say( 0, { enabled: false }, arguments.asJson, [ "Update notifications are off." ] );
+            return variables.out.say( "ok", { enabled: false }, arguments.asJson, [ "Update notifications are off." ] );
         }
-        if ( arguments.action != "on" ) return variables.out.say( 2, {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "update notifications" ) ] );
+        if ( arguments.action != "on" ) return variables.out.say( "usage", {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "update notifications" ) ] );
         var svc = { name: "update-service", target: unit( "service" ), mode: "644", content: "[Unit]" & chr( 10 ) & "Description=BxRig update check" & chr( 10 ) & chr( 10 ) & "[Service]" & chr( 10 ) & "Type=oneshot" & chr( 10 ) & "ExecStart=sh -c 'PATH=$HOME/.local/bin:$PATH bxrig update check --notify; true'" & chr( 10 ) };
         var tim = { name: "update-timer", target: unit( "timer" ), mode: "644", content: "[Unit]" & chr( 10 ) & "Description=BxRig daily update check" & chr( 10 ) & chr( 10 ) & "[Timer]" & chr( 10 ) & "OnCalendar=daily" & chr( 10 ) & "RandomizedDelaySec=1h" & chr( 10 ) & "Persistent=true" & chr( 10 ) & chr( 10 ) & "[Install]" & chr( 10 ) & "WantedBy=timers.target" & chr( 10 ) };
         for ( var e in [ svc, tim ] ) { var st = variables.config.configState( e ); if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( e, e.content, "apply", true, false ); }
         variables.proc.exec( [ "systemctl", "--user", "daemon-reload" ], 30 );
         var r = variables.proc.exec( [ "systemctl", "--user", "enable", "--now", "bxrig-update-check.timer" ], 60 );
-        if ( r.exitCode != 0 ) return variables.out.say( 6, { error: trim( r.output ) }, arguments.asJson, [ "error: could not start the timer" ] );
+        if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: could not start the timer" ] );
         d.notify = true; save( d );
-        return variables.out.say( 0, { enabled: true }, arguments.asJson, [ "Update notifications are on: a daily check, shown as a desktop notification." ] );
+        return variables.out.say( "ok", { enabled: true }, arguments.asJson, [ "Update notifications are on: a daily check, shown as a desktop notification." ] );
     }
 
     // `system update [--yes]`
@@ -186,12 +186,12 @@ class Update {
             for ( var st in data.steps ) plan.append( "  " & st );
             plan.append( snap.len() ? "A snapshot is taken first." : "No snapshot tool found (snapper or timeshift): the update runs without one." );
             plan.append( "Nothing was changed. Add --yes to apply." );
-            return variables.out.say( 2, data, arguments.asJson, plan );
+            return variables.out.say( "plan", data, arguments.asJson, plan );
         }
         for ( var s in steps ) {
             var r = variables.proc.exec( s, 3600 );
-            if ( r.exitCode != 0 ) return variables.out.say( 6, { error: s.toList( " " ) & " failed" }, arguments.asJson, [ "error: " & s.toList( " " ) & " failed (exit " & r.exitCode & ")" ] );
+            if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: s.toList( " " ) & " failed" }, arguments.asJson, [ "error: " & s.toList( " " ) & " failed (exit " & r.exitCode & ")" ] );
         }
-        return variables.out.say( 0, data, arguments.asJson, [ "The system is up to date." ] );
+        return variables.out.say( "ok", data, arguments.asJson, [ "The system is up to date." ] );
     }
 }

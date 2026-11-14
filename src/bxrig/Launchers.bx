@@ -148,16 +148,16 @@ class Launchers {
         data.submenu = sub == extras().len();
         lines.append( "Submenu BxRig: " & ( sub == extras().len() ? "yes" : "no" ) );
         if ( !present ) lines.append( "Turn them on: bxrig launchers on --yes" );
-        return variables.cli.say( "launchers status", 0, data, arguments.asJson, lines );
+        return variables.cli.say( "launchers status", "ok", data, arguments.asJson, lines );
     }
 
     // `launchers on [--yes] [--dry-run]`
     function on( yes, dryRun, asJson ) {
         var cmd = "launchers on";
-        if ( variables.inst.isRoot() ) return variables.cli.say( cmd, 4, { error: "Run as a regular user" }, arguments.asJson, [ "error: run as a regular user" ] );
-        if ( !variables.inst.hasCommand( "base64" ) ) return variables.cli.say( cmd, 4, { error: "base64 not found" }, arguments.asJson, [ "error: base64 (coreutils) was not found" ] );
+        if ( variables.inst.isRoot() ) return variables.cli.say( cmd, "precondition", { error: "Run as a regular user" }, arguments.asJson, [ "error: run as a regular user" ] );
+        if ( !variables.inst.hasCommand( "base64" ) ) return variables.cli.say( cmd, "precondition", { error: "base64 not found" }, arguments.asJson, [ "error: base64 (coreutils) was not found" ] );
         var term = new bxrig.Ai( variables.cli, variables.runner ).terminal();
-        if ( !structKeyExists( term, "argv" ) ) return variables.cli.say( cmd, 4, { error: "No terminal" }, arguments.asJson, [ "error: no terminal program found (ghostty, kitty, foot, alacritty or konsole)" ] );
+        if ( !structKeyExists( term, "argv" ) ) return variables.cli.say( cmd, "precondition", { error: "No terminal" }, arguments.asJson, [ "error: no terminal program found (ghostty, kitty, foot, alacritty or konsole)" ] );
         var rs = rows( term.argv );
         var plan = [];
         var kept = [];
@@ -174,19 +174,19 @@ class Launchers {
             for ( var ip in iconPlan ) lines.append( "  write " & ip.file );
             if ( !iconWrite ) lines.append( "  keep  the BxRig icons (already there)" );
             lines.append( arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return variables.cli.say( cmd, arguments.dryRun ? 0 : 2, data, arguments.asJson, lines );
+            return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", data, arguments.asJson, lines );
         }
         for ( var r in plan ) {
-            if ( variables.config.configWrite( r.entry, r.entry.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, 6, { error: "Could not write " & r.file }, arguments.asJson, [ "error: could not write " & r.file ] );
+            if ( variables.config.configWrite( r.entry, r.entry.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, "failed", { error: "Could not write " & r.file }, arguments.asJson, [ "error: could not write " & r.file ] );
         }
         for ( var x in extraPlan ) {
-            if ( variables.config.configWrite( x, x.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, 6, { error: "Could not write " & x.target }, arguments.asJson, [ "error: could not write " & x.target ] );
+            if ( variables.config.configWrite( x, x.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, "failed", { error: "Could not write " & x.target }, arguments.asJson, [ "error: could not write " & x.target ] );
         }
         for ( var ic in iconPlan ) {
             try { new bxrig.Assets( variables.cli, variables.runner ).decode( ic.name, ic.file ); }
-            catch ( any e ) { return variables.cli.say( cmd, 6, { error: "Could not write the icon" }, arguments.asJson, [ "error: could not write " & ic.file ] ); }
+            catch ( any e ) { return variables.cli.say( cmd, "failed", { error: "Could not write the icon" }, arguments.asJson, [ "error: could not write " & ic.file ] ); }
         }
-        return variables.cli.say( cmd, 0, data, arguments.asJson, [ "Added " & plan.len() & " launchers to the application menu." & ( kept.len() ? " Kept " & kept.len() & " you edited." : "" ) ] );
+        return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Added " & plan.len() & " launchers to the application menu." & ( kept.len() ? " Kept " & kept.len() & " you edited." : "" ) ] );
     }
 
     // `launchers off [--yes] [--dry-run]`: only entries BxRig wrote (marked) and still unedited go; the icon goes when it is still BxRig's.
@@ -210,7 +210,7 @@ class Launchers {
         }
         var extraGone = !kept.len() ? extras().filter( function( e ) { return mine( e.target ); } ) : [];
         var data = { submenu: extraGone.map( function( e ) { return e.target; } ), remove: gone.map( function( r ) { return r.file; } ), keep: kept.map( function( r ) { return r.file; } ), icon_remove: iconGone.map( function( i ) { return i.file; } ) };
-        if ( !gone.len() && !kept.len() && !extraGone.len() ) return variables.cli.say( cmd, 0, data, arguments.asJson, [ "No launchers are in the application menu." ] );
+        if ( !gone.len() && !kept.len() && !extraGone.len() ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "No launchers are in the application menu." ] );
         if ( !arguments.yes || arguments.dryRun ) {
             var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": remove " & gone.len() & " launchers from the application menu" ];
             for ( var g in gone ) lines.append( "  delete " & g.file );
@@ -218,12 +218,12 @@ class Launchers {
             for ( var x in extraGone ) lines.append( "  delete " & x.target );
             for ( var ig in iconGone ) lines.append( "  delete " & ig.file );
             lines.append( arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return variables.cli.say( cmd, arguments.dryRun ? 0 : 2, data, arguments.asJson, lines );
+            return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", data, arguments.asJson, lines );
         }
         for ( var g in gone ) fileDelete( g.file );
         for ( var x in extraGone ) fileDelete( x.target );
         for ( var ig in iconGone ) fileDelete( ig.file );
-        return variables.cli.say( cmd, 0, data, arguments.asJson, [ "Removed " & gone.len() & " launchers." & ( kept.len() ? " Kept " & kept.len() & " you edited." : "" ) ] );
+        return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Removed " & gone.len() & " launchers." & ( kept.len() ? " Kept " & kept.len() & " you edited." : "" ) ] );
     }
 
     // `launchers on|off|status`

@@ -16,11 +16,11 @@ class Out {
     }
 
     // Exit 2: bad usage.
-    function usage( msg, asJson ) { return fail( 2, arguments.msg, arguments.asJson ); }
+    function usage( msg, asJson ) { return fail( "usage", arguments.msg, arguments.asJson ); }
     // Exit 4: a precondition is not met (missing tool, wrong user, unknown name).
-    function precondition( msg, asJson ) { return fail( 4, arguments.msg, arguments.asJson ); }
+    function precondition( msg, asJson ) { return fail( "precondition", arguments.msg, arguments.asJson ); }
     // Exit 6: a write or a step failed.
-    function failed( msg, asJson ) { return fail( 6, arguments.msg, arguments.asJson ); }
+    function failed( msg, asJson ) { return fail( "failed", arguments.msg, arguments.asJson ); }
 
     // The same output for another command string (`keys set` and `keys reset` in one class).
     function sub( command ) {

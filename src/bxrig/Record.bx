@@ -18,27 +18,27 @@ class Record {
 
     function start( region, dryRun, asJson ) {
         var cmd = "record start";
-        if ( !variables.proc.has( "wf-recorder" ) ) return variables.cli.say( cmd, 4, { error: "wf-recorder is not installed" }, arguments.asJson, [ "error: wf-recorder is not installed. Install: bxrig install wf-recorder" ] );
-        if ( arguments.region && !variables.proc.has( "slurp" ) ) return variables.cli.say( cmd, 4, { error: "slurp is not installed" }, arguments.asJson, [ "error: slurp is not installed (it comes with the Hyprland setup)" ] );
-        if ( recording() ) return variables.cli.say( cmd, 0, { recording: true, started: false }, arguments.asJson, [ "A recording is already running. Stop it: bxrig record stop" ] );
+        if ( !variables.proc.has( "wf-recorder" ) ) return variables.cli.say( cmd, "precondition", { error: "wf-recorder is not installed" }, arguments.asJson, [ "error: wf-recorder is not installed. Install: bxrig install wf-recorder" ] );
+        if ( arguments.region && !variables.proc.has( "slurp" ) ) return variables.cli.say( cmd, "precondition", { error: "slurp is not installed" }, arguments.asJson, [ "error: slurp is not installed (it comes with the Hyprland setup)" ] );
+        if ( recording() ) return variables.cli.say( cmd, "ok", { recording: true, started: false }, arguments.asJson, [ "A recording is already running. Stop it: bxrig record stop" ] );
         var stamp = trim( variables.proc.exec( [ "date", "+%Y%m%d-%H%M%S" ], 10 ).output );
         var file = folder() & "/bxrig-" & stamp & ".mp4";
         var script = arguments.region ? 'mkdir -p "$1" && exec wf-recorder -g "$(slurp)" -f "$2"' : 'mkdir -p "$1" && exec wf-recorder -f "$2"';
         var argv = [ "sh", "-c", script, "_", folder(), file ];
         var data = { file: file, region: arguments.region, command: argv };
-        if ( arguments.dryRun ) return variables.cli.say( cmd, 0, data, arguments.asJson, [ "Dry run: " & argv.toList( " " ) ] );
+        if ( arguments.dryRun ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Dry run: " & argv.toList( " " ) ] );
         var run = [ "sh", "-c", 'setsid "$@" >/dev/null 2>&1 &', "_" ];
         for ( var p in argv ) run.append( p );
         variables.proc.exec( run, 10 );
-        return variables.cli.say( cmd, 0, variables.text.merge( data, { started: true } ), arguments.asJson, [ "Recording to " & file & ". Stop: bxrig record stop" ] );
+        return variables.cli.say( cmd, "ok", variables.text.merge( data, { started: true } ), arguments.asJson, [ "Recording to " & file & ". Stop: bxrig record stop" ] );
     }
 
     function stop( asJson ) {
         var cmd = "record stop";
-        if ( !recording() ) return variables.cli.say( cmd, 0, { recording: false }, arguments.asJson, [ "Nothing is recording." ] );
+        if ( !recording() ) return variables.cli.say( cmd, "ok", { recording: false }, arguments.asJson, [ "Nothing is recording." ] );
         var r = variables.proc.exec( [ "pkill", "-INT", "-x", "wf-recorder" ], 10 );
-        if ( r.exitCode != 0 ) return variables.cli.say( cmd, 6, { error: "could not stop the recording" }, arguments.asJson, [ "error: could not stop the recording" ] );
-        return variables.cli.say( cmd, 0, { recording: false, stopped: true }, arguments.asJson, [ "The recording was stopped and saved in " & folder() & "." ] );
+        if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: "could not stop the recording" }, arguments.asJson, [ "error: could not stop the recording" ] );
+        return variables.cli.say( cmd, "ok", { recording: false, stopped: true }, arguments.asJson, [ "The recording was stopped and saved in " & folder() & "." ] );
     }
 
     function toggle( region, dryRun, asJson ) {
@@ -47,6 +47,6 @@ class Record {
 
     function status( asJson ) {
         var on = recording();
-        return variables.cli.say( "record status", 0, { recording: on }, arguments.asJson, [ on ? "Recording." : "Not recording." ] );
+        return variables.cli.say( "record status", "ok", { recording: on }, arguments.asJson, [ on ? "Recording." : "Not recording." ] );
     }
 }

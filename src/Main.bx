@@ -11,6 +11,7 @@ class {
         var appVersion = "0.11.0-dev";
         var asJson = structKeyExists( args.options, "json" );
         var cli = new bxrig.Cli( appVersion );
+        var xit = new bxrig.Exit();
         var catalog = new bxrig.Catalog();
         var config = new bxrig.ConfigService();
         // One flag check for every command, from the registry (docs/reference/cli.json): a flag the command does not list is a usage error and nothing runs.
@@ -23,7 +24,7 @@ class {
             if ( badFlags.len() ) {
                 println( "Unknown option: --" & badFlags[ 1 ] & " (bxrig " & cmd & " does not take it)" );
                 println( spec.usage( cmd ) );
-                CLIExit( 2 );
+                CLIExit( xit.usage() );
             }
           }
         }
@@ -55,7 +56,7 @@ class {
          case "profile-list":
           if ( p.len() != 1 ) {
            println( "Usage: bxrig " & cmd & " [--json]" );
-           CLIExit( 2 );
+           CLIExit( xit.usage() );
           }
           pk = new bxrig.Packages( cli, catalog.load() );
           CLIExit( cmd == "profile-list" ? pk.profiles( asJson ) : pk.listApps( cmd, asJson ) );
@@ -74,7 +75,7 @@ class {
           planReq = pk.request( cmd, p, args.options );
           if ( planReq.bad ) {
            println( planReq.usage );
-           CLIExit( 2 );
+           CLIExit( xit.usage() );
           }
           CLIExit( pk.plan( cmd, planReq.req, asJson ) );
           break;
@@ -82,7 +83,7 @@ class {
          case "package-source":
           if ( p.len() != 2 || !reFind( "^[a-z0-9][a-z0-9-]*$", p[2] ) ) {
            println( "Usage: bxrig " & cmd & " ID" );
-           CLIExit( 2 );
+           CLIExit( xit.usage() );
           }
           pk = new bxrig.Packages( cli, catalog.load() );
           CLIExit( cmd == "package-status" ? pk.status( p[2], asJson ) : pk.source( p[2], asJson ) );
@@ -102,7 +103,7 @@ class {
           instReq = pk.request( cmd, p, args.options );
           if ( instReq.bad ) {
            println( instReq.usage );
-           CLIExit( 2 );
+           CLIExit( xit.usage() );
           }
           CLIExit( pk.install( cmd, instReq.req, asJson, structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ) ) );
           break;
@@ -114,7 +115,7 @@ class {
           for ( var o in args.options ) if ( !arrayFind( catOpts, o ) && !arrayFind( [ "yes", "dry-run", "force", "quiet" ], o ) ) catBad = true;
           if ( catBad ) {
            println( new bxrig.CommandSpec().usage( "catalog" ) );
-           CLIExit( 2 );
+           CLIExit( xit.usage() );
           }
           cat = catalog.load();
           if ( catVerb == "version" ) {
@@ -137,7 +138,7 @@ class {
            found = catalog.find( cat, catArg );
            if ( structIsEmpty( found ) ) {
             println( "Unknown catalog id: " & catArg );
-            CLIExit( 3 );
+            CLIExit( xit.timeout() );
            }
            if ( asJson ) {
             println( cli.envelope( "catalog show", 0, found ) );
@@ -182,7 +183,7 @@ class {
           cfgBad = !len( getSystemSetting( "HOME", "" ) ) || p.len() > 4 || ( p.len() == 4 && cfgVerb != "restore" ) || !arrayFind( [ "list", "diff", "apply", "restore", "history" ], cfgVerb );
           if ( cfgBad ) {
            println( new bxrig.CommandSpec().usage( "config" ) );
-           CLIExit( 2 );
+           CLIExit( xit.usage() );
           }
           yes = structKeyExists( args.options, "yes" );
           dryRun = structKeyExists( args.options, "dry-run" );
@@ -210,7 +211,7 @@ class {
           }
           if ( !structKeyExists( managed, cfgName ) ) {
            println( "Unknown managed config: " & cfgName );
-           CLIExit( 2 );
+           CLIExit( xit.usage() );
           }
           entry = managed[cfgName];
           if ( cfgVerb == "diff" ) {
@@ -230,7 +231,7 @@ class {
           }
           if ( p.len() != 4 ) {
            println( new bxrig.CommandSpec().usage( "config restore" ) );
-           CLIExit( 2 );
+           CLIExit( xit.usage() );
           }
           CLIExit( config.configRestore( entry, p[4], yes, dryRun ) );
           break;
@@ -271,7 +272,7 @@ class {
            CLIExit( st.undoXremap( setupYes, setupDry, asJson ) );
           }
           println( new bxrig.CommandSpec().usage( "setup" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "cloud":
           // Cloud storage as folders with rclone. See COMMAND-CONTRACT.md 13.21.
@@ -283,7 +284,7 @@ class {
           if ( clSub == "unmount" && p.len() == 3 ) CLIExit( cl.unmount( p[3], structKeyExists( args.options, "yes" ), asJson ) );
           if ( clSub == "status" && p.len() == 2 ) CLIExit( cl.status( asJson ) );
           println( new bxrig.CommandSpec().usage( "cloud" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "layout":
           // Tiled or floating windows on the current workspace. See COMMAND-CONTRACT.md 13.21.
@@ -292,7 +293,7 @@ class {
           if ( lyAct == "status" && p.len() <= 2 ) CLIExit( ly.status( asJson ) );
           if ( arrayFind( [ "toggle", "float", "tile" ], lyAct ) && p.len() <= 2 ) CLIExit( ly.apply( lyAct, structKeyExists( args.options, "dry-run" ), asJson ) );
           println( new bxrig.CommandSpec().usage( "layout" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "web":
           // Your own web apps with launcher entries. See COMMAND-CONTRACT.md 13.20.
@@ -304,13 +305,13 @@ class {
           if ( wbSub == "list" && p.len() == 2 ) CLIExit( wb.list( asJson ) );
           if ( wbSub == "rm" && p.len() == 3 ) CLIExit( wb.remove( p[3], structKeyExists( args.options, "yes" ), asJson ) );
           println( new bxrig.CommandSpec().usage( "web" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "vpn":
           // Post-install steps for VPN clients. See COMMAND-CONTRACT.md 13.20.
           if ( p.len() == 3 && p[2] == "nordvpn" && p[3] == "setup" ) CLIExit( new bxrig.Vpn( cli ).nordvpn( structKeyExists( args.options, "yes" ), asJson ) );
           println( new bxrig.CommandSpec().usage( "vpn nordvpn setup" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "clipboard":
           // Clipboard history with cliphist. See COMMAND-CONTRACT.md 13.18.
@@ -320,7 +321,7 @@ class {
           if ( cbSub == "clear" && p.len() == 2 ) CLIExit( cb.clear( structKeyExists( args.options, "yes" ), asJson ) );
           if ( cbSub == "status" && p.len() == 2 ) CLIExit( cb.status( asJson ) );
           println( new bxrig.CommandSpec().usage( "clipboard" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "record":
           // Screen recording with wf-recorder. See COMMAND-CONTRACT.md 13.18.
@@ -332,7 +333,7 @@ class {
           if ( rcSub == "stop" && p.len() == 2 ) CLIExit( rc.stop( asJson ) );
           if ( rcSub == "status" && p.len() == 2 ) CLIExit( rc.status( asJson ) );
           println( new bxrig.CommandSpec().usage( "record" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "containers":
           // Podman helpers and docker compatibility. See COMMAND-CONTRACT.md 13.17.
@@ -342,7 +343,7 @@ class {
           if ( ctSub == "socket" && p.len() == 3 && p[3] == "enable" ) CLIExit( ct.socketEnable( structKeyExists( args.options, "yes" ), asJson ) );
           if ( ctSub == "docker-compat" && p.len() == 2 ) CLIExit( ct.dockerCompat( structKeyExists( args.options, "yes" ), asJson ) );
           println( new bxrig.CommandSpec().usage( "containers" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "editor":
           // The LazyVim starter for Neovim, the BxRig layer and BoxLang. See COMMAND-CONTRACT.md 13.17 and 13.32.
@@ -353,7 +354,7 @@ class {
           if ( edSub == "status" ) CLIExit( ed.status( asJson ) );
           if ( edSub == "refresh" ) CLIExit( ed.refresh( structKeyExists( args.options, "force" ), structKeyExists( args.options, "yes" ), asJson ) );
           println( new bxrig.CommandSpec().usage( "editor" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "skills":
           // Agent skills: BxRig's own, BoxLang and MatchBox, and the skills.boxlang.io hub. See COMMAND-CONTRACT.md 13.31.
@@ -370,7 +371,7 @@ class {
           if ( skSub == "status" && p.len() <= 2 ) CLIExit( sk.status( asJson ) );
           if ( skSub == "link" && p.len() == 2 ) CLIExit( sk.link( asJson ) );
           println( new bxrig.CommandSpec().usage( "skills" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "update":
           // Updates for BxRig (channels stable and beta) and notifications. See COMMAND-CONTRACT.md 13.30.
@@ -381,35 +382,35 @@ class {
           if ( upSub == "channel" && p.len() <= 3 ) CLIExit( up.channel( p.len() == 3 ? p[3] : "", asJson ) );
           if ( upSub == "notifications" && p.len() == 3 ) CLIExit( up.notifications( p[3], asJson ) );
           println( new bxrig.CommandSpec().usage( "update" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "system":
           if ( p.len() == 2 && p[2] == "update" ) CLIExit( new bxrig.Update( cli ).systemUpdate( structKeyExists( args.options, "yes" ), asJson ) );
           if ( p.len() == 2 && arrayFind( [ "lock", "suspend", "logout", "reboot", "shutdown" ], p[2] ) ) CLIExit( new bxrig.SystemActions( cli ).run( p[2], structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
-          println( new bxrig.CommandSpec().usage( "system" ) ); CLIExit( 2 ); break;
+          println( new bxrig.CommandSpec().usage( "system" ) ); CLIExit( xit.usage() ); break;
          case "emoji": CLIExit( new bxrig.MacExtras( cli ).emoji( asJson ) ); break;
          case "forcequit": CLIExit( new bxrig.MacExtras( cli ).forcequit( asJson ) ); break;
          case "window":
           if ( p.len() == 2 ) CLIExit( new bxrig.MacExtras( cli ).window( p[2], asJson ) );
-          println( new bxrig.CommandSpec().usage( "window" ) ); CLIExit( 2 ); break;
+          println( new bxrig.CommandSpec().usage( "window" ) ); CLIExit( xit.usage() ); break;
          case "overview": CLIExit( new bxrig.MacExtras( cli ).overview( p.len() == 2 && p[2] == "setup", asJson ) ); break;
          case "nightshift":
           if ( p.len() <= 2 && arrayFind( [ "on", "off", "toggle", "status" ], p.len() == 2 ? p[2] : "on" ) ) CLIExit( new bxrig.MacExtras( cli ).nightshift( p.len() == 2 ? p[2] : "on", args.options.location ?: "", asJson ) );
-          println( new bxrig.CommandSpec().usage( "nightshift" ) ); CLIExit( 2 ); break;
+          println( new bxrig.CommandSpec().usage( "nightshift" ) ); CLIExit( xit.usage() ); break;
          case "gpu":
           if ( p.len() == 2 && p[2] == "doctor" ) CLIExit( new bxrig.MacExtras( cli ).gpu( asJson ) );
-          println( new bxrig.CommandSpec().usage( "gpu doctor" ) ); CLIExit( 2 ); break;
+          println( new bxrig.CommandSpec().usage( "gpu doctor" ) ); CLIExit( xit.usage() ); break;
          case "input":
           if ( p.len() == 2 && p[2] == "doctor" ) CLIExit( new bxrig.MacExtras( cli ).inputDoctor( asJson ) );
           if ( p.len() == 2 && p[2] == "gestures" ) CLIExit( new bxrig.MacExtras( cli ).gestures( structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
-          println( new bxrig.CommandSpec().usage( "input" ) ); CLIExit( 2 ); break;
+          println( new bxrig.CommandSpec().usage( "input" ) ); CLIExit( xit.usage() ); break;
          case "airplay":
           if ( p.len() == 2 ) CLIExit( new bxrig.MacExtras( cli ).airplay( p[2], asJson ) );
-          println( new bxrig.CommandSpec().usage( "airplay" ) ); CLIExit( 2 ); break;
+          println( new bxrig.CommandSpec().usage( "airplay" ) ); CLIExit( xit.usage() ); break;
          case "settings":
           if ( p.len() == 3 && p[2] == "export" ) CLIExit( new bxrig.Settings( cli ).exportFile( p[3], structKeyExists( args.options, "force" ), asJson ) );
           if ( p.len() == 3 && p[2] == "import" ) CLIExit( new bxrig.Settings( cli ).importFile( p[3], structKeyExists( args.options, "yes" ), asJson ) );
-          println( new bxrig.CommandSpec().usage( "settings" ) ); CLIExit( 2 ); break;
+          println( new bxrig.CommandSpec().usage( "settings" ) ); CLIExit( xit.usage() ); break;
          case "boxlang":
           // The BoxLang developer ecosystem. See COMMAND-CONTRACT.md 13.28.
           blSub = p.len() >= 2 ? p[2] : "status";
@@ -422,7 +423,7 @@ class {
           if ( blSub == "links" && p.len() == 2 ) CLIExit( bl.showLinks( asJson ) );
           if ( blSub == "welcome" && p.len() == 2 ) CLIExit( bl.welcome( !structKeyExists( args.options, "no-open" ), asJson ) );
           println( new bxrig.CommandSpec().usage( "boxlang" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "plasma":
           // The Plasma panel layout and virtual desktops. See COMMAND-CONTRACT.md 13.27.
@@ -437,7 +438,7 @@ class {
             if ( p[3] == "status" && p.len() == 3 ) CLIExit( plp.status( asJson ) );
           }
           println( new bxrig.CommandSpec().usage( "plasma" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "screenshot":
           // Screenshots, OCR and QR codes. See COMMAND-CONTRACT.md 13.26.
@@ -449,12 +450,12 @@ class {
           if ( p.len() <= 2 && ssMode == "qr" ) CLIExit( ss.qrScan( ssDry, asJson ) );
           if ( p.len() <= 2 && ssMode == "menu" ) CLIExit( ss.menu( ssDry, asJson ) );
           println( new bxrig.CommandSpec().usage( "screenshot" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "qr":
           if ( p.len() == 2 ) CLIExit( new bxrig.Screenshot( cli ).qrMake( p[2], args.options.out ?: "", asJson ) );
           println( new bxrig.CommandSpec().usage( "qr" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "pkg":
           // Any package from the repos or the AUR: search, info, install, remove. See COMMAND-CONTRACT.md 13.34.
@@ -470,7 +471,7 @@ class {
           if ( pkSub == "install" ) CLIExit( pkx.install( pkNames, structKeyExists( args.options, "aur" ), pkYes, pkDry, asJson ) );
           if ( pkSub == "remove" ) CLIExit( pkx.remove( pkNames, pkYes, pkDry, asJson ) );
           println( new bxrig.CommandSpec().usage( "pkg" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "remove":
           // Uninstall catalog apps (their packages or web launchers) or any package. See COMMAND-CONTRACT.md 13.34.
@@ -546,13 +547,13 @@ class {
           tmOpts = args.options;
           if ( p.len() != 1 ) {
            println( "Usage: bxrig timemachine [--demo] [--local]   (also: bxtimemachine)" );
-           CLIExit( 2 );
+           CLIExit( xit.usage() );
           }
           try {
            CLIExit( new bxrig.TimeMachine( cli ).run( tmOpts ) );
           } catch ( any tmErr ) {
            println( "bxrig timemachine needs a terminal (" & tmErr.message & ")." );
-           CLIExit( 4 );
+           CLIExit( xit.precondition() );
           }
           break;
          case "java":
@@ -579,12 +580,12 @@ class {
           ccDemo = structKeyExists( args.options, "demo" );
           if ( p.len() > 2 ) {
            println( new bxrig.CommandSpec().usage( "tui" ) );
-           CLIExit( 2 );
+           CLIExit( xit.usage() );
           }
           if ( ccPage == "list" ) CLIExit( new bxrig.ControlCenter( cli ).listPages( asJson ) );
           if ( len( ccPage ) && !arrayFind( new bxrig.ControlCenterPages().ids(), ccPage ) ) {
            println( "Unknown page " & ccPage & ". Pages: " & new bxrig.ControlCenterPages().ids().toList( ", " ) );
-           CLIExit( 2 );
+           CLIExit( xit.usage() );
           }
           if ( asJson ) CLIExit( new bxrig.ControlCenter( cli ).dump( len( ccPage ) ? ccPage : "dashboard", ccDemo, true ) );
           // the parser turns --no-sidebar into sidebar=false, so one option carries both flags (the last one wins)
@@ -594,7 +595,7 @@ class {
            CLIExit( new bxrig.ControlCenter( cli ).run( len( ccPage ) ? ccPage : "dashboard", ccDemo, structKeyExists( args.options, "icons" ) ? args.options.icons : "", ccSide ) );
           } catch ( any ccErr ) {
            println( "bxrig tui needs a terminal (" & ccErr.message & ")." );
-           CLIExit( 4 );
+           CLIExit( xit.precondition() );
           }
           break;
          case "vm":
@@ -614,7 +615,7 @@ class {
           if ( vmSub == "remove" && p.len() == 3 ) CLIExit( vmx.remove( p[3], structKeyExists( args.options, "keep-data" ), vmYes, vmDry, asJson ) );
           if ( vmSub == "create" && p.len() >= 3 && p.len() <= 4 ) CLIExit( vmx.create( p[3], p.len() == 4 ? p[4] : "", { version: args.options.version ?: "", tag: args.options.tag ?: "", ram: args.options.ram ?: "", cpus: args.options.cpus ?: "", disk: args.options.disk ?: "", memory: args.options.memory ?: "", share: args.options.share ?: "", gpu: args.options.gpu ?: "" }, vmYes, vmDry, asJson ) );
           println( new bxrig.CommandSpec().usage( "vm" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "theme":
           // Themes (Omarchy format): Noctalia palette, terminals, btop, Hyprland accent, Neovim. See COMMAND-CONTRACT.md 13.32.
@@ -632,7 +633,7 @@ class {
           if ( thSub == "import" && p.len() == 3 ) CLIExit( th.importDir( p[3], args.options.name ?: "", structKeyExists( args.options, "force" ), asJson ) );
           if ( thSub == "remove" && p.len() == 3 ) CLIExit( th.remove( p[3], asJson ) );
           println( new bxrig.CommandSpec().usage( "theme" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "notify":
           // Noctalia notifications: Do Not Disturb, snooze, clear. See COMMAND-CONTRACT.md 13.26.
@@ -642,19 +643,19 @@ class {
           if ( ntSub == "snooze" && p.len() <= 3 ) CLIExit( nt.snooze( p.len() == 3 ? p[3] : "", asJson ) );
           if ( ntSub == "clear" && p.len() == 2 ) CLIExit( nt.clear( structKeyExists( args.options, "history" ), asJson ) );
           println( new bxrig.CommandSpec().usage( "notify" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "quicklook":
           // Quick Look style preview with Kiview. See COMMAND-CONTRACT.md 13.25.
           if ( p.len() <= 2 ) CLIExit( new bxrig.Quicklook( cli ).run( p.len() == 2 ? p[2] : "", structKeyExists( args.options, "dry-run" ), asJson ) );
           println( new bxrig.CommandSpec().usage( "quicklook" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "dolphin":
           // Dolphin outside Plasma. See COMMAND-CONTRACT.md 13.25.
           if ( p.len() == 2 && p[2] == "doctor" ) CLIExit( new bxrig.Dolphin( cli ).run( structKeyExists( args.options, "fix" ), asJson ) );
           println( new bxrig.CommandSpec().usage( "dolphin doctor" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "dictation":
           // Voice dictation: Superwhisper (default) or Voxtype. See COMMAND-CONTRACT.md 13.25.
@@ -664,26 +665,26 @@ class {
           if ( dctSub == "status" && p.len() == 2 ) CLIExit( dct.status( asJson ) );
           if ( dctSub == "key" && p.len() <= 3 ) CLIExit( dct.key( p.len() == 3 ? p[3] : "", asJson ) );
           println( new bxrig.CommandSpec().usage( "dictation" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "strata":
           // Strata's Send to providers (LocalSend, KDE Connect). See COMMAND-CONTRACT.md 13.25.
           if ( p.len() == 2 && p[2] == "integrations" ) CLIExit( new bxrig.Strata( cli ).integrations( structKeyExists( args.options, "dry-run" ), asJson ) );
           println( new bxrig.CommandSpec().usage( "strata integrations" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "status":
           // What this machine already has, in the wizard's terms. See COMMAND-CONTRACT.md 13.24.
           if ( p.len() == 1 ) CLIExit( new bxrig.Status( cli ).run( asJson ) );
           println( new bxrig.CommandSpec().usage( "status" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "apps":
           // Every installed application in one window (Omarchy 4.5's app grid). See COMMAND-CONTRACT.md 13.22.
           if ( p.len() == 1 ) CLIExit( new bxrig.Apps( cli ).grid() );
           if ( p.len() == 2 && p[2] == "list" ) CLIExit( new bxrig.Apps( cli ).list( asJson ) );
           println( new bxrig.CommandSpec().usage( "apps" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "menu":
           // The BxRig control center on the runner's menu provider. See COMMAND-CONTRACT.md 13.16.
@@ -691,13 +692,13 @@ class {
           if ( p.len() == 2 && p[2] == "items" ) CLIExit( new bxrig.Menu( cli ).show( asJson ) );
           if ( p.len() >= 3 && p[2] == "search" ) { mnWords = []; for ( mni = 3; mni <= p.len(); mni++ ) mnWords.append( p[ mni ] ); CLIExit( new bxrig.Menu( cli ).search( mnWords.toList( " " ), asJson ) ); }
           println( new bxrig.CommandSpec().usage( "menu" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "ssh":
           // Create an ed25519 SSH key (never replaces one). See COMMAND-CONTRACT.md 13.15.
           if ( p.len() == 2 && p[2] == "key" ) CLIExit( new bxrig.SshKey( cli ).run( args.options.email ?: "", structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
           println( new bxrig.CommandSpec().usage( "ssh key" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "default":
           // Make an installed app your default browser or terminal. See COMMAND-CONTRACT.md 13.12.
@@ -710,7 +711,7 @@ class {
           if ( dfltSub == "terminal" && p.len() == 3 ) CLIExit( dflt.terminal( p[3], dfltYes, dfltDry, asJson ) );
           if ( dfltSub == "filemanager" && p.len() == 3 ) CLIExit( dflt.filemanager( p[3], dfltYes, dfltDry, asJson ) );
           println( new bxrig.CommandSpec().usage( "default" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "ai":
           // Your coding agents: list, the default one, and launching it. See COMMAND-CONTRACT.md 13.14.
@@ -728,7 +729,7 @@ class {
             if ( aiAct == "attach" && p.len() == 4 ) CLIExit( aiSes.attach( p[4], asJson ) );
             if ( aiAct == "stop" && p.len() == 4 ) CLIExit( aiSes.stop( p[4], structKeyExists( args.options, "yes" ), asJson ) );
             println( new bxrig.CommandSpec().usage( "ai" ) );
-            CLIExit( 2 );
+            CLIExit( xit.usage() );
           }
           if ( aiSub == "models" ) {
             aiMod = new bxrig.AiModels( cli );
@@ -739,10 +740,10 @@ class {
             if ( aiAct2 == "status" && p.len() == 3 ) CLIExit( aiMod.status( asJson ) );
             if ( aiAct2 == "enable" && p.len() == 3 ) CLIExit( aiMod.enable( structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
             println( new bxrig.CommandSpec().usage( "ai" ) );
-            CLIExit( 2 );
+            CLIExit( xit.usage() );
           }
           println( new bxrig.CommandSpec().usage( "ai" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "secrets":
           // One way to store and load API keys: keyring first, private files otherwise. See COMMAND-CONTRACT.md 13.13.
@@ -774,7 +775,7 @@ class {
             }
           }
           println( new bxrig.CommandSpec().usage( "secrets" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "dotfiles":
           // Apply your own dotfiles repository (method detected: chezmoi, yadm, stow or links). See COMMAND-CONTRACT.md 13.11.
@@ -788,7 +789,7 @@ class {
           if ( dfSub == "status" && p.len() == 2 ) CLIExit( df.status( asJson ) );
           if ( dfSub == "undo" && p.len() == 2 ) CLIExit( df.undo( dfYes, dfDry, asJson ) );
           println( dfUsage );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "db":
           // Local database and search services as containers (Podman by default, Docker by choice). See COMMAND-CONTRACT.md 13.10.
@@ -807,7 +808,7 @@ class {
           if ( p.len() == 3 && dbSub == "remove" ) CLIExit( db.remove( dbArg, dbName, structKeyExists( args.options, "keep-data" ), dbYes, dbDry, asJson ) );
           if ( p.len() == 3 && dbSub == "info" ) CLIExit( db.info( dbArg, dbName, structKeyExists( args.options, "show-password" ), asJson ) );
           println( dbUsage );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "runner":
           // Launcher and menu providers. Records the choice (~/.config/bxrig/runner.json); never changes a keybinding.
@@ -818,7 +819,7 @@ class {
           rnArity = { list: 2, show: 2, doctor: 2, launch: 2, select: 3, set: 3, "menu-set": 3, "icon-theme": 3, "launcher-command": 4, "menu-command": 4 };
           if ( !structKeyExists( rnArity, rnSub ) || p.len() != rnArity[ rnSub ] ) {
            println( rnUsage );
-           CLIExit( 2 );
+           CLIExit( xit.usage() );
           }
           try {
            if ( rnSub == "list" ) {
@@ -828,12 +829,12 @@ class {
              println( "launcher: " & rn.launcherProviders().map( function( x ) { return ( x == rnCfg.provider ? "*" : "" ) & x; } ).toList( " " ) );
              println( "menu: " & rn.menuProviders().map( function( x ) { return ( x == rnCfg.menu_provider ? "*" : "" ) & x; } ).toList( " " ) );
             }
-            CLIExit( 0 );
+            CLIExit( xit.ok() );
            }
            if ( rnSub == "show" ) {
             rnCfg = rn.load();
             if ( asJson ) println( cli.envelope( "runner show", 0, rnCfg ) ); else println( jsonSerialize( rnCfg ) );
-            CLIExit( 0 );
+            CLIExit( xit.ok() );
            }
            if ( rnSub == "doctor" ) {
             rnDoc = rn.doctor();
@@ -846,7 +847,7 @@ class {
              println( "menu executable: " & ( rnDoc.menu.found ? "found" : "NOT FOUND" ) );
              println( "Shortcut ownership: unchanged" );
             }
-            CLIExit( 0 );
+            CLIExit( xit.ok() );
            }
            if ( rnSub == "launch" ) {
             rnLaunch = rn.launch();
@@ -862,12 +863,12 @@ class {
             if ( rnOk ) for ( rnE in rnEntries ) if ( !( isSimpleValue( rnE ) && len( rnE ) ) && !( isStruct( rnE ) && structKeyExists( rnE, "label" ) && len( rnE.label ) ) ) rnOk = false;
             if ( !rnOk ) {
              println( "error: entries must be a JSON array of labels or { label, icon } objects, for example [""Apps"",""Settings""]" );
-             CLIExit( 4 );
+             CLIExit( xit.precondition() );
             }
             rnPick = rn.select( args.options.prompt ?: "BxRig", rnEntries );
-            if ( rnPick == 0 ) CLIExit( 1 );
+            if ( rnPick == 0 ) CLIExit( xit.negative() );
             if ( asJson ) println( cli.envelope( "runner select", 0, { index: rnPick - 1 } ) ); else println( rnPick - 1 );
-            CLIExit( 0 );
+            CLIExit( xit.ok() );
            }
            rnArgv = [];
            if ( rnSub == "launcher-command" || rnSub == "menu-command" ) {
@@ -877,16 +878,16 @@ class {
            rnErr = rn.set( rnSub == "set" ? "provider" : ( rnSub == "menu-set" ? "menu" : rnSub ), p[3], rnArgv );
            if ( len( rnErr ) ) {
             if ( asJson ) println( cli.envelope( "runner " & rnSub, 4, { error: rnErr } ) ); else println( "error: " & rnErr );
-            CLIExit( 4 );
+            CLIExit( xit.precondition() );
            }
            if ( asJson ) println( cli.envelope( "runner " & rnSub, 0, { provider: p[3] } ) );
            else println( ( rnSub == "set" ? "Runner provider: " : ( rnSub == "menu-set" ? "Menu provider: " : ( rnSub == "icon-theme" ? "Icon theme: " : "Configured " ) ) ) & p[3] );
            if ( rnSub == "icon-theme" && !asJson ) println( "Apply it to Rofi and Fuzzel with: bxrig theme set THEME (the current theme name is in bxrig theme status)" );
-           CLIExit( 0 );
+           CLIExit( xit.ok() );
           } catch ( any e ) {
            if ( e.message contains "CLIExit" ) rethrow;
            println( "error: " & e.message );
-           CLIExit( 4 );
+           CLIExit( xit.precondition() );
           }
           break;
          case "toolchain":
@@ -894,7 +895,7 @@ class {
           // catalog apps: bxrig install bun deno.
           if ( p.len() != 2 || p[2] != "node" ) {
            println( "Usage: bxrig toolchain node [--yes] [--dry-run] [--json]   (Bun and Deno: bxrig install bun deno)" );
-           CLIExit( 2 );
+           CLIExit( xit.usage() );
           }
           CLIExit( new bxrig.Setup( cli ).node( structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
           break;
@@ -904,7 +905,7 @@ class {
           if ( cmd == "reinstall" ) args.options.rerun = true;
           if ( p.len() != 1 ) {
            println( new bxrig.CommandSpec().usage( "init" ) );
-           CLIExit( 2 );
+           CLIExit( xit.usage() );
           }
           initRun = new bxrig.Init( cli );
           if ( structKeyExists( args.options, "export" ) ) CLIExit( initRun.exportAnswers( args.options.export, structKeyExists( args.options, "force" ), asJson ) );
@@ -915,7 +916,7 @@ class {
             initAnswers = jsonDeserialize( fileRead( args.options.answers ) );
            } catch ( any e ) {
             println( "bxrig init: cannot read the answers file: " & e.message );
-            CLIExit( 4 );
+            CLIExit( xit.precondition() );
            }
            CLIExit( initRun.run( initAnswers, structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
           }
@@ -927,19 +928,19 @@ class {
           // JSON to --out FILE. It changes nothing on the machine. Exit: 0 answers written, 130 cancelled, 2 usage, 4 bad file.
           if ( p.len() != 1 || ( !structKeyExists( args.options, "demo" ) && !structKeyExists( args.options, "pages" ) ) ) {
            println( new bxrig.CommandSpec().usage( "wizard" ) );
-           CLIExit( 2 );
+           CLIExit( xit.usage() );
           }
           try {
            wzSpec = jsonDeserialize( structKeyExists( args.options, "demo" ) ? new bxrig.WizardData().demoPages() : fileRead( args.options.pages ) );
            wzPreset = structKeyExists( args.options, "answers" ) ? jsonDeserialize( fileRead( args.options.answers ) ) : {};
           } catch ( any e ) {
            println( "bxrig wizard: cannot read the pages or answers: " & e.message );
-           CLIExit( 4 );
+           CLIExit( xit.precondition() );
           }
           wzResult = new bxrig.Wizard( wzSpec, wzPreset ).run();
           if ( wzResult.outcome != "done" ) CLIExit( 130 );
           if ( structKeyExists( args.options, "out" ) ) fileWrite( args.options.out, jsonSerialize( wzResult.answers ) & chr( 10 ) );
-          CLIExit( 0 );
+          CLIExit( xit.ok() );
           break;
          case "keys":
           // The shared shortcut table: keys show | keys render xremap|hyprland|plasma (pure, writes nothing).
@@ -949,12 +950,12 @@ class {
            rows = sc.show();
            if ( asJson ) println( cli.envelope( "keys show", 0, { shortcuts: rows } ) );
            else for ( kr in rows ) println( kr.keys & "  " & kr.action & "  (" & kr.how & ")" );
-           CLIExit( 0 );
+           CLIExit( xit.ok() );
           }
           if ( keysSub == "render" && p.len() == 3 && arrayFind( sc.targets(), p[3] ) ) {
            if ( asJson ) println( cli.envelope( "keys render", 0, { target: p[3], text: sc.render( p[3] ) } ) );
            else print( sc.render( p[3] ) );
-           CLIExit( 0 );
+           CLIExit( xit.ok() );
           }
           if ( keysSub == "sheet" && p.len() == 2 ) CLIExit( new bxrig.KeySheet( cli ).run( asJson ) );
           if ( keysSub == "check" && p.len() == 2 ) {
@@ -973,7 +974,7 @@ class {
            if ( macAct == "on" || macAct == "off" ) CLIExit( macSvc.set( macAct == "on", structKeyExists( args.options, "yes" ), asJson ) );
           }
           println( new bxrig.CommandSpec().usage( "keys" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "launchers":
           // One application-menu entry per Control Center page, opt-in: launchers on|off|status [--yes] [--dry-run]. See COMMAND-CONTRACT.md 13.50.
@@ -988,7 +989,7 @@ class {
           if ( assetsSub == "list" ) CLIExit( assetsSvc.list( asJson ) );
           if ( assetsSub == "install" ) CLIExit( assetsSvc.install( structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
           println( new bxrig.CommandSpec().usage( "assets" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "session":
           // Which session the SDDM login screen preselects: session show | session set hyprland|plasma [--yes] [--dry-run].
@@ -997,7 +998,7 @@ class {
           if ( sessionSub == "show" && p.len() == 2 ) CLIExit( sessionSvc.show( asJson ) );
           if ( sessionSub == "set" && p.len() == 3 ) CLIExit( sessionSvc.set( p[3], structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
           println( new bxrig.CommandSpec().usage( "session" ) );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
           break;
          case "tiling":
           // HyprKwin on/off inside Plasma; on and off act at once (reversible user setting, see Tiling.bx).
@@ -1005,7 +1006,7 @@ class {
           if ( tilingSub == "layout" && p.len() <= 3 ) CLIExit( new bxrig.Tiling( cli ).layout( p.len() == 3 ? p[3] : "", asJson ) );
           if ( !arrayFind( [ "on", "off", "status" ], tilingSub ) || p.len() != 2 ) {
            println( new bxrig.CommandSpec().usage( "tiling" ) );
-           CLIExit( 2 );
+           CLIExit( xit.usage() );
           }
           tl = new bxrig.Tiling( cli );
           CLIExit( tilingSub == "status" ? tl.status( asJson ) : tl.set( tilingSub == "on", asJson ) );
@@ -1019,7 +1020,7 @@ class {
          default:
           println( "Unsupported command: " & cmd );
           println( "Run bxrig help" );
-          CLIExit( 2 );
+          CLIExit( xit.usage() );
         }
     }
 

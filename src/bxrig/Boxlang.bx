@@ -60,7 +60,7 @@ class Boxlang {
             matchbox: versionOf( "matchbox", "--version" ), mvm: variables.proc.has( "mvm" ), bx_module: variables.proc.has( "bx-module" ),
             vscode: variables.proc.has( "code" ), vscode_extension: find( variables.extension, vsx ) > 0
         };
-        return variables.out.say( 0, d, arguments.asJson, [
+        return variables.out.say( "ok", d, arguments.asJson, [
             "BoxLang:   " & ( len( d.boxlang ) ? d.boxlang : "not installed" ) & ( len( d.bvm ) ? "  (bvm: " & d.bvm & ")" : "" ),
             "MatchBox:  " & ( len( d.matchbox ) ? d.matchbox : "not installed" ) & ( d.mvm ? "  (mvm)" : "" ),
             "Modules:   " & ( d.bx_module ? "bx-module is available" : "bx-module not found" ),
@@ -70,16 +70,16 @@ class Boxlang {
 
     // `use VERSION` (bvm) or `matchbox use VERSION` (mvm)
     function use( tool, version, asJson ) {
-        if ( !variables.proc.has( arguments.tool ) ) return variables.out.say( 4, { error: arguments.tool & " was not found" }, arguments.asJson, [ "error: " & arguments.tool & " was not found (install.sh installs it)" ] );
-        if ( !reFind( "^[A-Za-z0-9._+-]{1,40}$", arguments.version ) ) return variables.out.say( 4, { error: "bad version" }, arguments.asJson, [ "error: bad version " & arguments.version ] );
+        if ( !variables.proc.has( arguments.tool ) ) return variables.out.say( "precondition", { error: arguments.tool & " was not found" }, arguments.asJson, [ "error: " & arguments.tool & " was not found (install.sh installs it)" ] );
+        if ( !reFind( "^[A-Za-z0-9._+-]{1,40}$", arguments.version ) ) return variables.out.say( "precondition", { error: "bad version" }, arguments.asJson, [ "error: bad version " & arguments.version ] );
         var have = variables.proc.exec( [ arguments.tool, "list" ], 60 ).output;
         if ( find( arguments.version, have ) == 0 ) {
             var i = variables.proc.exec( [ arguments.tool, "install", arguments.version ], 1800 );
-            if ( i.exitCode != 0 ) return variables.out.say( 6, { error: trim( i.output ) }, arguments.asJson, [ "error: " & arguments.tool & " install " & arguments.version & " failed" ] );
+            if ( i.exitCode != 0 ) return variables.out.say( "failed", { error: trim( i.output ) }, arguments.asJson, [ "error: " & arguments.tool & " install " & arguments.version & " failed" ] );
         }
         var r = variables.proc.exec( [ arguments.tool, "use", arguments.version ], 60 );
-        if ( r.exitCode != 0 ) return variables.out.say( 6, { error: trim( r.output ) }, arguments.asJson, [ "error: " & arguments.tool & " use " & arguments.version & " failed" ] );
-        return variables.out.say( 0, { tool: arguments.tool, version: arguments.version }, arguments.asJson, [ arguments.tool & " now uses " & arguments.version ] );
+        if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & arguments.tool & " use " & arguments.version & " failed" ] );
+        return variables.out.say( "ok", { tool: arguments.tool, version: arguments.version }, arguments.asJson, [ arguments.tool & " now uses " & arguments.version ] );
     }
 
     // ForgeBox: [ { slug, title, version, description } ]. The API (saas-forgebox, api-v1): /entries/<typeSlug>?max=&offset=&searchTerm=;
@@ -103,35 +103,35 @@ class Boxlang {
     function modules( action, args, asJson ) {
         if ( arguments.action == "list" || arguments.action == "search" ) {
             var f = forgeboxModules( arguments.action == "search" && arguments.args.len() ? arguments.args.toList( " " ) : "" );
-            if ( !f.ok ) return variables.out.say( 6, { error: f.error }, arguments.asJson, [ "error: " & f.error ] );
-            return variables.out.say( 0, { modules: f.rows }, arguments.asJson, f.rows.map( function( m ) { return m.slug & "  " & m.version & "  " & m.description; } ) );
+            if ( !f.ok ) return variables.out.say( "failed", { error: f.error }, arguments.asJson, [ "error: " & f.error ] );
+            return variables.out.say( "ok", { modules: f.rows }, arguments.asJson, f.rows.map( function( m ) { return m.slug & "  " & m.version & "  " & m.description; } ) );
         }
-        if ( !variables.proc.has( "bx-module" ) ) return variables.out.say( 4, { error: "bx-module was not found" }, arguments.asJson, [ "error: bx-module was not found (the BoxLang quick installer or bvm installs it)" ] );
-        for ( var a in arguments.args ) if ( !reFind( "^[A-Za-z0-9._@+-]{1,60}$", a ) ) return variables.out.say( 4, { error: "bad module name" }, arguments.asJson, [ "error: bad module name " & a ] );
+        if ( !variables.proc.has( "bx-module" ) ) return variables.out.say( "precondition", { error: "bx-module was not found" }, arguments.asJson, [ "error: bx-module was not found (the BoxLang quick installer or bvm installs it)" ] );
+        for ( var a in arguments.args ) if ( !reFind( "^[A-Za-z0-9._@+-]{1,60}$", a ) ) return variables.out.say( "precondition", { error: "bad module name" }, arguments.asJson, [ "error: bad module name " & a ] );
         var words = { install: "install", installed: "list", outdated: "outdated", update: "update" };
-        if ( !structKeyExists( words, arguments.action ) ) return variables.out.say( 4, { error: "unknown action" }, arguments.asJson, [ "error: unknown action " & arguments.action ] );
-        if ( arguments.action == "install" && !arguments.args.len() ) return variables.out.say( 4, { error: "name the modules" }, arguments.asJson, [ "error: name the modules to install" ] );
+        if ( !structKeyExists( words, arguments.action ) ) return variables.out.say( "precondition", { error: "unknown action" }, arguments.asJson, [ "error: unknown action " & arguments.action ] );
+        if ( arguments.action == "install" && !arguments.args.len() ) return variables.out.say( "precondition", { error: "name the modules" }, arguments.asJson, [ "error: name the modules to install" ] );
         var argv = [ "bx-module", words[ arguments.action ] ];
         for ( var m in arguments.args ) argv.append( m );
         if ( arguments.action == "update" ) argv.append( "--force" );
         var r = variables.proc.exec( argv, 1800 );
-        if ( r.exitCode != 0 ) return variables.out.say( 6, { error: trim( r.output ) }, arguments.asJson, [ "error: bx-module " & words[ arguments.action ] & " failed" ] );
-        return variables.out.say( 0, { output: trim( r.output ) }, arguments.asJson, [ trim( r.output ) ] );
+        if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: bx-module " & words[ arguments.action ] & " failed" ] );
+        return variables.out.say( "ok", { output: trim( r.output ) }, arguments.asJson, [ trim( r.output ) ] );
     }
 
     function vscode( asJson ) {
-        if ( !variables.proc.has( "code" ) ) return variables.out.say( 4, { error: "code was not found" }, arguments.asJson, [ "error: VS Code was not found. Install it: bxrig install vscode" ] );
+        if ( !variables.proc.has( "code" ) ) return variables.out.say( "precondition", { error: "code was not found" }, arguments.asJson, [ "error: VS Code was not found. Install it: bxrig install vscode" ] );
         var done = [];
         for ( var ext in [ variables.extension, variables.pack ] ) {
             var r = variables.proc.exec( [ "code", "--install-extension", ext, "--force" ], 300 );
             if ( r.exitCode == 0 ) done.append( ext );
         }
-        if ( !done.len() ) return variables.out.say( 6, { error: "could not install the extension" }, arguments.asJson, [ "error: could not install the BoxLang extension (is it on your editor's marketplace?)" ] );
-        return variables.out.say( 0, { installed: done }, arguments.asJson, [ "Installed: " & done.toList( ", " ) ] );
+        if ( !done.len() ) return variables.out.say( "failed", { error: "could not install the extension" }, arguments.asJson, [ "error: could not install the BoxLang extension (is it on your editor's marketplace?)" ] );
+        return variables.out.say( "ok", { installed: done }, arguments.asJson, [ "Installed: " & done.toList( ", " ) ] );
     }
 
     function showLinks( asJson ) {
-        return variables.out.say( 0, { links: links() }, arguments.asJson, links().map( function( l ) { return l.title & "  " & l.url & "  " & l.about; } ) );
+        return variables.out.say( "ok", { links: links() }, arguments.asJson, links().map( function( l ) { return l.title & "  " & l.url & "  " & l.about; } ) );
     }
 
     function welcomeFile() { return new bxrig.ConfigService().quiet( true ).cfgHome() & "/bxrig/welcome.html"; }
@@ -151,6 +151,6 @@ class Boxlang {
         if ( !directoryExists( dir ) ) directoryCreate( dir, true );
         fileWrite( f, welcomeHtml() );
         if ( arguments.open && variables.proc.has( "xdg-open" ) ) variables.proc.exec( [ "sh", "-c", 'setsid xdg-open "$1" >/dev/null 2>&1 &', "_", f ], 10 );
-        return variables.out.say( 0, { file: f }, arguments.asJson, [ "Welcome page: " & f ] );
+        return variables.out.say( "ok", { file: f }, arguments.asJson, [ "Welcome page: " & f ] );
     }
 }

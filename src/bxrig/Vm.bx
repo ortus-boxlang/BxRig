@@ -151,16 +151,16 @@ class Vm {
             var rows = variables.data.linuxTags();
             var lines = [ "Linux desktops (image " & variables.data.linuxImage() & ", default " & variables.data.defaultLinux() & "):" ];
             for ( var t in rows ) lines.append( "  " & t.id & repeatString( " ", max( 1, 14 - len( t.id ) ) ) & t.distro & " " & t.desktop & ": " & t.note );
-            return variables.cli.say( cmd, 0, { kind: "linux", image: variables.data.linuxImage(), default: variables.data.defaultLinux(), tags: rows }, arguments.asJson, lines );
+            return variables.cli.say( cmd, "ok", { kind: "linux", image: variables.data.linuxImage(), default: variables.data.defaultLinux(), tags: rows }, arguments.asJson, lines );
         }
         if ( arguments.kind == "windows" ) {
             var w = variables.data.windowsVersions();
             var wl = [ "Windows versions (image " & variables.data.windowsImage() & ", default " & variables.data.defaultWindows() & "; sizes are the download):" ];
             for ( var v in w ) wl.append( "  " & v.value & repeatString( " ", max( 1, 8 - len( v.value ) ) ) & v.name & " (" & numberFormat( v.size, "0.0" ) & " GB)" & ( len( v.note ) ? ": " & v.note : "" ) );
             wl.append( "You need your own Windows license; the install uses generic trial keys, which do not activate Windows." );
-            return variables.cli.say( cmd, 0, { kind: "windows", image: variables.data.windowsImage(), default: variables.data.defaultWindows(), versions: w }, arguments.asJson, wl );
+            return variables.cli.say( cmd, "ok", { kind: "windows", image: variables.data.windowsImage(), default: variables.data.defaultWindows(), versions: w }, arguments.asJson, wl );
         }
-        return variables.cli.fail( cmd, 2, new bxrig.CommandSpec().usage( "vm versions" ), arguments.asJson );
+        return variables.cli.fail( cmd, "usage", new bxrig.CommandSpec().usage( "vm versions" ), arguments.asJson );
     }
 
     // ---- doctor ----
@@ -198,7 +198,7 @@ class Vm {
         var lines = [];
         for ( var r in rows ) lines.append( ( r.ok ? "ok    " : ( r.hard ? "FAIL  " : "note  " ) ) & r.check & ": " & r.detail );
         lines.append( hardFail.len() ? "Not ready: fix the FAIL lines above." : "Ready." );
-        return variables.cli.say( cmd, hardFail.len() ? 4 : 0, { checks: rows, ready: !hardFail.len(), engine: eng }, arguments.asJson, lines );
+        return variables.cli.say( cmd, hardFail.len() ? "precondition" : "ok", { checks: rows, ready: !hardFail.len(), engine: eng }, arguments.asJson, lines );
     }
 
     // ---- choosing a Windows version ----
@@ -298,46 +298,46 @@ class Vm {
         var cmd = "vm create";
         var o = arguments.opts;
         var nm = len( arguments.name ) ? arguments.name : ( arguments.kind == "windows" ? "windows" : "" );
-        if ( !arrayFind( [ "windows", "linux" ], arguments.kind ) ) return variables.cli.fail( cmd, 2, new bxrig.CommandSpec().usage( "vm" ), arguments.asJson );
-        if ( !len( nm ) ) return variables.cli.fail( cmd, 2, "A Linux desktop needs a name: bxrig vm create linux NAME [--tag=ubuntu-xfce]", arguments.asJson );
-        if ( !validName( nm ) ) return variables.cli.fail( cmd, 4, "The name may only contain lower case letters, digits and hyphens (up to 31 characters)", arguments.asJson );
-        if ( structKeyExists( readRecord( nm ), "name" ) ) return variables.cli.fail( cmd, 4, "A VM named " & nm & " already exists (bxrig vm list)", arguments.asJson );
-        if ( arguments.kind == "windows" && len( o.gpu ?: "" ) ) return variables.cli.fail( cmd, 2, "--gpu is for Linux desktops", arguments.asJson );
-        if ( arguments.kind == "linux" && len( o.version ?: "" ) ) return variables.cli.fail( cmd, 2, "--version is for Windows; Linux desktops use --tag", arguments.asJson );
+        if ( !arrayFind( [ "windows", "linux" ], arguments.kind ) ) return variables.cli.fail( cmd, "usage", new bxrig.CommandSpec().usage( "vm" ), arguments.asJson );
+        if ( !len( nm ) ) return variables.cli.fail( cmd, "usage", "A Linux desktop needs a name: bxrig vm create linux NAME [--tag=ubuntu-xfce]", arguments.asJson );
+        if ( !validName( nm ) ) return variables.cli.fail( cmd, "precondition", "The name may only contain lower case letters, digits and hyphens (up to 31 characters)", arguments.asJson );
+        if ( structKeyExists( readRecord( nm ), "name" ) ) return variables.cli.fail( cmd, "precondition", "A VM named " & nm & " already exists (bxrig vm list)", arguments.asJson );
+        if ( arguments.kind == "windows" && len( o.gpu ?: "" ) ) return variables.cli.fail( cmd, "usage", "--gpu is for Linux desktops", arguments.asJson );
+        if ( arguments.kind == "linux" && len( o.version ?: "" ) ) return variables.cli.fail( cmd, "usage", "--version is for Windows; Linux desktops use --tag", arguments.asJson );
         var rec = { name: nm, kind: arguments.kind, created: now() & "", ports: {}, share: "", cpus: "", memory: "", user: "bxrig" };
         // the share folder: default ~/Windows (drive Z:) or ~/Shared, none to turn it off
         var shareOpt = o.share ?: "";
         rec.share = shareOpt == "none" ? "" : ( len( shareOpt ) ? shareOpt : variables.environ.home() & ( arguments.kind == "windows" ? "/Windows" : "/Shared" ) );
-        if ( len( rec.share ) && left( rec.share, 1 ) != "/" ) return variables.cli.fail( cmd, 4, "--share needs an absolute path (or none)", arguments.asJson );
+        if ( len( rec.share ) && left( rec.share, 1 ) != "/" ) return variables.cli.fail( cmd, "precondition", "--share needs an absolute path (or none)", arguments.asJson );
         var gpu = { error: "", args: [], mode: "none" };
         var taken = takenPorts();
         if ( arguments.kind == "windows" ) {
             var ver = o.version ?: "";
             if ( !len( ver ) ) {
-                if ( !hasTerminal() ) return variables.cli.fail( cmd, 4, "Choose the Windows version with --version=VALUE (see: bxrig vm versions windows); there is no terminal to ask on", arguments.asJson );
+                if ( !hasTerminal() ) return variables.cli.fail( cmd, "precondition", "Choose the Windows version with --version=VALUE (see: bxrig vm versions windows); there is no terminal to ask on", arguments.asJson );
                 var ask = askVersion( arguments.asJson );
-                if ( len( ask.error ) ) return variables.cli.fail( cmd, 4, ask.error, arguments.asJson );
+                if ( len( ask.error ) ) return variables.cli.fail( cmd, "precondition", ask.error, arguments.asJson );
                 ver = ask.value;
             }
-            if ( structIsEmpty( variables.data.windowsVersion( ver ) ) ) return variables.cli.fail( cmd, 4, "Unknown Windows version " & ver & " (bxrig vm versions windows)", arguments.asJson );
+            if ( structIsEmpty( variables.data.windowsVersion( ver ) ) ) return variables.cli.fail( cmd, "precondition", "Unknown Windows version " & ver & " (bxrig vm versions windows)", arguments.asJson );
             rec.version = ver;
             rec.ram = len( o.ram ?: "" ) ? o.ram : min( 8, max( 4, int( hostMemGb() / 2 ) ) ) & "G";
             rec.cpus = len( o.cpus ?: "" ) ? o.cpus : min( 8, max( 2, int( hostCores() / 2 ) ) ) & "";
             rec.disk = len( o.disk ?: "" ) ? o.disk : "64G";
-            if ( !validSize( rec.ram ) || !validSize( rec.disk ) || !validSize( rec.cpus ) ) return variables.cli.fail( cmd, 4, "--ram, --disk and --cpus take a whole number, with G or M for sizes (for example 8G)", arguments.asJson );
+            if ( !validSize( rec.ram ) || !validSize( rec.disk ) || !validSize( rec.cpus ) ) return variables.cli.fail( cmd, "precondition", "--ram, --disk and --cpus take a whole number, with G or M for sizes (for example 8G)", arguments.asJson );
             rec.ports.web = freePort( 8006, taken );
             taken.append( rec.ports.web );
             rec.ports.rdp = freePort( 3389, taken );
         } else {
             var tg = len( o.tag ?: "" ) ? o.tag : variables.data.defaultLinux();
             var t = variables.data.linuxTag( tg );
-            if ( structIsEmpty( t ) ) return variables.cli.fail( cmd, 4, "Unknown tag " & tg & " (bxrig vm versions linux)", arguments.asJson );
+            if ( structIsEmpty( t ) ) return variables.cli.fail( cmd, "precondition", "Unknown tag " & tg & " (bxrig vm versions linux)", arguments.asJson );
             rec.tag = t.id; rec.imageTag = t.tag;
             rec.cpus = o.cpus ?: ""; rec.memory = o.memory ?: "";
-            if ( len( rec.cpus ) && !isNumeric( rec.cpus ) ) return variables.cli.fail( cmd, 4, "--cpus takes a number", arguments.asJson );
-            if ( len( rec.memory ) && !validSize( rec.memory ) ) return variables.cli.fail( cmd, 4, "--memory takes a number with G or M (for example 4G)", arguments.asJson );
+            if ( len( rec.cpus ) && !isNumeric( rec.cpus ) ) return variables.cli.fail( cmd, "precondition", "--cpus takes a number", arguments.asJson );
+            if ( len( rec.memory ) && !validSize( rec.memory ) ) return variables.cli.fail( cmd, "precondition", "--memory takes a number with G or M (for example 4G)", arguments.asJson );
             gpu = gpuArgs( o.gpu ?: "none", t.tag );
-            if ( len( gpu.error ) ) return variables.cli.fail( cmd, 4, gpu.error, arguments.asJson );
+            if ( len( gpu.error ) ) return variables.cli.fail( cmd, "precondition", gpu.error, arguments.asJson );
             rec.gpu = gpu.mode;
             rec.ports.web = freePort( 3001, taken );
         }
@@ -350,15 +350,15 @@ class Vm {
             var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": " & cmd & " " & arguments.kind & " " & nm, "  would " & what ];
             if ( arguments.kind == "windows" ) lines.append( "  The Windows install downloads about " & numberFormat( variables.data.windowsVersion( rec.version ).size, "0.0" ) & " GB and takes a while; you need your own Windows license." );
             lines.append( arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return variables.cli.say( cmd, arguments.dryRun ? 0 : 2, variables.text.merge( data, { would: what } ), arguments.asJson, lines, arguments.dryRun );
+            return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", variables.text.merge( data, { would: what } ), arguments.asJson, lines, arguments.dryRun );
         }
-        if ( !engineAvailable() ) return variables.cli.fail( cmd, 4, engineCli() & " is required but was not found (bxrig profile-install containers, or bxrig db engine docker)", arguments.asJson );
-        if ( arguments.kind == "windows" && variables.proc.exec( [ "sh", "-c", '[ -r /dev/kvm ] && [ -w /dev/kvm ]' ], 10 ).exitCode != 0 && !len( getSystemSetting( "BXRIG_VM_SKIP_KVM_CHECK", "" ) ) ) return variables.cli.fail( cmd, 4, "/dev/kvm is not usable by you (run: bxrig vm doctor)", arguments.asJson );
+        if ( !engineAvailable() ) return variables.cli.fail( cmd, "precondition", engineCli() & " is required but was not found (bxrig profile-install containers, or bxrig db engine docker)", arguments.asJson );
+        if ( arguments.kind == "windows" && variables.proc.exec( [ "sh", "-c", '[ -r /dev/kvm ] && [ -w /dev/kvm ]' ], 10 ).exitCode != 0 && !len( getSystemSetting( "BXRIG_VM_SKIP_KVM_CHECK", "" ) ) ) return variables.cli.fail( cmd, "precondition", "/dev/kvm is not usable by you (run: bxrig vm doctor)", arguments.asJson );
         // the password goes to the keyring (bxrig secrets) and, for this run only, into an env file (mode 600) the container reads
         var pw = newSecret();
-        if ( len( pw ) < 16 ) return variables.cli.fail( cmd, 6, "Could not generate a password", arguments.asJson );
+        if ( len( pw ) < 16 ) return variables.cli.fail( cmd, "failed", "Could not generate a password", arguments.asJson );
         var serr = secrets().store( secretKey( nm ), pw );
-        if ( len( serr ) ) return variables.cli.fail( cmd, 6, "Could not store the password: " & serr, arguments.asJson );
+        if ( len( serr ) ) return variables.cli.fail( cmd, "failed", "Could not store the password: " & serr, arguments.asJson );
         directoryCreate( dir, true, true );
         if ( len( rec.share ) ) directoryCreate( rec.share, true, true );
         var envFile = dir & "/vm.env";
@@ -370,7 +370,7 @@ class Vm {
         if ( r.exitCode != 0 ) {
             secrets().drop( secretKey( nm ) );
             variables.proc.exec( [ "rm", "-rf", dir ], 30 );
-            return variables.cli.say( cmd, 6, variables.text.merge( data, { error: trim( r.output ) } ), arguments.asJson, [ "error: " & trim( r.output ) ] );
+            return variables.cli.say( cmd, "failed", variables.text.merge( data, { error: trim( r.output ) } ), arguments.asJson, [ "error: " & trim( r.output ) ] );
         }
         writeRecord( rec );
         writeLauncher( rec );
@@ -379,7 +379,7 @@ class Vm {
             out.append( "Windows installs by itself on the first start: watch it at " & url( rec ) & " (about " & numberFormat( variables.data.windowsVersion( rec.version ).size, "0.0" ) & " GB to download). Then: bxrig vm open " & nm );
         } else out.append( "Open it with: bxrig vm open " & nm & "  (" & url( rec ) & ", user bxrig; the first start pulls the image)" );
         out.append( "Password: bxrig vm info " & nm & " --show-password   Data: " & dir & ( len( rec.share ) ? "   Shared folder: " & rec.share : "" ) );
-        return variables.cli.say( cmd, 0, data, arguments.asJson, out );
+        return variables.cli.say( cmd, "ok", data, arguments.asJson, out );
     }
 
     function desktopFile( name ) {
@@ -409,20 +409,20 @@ class Vm {
         var cmd = "vm " & arguments.verb;
         var res = resolve( arguments.name );
         if ( len( res.error ) ) return variables.cli.fail( cmd, res.code, res.error, arguments.asJson );
-        if ( !engineAvailable() ) return variables.cli.fail( cmd, 4, engineCli() & " was not found", arguments.asJson );
+        if ( !engineAvailable() ) return variables.cli.fail( cmd, "precondition", engineCli() & " was not found", arguments.asJson );
         var state = stateOf( res.container );
-        if ( !len( state ) ) return variables.cli.fail( cmd, 4, res.container & " does not exist any more (bxrig vm remove " & arguments.name & " clears the record)", arguments.asJson );
+        if ( !len( state ) ) return variables.cli.fail( cmd, "precondition", res.container & " does not exist any more (bxrig vm remove " & arguments.name & " clears the record)", arguments.asJson );
         if ( arguments.verb == "logs" ) {
             var l = engineExec( [ "logs", "--tail", "200", res.container ], 60 );
-            return variables.cli.say( cmd, l.exitCode == 0 ? 0 : 6, { name: arguments.name, logs: l.output }, arguments.asJson, [ l.output ] );
+            return variables.cli.say( cmd, l.exitCode == 0 ? "ok" : "failed", { name: arguments.name, logs: l.output }, arguments.asJson, [ l.output ] );
         }
         if ( arguments.verb == "start" ) {
-            if ( state == "running" ) return variables.cli.say( cmd, 0, { name: arguments.name, state: "running", already: true }, arguments.asJson, [ arguments.name & " is already running (" & url( res.rec ) & ")" ] );
+            if ( state == "running" ) return variables.cli.say( cmd, "ok", { name: arguments.name, state: "running", already: true }, arguments.asJson, [ arguments.name & " is already running (" & url( res.rec ) & ")" ] );
             var s = engineExec( [ "start", res.container ], 120 );
-            return variables.cli.say( cmd, s.exitCode == 0 ? 0 : 6, { name: arguments.name, started: s.exitCode == 0 }, arguments.asJson, [ s.exitCode == 0 ? "Started " & arguments.name & " (" & url( res.rec ) & ")" : "error: " & trim( s.output ) ] );
+            return variables.cli.say( cmd, s.exitCode == 0 ? "ok" : "failed", { name: arguments.name, started: s.exitCode == 0 }, arguments.asJson, [ s.exitCode == 0 ? "Started " & arguments.name & " (" & url( res.rec ) & ")" : "error: " & trim( s.output ) ] );
         }
         var st = engineExec( [ "stop", res.container ], 180 );
-        return variables.cli.say( cmd, st.exitCode == 0 ? 0 : 6, { name: arguments.name, stopped: st.exitCode == 0 }, arguments.asJson, [ st.exitCode == 0 ? "Stopped " & arguments.name : "error: " & trim( st.output ) ] );
+        return variables.cli.say( cmd, st.exitCode == 0 ? "ok" : "failed", { name: arguments.name, stopped: st.exitCode == 0 }, arguments.asJson, [ st.exitCode == 0 ? "Stopped " & arguments.name : "error: " & trim( st.output ) ] );
     }
 
     function waitFor( port, seconds ) {
@@ -435,33 +435,33 @@ class Vm {
         var cmd = "vm open";
         var res = resolve( arguments.name );
         if ( len( res.error ) ) return variables.cli.fail( cmd, res.code, res.error, arguments.asJson );
-        if ( !engineAvailable() ) return variables.cli.fail( cmd, 4, engineCli() & " was not found", arguments.asJson );
+        if ( !engineAvailable() ) return variables.cli.fail( cmd, "precondition", engineCli() & " was not found", arguments.asJson );
         var state = stateOf( res.container );
-        if ( !len( state ) ) return variables.cli.fail( cmd, 4, res.container & " does not exist any more", arguments.asJson );
+        if ( !len( state ) ) return variables.cli.fail( cmd, "precondition", res.container & " does not exist any more", arguments.asJson );
         var rec = res.rec;
         if ( state != "running" ) {
             var s = engineExec( [ "start", res.container ], 120 );
-            if ( s.exitCode != 0 ) return variables.cli.fail( cmd, 6, "could not start " & res.container & ": " & trim( s.output ), arguments.asJson );
+            if ( s.exitCode != 0 ) return variables.cli.fail( cmd, "failed", "could not start " & res.container & ": " & trim( s.output ), arguments.asJson );
         }
         var target = url( rec );
         if ( rec.kind == "linux" || arguments.web ) {
-            if ( !waitFor( rec.ports.web, 60 ) ) return variables.cli.say( cmd, 6, { name: arguments.name, url: target }, arguments.asJson, [ "error: " & arguments.name & " did not answer on " & target & " yet (bxrig vm logs " & arguments.name & ")" ] );
+            if ( !waitFor( rec.ports.web, 60 ) ) return variables.cli.say( cmd, "failed", { name: arguments.name, url: target }, arguments.asJson, [ "error: " & arguments.name & " did not answer on " & target & " yet (bxrig vm logs " & arguments.name & ")" ] );
             var br = variables.proc.exec( [ "sh", "-c", 'setsid xdg-open "$1" </dev/null >/dev/null 2>&1 &', "_", target ], 15 );
-            return variables.cli.say( cmd, br.exitCode == 0 ? 0 : 6, { name: arguments.name, url: target, user: rec.user }, arguments.asJson, [ "Opening " & target & " (user " & rec.user & "; the certificate is self-signed, accept it once). Password: bxrig vm info " & arguments.name & " --show-password" ] );
+            return variables.cli.say( cmd, br.exitCode == 0 ? "ok" : "failed", { name: arguments.name, url: target, user: rec.user }, arguments.asJson, [ "Opening " & target & " (user " & rec.user & "; the certificate is self-signed, accept it once). Password: bxrig vm info " & arguments.name & " --show-password" ] );
         }
         var client = "";
         for ( var c in [ "sdl-freerdp3", "sdl-freerdp", "xfreerdp3", "xfreerdp", "wlfreerdp3", "wlfreerdp" ] ) if ( !len( client ) && variables.proc.has( c ) ) client = c;
-        if ( !len( client ) ) return variables.cli.fail( cmd, 4, "No FreeRDP client was found (bxrig install freerdp). The browser viewer works meanwhile: bxrig vm open " & arguments.name & " --web", arguments.asJson );
-        if ( !waitFor( rec.ports.rdp, 30 ) ) return variables.cli.say( cmd, 6, { name: arguments.name, web: target }, arguments.asJson, [ "Windows is not answering on RDP yet. On the first start it is still installing: watch it at " & target & " (bxrig vm open " & arguments.name & " --web), then try again." ] );
+        if ( !len( client ) ) return variables.cli.fail( cmd, "precondition", "No FreeRDP client was found (bxrig install freerdp). The browser viewer works meanwhile: bxrig vm open " & arguments.name & " --web", arguments.asJson );
+        if ( !waitFor( rec.ports.rdp, 30 ) ) return variables.cli.say( cmd, "failed", { name: arguments.name, web: target }, arguments.asJson, [ "Windows is not answering on RDP yet. On the first start it is still installing: watch it at " & target & " (bxrig vm open " & arguments.name & " --web), then try again." ] );
         var pw = secrets().fetch( secretKey( arguments.name ) );
-        if ( !len( pw ) ) return variables.cli.fail( cmd, 4, "The stored password was not found (" & secretKey( arguments.name ) & "); use --web, or set it with bxrig secrets set", arguments.asJson );
+        if ( !len( pw ) ) return variables.cli.fail( cmd, "precondition", "The stored password was not found (" & secretKey( arguments.name ) & "); use --web, or set it with bxrig secrets set", arguments.asJson );
         // FreeRDP reads its arguments, one per line, from a file (/args-from:file:PATH), so the password is not on a command line
         var f = dataDir( arguments.name ) & "/rdp.args";
         var argLines = [ "/v:127.0.0.1:" & rec.ports.rdp, "/u:" & rec.user, "/p:" & pw, "/cert:ignore", "+clipboard", "/dynamic-resolution", "/title:" & arguments.name ];
         if ( arguments.fullscreen ) argLines.append( "/f" );
         variables.config.writeAtomic( f, argLines.toList( chr( 10 ) ) & chr( 10 ), "600" );
         var run = variables.proc.exec( [ "sh", "-c", 'f="$2"; shift 2; ( setsid "$@" </dev/null >/dev/null 2>&1 & ); ( sleep 15; rm -f "$f" ) </dev/null >/dev/null 2>&1 &', "_", client, f, client, "/args-from:file:" & f ], 15 );
-        return variables.cli.say( cmd, run.exitCode == 0 ? 0 : 6, { name: arguments.name, client: client, rdp: "127.0.0.1:" & rec.ports.rdp, user: rec.user }, arguments.asJson, [ "Opening " & arguments.name & " with " & client & " (user " & rec.user & ", clipboard shared, drive Z: is " & ( len( rec.share ) ? rec.share : "off" ) & ")" ] );
+        return variables.cli.say( cmd, run.exitCode == 0 ? "ok" : "failed", { name: arguments.name, client: client, rdp: "127.0.0.1:" & rec.ports.rdp, user: rec.user }, arguments.asJson, [ "Opening " & arguments.name & " with " & client & " (user " & rec.user & ", clipboard shared, drive Z: is " & ( len( rec.share ) ? rec.share : "off" ) & ")" ] );
     }
 
     // ---- views ----
@@ -477,7 +477,7 @@ class Vm {
             lines.append( r.name & repeatString( " ", max( 1, 16 - len( r.name ) ) ) & r.kind & repeatString( " ", max( 1, 9 - len( r.kind ) ) ) & row.what & repeatString( " ", max( 1, 14 - len( row.what & "" ) ) ) & row.state & repeatString( " ", max( 1, 10 - len( row.state ) ) ) & variables.fmt.kb( row.size_kb ) & "  " & row.url );
         }
         if ( !rows.len() ) lines.append( "No VMs yet. Create one: bxrig vm create linux NAME   or   bxrig vm create windows" );
-        return variables.cli.say( cmd, 0, { vms: rows }, arguments.asJson, lines );
+        return variables.cli.say( cmd, "ok", { vms: rows }, arguments.asJson, lines );
     }
 
     function status( name, asJson ) {
@@ -487,13 +487,13 @@ class Vm {
         if ( len( res.error ) ) return variables.cli.fail( cmd, res.code, res.error, arguments.asJson );
         var st = engineAvailable() ? stateOf( res.container ) : "";
         var d = { name: arguments.name, kind: res.rec.kind, state: len( st ) ? st : "missing", url: url( res.rec ), ports: res.rec.ports, size_kb: duKb( dataDir( arguments.name ) ), data: dataDir( arguments.name ) };
-        return variables.cli.say( cmd, 0, d, arguments.asJson, [ arguments.name & ": " & d.state & "  " & d.url & "  data " & variables.fmt.kb( d.size_kb ) & " in " & d.data ] );
+        return variables.cli.say( cmd, "ok", d, arguments.asJson, [ arguments.name & ": " & d.state & "  " & d.url & "  data " & variables.fmt.kb( d.size_kb ) & " in " & d.data ] );
     }
 
     function size( name, asJson ) {
         var cmd = "vm size";
         var recs = len( arguments.name ) ? [ readRecord( arguments.name ) ] : allRecords();
-        if ( len( arguments.name ) && !structKeyExists( recs[ 1 ], "name" ) ) return variables.cli.fail( cmd, 4, "There is no VM named " & arguments.name, arguments.asJson );
+        if ( len( arguments.name ) && !structKeyExists( recs[ 1 ], "name" ) ) return variables.cli.fail( cmd, "precondition", "There is no VM named " & arguments.name, arguments.asJson );
         var rows = [];
         var total = 0;
         var lines = [];
@@ -504,7 +504,7 @@ class Vm {
             lines.append( r.name & repeatString( " ", max( 1, 16 - len( r.name ) ) ) & variables.fmt.kb( kb ) & "  " & dataDir( r.name ) );
         }
         lines.append( "Total " & variables.fmt.kb( total ) & " (the images themselves are in the container engine: " & engineCli() & " image ls)" );
-        return variables.cli.say( cmd, 0, { vms: rows, total_kb: total }, arguments.asJson, lines );
+        return variables.cli.say( cmd, "ok", { vms: rows, total_kb: total }, arguments.asJson, lines );
     }
 
     function info( name, showPassword, asJson ) {
@@ -519,7 +519,7 @@ class Vm {
             d.password = secrets().fetch( secretKey( rec.name ) );
             lines.append( "  password: " & d.password );
         } else lines.append( "  password: bxrig vm info " & rec.name & " --show-password   (stored as " & secretKey( rec.name ) & ")" );
-        return variables.cli.say( cmd, 0, d, arguments.asJson, lines );
+        return variables.cli.say( cmd, "ok", d, arguments.asJson, lines );
     }
 
     // `remove NAME [--keep-data]`: the container, and unless --keep-data the data folder, the password and the record.
@@ -527,24 +527,24 @@ class Vm {
         var cmd = "vm remove";
         var res = resolve( arguments.name );
         if ( len( res.error ) ) return variables.cli.fail( cmd, res.code, res.error, arguments.asJson );
-        if ( !engineAvailable() ) return variables.cli.fail( cmd, 4, engineCli() & " was not found", arguments.asJson );
+        if ( !engineAvailable() ) return variables.cli.fail( cmd, "precondition", engineCli() & " was not found", arguments.asJson );
         var dir = dataDir( arguments.name );
         var kb = duKb( dir );
         var what = "remove the container " & res.container & ( arguments.keepData ? " (the data in " & dir & ", the password and the record are KEPT)" : " AND DELETE ITS DATA (" & variables.fmt.kb( kb ) & " in " & dir & "), its stored password and its record. The shared folder is not touched" );
-        if ( !arguments.yes || arguments.dryRun ) return variables.cli.say( cmd, arguments.dryRun ? 0 : 2, { name: arguments.name, would: what, deletes_data: !arguments.keepData, size_kb: kb }, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": would " & what, arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dryRun );
+        if ( !arguments.yes || arguments.dryRun ) return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", { name: arguments.name, would: what, deletes_data: !arguments.keepData, size_kb: kb }, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": would " & what, arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dryRun );
         if ( len( stateOf( res.container ) ) ) {
             var r = engineExec( [ "rm", "-f", res.container ], 180 );
-            if ( r.exitCode != 0 ) return variables.cli.fail( cmd, 6, trim( r.output ), arguments.asJson );
+            if ( r.exitCode != 0 ) return variables.cli.fail( cmd, "failed", trim( r.output ), arguments.asJson );
         }
         if ( fileExists( desktopFile( arguments.name ) ) ) fileDelete( desktopFile( arguments.name ) );
         if ( !arguments.keepData ) {
             if ( directoryExists( dir ) ) {
                 var rm = variables.proc.exec( [ "rm", "-rf", dir ], 600 );
-                if ( rm.exitCode != 0 || directoryExists( dir ) ) return variables.cli.say( cmd, 6, { name: arguments.name, error: "the container was removed but " & dir & " could not be deleted" }, arguments.asJson, [ "error: the container was removed but " & dir & " could not be deleted (files made by Docker may need: sudo rm -rf " & dir & ")" ] );
+                if ( rm.exitCode != 0 || directoryExists( dir ) ) return variables.cli.say( cmd, "failed", { name: arguments.name, error: "the container was removed but " & dir & " could not be deleted" }, arguments.asJson, [ "error: the container was removed but " & dir & " could not be deleted (files made by Docker may need: sudo rm -rf " & dir & ")" ] );
             }
             secrets().drop( secretKey( arguments.name ) );
             if ( fileExists( recordFile( arguments.name ) ) ) fileDelete( recordFile( arguments.name ) );
         }
-        return variables.cli.say( cmd, 0, { name: arguments.name, removed: true, data_deleted: !arguments.keepData }, arguments.asJson, [ "Removed " & res.container & ( arguments.keepData ? ". Its data, password and record were kept." : " and its data." ) ] );
+        return variables.cli.say( cmd, "ok", { name: arguments.name, removed: true, data_deleted: !arguments.keepData }, arguments.asJson, [ "Removed " & res.container & ( arguments.keepData ? ". Its data, password and record were kept." : " and its data." ) ] );
     }
 }

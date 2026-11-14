@@ -24,7 +24,7 @@ class ControlCenter {
         var rows = new bxrig.ControlCenterPages().list();
         if ( arguments.asJson ) println( variables.cli.envelope( "tui list", 0, { pages: rows } ) );
         else for ( var r in rows ) println( r.id & "  " & r.title );
-        return 0;
+        return new bxrig.Exit().ok();
     }
 
     function provider( demo ) {
@@ -107,10 +107,10 @@ class ControlCenter {
             var st = p.state();
             if ( arguments.asJson ) println( variables.cli.envelope( "tui " & p.id(), 0, st ) );
             else println( p.title() & ": " & ( structKeyExists( st, "attention" ) ? st.attention.len() & " things to look at" : ( isArray( st.rows ) ? st.rows.len() : st.rows ) & " rows" ) );
-            return 0;
+            return new bxrig.Exit().ok();
         }
         println( "Unknown page " & arguments.pageId & ". Pages: " & pageIds().toList( ", " ) );
-        return 2;
+        return new bxrig.Exit().usage();
     }
 
     // Icons are Nerd Font glyphs. "on" and "off" are explicit; "" follows BXRIG_ICONS, then looks for a Nerd Font on the machine.

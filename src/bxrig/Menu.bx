@@ -72,7 +72,7 @@ class Menu {
 
     function show( asJson ) {
         var rows = tree();
-        return variables.cli.say( "menu items", 0, { menu: rows, entries: flatten( rows ).len() }, arguments.asJson, lineList( rows, 0 ) );
+        return variables.cli.say( "menu items", "ok", { menu: rows, entries: flatten( rows ).len() }, arguments.asJson, lineList( rows, 0 ) );
     }
 
     // `menu search TEXT`: the entries whose path contains TEXT.
@@ -82,7 +82,7 @@ class Menu {
         var rows = hits.map( function( h ) { return { path: h.path, kind: h.entry.kind, does: describe( h.entry ) }; } );
         var lines = rows.map( function( r ) { return r.path & "   (" & r.does & ")"; } );
         if ( !rows.len() ) lines.append( "No menu entry matches " & arguments.text );
-        return variables.cli.say( "menu search", 0, { query: arguments.text, results: rows }, arguments.asJson, lines );
+        return variables.cli.say( "menu search", "ok", { query: arguments.text, results: rows }, arguments.asJson, lines );
     }
 
     // ---- live lists for pick entries ----
@@ -165,40 +165,40 @@ class Menu {
             var sp = [ variables.environ.self() ];
             for ( var a in arguments.entry.argv ) sp.append( a );
             detach( sp );
-            return 0;
+            return new bxrig.Exit().ok();
         }
         var term = terminalArgv();
-        if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return 4; }
+        if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.Exit().precondition(); }
         var argv = [];
         for ( var t in term ) argv.append( t );
         for ( var w in [ "sh", "-c", 'bxrig_cmd="$1"; shift; "$bxrig_cmd" "$@"; echo; echo "Press Enter to close"; read _', "_", variables.environ.self() ] ) argv.append( w );
         for ( var a2 in arguments.entry.argv ) argv.append( a2 );
         detach( argv );
-        return 0;
+        return new bxrig.Exit().ok();
     }
 
     // A Control Center page in its own terminal window: the terminal closes when you leave the page (no "press Enter" step).
     function startTui( entry ) {
         var term = terminalArgv();
-        if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return 4; }
+        if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.Exit().precondition(); }
         var argv = [];
         for ( var t in term ) argv.append( t );
         argv.append( variables.environ.self() );
         for ( var a in arguments.entry.argv ) argv.append( a );
         detach( argv );
-        return 0;
+        return new bxrig.Exit().ok();
     }
 
     // A command in its own terminal window that closes when it ends (the wizard).
     function startTerm( entry ) {
         var term = terminalArgv();
-        if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return 4; }
+        if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.Exit().precondition(); }
         var argv = [];
         for ( var t in term ) argv.append( t );
         argv.append( variables.environ.self() );
         for ( var a in arguments.entry.argv ) argv.append( a );
         detach( argv );
-        return 0;
+        return new bxrig.Exit().ok();
     }
 
     function sub( argv, value ) {

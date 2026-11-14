@@ -66,7 +66,7 @@ class Mail {
     }
 
     function notRunning( command, asJson ) {
-        return variables.cli.fail( arguments.command, 4, "The mail catcher is not answering at " & base() & ". Start it with: bxrig mail start --yes", arguments.asJson );
+        return variables.cli.fail( arguments.command, "precondition", "The mail catcher is not answering at " & base() & ". Start it with: bxrig mail start --yes", arguments.asJson );
     }
 
     // ---- reading messages (the Control Center page uses these too) ----
@@ -130,31 +130,31 @@ class Mail {
         var cmd = "mail start";
         var sp = len( toString( arguments.smtp ) ) ? arguments.smtp : 1025;
         var up = len( toString( arguments.ui ) ) ? arguments.ui : 8025;
-        if ( !validPort( sp ) || !validPort( up ) ) return variables.cli.fail( cmd, 4, "The ports must be whole numbers from 1024 to 65535", arguments.asJson );
+        if ( !validPort( sp ) || !validPort( up ) ) return variables.cli.fail( cmd, "precondition", "The ports must be whole numbers from 1024 to 65535", arguments.asJson );
         sp = int( val( sp ) ); up = int( val( up ) );
-        if ( sp == up ) return variables.cli.fail( cmd, 4, "The SMTP port and the web port must differ", arguments.asJson );
+        if ( sp == up ) return variables.cli.fail( cmd, "precondition", "The SMTP port and the web port must differ", arguments.asJson );
         if ( !variables.db.engineAvailable() ) {
             var msg = variables.db.engineCli() & " is required but was not found" & ( variables.db.engineCli() == "podman" ? " (install it with: bxrig profile-install containers; or choose Docker with: bxrig db engine docker)" : "" );
-            return variables.cli.fail( cmd, 4, msg, arguments.asJson );
+            return variables.cli.fail( cmd, "precondition", msg, arguments.asJson );
         }
         var state = variables.db.stateOf( container() );
         var data = { container: container(), image: image(), smtp: "127.0.0.1:" & sp, web: "http://127.0.0.1:" & up, keep: arguments.keep };
-        if ( state == "running" ) return variables.cli.say( cmd, 0, structAppendNew( data, { already: "running" } ), arguments.asJson, [ container() & " is already running: SMTP 127.0.0.1:" & smtpPort() & ", inbox http://127.0.0.1:" & uiPort() ] );
+        if ( state == "running" ) return variables.cli.say( cmd, "ok", structAppendNew( data, { already: "running" } ), arguments.asJson, [ container() & " is already running: SMTP 127.0.0.1:" & smtpPort() & ", inbox http://127.0.0.1:" & uiPort() ] );
         var verb = len( state ) ? "start the stopped container " & container() & " (its mail is kept)" : "run " & image() & " as " & container() & ": SMTP 127.0.0.1:" & sp & ", web inbox http://127.0.0.1:" & up & ( arguments.keep ? ", inbox stored in " & dir() : ", mail thrown away when it stops" );
         if ( !arguments.yes || arguments.dry ) {
             var lines = [ ( arguments.dry ? "Dry run" : "Plan" ) & ": mail start", "  would " & verb, arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ];
-            return variables.cli.say( cmd, arguments.dry ? 0 : 2, structAppendNew( data, { would: verb } ), arguments.asJson, lines, arguments.dry );
+            return variables.cli.say( cmd, arguments.dry ? "ok" : "plan", structAppendNew( data, { would: verb } ), arguments.asJson, lines, arguments.dry );
         }
         if ( len( state ) ) {
             var s = variables.db.engineExec( [ "start", container() ], 120 );
-            return variables.cli.say( cmd, s.exitCode == 0 ? 0 : 6, structAppendNew( data, { started: s.exitCode == 0 } ), arguments.asJson, [ s.exitCode == 0 ? "Started " & container() : "error: could not start " & container() & " " & trim( s.output ) ] );
+            return variables.cli.say( cmd, s.exitCode == 0 ? "ok" : "failed", structAppendNew( data, { started: s.exitCode == 0 } ), arguments.asJson, [ s.exitCode == 0 ? "Started " & container() : "error: could not start " & container() & " " & trim( s.output ) ] );
         }
         if ( arguments.keep ) directoryCreate( dir(), true, true );
         var r = variables.db.engineExec( runArgs( sp, up, arguments.keep ), 1800 );
-        if ( r.exitCode != 0 ) return variables.cli.say( cmd, 6, structAppendNew( data, { error: trim( r.output ) } ), arguments.asJson, [ "error: " & trim( r.output ) ] );
+        if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", structAppendNew( data, { error: trim( r.output ) } ), arguments.asJson, [ "error: " & trim( r.output ) ] );
         directoryCreate( dir(), true, true );
         variables.config.writeAtomic( metaFile(), jsonSerialize( { smtp: sp, ui: up, keep: arguments.keep, image: image(), created: now() & "" } ) & chr( 10 ), "644" );
-        return variables.cli.say( cmd, 0, data, arguments.asJson, [ "Mail catcher started.", "  SMTP:  127.0.0.1:" & sp & "  (no TLS, any login is accepted)", "  Inbox: http://127.0.0.1:" & up, arguments.keep ? "  Mail is kept in " & dir() & " between stops." : "  Mail is thrown away when it stops. Use --keep to keep it.", "Settings for your app: bxrig mail env" ] );
+        return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Mail catcher started.", "  SMTP:  127.0.0.1:" & sp & "  (no TLS, any login is accepted)", "  Inbox: http://127.0.0.1:" & up, arguments.keep ? "  Mail is kept in " & dir() & " between stops." : "  Mail is thrown away when it stops. Use --keep to keep it.", "Settings for your app: bxrig mail env" ] );
     }
 
     // A copy of base with the keys of extra added (the keys of extra win).
@@ -167,13 +167,13 @@ class Mail {
 
     function stop( asJson ) {
         var cmd = "mail stop";
-        if ( !variables.db.engineAvailable() ) return variables.cli.fail( cmd, 4, variables.db.engineCli() & " was not found", arguments.asJson );
+        if ( !variables.db.engineAvailable() ) return variables.cli.fail( cmd, "precondition", variables.db.engineCli() & " was not found", arguments.asJson );
         var state = variables.db.stateOf( container() );
-        if ( !len( state ) ) return variables.cli.fail( cmd, 4, container() & " does not exist (start it with: bxrig mail start --yes)", arguments.asJson );
+        if ( !len( state ) ) return variables.cli.fail( cmd, "precondition", container() & " does not exist (start it with: bxrig mail start --yes)", arguments.asJson );
         var keep = structKeyExists( meta(), "keep" ) ? meta().keep : false;
         var s = variables.db.engineExec( [ "stop", container() ], 120 );
-        if ( s.exitCode != 0 ) return variables.cli.fail( cmd, 6, trim( s.output ), arguments.asJson );
-        return variables.cli.say( cmd, 0, { container: container(), stopped: true, kept: keep }, arguments.asJson, [ "Stopped " & container() & ( keep ? ". Its mail is kept." : ". Its mail is gone." ) ] );
+        if ( s.exitCode != 0 ) return variables.cli.fail( cmd, "failed", trim( s.output ), arguments.asJson );
+        return variables.cli.say( cmd, "ok", { container: container(), stopped: true, kept: keep }, arguments.asJson, [ "Stopped " & container() & ( keep ? ". Its mail is kept." : ". Its mail is gone." ) ] );
     }
 
     function status( asJson ) {
@@ -186,23 +186,23 @@ class Mail {
         var lines = [ container() & ": " & data.state, "  SMTP 127.0.0.1:" & smtpPort() & "   inbox " & base() ];
         if ( up ) lines.append( "  " & count.total & " messages, " & count.unread & " unread" );
         else lines.append( "  not answering" & ( data.state == "none" ? ". Start it with: bxrig mail start --yes" : "" ) );
-        return variables.cli.say( cmd, 0, data, arguments.asJson, lines );
+        return variables.cli.say( cmd, "ok", data, arguments.asJson, lines );
     }
 
     function remove( keepData, yes, dry, asJson ) {
         var cmd = "mail remove";
-        if ( !variables.db.engineAvailable() ) return variables.cli.fail( cmd, 4, variables.db.engineCli() & " was not found", arguments.asJson );
+        if ( !variables.db.engineAvailable() ) return variables.cli.fail( cmd, "precondition", variables.db.engineCli() & " was not found", arguments.asJson );
         var has = variables.db.exists( container() );
         var hasFiles = directoryExists( dir() );
-        if ( !has && !hasFiles ) return variables.cli.fail( cmd, 4, "There is nothing to remove for " & container(), arguments.asJson );
+        if ( !has && !hasFiles ) return variables.cli.fail( cmd, "precondition", "There is nothing to remove for " & container(), arguments.asJson );
         var what = "remove the container " & container() & ( arguments.keepData ? " (the stored mail in " & dir() & " is KEPT)" : " AND DELETE the stored mail in " & dir() );
-        if ( !arguments.yes || arguments.dry ) return variables.cli.say( cmd, arguments.dry ? 0 : 2, { container: container(), would: what, deletes_data: !arguments.keepData }, arguments.asJson, [ ( arguments.dry ? "Dry run" : "Plan" ) & ": would " & what, arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dry );
+        if ( !arguments.yes || arguments.dry ) return variables.cli.say( cmd, arguments.dry ? "ok" : "plan", { container: container(), would: what, deletes_data: !arguments.keepData }, arguments.asJson, [ ( arguments.dry ? "Dry run" : "Plan" ) & ": would " & what, arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dry );
         if ( has ) {
             var r = variables.db.engineExec( [ "rm", "-f", container() ], 120 );
-            if ( r.exitCode != 0 ) return variables.cli.fail( cmd, 6, trim( r.output ), arguments.asJson );
+            if ( r.exitCode != 0 ) return variables.cli.fail( cmd, "failed", trim( r.output ), arguments.asJson );
         }
         if ( !arguments.keepData && hasFiles ) directoryDelete( dir(), true );
-        return variables.cli.say( cmd, 0, { container: container(), removed: true, data_deleted: !arguments.keepData }, arguments.asJson, [ "Removed " & container() ] );
+        return variables.cli.say( cmd, "ok", { container: container(), removed: true, data_deleted: !arguments.keepData }, arguments.asJson, [ "Removed " & container() ] );
     }
 
     // ---- messages ----
@@ -215,16 +215,16 @@ class Mail {
         for ( var x in m.messages ) lines.append( ( x.seen ? " " : "*" ) & " " & left( x.mid & "                      ", 23 ) & left( x.received & "    ", 20 ) & left( x.sender & repeatString( " ", 24 ), 24 ) & x.subject_line );
         if ( !m.messages.len() ) lines.append( "The inbox is empty. Point your app at 127.0.0.1:" & smtpPort() & " (settings: bxrig mail env)." );
         else lines.append( m.total & " messages, " & m.unread & " unread (* marks unread)" );
-        return variables.cli.say( cmd, 0, m, arguments.asJson, lines );
+        return variables.cli.say( cmd, "ok", m, arguments.asJson, lines );
     }
 
     function show( id, asJson ) {
         var cmd = "mail show";
-        if ( !validId( arguments.id ) ) return variables.cli.say( cmd, 2, { error: "usage" }, arguments.asJson, [ "Usage: bxrig mail show ID   (the ID comes from: bxrig mail list)" ] );
+        if ( !validId( arguments.id ) ) return variables.cli.say( cmd, "usage", { error: "usage" }, arguments.asJson, [ "Usage: bxrig mail show ID   (the ID comes from: bxrig mail list)" ] );
         var probe = messages( 1 );
         if ( structKeyExists( probe, "error" ) ) return notRunning( cmd, arguments.asJson );
         var m = message( arguments.id );
-        if ( !structCount( m ) ) return variables.cli.fail( cmd, 4, "There is no message " & arguments.id, arguments.asJson );
+        if ( !structCount( m ) ) return variables.cli.fail( cmd, "precondition", "There is no message " & arguments.id, arguments.asJson );
         var lines = [ "From:    " & m.sender, "To:      " & m.to_list.toList( ", " ) ];
         if ( m.cc_list.len() ) lines.append( "Cc:      " & m.cc_list.toList( ", " ) );
         lines.append( "Date:    " & m.sent );
@@ -233,7 +233,7 @@ class Mail {
         lines.append( "" );
         if ( len( m.body_text ) ) for ( var l in listToArray( m.body_text, chr( 10 ), true ) ) lines.append( l );
         else lines.append( len( m.body_html ) ? "(no text part; it is HTML only. See it with: bxrig mail open " & arguments.id & ")" : "(empty body)" );
-        return variables.cli.say( cmd, 0, m, arguments.asJson, lines );
+        return variables.cli.say( cmd, "ok", m, arguments.asJson, lines );
     }
 
     function clear( yes, dry, asJson ) {
@@ -241,21 +241,21 @@ class Mail {
         var m = messages( 1 );
         if ( structKeyExists( m, "error" ) ) return notRunning( cmd, arguments.asJson );
         var plan = [ ( arguments.dry ? "Dry run" : "Plan" ) & ": would delete all " & m.total & " messages in the inbox.", arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ];
-        if ( !arguments.yes || arguments.dry ) return variables.cli.say( cmd, arguments.dry ? 0 : 2, { would_delete: m.total }, arguments.asJson, plan, arguments.dry );
+        if ( !arguments.yes || arguments.dry ) return variables.cli.say( cmd, arguments.dry ? "ok" : "plan", { would_delete: m.total }, arguments.asJson, plan, arguments.dry );
         var r = http( "DELETE", "/api/v1/messages" );
-        if ( !r.ok ) return variables.cli.fail( cmd, 6, "The catcher refused the request (HTTP " & r.status & ")", arguments.asJson );
-        return variables.cli.say( cmd, 0, { deleted: m.total }, arguments.asJson, [ "Deleted " & m.total & " messages." ] );
+        if ( !r.ok ) return variables.cli.fail( cmd, "failed", "The catcher refused the request (HTTP " & r.status & ")", arguments.asJson );
+        return variables.cli.say( cmd, "ok", { deleted: m.total }, arguments.asJson, [ "Deleted " & m.total & " messages." ] );
     }
 
     function deleteOne( id, yes, dry, asJson ) {
         var cmd = "mail delete";
-        if ( !validId( arguments.id ) ) return variables.cli.say( cmd, 2, { error: "usage" }, arguments.asJson, [ new bxrig.CommandSpec().usage( "mail delete" ) ] );
+        if ( !validId( arguments.id ) ) return variables.cli.say( cmd, "usage", { error: "usage" }, arguments.asJson, [ new bxrig.CommandSpec().usage( "mail delete" ) ] );
         var m = message( arguments.id );
-        if ( !structCount( m ) ) return structKeyExists( messages( 1 ), "error" ) ? notRunning( cmd, arguments.asJson ) : variables.cli.fail( cmd, 4, "There is no message " & arguments.id, arguments.asJson );
+        if ( !structCount( m ) ) return structKeyExists( messages( 1 ), "error" ) ? notRunning( cmd, arguments.asJson ) : variables.cli.fail( cmd, "precondition", "There is no message " & arguments.id, arguments.asJson );
         var plan = [ ( arguments.dry ? "Dry run" : "Plan" ) & ": would delete the message " & chr( 34 ) & m.subject_line & chr( 34 ) & " from " & m.sender & ".", arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ];
-        if ( !arguments.yes || arguments.dry ) return variables.cli.say( cmd, arguments.dry ? 0 : 2, { mid: arguments.id, subject_line: m.subject_line }, arguments.asJson, plan, arguments.dry );
-        if ( !deleteIds( [ arguments.id ] ) ) return variables.cli.fail( cmd, 6, "The catcher refused the request", arguments.asJson );
-        return variables.cli.say( cmd, 0, { mid: arguments.id, deleted: true }, arguments.asJson, [ "Deleted the message." ] );
+        if ( !arguments.yes || arguments.dry ) return variables.cli.say( cmd, arguments.dry ? "ok" : "plan", { mid: arguments.id, subject_line: m.subject_line }, arguments.asJson, plan, arguments.dry );
+        if ( !deleteIds( [ arguments.id ] ) ) return variables.cli.fail( cmd, "failed", "The catcher refused the request", arguments.asJson );
+        return variables.cli.say( cmd, "ok", { mid: arguments.id, deleted: true }, arguments.asJson, [ "Deleted the message." ] );
     }
 
     // Deletes the given message ids (the Control Center uses this). Returns true on success.
@@ -265,12 +265,12 @@ class Mail {
 
     function openUi( id, asJson ) {
         var cmd = "mail open";
-        if ( len( arguments.id ) && !validId( arguments.id ) ) return variables.cli.say( cmd, 2, { error: "usage" }, arguments.asJson, [ new bxrig.CommandSpec().usage( "mail open" ) ] );
+        if ( len( arguments.id ) && !validId( arguments.id ) ) return variables.cli.say( cmd, "usage", { error: "usage" }, arguments.asJson, [ new bxrig.CommandSpec().usage( "mail open" ) ] );
         var url = len( arguments.id ) ? viewUrl( arguments.id ) : base();
         var code = 1;
         try { code = systemExecute( "xdg-open", [ url ], 10, true ).exitCode; } catch ( any e ) {}
-        if ( code != 0 ) return variables.cli.say( cmd, 4, { url: url, error: "no browser launcher (xdg-open)" }, arguments.asJson, [ "error: could not run xdg-open. Open this address yourself:", url ] );
-        return variables.cli.say( cmd, 0, { url: url }, arguments.asJson, [ "Opened " & url ] );
+        if ( code != 0 ) return variables.cli.say( cmd, "precondition", { url: url, error: "no browser launcher (xdg-open)" }, arguments.asJson, [ "error: could not run xdg-open. Open this address yourself:", url ] );
+        return variables.cli.say( cmd, "ok", { url: url }, arguments.asJson, [ "Opened " & url ] );
     }
 
     function test( to, subject, asJson ) {
@@ -281,8 +281,8 @@ class Mail {
         var subj = len( arguments.subject ) ? arguments.subject : "Test mail from BxRig";
         var body = jsonSerialize( { From: { Email: "bxrig@localhost", Name: "BxRig" }, To: [ { Email: rcpt } ], Subject: subj, Text: "If you can read this in the inbox, your mail catcher works." & chr( 10 ) & "Point your app at 127.0.0.1:" & smtpPort() & "." } );
         var r = http( "POST", "/api/v1/send", body );
-        if ( !r.ok ) return variables.cli.fail( cmd, 6, "The catcher refused the test message (HTTP " & r.status & ")", arguments.asJson );
-        return variables.cli.say( cmd, 0, { recipient: rcpt, subject_line: subj }, arguments.asJson, [ "Sent a test message to " & rcpt & ". See it with: bxrig mail list" ] );
+        if ( !r.ok ) return variables.cli.fail( cmd, "failed", "The catcher refused the test message (HTTP " & r.status & ")", arguments.asJson );
+        return variables.cli.say( cmd, "ok", { recipient: rcpt, subject_line: subj }, arguments.asJson, [ "Sent a test message to " & rcpt & ". See it with: bxrig mail list" ] );
     }
 
     function envLines( asJson ) {
@@ -298,7 +298,7 @@ class Mail {
         var lines = [];
         for ( var s in settings ) { lines.append( s.stack ); for ( var l in s.lines ) lines.append( "  " & l ); }
         lines.append( "Inbox: " & base() );
-        return variables.cli.say( "mail env", 0, { host: "127.0.0.1", port: port, web: base(), settings: settings }, arguments.asJson, lines );
+        return variables.cli.say( "mail env", "ok", { host: "127.0.0.1", port: port, web: base(), settings: settings }, arguments.asJson, lines );
     }
 
     function run( words, opts, yes, dry, asJson ) {
@@ -316,6 +316,6 @@ class Mail {
         if ( sub == "open" ) return openUi( arg, arguments.asJson );
         if ( sub == "test" ) return test( o.to ?: "", o.subject ?: "", arguments.asJson );
         if ( sub == "env" ) return envLines( arguments.asJson );
-        return variables.cli.say( "mail", 2, { error: "usage" }, arguments.asJson, [ new bxrig.CommandSpec().usage( "mail" ) ] );
+        return variables.cli.say( "mail", "usage", { error: "usage" }, arguments.asJson, [ new bxrig.CommandSpec().usage( "mail" ) ] );
     }
 }

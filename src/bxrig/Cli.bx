@@ -2,6 +2,7 @@
 class Cli {
     function init( version ) {
         variables.version = arguments.version;
+        variables.exit = new bxrig.Exit();
         return this;
     }
 
@@ -11,10 +12,12 @@ class Cli {
     }
 
     // Prints one command result: the JSON envelope with --json, else the human lines. Returns the exit code (so a command ends with `return cli.say( ... )`).
+    // `code` is a number or a name from Exit ("ok", "usage", "precondition", ...).
     function say( command, code, data, asJson, lines = [], dry = false ) {
-        if ( arguments.asJson ) println( envelope( arguments.command, arguments.code, arguments.data, arguments.dry ) );
+        var n = variables.exit.code( arguments.code );
+        if ( arguments.asJson ) println( envelope( arguments.command, n, arguments.data, arguments.dry ) );
         else for ( var l in arguments.lines ) println( l );
-        return arguments.code;
+        return n;
     }
 
     // An error result: { error: msg } in JSON, "error: msg" for people. Returns the exit code.

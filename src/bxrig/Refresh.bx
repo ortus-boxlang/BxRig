@@ -92,9 +92,9 @@ class Refresh {
     function run( words, opts = {}, yes = false, dry = false, force = false, asJson = false ) {
         var what = arguments.words.len() == 1 ? arguments.words[ 1 ] : "";
         var ids = components().map( function( x ) { return x.id; } );
-        if ( what == "list" ) return variables.out.say( 0, { components: components() }, arguments.asJson, components().map( function( x ) { return x.id & "   " & x.owns; } ) );
-        if ( what != "all" && !arrayFind( ids, what ) ) return variables.out.fail( 2, "Usage: bxrig refresh " & ids.toList( "|" ) & "|all|list [--starter] [--force] [--yes] [--dry-run]", arguments.asJson );
-        if ( variables.inst.isRoot() ) return variables.out.fail( 4, "run as a regular user: these are your own files", arguments.asJson );
+        if ( what == "list" ) return variables.out.say( "ok", { components: components() }, arguments.asJson, components().map( function( x ) { return x.id & "   " & x.owns; } ) );
+        if ( what != "all" && !arrayFind( ids, what ) ) return variables.out.fail( "usage", "Usage: bxrig refresh " & ids.toList( "|" ) & "|all|list [--starter] [--force] [--yes] [--dry-run]", arguments.asJson );
+        if ( variables.inst.isRoot() ) return variables.out.fail( "precondition", "run as a regular user: these are your own files", arguments.asJson );
         var comps = what == "all" ? ids : [ what ];
         var units = [];
         for ( var c in comps ) for ( var x in unitsFor( c, arguments.opts ) ) units.append( x );
@@ -103,7 +103,7 @@ class Refresh {
             var lines = [ ( arguments.dry ? "Dry run: " : "Plan: " ) & "refresh " & what ];
             for ( var r in rows ) lines.append( "  " & r.component & ": " & r.name & ( r.kind == "file" ? " -> " & r.target : "" ) & "   " & r.result );
             lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return variables.out.say( arguments.dry ? 0 : 2, { component: what, units: rows, force: arguments.force }, arguments.asJson, lines, arguments.dry );
+            return variables.out.say( arguments.dry ? "ok" : "plan", { component: what, units: rows, force: arguments.force }, arguments.asJson, lines, arguments.dry );
         }
         var done = [];
         var kept = [];
@@ -128,6 +128,6 @@ class Refresh {
         for ( var k in kept ) out.append( "kept (you edited it): " & k & "   run with --force to overwrite it, a backup is taken" );
         for ( var f in failed ) out.append( "failed: " & f );
         if ( !out.len() ) out.append( "Everything was already as BxRig ships it." );
-        return variables.out.say( failed.len() ? 6 : 0, { component: what, refreshed: done, kept: kept, failed: failed }, arguments.asJson, out );
+        return variables.out.say( failed.len() ? "failed" : "ok", { component: what, refreshed: done, kept: kept, failed: failed }, arguments.asJson, out );
     }
 }

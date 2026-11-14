@@ -183,17 +183,17 @@ class Theme {
             rows.append( row );
             lines.append( ( row.current ? "* " : "  " ) & n & "  (" & t.origin & ", " & ( !p.ok ? "invalid" : ( row.light ? "light" : "dark" ) ) & ")" );
         }
-        return variables.out.say( 0, { themes: rows, current: cur }, arguments.asJson, lines );
+        return variables.out.say( "ok", { themes: rows, current: cur }, arguments.asJson, lines );
     }
 
     function show( name, asJson ) {
         var t = find( arguments.name );
-        if ( !t.found ) return variables.out.say( 4, { error: "unknown theme " & arguments.name }, arguments.asJson, [ "error: unknown theme " & arguments.name & " (bxrig theme list)" ] );
+        if ( !t.found ) return variables.out.say( "precondition", { error: "unknown theme " & arguments.name }, arguments.asJson, [ "error: unknown theme " & arguments.name & " (bxrig theme list)" ] );
         var p = variables.tc.parse( t.colorsText );
-        if ( !p.ok ) return variables.out.say( 4, { error: "invalid theme", errors: p.errors }, arguments.asJson, [ "error: " & arguments.name & " is not a valid theme: " & p.errors.toList( ", " ) ] );
+        if ( !p.ok ) return variables.out.say( "precondition", { error: "invalid theme", errors: p.errors }, arguments.asJson, [ "error: " & arguments.name & " is not a valid theme: " & p.errors.toList( ", " ) ] );
         var c = p.colors;
         var data = { name: t.name, origin: t.origin, light: variables.tc.isLight( c ), accent: c.accent, background: c.background, foreground: c.foreground, neovim: len( t.neovimText ) > 0, wallpaper: t.wallpaper };
-        return variables.out.say( 0, data, arguments.asJson, [ t.name & " (" & t.origin & ", " & ( data.light ? "light" : "dark" ) & ")", "accent " & c.accent & "  background " & c.background & "  foreground " & c.foreground, "neovim colourscheme: " & ( data.neovim ? "yes" : "no" ) ] );
+        return variables.out.say( "ok", data, arguments.asJson, [ t.name & " (" & t.origin & ", " & ( data.light ? "light" : "dark" ) & ")", "accent " & c.accent & "  background " & c.background & "  foreground " & c.foreground, "neovim colourscheme: " & ( data.neovim ? "yes" : "no" ) ] );
     }
 
     // One line per terminal or btop config of yours that does not use the generated theme yet (we never edit your files).
@@ -249,23 +249,23 @@ class Theme {
 
     function set( name, mode = "", keepWallpaper = false, dry = false, asJson = false ) {
         var t = find( arguments.name );
-        if ( !t.found ) return variables.out.say( 4, { error: "unknown theme " & arguments.name }, arguments.asJson, [ "error: unknown theme " & arguments.name & " (bxrig theme list)" ] );
+        if ( !t.found ) return variables.out.say( "precondition", { error: "unknown theme " & arguments.name }, arguments.asJson, [ "error: unknown theme " & arguments.name & " (bxrig theme list)" ] );
         var p = variables.tc.parse( t.colorsText );
-        if ( !p.ok ) return variables.out.say( 4, { error: "invalid theme", errors: p.errors }, arguments.asJson, [ "error: " & arguments.name & " is not a valid theme: " & p.errors.toList( ", " ) ] );
-        if ( len( arguments.mode ) && !arrayFind( modes(), arguments.mode ) ) return variables.out.say( 2, { error: "bad mode " & arguments.mode }, arguments.asJson, [ "error: mode must be theme, dark, light or auto" ] );
+        if ( !p.ok ) return variables.out.say( "precondition", { error: "invalid theme", errors: p.errors }, arguments.asJson, [ "error: " & arguments.name & " is not a valid theme: " & p.errors.toList( ", " ) ] );
+        if ( len( arguments.mode ) && !arrayFind( modes(), arguments.mode ) ) return variables.out.say( "usage", { error: "bad mode " & arguments.mode }, arguments.asJson, [ "error: mode must be theme, dark, light or auto" ] );
         var st = readState();
         var stateMode = len( arguments.mode ) ? arguments.mode : st.mode;
         var m = resolveMode( stateMode, p.colors );
         var wall = arguments.keepWallpaper ? "" : t.wallpaper;
         var entries = files( p.colors, t.neovimText );
         var data = { theme: t.name, origin: t.origin, light: variables.tc.isLight( p.colors ), mode: stateMode, applied_mode: m, wallpaper: wall, files: entries.map( function( e ) { return e.target; } ) };
-        if ( arguments.dry ) return variables.out.say( 0, data, arguments.asJson, [ "Plan: theme " & t.name & " (" & ( data.light ? "light" : "dark" ) & ", mode " & m & ")", "Files: " & entries.map( function( e ) { return e.target; } ).toList( ", " ), "Nothing was changed." ], true );
+        if ( arguments.dry ) return variables.out.say( "ok", data, arguments.asJson, [ "Plan: theme " & t.name & " (" & ( data.light ? "light" : "dark" ) & ", mode " & m & ")", "Files: " & entries.map( function( e ) { return e.target; } ).toList( ", " ), "Nothing was changed." ], true );
         data.written = []; data.unchanged = []; data.failed = [];
         for ( var e in entries ) {
             if ( variables.cfgSvc.configState( e ) == "clean" ) { data.unchanged.append( e.name ); continue; }
             if ( variables.cfgSvc.configWrite( e, e.content, "theme", true, false ) == 0 ) data.written.append( e.name ); else data.failed.append( e.name );
         }
-        if ( data.failed.len() ) return variables.out.say( 6, data, arguments.asJson, [ "error: could not write " & data.failed.toList( ", " ) ] );
+        if ( data.failed.len() ) return variables.out.say( "failed", data, arguments.asJson, [ "error: could not write " & data.failed.toList( ", " ) ] );
         writeState( t.name, stateMode );
         syncNvim();
         var n = notify( m, wall );
@@ -276,7 +276,7 @@ class Theme {
         data.hints = hints();
         for ( var h in data.hints ) lines.append( "hint: " & h );
         if ( !len( t.neovimText ) ) lines.append( "note: this theme has no neovim.lua, so Neovim keeps its colourscheme" );
-        return variables.out.say( 0, data, arguments.asJson, lines );
+        return variables.out.say( "ok", data, arguments.asJson, lines );
     }
 
     // `vscode [--yes]`: puts the theme's colours into VS Code's settings.json (workbench.colorCustomizations). It edits your file, so it
@@ -285,11 +285,11 @@ class Theme {
         var st = readState();
         var t = find( len( st.name ) ? st.name : "bxrig" );
         var p = variables.tc.parse( t.colorsText );
-        if ( !p.ok ) return variables.out.say( 4, { error: "invalid theme" }, arguments.asJson, [ "error: the theme is not valid" ] );
+        if ( !p.ok ) return variables.out.say( "precondition", { error: "invalid theme" }, arguments.asJson, [ "error: the theme is not valid" ] );
         var colors = variables.tc.vscode( p.colors );
         var found = [];
         for ( var app in [ "Code", "Code - OSS", "VSCodium", "Cursor" ] ) { var f = cfg() & "/" & app & "/User/settings.json"; if ( fileExists( f ) ) found.append( { app: app, file: f } ); }
-        if ( !found.len() ) return variables.out.say( 4, { error: "no VS Code settings.json found" }, arguments.asJson, [ "error: no settings.json found for Code, Code - OSS, VSCodium or Cursor (start the editor once)" ] );
+        if ( !found.len() ) return variables.out.say( "precondition", { error: "no VS Code settings.json found" }, arguments.asJson, [ "error: no settings.json found for Code, Code - OSS, VSCodium or Cursor (start the editor once)" ] );
         var plan = [];
         var skipped = [];
         for ( var x in found ) {
@@ -306,7 +306,7 @@ class Theme {
             for ( var sk in skipped ) lines.append( "  note: " & sk );
             lines.append( "Your file is rewritten as plain JSON (a backup is kept; only workbench.colorCustomizations is changed)." );
             lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return variables.out.say( arguments.dry ? 0 : 2, d, arguments.asJson, lines, arguments.dry );
+            return variables.out.say( arguments.dry ? "ok" : "plan", d, arguments.asJson, lines, arguments.dry );
         }
         for ( var u in plan ) {
             var cfgJson = jsonDeserialize( fileRead( u.file ) );
@@ -314,22 +314,22 @@ class Theme {
             for ( var k in colors ) merged[ k ] = colors[ k ];
             cfgJson[ "workbench.colorCustomizations" ] = merged;
             var e2 = { name: "vscode-" & replace( u.app, " ", "-", "all" ), target: u.file, mode: "644", content: jsonSerialize( cfgJson ) & chr( 10 ) };
-            if ( variables.cfgSvc.configWrite( e2, e2.content, "theme", true, false ) != 0 ) return variables.out.say( 6, d, arguments.asJson, [ "error: could not write " & u.file ] );
+            if ( variables.cfgSvc.configWrite( e2, e2.content, "theme", true, false ) != 0 ) return variables.out.say( "failed", d, arguments.asJson, [ "error: could not write " & u.file ] );
         }
-        return variables.out.say( 0, d, arguments.asJson, [ "VS Code now uses the " & t.name & " colours (" & plan.len() & " file(s); a backup of each is in the config history)." ] & skipped );
+        return variables.out.say( "ok", d, arguments.asJson, [ "VS Code now uses the " & t.name & " colours (" & plan.len() & " file(s); a backup of each is in the config history)." ] & skipped );
     }
 
     // `mode`: how light or dark follows. theme = the theme's own; dark or light = pinned; auto = Noctalia switches by itself.
     function mode( value, dry = false, asJson = false ) {
-        if ( !arrayFind( modes(), arguments.value ) ) return variables.out.say( 2, { error: "bad mode " & arguments.value }, arguments.asJson, [ new bxrig.CommandSpec().usage( "theme mode" ) ] );
+        if ( !arrayFind( modes(), arguments.value ) ) return variables.out.say( "usage", { error: "bad mode " & arguments.value }, arguments.asJson, [ new bxrig.CommandSpec().usage( "theme mode" ) ] );
         var st = readState();
         var t = len( st.name ) ? find( st.name ) : { found: false };
         var c = t.found ? variables.tc.parse( t.colorsText ) : { ok: false };
         var m = c.ok ? resolveMode( arguments.value, c.colors ) : ( arguments.value == "theme" ? "dark" : arguments.value );
-        if ( arguments.dry ) return variables.out.say( 0, { mode: arguments.value, applied_mode: m }, arguments.asJson, [ "Plan: theme mode " & arguments.value & " (applies " & m & ")", "Nothing was changed." ], true );
+        if ( arguments.dry ) return variables.out.say( "ok", { mode: arguments.value, applied_mode: m }, arguments.asJson, [ "Plan: theme mode " & arguments.value & " (applies " & m & ")", "Nothing was changed." ], true );
         writeState( st.name, arguments.value );
         var n = notify( m, "" );
-        return variables.out.say( 0, { mode: arguments.value, applied_mode: m, noctalia: n.noctalia, plasma: n.plasma }, arguments.asJson, [ "Theme mode: " & arguments.value & " (applies " & m & "). Noctalia: " & n.noctalia & "  Plasma: " & n.plasma ] );
+        return variables.out.say( "ok", { mode: arguments.value, applied_mode: m, noctalia: n.noctalia, plasma: n.plasma }, arguments.asJson, [ "Theme mode: " & arguments.value & " (applies " & m & "). Noctalia: " & n.noctalia & "  Plasma: " & n.plasma ] );
     }
 
     function status( asJson ) {
@@ -345,7 +345,7 @@ class Theme {
                 lines.append( "  " & e.name & ": " & s );
             }
         }
-        return variables.out.say( 0, data, arguments.asJson, lines );
+        return variables.out.say( "ok", data, arguments.asJson, lines );
     }
 
     function userDir() { return cfg() & "/bxrig/themes"; }
@@ -365,31 +365,31 @@ class Theme {
 
     // Copies a theme folder (colors.toml and friends, no .git, no symlinks) into the user themes. Returns the exit code.
     function adopt( dir, name, force, asJson, via ) {
-        if ( !validName( arguments.name ) ) return variables.out.say( 2, { error: "bad theme name " & arguments.name }, arguments.asJson, [ "error: the theme name must be lower case letters, digits and dashes (use --name=NAME)" ] );
-        if ( !fileExists( arguments.dir & "/colors.toml" ) ) return variables.out.say( 4, { error: "no colors.toml" }, arguments.asJson, [ "error: " & arguments.dir & " has no colors.toml, so it is not a theme" ] );
+        if ( !validName( arguments.name ) ) return variables.out.say( "usage", { error: "bad theme name " & arguments.name }, arguments.asJson, [ "error: the theme name must be lower case letters, digits and dashes (use --name=NAME)" ] );
+        if ( !fileExists( arguments.dir & "/colors.toml" ) ) return variables.out.say( "precondition", { error: "no colors.toml" }, arguments.asJson, [ "error: " & arguments.dir & " has no colors.toml, so it is not a theme" ] );
         var p = variables.tc.parse( fileRead( arguments.dir & "/colors.toml" ) );
-        if ( !p.ok ) return variables.out.say( 4, { error: "invalid theme", errors: p.errors }, arguments.asJson, [ "error: not a valid theme: " & p.errors.toList( ", " ) ] );
+        if ( !p.ok ) return variables.out.say( "precondition", { error: "invalid theme", errors: p.errors }, arguments.asJson, [ "error: not a valid theme: " & p.errors.toList( ", " ) ] );
         var links = variables.proc.exec( [ "find", arguments.dir, "-name", ".git", "-prune", "-o", "-type", "l", "-print" ], 30 );
-        if ( len( trim( links.output ) ) ) return variables.out.say( 4, { error: "symlinks in theme" }, arguments.asJson, [ "error: the theme contains symlinks, which are not copied: " & trim( links.output ) ] );
+        if ( len( trim( links.output ) ) ) return variables.out.say( "precondition", { error: "symlinks in theme" }, arguments.asJson, [ "error: the theme contains symlinks, which are not copied: " & trim( links.output ) ] );
         var dest = userDir() & "/" & arguments.name;
-        if ( directoryExists( dest ) && !arguments.force ) return variables.out.say( 4, { error: dest & " exists" }, arguments.asJson, [ "error: " & dest & " already exists (--force replaces it)" ] );
+        if ( directoryExists( dest ) && !arguments.force ) return variables.out.say( "precondition", { error: dest & " exists" }, arguments.asJson, [ "error: " & dest & " already exists (--force replaces it)" ] );
         directoryCreate( userDir(), true, true );
         if ( directoryExists( dest ) ) variables.proc.exec( [ "rm", "-rf", dest ], 30 );
         var cp = variables.proc.exec( [ "cp", "-r", arguments.dir, dest ], 60 );
-        if ( cp.exitCode != 0 ) return variables.out.say( 6, { error: trim( cp.output ) }, arguments.asJson, [ "error: could not copy the theme: " & trim( cp.output ) ] );
+        if ( cp.exitCode != 0 ) return variables.out.say( "failed", { error: trim( cp.output ) }, arguments.asJson, [ "error: could not copy the theme: " & trim( cp.output ) ] );
         variables.proc.exec( [ "rm", "-rf", dest & "/.git" ], 30 );
         syncNvim();
-        return variables.out.say( 0, { theme: arguments.name, path: dest, via: arguments.via }, arguments.asJson, [ "Installed theme " & arguments.name & " in " & dest, "Apply it with: bxrig theme set " & arguments.name ] );
+        return variables.out.say( "ok", { theme: arguments.name, path: dest, via: arguments.via }, arguments.asJson, [ "Installed theme " & arguments.name & " in " & dest, "Apply it with: bxrig theme set " & arguments.name ] );
     }
 
     // `install URL`: a git repository (https only) with an Omarchy-format theme at its top.
     function install( url, name = "", force = false, asJson = false ) {
-        if ( !reFind( "^https://[A-Za-z0-9._~/-]+$", arguments.url ) ) return variables.out.say( 2, { error: "bad url" }, arguments.asJson, [ "error: the source must be an https git URL, for example https://github.com/someone/omarchy-name-theme" ] );
+        if ( !reFind( "^https://[A-Za-z0-9._~/-]+$", arguments.url ) ) return variables.out.say( "usage", { error: "bad url" }, arguments.asJson, [ "error: the source must be an https git URL, for example https://github.com/someone/omarchy-name-theme" ] );
         var nm = len( arguments.name ) ? arguments.name : nameFromSource( arguments.url );
-        if ( !variables.proc.has( "git" ) ) return variables.out.say( 4, { error: "git was not found" }, arguments.asJson, [ "error: git was not found" ] );
+        if ( !variables.proc.has( "git" ) ) return variables.out.say( "precondition", { error: "git was not found" }, arguments.asJson, [ "error: git was not found" ] );
         var tmp = cfgTmp();
         var cl = variables.proc.exec( [ "git", "clone", "--depth", "1", arguments.url, tmp ], 300 );
-        if ( cl.exitCode != 0 ) { variables.proc.exec( [ "rm", "-rf", tmp ], 30 ); return variables.out.say( 6, { error: trim( cl.output ) }, arguments.asJson, [ "error: git clone failed: " & trim( cl.output ) ] ); }
+        if ( cl.exitCode != 0 ) { variables.proc.exec( [ "rm", "-rf", tmp ], 30 ); return variables.out.say( "failed", { error: trim( cl.output ) }, arguments.asJson, [ "error: git clone failed: " & trim( cl.output ) ] ); }
         var code = adopt( tmp, nm, arguments.force, arguments.asJson, arguments.url );
         variables.proc.exec( [ "rm", "-rf", tmp ], 30 );
         return code;
@@ -399,7 +399,7 @@ class Theme {
 
     // `import PATH`: a local folder in the same format.
     function importDir( path, name = "", force = false, asJson = false ) {
-        if ( !directoryExists( arguments.path ) ) return variables.out.say( 4, { error: "not a folder" }, arguments.asJson, [ "error: " & arguments.path & " is not a folder" ] );
+        if ( !directoryExists( arguments.path ) ) return variables.out.say( "precondition", { error: "not a folder" }, arguments.asJson, [ "error: " & arguments.path & " is not a folder" ] );
         var nm = len( arguments.name ) ? arguments.name : lCase( listLast( replace( arguments.path, chr( 92 ), "/", "all" ), "/" ) );
         return adopt( arguments.path, nm, arguments.force, arguments.asJson, arguments.path );
     }
@@ -407,12 +407,12 @@ class Theme {
     // `remove NAME`: only a theme in your own folder; bundled and Omarchy ones cannot be removed, and neither can the current one.
     function remove( name, asJson ) {
         var all = discover();
-        if ( !validName( arguments.name ) || !structKeyExists( all, arguments.name ) ) return variables.out.say( 4, { error: "unknown theme" }, arguments.asJson, [ "error: unknown theme " & arguments.name ] );
-        if ( all[ arguments.name ].origin != "user" || all[ arguments.name ].dir != userDir() & "/" & arguments.name ) return variables.out.say( 4, { error: "not one of your themes" }, arguments.asJson, [ "error: " & arguments.name & " is " & all[ arguments.name ].origin & ", not one you installed, so it cannot be removed here" ] );
-        if ( readState().name == arguments.name ) return variables.out.say( 4, { error: "current theme" }, arguments.asJson, [ "error: " & arguments.name & " is the current theme; set another one first" ] );
+        if ( !validName( arguments.name ) || !structKeyExists( all, arguments.name ) ) return variables.out.say( "precondition", { error: "unknown theme" }, arguments.asJson, [ "error: unknown theme " & arguments.name ] );
+        if ( all[ arguments.name ].origin != "user" || all[ arguments.name ].dir != userDir() & "/" & arguments.name ) return variables.out.say( "precondition", { error: "not one of your themes" }, arguments.asJson, [ "error: " & arguments.name & " is " & all[ arguments.name ].origin & ", not one you installed, so it cannot be removed here" ] );
+        if ( readState().name == arguments.name ) return variables.out.say( "precondition", { error: "current theme" }, arguments.asJson, [ "error: " & arguments.name & " is the current theme; set another one first" ] );
         variables.proc.exec( [ "rm", "-rf", userDir() & "/" & arguments.name ], 30 );
         variables.proc.exec( [ "rm", "-f", cfg() & "/bxrig/nvim-themes/" & arguments.name & ".lua" ], 30 );
-        return variables.out.say( 0, { removed: arguments.name }, arguments.asJson, [ "Removed theme " & arguments.name ] );
+        return variables.out.say( "ok", { removed: arguments.name }, arguments.asJson, [ "Removed theme " & arguments.name ] );
     }
 
     // The next theme after the current one (wrapping), or a random other one.

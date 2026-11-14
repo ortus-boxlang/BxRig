@@ -62,7 +62,7 @@ class Tiling {
         if ( errors.len() ) {
             if ( asJson ) println( variables.cli.envelope( command, 4, { errors: errors } ) );
             else println( "error: " & errors[1] );
-            return 4;
+            return new bxrig.Exit().precondition();
         }
         var wasRunning = kwinRunning();
         variables.inst.exec( [ "kwriteconfig6", "--file", "kwinrc", "--group", "Plugins", "--key", "hyprkwinEnabled", on ? "true" : "false" ], 15 );
@@ -73,7 +73,7 @@ class Tiling {
         var data = { enabled: on, applied: wasRunning };
         if ( asJson ) println( variables.cli.envelope( command, 0, data ) );
         else println( "tiling " & ( on ? "on" : "off" ) & ( wasRunning ? "" : " (KWin is not running; it takes effect at the next Plasma login)" ) );
-        return 0;
+        return new bxrig.Exit().ok();
     }
 
     // The layouts HyprKwin knows (its README, 2026-11-12).
@@ -93,17 +93,17 @@ class Tiling {
         if ( errors.len() ) {
             if ( arguments.asJson ) println( variables.cli.envelope( command, 4, { errors: errors } ) );
             else println( "error: " & errors[ 1 ] );
-            return 4;
+            return new bxrig.Exit().precondition();
         }
         var argv = len( arguments.name ) ? [ "hyprkwinctl", "layout", arguments.name ] : [ "hyprkwinctl", "layout" ];
         var r = variables.inst.exec( argv, 20 );
         if ( r.exitCode != 0 ) {
             if ( arguments.asJson ) println( variables.cli.envelope( command, 6, { error: trim( r.output ) } ) );
             else println( "error: hyprkwinctl failed: " & trim( r.output ) );
-            return 6;
+            return new bxrig.Exit().failed();
         }
         if ( arguments.asJson ) println( variables.cli.envelope( command, 0, { layout: len( arguments.name ) ? arguments.name : trim( r.output ), set: len( arguments.name ) > 0 } ) );
         else println( len( arguments.name ) ? "This workspace now uses the " & arguments.name & " layout." : trim( r.output ) );
-        return 0;
+        return new bxrig.Exit().ok();
     }
 }
