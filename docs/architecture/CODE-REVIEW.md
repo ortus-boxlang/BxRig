@@ -12,6 +12,61 @@ Numbers come from `grep` and `wc` over `src/`, `tests/`, `docs/`, `bootstrap/` a
 
 Scope: `src/Main.bx` (1018 lines), `src/bxrig/*.bx` (137 classes, about 24,600 lines, of which about 3,850 are generated `*Data.bx`), 74 shell tests, 20 `.bxs` tests, 8 generators.
 
+## Status of the refactor (updated 2026-11-14)
+
+Phases 0 to 5 and the first slice of phase 6 are done and pushed to `development` (commits `a106a30` for phases 0 and 1, `00ba305` for phases 2 to 5); phases 6b to 12 are deferred (reasons below). Behaviour is unchanged except for the bug fixes listed here, each with a test.
+
+| Finding | Status | Where |
+|---|---|---|
+| F01 `Cli.say` / `Out` | **done**: 57 files migrated; `say` 54 to 2 definitions (`Cli`, `Out`), `fail` 17 to 2; the three text printers renamed `progress` (ConfigService, KeysService) and `flash` (TimeMachineApp). | `Cli.bx`, `Out.bx`, `out_test.bxs` |
+| F02 `Proc` | **done**: `tryExec` 33 to 0, `has` 28 to 1 (`Proc`), `Installer.hasCommand` is now `command -v` (was `--version`, which ran the tool); `TuiSys.has` shell-string bug and the 5 run-myself paths are gone (`Proc.self`). Left for phase 8: direct `systemExecute` calls for interactive commands, `curl`, `pacman -Qq` and similar (see F09, F11). | `Proc.bx`, `proc_test.bxs`, `installer_test.bxs` |
+| F03 `Env` | **done**: `home`/`env`/`self`/`dataHome` copies removed; one precedence rule; `XDG_CONFIG_HOME` is honoured by every config path (it was ignored by the config service); `dataHome` split into `data()` and `xdgData()`. | `Env.bx`, `env_test.bxs`, `paths-test.sh` |
+| F04 `Mutation` | **deferred** (phase 7): 44 files, output wording asserted by many tests; needs its own pass with the per-class tests. | |
+| F05 `JsonStore` | **deferred** (phase 9): changes write behaviour (journal and backup files for 8 classes), tests need updates. | |
+| F06 entries, `SystemFile`, `SystemdUnit` | **deferred** (phase 9), depends on F05. | |
+| F07 `Names` | **deferred** (phase 12): changes exit codes of 5 classes (2 vs 4), needs the owner's decision (propose 2). | |
+| F08 `Text` / `Fmt` | **partly done**: `Text.merge` replaces 8 of the 10 copies (the two with different bodies stay), `pad`/`padLeft` exist; `Fmt` (bytes, durations) not built, the three formats differ on purpose. | `Text.bx`, `text_test.bxs` |
+| F09 `Pacman` | **deferred** (phase 8). | |
+| F10 `Systemd` | **deferred** (phase 8). | |
+| F11 `Http` | **deferred** (phase 8). | |
+| F12 desktop and engine detection | **deferred** (phase 12). | |
+| F13 `CommandSpec` and `Options` | **partly done**: the unknown-command branch now exits 2 (verified: it exited 0) and the flag whitelist has no duplicates (130 to 122). Per-command flags and generated usage strings are deferred (phase 6a/6b): the biggest user-visible change, best done with the owner reviewing the flag list per command. | `Main.bx`, `cli-contract-test.sh` |
+| F14 Main logic | **deferred** (phase 12). | |
+| F15 version single source | **deferred** (phase 12). | |
+| F16 page registry, `ProviderSpec` | **deferred** (phase 11). | |
+| F17 `DesktopEntry` | **done**: 3 parsers to 1, 5 writers to `render`, one folder list (`BXRIG_APPS_DIRS`, older `BXRIG_DESKTOP_DIRS` still read); exact-case keys; the Apps page hides BxRig's launchers, the `apps` grid keeps them. | `DesktopEntry.bx`, `desktop_entry_test.bxs` |
+| F18 `Props` and other parsers | **deferred**. | |
+| F19 shortcut table completeness | **deferred on purpose**: the owner is deciding the Traditional and Mac key styles and the five Mac collisions (`Super+B/F/V/S/Comma`). Nothing in `Shortcuts.bx` or `KeysEditor.bx` changed except the generated Lua also reading `XDG_CONFIG_HOME`. | |
+| F20 Shortcuts split | **deferred** (phase 10), after F19. | |
+| F21 `Modal`, `KeyMap`, `IntentRunner` | **deferred** (phase 11). | |
+| F22 view forwarders | **deferred** (phase 11). | |
+| F23 test harness | **partly done**: `tests/lib/harness.sh` exists and 5 pilot tests use it (70 copies to 65 of `fail()`); the rest is mechanical and left for batches. | `tests/lib/harness.sh` |
+| F24 test discovery | **done for running and checking**: `tests/run-all.sh` finds every test, `dry-test.sh` fails when a test is missing from CI. The shared `.bxs` `Check` class is feasible (a helper in `tests/lib/` resolves from the script's folder, verified) but not built. | `tests/run-all.sh`, `tests/dry-test.sh` |
+| F25 named exit codes | **partly done**: `Out.usage`, `precondition`, `failed` exist; call sites still use numbers. | |
+| F26 `Urls` | **deferred** (phase 12). | |
+| F27 encapsulation leaks | **partly done**: `BackupMove` no longer reaches into `BackupData` for `say`/`fail`/`has`/`tryExec`/`home`, `Mail` no longer calls `Db.dataHome()`. The rest is deferred. | |
+
+### Behaviour changes made on purpose
+
+- An unknown command exits 2 (it exited 0).
+- `Installer.hasCommand` and every `has` mean `command -v`; a tool that has no `--version` is now found, and the tool is never run to find out.
+- `XDG_CONFIG_HOME` is honoured everywhere (the config service, journal-free files, menus, nvim, strata, the generated Lua); `XDG_STATE_HOME` too. With neither set nothing moves.
+- The Apps page (`bxrig tui apps`) reads `/usr/local/share/applications` as well as the other folders; `.desktop` type and keys are compared exact-case.
+- `tests/capture-notify-test.sh` expected 38 lines in the key sheet; the sheet has 55 (17 unbound page rows are listed on purpose), so the expectation was fixed. It was already failing before this work.
+
+### Test results
+
+Full run of `tests/run-all.sh` on the final build: 98 of 100 pass. `bootstrap-test.sh` fails in this sandbox (no pacman, unrelated to this work: it fails the same way without the refactor) and `wizard-test.sh` fails here with the same answers (it types before the 1.4 s native start finishes; it failed identically on the build from before the refactor). Six tests first failed only because `run-all.sh` gave them no binary argument; fixed and rerun green. Startup of the native binary went from about 1.4 to 1.7 seconds per run (extra classes loaded at start: `Env`, `Proc`, `Out`); not investigated further.
+
+### Verified (the three "verify" items of this review)
+
+- The `default:` branch of `Main.bx` exited 0: **true**, fixed.
+- Struct keys are case-insensitive on MatchBox: **true** (`s.A` and `s.a` are one key; `Foo` and `foo` are one key).
+- A `.bxs` test resolves a helper class from its own folder (`new lib.Check()` next to the script works from any working directory): **true**. Classes under `src/` are reached as `bxrig.X` when the test runs from `src/` (the CI does).
+- New quirks found: a class that `new`s its own class (`Out.sub` calling `new bxrig.Out`) overflows the stack when another class loads it; and a variable named like a function of the same class (`info = getFileInfo( path )` next to `function info()`) hides the function.
+- The dead Hyprland binds under xremap were not run on a real machine (still unverified).
+
+
 ## 0. The short version
 
 - The code is consistent in style, and that is the problem: the same 5 to 10 helper lines were pasted into 20 to 57 classes instead of living once. Counting definitions only, about 550 lines are pure copies. Counting call sites that depend on a copy (`say(` 788, `tryExec(` 314, `has(` 143, `fail(` 267) the coupling is much bigger than the line count.
