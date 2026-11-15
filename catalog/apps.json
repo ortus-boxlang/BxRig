@@ -5162,6 +5162,72 @@
 			]
 		},
 		{
+			"id": "pipewire",
+			"name": "PipeWire audio",
+			"description": "PipeWire with the PulseAudio and WirePlumber layers and pactl (libpulse)",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "media",
+			"category": "Audio",
+			"tier": "default",
+			"source": "pacman",
+			"targets": [
+				"pipewire",
+				"pipewire-pulse",
+				"wireplumber",
+				"libpulse"
+			],
+			"repo": "extra",
+			"homepage": "https://pipewire.org/",
+			"macos": "Sound settings",
+			"origin": [
+				"owner-request"
+			],
+			"verified_on": "2026-11-15"
+		},
+		{
+			"tier": "default",
+			"source": "pacman",
+			"repo": "extra",
+			"verified_on": "2026-11-15",
+			"macos": "Media keys",
+			"origin": [
+				"owner-request"
+			],
+			"description_source": "arch",
+			"id": "playerctl",
+			"name": "playerctl",
+			"description": "Command-line controller for MPRIS media players (media keys)",
+			"kind": "tui",
+			"group": "media",
+			"category": "Audio",
+			"targets": [
+				"playerctl"
+			],
+			"homepage": "https://github.com/altdesktop/playerctl"
+		},
+		{
+			"tier": "default",
+			"source": "pacman",
+			"repo": "extra",
+			"verified_on": "2026-11-15",
+			"macos": "Sound settings",
+			"origin": [
+				"owner-request"
+			],
+			"description_source": "arch",
+			"id": "wiremix",
+			"name": "wiremix",
+			"description": "TUI audio mixer for PipeWire",
+			"kind": "tui",
+			"group": "media",
+			"category": "Audio",
+			"targets": [
+				"wiremix"
+			],
+			"homepage": "https://github.com/tsowell/wiremix"
+		},
+		{
 			"id": "cliamp",
 			"name": "Cliamp",
 			"description": "A retro terminal music player inspired by Winamp 2.x",
@@ -5391,7 +5457,7 @@
 				"owner-pick",
 				"omarchy-desktop"
 			],
-			"verified_on": "2026-11-09",
+			"verified_on": "2026-11-15",
 			"profiles": {
 				"media": "default"
 			}
@@ -6225,27 +6291,6 @@
 			"source": "pacman",
 			"repo": "extra",
 			"verified_on": "2026-11-12",
-			"macos": "Sound settings",
-			"origin": [
-				"owner-request"
-			],
-			"description_source": "arch",
-			"id": "wiremix",
-			"name": "wiremix",
-			"description": "TUI audio mixer for PipeWire",
-			"kind": "tui",
-			"group": "media",
-			"category": "Audio",
-			"targets": [
-				"wiremix"
-			],
-			"homepage": "https://github.com/tsowell/wiremix"
-		},
-		{
-			"tier": "optional",
-			"source": "pacman",
-			"repo": "extra",
-			"verified_on": "2026-11-12",
 			"macos": "Displays settings",
 			"origin": [
 				"owner-request"
@@ -6264,27 +6309,6 @@
 				"hyprland"
 			],
 			"homepage": "https://github.com/nwg-piotr/nwg-displays"
-		},
-		{
-			"tier": "optional",
-			"source": "pacman",
-			"repo": "extra",
-			"verified_on": "2026-11-12",
-			"macos": "Media keys",
-			"origin": [
-				"owner-request"
-			],
-			"description_source": "arch",
-			"id": "playerctl",
-			"name": "playerctl",
-			"description": "Command-line controller for MPRIS media players (media keys)",
-			"kind": "tui",
-			"group": "media",
-			"category": "Audio",
-			"targets": [
-				"playerctl"
-			],
-			"homepage": "https://github.com/altdesktop/playerctl"
 		},
 		{
 			"tier": "default",
@@ -7005,6 +7029,27 @@
 			"macos": "Trackpad gestures"
 		},
 		{
+			"id": "bluetui",
+			"name": "bluetui",
+			"description": "TUI for managing bluetooth devices (fallback for the Noctalia Bluetooth panel)",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "system",
+			"category": "System",
+			"tier": "default",
+			"source": "pacman",
+			"targets": [
+				"bluetui"
+			],
+			"repo": "extra",
+			"homepage": "https://github.com/pythops/bluetui",
+			"macos": "Bluetooth settings",
+			"origin": [
+				"owner-request"
+			],
+			"verified_on": "2026-11-15"
+		},
+		{
 			"id": "bluez",
 			"name": "Bluetooth stack",
 			"description": "BlueZ and its tools, for Magic Mouse and Trackpad",
@@ -7021,8 +7066,50 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-13",
+			"verified_on": "2026-11-15",
 			"repo": "extra"
+		},
+		{
+			"id": "brightnessctl",
+			"name": "brightnessctl",
+			"description": "Lightweight brightness control tool (brightness keys, bxrig display brightness)",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "system",
+			"category": "System",
+			"tier": "default",
+			"source": "pacman",
+			"targets": [
+				"brightnessctl"
+			],
+			"repo": "extra",
+			"homepage": "https://github.com/Hummer12007/brightnessctl",
+			"macos": "Displays settings",
+			"origin": [
+				"owner-request"
+			],
+			"verified_on": "2026-11-15"
+		},
+		{
+			"id": "impala",
+			"name": "impala",
+			"description": "TUI for managing wifi. Needs iwd as the Wi-Fi backend with NetworkManager and wpa_supplicant disabled, so it does not work next to NetworkManager (not installed by default)",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "system",
+			"category": "System",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"impala"
+			],
+			"repo": "extra",
+			"homepage": "https://github.com/pythops/impala",
+			"macos": "Wi-Fi settings",
+			"origin": [
+				"owner-request"
+			],
+			"verified_on": "2026-11-15"
 		},
 		{
 			"id": "uxplay",

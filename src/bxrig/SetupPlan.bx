@@ -8,7 +8,8 @@
 //
 // facts: { isRoot, hasSudo, kwinVersion ("6.6.2" or ""), desktop (XDG_CURRENT_DESKTOP), sessionType (XDG_SESSION_TYPE),
 //          installed (set of pacman package names), hyprkwinInstalled, workDir (temp dir for the HyprKwin checkout),
-//          os ("cachyos"/"arch"/...), arch ("x86_64"), hasPacman, hyprlandAdded (packages a previous `setup hyprland` installed) }
+//          os ("cachyos"/"arch"/...), arch ("x86_64"), hasPacman, hyprlandAdded (packages a previous `setup hyprland` installed),
+//          bluetoothEnabled (bluetooth.service is enabled; a missing key counts as not enabled) }
 // opts:  { keys: bool, undoKeys: bool }
 //
 // Errors are preconditions (exit 4): nothing runs when there is one. HyprKwin is taken from a pinned full commit.
@@ -107,8 +108,11 @@ class SetupPlan {
 		var t = new bxrig.TerminalConfig().find( arguments.terminal );
 		return [ "hyprland", "noctalia", "uwsm", "hyprlock", "hypridle", "xdg-desktop-portal-hyprland", "hyprpolkitagent",
 			"qt6ct", "nwg-look", "hyprpicker", "grim", "slurp", "wl-clipboard", "brightnessctl", structKeyExists( t, "pkg" ) ? t.pkg : "ghostty",
-			"adw-gtk-theme", "noto-fonts", "noto-fonts-emoji" ];
+			"adw-gtk-theme", "noto-fonts", "noto-fonts-emoji", "bluez", "bluez-utils" ];
 	}
+
+	// The Bluetooth service the bar's Bluetooth panel and `bxrig bluetooth status` need: bluez ships it, it is not enabled by itself.
+	function bluetoothUnit() { return "bluetooth.service"; }
 
 	// The default window layouts `setup hyprland --layout` offers: Hyprland's tiling layouts, scrolling (a carousel of columns), and floating.
 	function layouts() { return [ "dwindle", "master", "scrolling", "floating" ]; }
@@ -136,12 +140,14 @@ class SetupPlan {
 		var term = parsed.value.terminal;
 		var lay = parsed.value.layout;
 		var missing = hyprlandPackages( term ).filter( function( p ) { return !structKeyExists( facts.installed, p ); } );
-		if ( missing.len() && !facts.hasSudo ) out.errors.append( "sudo is required to install packages but was not found" );
+		var needBluetooth = !( structKeyExists( facts, "bluetoothEnabled" ) && facts.bluetoothEnabled );
+		if ( ( missing.len() || needBluetooth ) && !facts.hasSudo ) out.errors.append( "sudo is required to install packages but was not found" );
 		if ( out.errors.len() ) return out;
 		if ( missing.len() ) {
 			out.steps.append( { id: "packages", title: "install " & missing.len() & " packages (" & missing.toList( " " ) & ")", kind: "pacman", commands: [ variables.pacman.installArgv( missing ) ] } );
 			out.added = missing;
 		} else out.notes.append( "Hyprland and Noctalia are already installed." );
+		if ( needBluetooth ) out.steps.append( { id: "bluetooth", title: "turn on the Bluetooth service (" & bluetoothUnit() & ", now and at boot)", kind: "systemd", commands: [ variables.systemd.enableArgv( [ bluetoothUnit() ], false, true ) ] } );
 		out.steps.append( { id: "images", title: "write the BxRig logo and wallpapers to ~/Pictures/BxRig (missing ones only)", kind: "assets", commands: [] } );
 		out.steps.append( { id: "starter", title: "write the starter Noctalia config and palette, and hyprland.lua (" & term & " on Super+Enter, " & lay & " layout) if you have none (existing files are kept)", kind: "starter", opts: parsed.value, commands: [] } );
 		out.steps.append( { id: "keys", title: "write the shared shortcut files (xremap config and service unit, Hyprland module, Plasma Log Out)", kind: "keys", commands: [] } );
@@ -232,6 +238,7 @@ class SetupPlan {
 		else if ( !still.len() ) out.errors.append( "The packages setup installed are already gone" );
 		if ( still.len() && !facts.hasSudo ) out.errors.append( "sudo is required to remove packages but was not found" );
 		if ( out.errors.len() ) return out;
+		if ( arrayFind( still, "bluez" ) ) out.steps.append( { id: "bluetooth", title: "turn off the Bluetooth service (" & bluetoothUnit() & ") that setup turned on", kind: "systemd", commands: [ variables.systemd.disableArgv( [ bluetoothUnit() ], false, true ) ] } );
 		out.steps.append( { id: "remove", title: "remove " & still.len() & " packages that setup installed (" & still.toList( " " ) & ")", kind: "pacman", commands: [ variables.pacman.removeArgv( still, "-Rs" ) ] } );
 		out.notes.append( "pacman refuses to remove a package another package still needs; if that happens nothing is removed and its message is shown. KDE Plasma is untouched." );
 		return out;

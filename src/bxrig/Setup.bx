@@ -81,6 +81,7 @@ class Setup {
 			arch: trim( variables.inst.proc().exec( [ "uname", "-m" ], 10 ).output ),
 			hasPacman: variables.pacman.available(),
 			hyprlandAdded: hyprlandAdded(),
+			bluetoothEnabled: new bxrig.util.Systemd( variables.inst.runner() ).enabled( new bxrig.SetupPlan().bluetoothUnit() ),
 			isRoot: variables.inst.isRoot(),
 			hasSudo: variables.inst.hasCommand( "sudo" ),
 			kwinVersion: kwinVersion(),

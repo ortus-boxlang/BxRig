@@ -2440,11 +2440,6 @@
 							"value": "nwg-displays",
 							"label": "Monitor layout",
 							"description": "nwg-displays: arrange monitors, resolution and scale."
-						},
-						{
-							"value": "playerctl",
-							"label": "Media keys",
-							"description": "playerctl: control any media player from the keyboard."
 						}
 					]
 				},

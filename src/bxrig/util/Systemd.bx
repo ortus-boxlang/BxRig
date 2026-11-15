@@ -42,6 +42,12 @@ class Systemd {
 		return variables.proc.exec( a, 10 ).exitCode == 0;
 	}
 
+	// True when the unit is enabled (`is-enabled --quiet`, the exit code answers).
+	function enabled( unit, user = false ) {
+		var a = argv( "is-enabled", [ arguments.unit ], arguments.user, false, [ "--quiet" ] );
+		return variables.proc.exec( a, 10 ).exitCode == 0;
+	}
+
 	// What `is-active` prints ("active", "inactive", "failed", ...) or "".
 	function state( unit, user = false ) {
 		return trim( variables.proc.exec( argv( "is-active", [ arguments.unit ], arguments.user ), 10 ).output );

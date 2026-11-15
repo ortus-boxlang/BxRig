@@ -26,6 +26,9 @@ if [[ "$1" == clone ]]; then
 fi
 MOCK
 printf '#!/usr/bin/env bash\necho x86_64\n' > "$tmp/bin/uname"
+# systemctl: is-enabled answers MOCK_BT_ENABLED (default: not enabled); everything else is logged
+stub systemctl 'if [[ "$1" == is-enabled ]]; then [[ -n "${MOCK_BT_ENABLED:-}" ]]; exit; fi
+printf "systemctl %s\n" "$*" >> "$SETUP_LOG"'
 stub_sudo
 stub_id
 chmod +x "$tmp/bin/"*
@@ -91,7 +94,7 @@ rm -rf "$tmp/home/.local"; [[ "$(code "$binary" setup undo plasma --yes)" == 4 ]
 [[ "$(code "$binary" setup nope)" == 2 ]] || fail 'unknown target is a usage error'
 
 # ---- hyprland: packages only
-ALL="hyprland noctalia uwsm hyprlock hypridle xdg-desktop-portal-hyprland hyprpolkitagent qt6ct nwg-look hyprpicker grim slurp wl-clipboard brightnessctl ghostty adw-gtk-theme noto-fonts noto-fonts-emoji"
+ALL="hyprland noctalia uwsm hyprlock hypridle xdg-desktop-portal-hyprland hyprpolkitagent qt6ct nwg-look hyprpicker grim slurp wl-clipboard brightnessctl ghostty adw-gtk-theme noto-fonts noto-fonts-emoji bluez bluez-utils"
 reset; [[ "$(code "$binary" setup hyprland)" == 2 ]] || fail 'hyprland without --yes exits 2'
 [[ "$(code "$binary" setup hyprland --dry-run)" == 0 ]] || fail 'hyprland --dry-run exits 0'
 run "$binary" setup hyprland --dry-run | grep -F 'sudo pacman -S --needed --noconfirm' >/dev/null || fail 'the plan shows the exact pacman command'
@@ -106,8 +109,15 @@ for p in $ALL; do grep -Fq " $p" <<<"$call" || fail "pacman call misses $p"; don
 for bad in cachyos-hypr-noctalia noctalia-shell noctalia-qs; do grep -Fq "$bad" <<<"$call" && fail "$bad must not be installed"; done
 [[ "$(jq -r '.packages|length' "$tmp/state-home/bxrig/setup-hyprland.json")" == "$(wc -w <<<"$ALL")" ]] || fail 'the added packages are remembered'
 [[ "$(stat -c %a "$tmp/state-home/bxrig/setup-hyprland.json")" == 600 ]] || fail 'the state file is private'
+# bluetooth.service is enabled after the packages (it is not enabled by itself); an enabled one is left alone
+grep -Fxq 'systemctl enable --now bluetooth.service' "$SETUP_LOG" || fail 'the Bluetooth service is enabled'
+[[ "$(grep -n '^pacman -S' "$SETUP_LOG" | cut -d: -f1)" -lt "$(grep -n '^systemctl enable' "$SETUP_LOG" | cut -d: -f1)" ]] || fail 'the service is enabled after bluez is installed'
+run "$binary" setup hyprland --dry-run | grep -F 'sudo systemctl enable --now bluetooth.service' >/dev/null || fail 'the plan shows the exact systemctl command'
+: > "$SETUP_LOG"; MOCK_BT_ENABLED=1 run "$binary" setup hyprland --yes >/dev/null 2>&1 || fail 'hyprland with the service already on'
+grep -Fq 'systemctl enable' "$SETUP_LOG" && fail 'an enabled Bluetooth service is not enabled again'
+reset; run "$binary" setup hyprland --yes >/dev/null 2>&1
 # everything already there (packages, starter files and the Noctalia plugins of the run above): nothing to do
-: > "$SETUP_LOG"; rm -rf "$tmp/state-home"; MOCK_INSTALLED="git $ALL" run "$binary" setup hyprland --yes | grep -F 'already installed' >/dev/null || fail 'already installed is reported'
+: > "$SETUP_LOG"; rm -rf "$tmp/state-home"; MOCK_BT_ENABLED=1 MOCK_INSTALLED="git $ALL" run "$binary" setup hyprland --yes | grep -F 'already installed' >/dev/null || fail 'already installed is reported'
 [[ ! -s "$SETUP_LOG" && ! -e "$tmp/state-home" ]] || fail 'nothing to do must change nothing'
 # some there: only the rest is installed and remembered
 reset; MOCK_INSTALLED="git hyprland ghostty" run "$binary" setup hyprland --yes >/dev/null 2>&1 || fail 'partial install'
@@ -122,6 +132,7 @@ reset; [[ "$(code "$binary" setup undo hyprland --yes)" == 4 ]] || fail 'undo wi
 run "$binary" setup hyprland --yes >/dev/null 2>&1; : > "$SETUP_LOG"
 MOCK_INSTALLED="git $ALL" run "$binary" setup undo hyprland --yes >/dev/null 2>&1 || fail 'undo hyprland'
 grep -Fq 'pacman -Rs --noconfirm hyprland noctalia' "$SETUP_LOG" || fail 'undo removes the remembered packages'
+grep -Fxq 'systemctl disable --now bluetooth.service' "$SETUP_LOG" || fail 'undo turns the Bluetooth service off first'
 [[ ! -e "$tmp/state-home/bxrig/setup-hyprland.json" ]] || fail 'undo forgets them'
 [[ "$(MOCK_INSTALLED=git run "$binary" setup status --json | jq -r '.data.hyprland.installed')" == 0 ]] || fail 'status counts the hyprland packages'
 echo 'setup tests passed'
