@@ -38,7 +38,7 @@ for t in bash env grep awk df id uname head tr cat sort dirname mktemp sed cut m
 done
 # Fixture repository: a copy of the script next to a box.json with known pins. Tests run this copy.
 repo="$tmp/repo"; mkdir -p "$repo/bootstrap" "$repo/src"
-cp "$root/bootstrap/install.sh" "$repo/bootstrap/install.sh"; cp -r "$root/src/." "$repo/src/"
+cp "$root/bootstrap/install.sh" "$repo/bootstrap/install.sh"; cp -rL "$root/src/." "$repo/src/"   # -L: src/resources links to the data folders
 cat > "$repo/box.json" <<'JSON'
 { "name": "bxrig", "version": "0.11.0-dev",
   "toolchain": {
