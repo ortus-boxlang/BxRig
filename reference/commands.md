@@ -57,7 +57,7 @@ Settings that only touch your own config (a theme, the bar, the font) act at onc
 
 **Develop**: [`boxlang`](#bxrig-boxlang), [`editor`](#bxrig-editor), [`db`](#bxrig-db), [`containers`](#bxrig-containers), [`vm`](#bxrig-vm), [`ai`](#bxrig-ai), [`skills`](#bxrig-skills)
 
-**Everyday tools**: [`screenshot`](#bxrig-screenshot), [`qr`](#bxrig-qr), [`record`](#bxrig-record), [`clipboard`](#bxrig-clipboard), [`emoji`](#bxrig-emoji), [`forcequit`](#bxrig-forcequit), [`window`](#bxrig-window), [`overview`](#bxrig-overview), [`quicklook`](#bxrig-quicklook), [`dolphin`](#bxrig-dolphin), [`dictation`](#bxrig-dictation), [`strata`](#bxrig-strata), [`gpu`](#bxrig-gpu), [`input`](#bxrig-input), [`airplay`](#bxrig-airplay)
+**Everyday tools**: [`screenshot`](#bxrig-screenshot), [`qr`](#bxrig-qr), [`record`](#bxrig-record), [`browser`](#bxrig-browser), [`files`](#bxrig-files), [`webcam`](#bxrig-webcam), [`clipboard`](#bxrig-clipboard), [`emoji`](#bxrig-emoji), [`forcequit`](#bxrig-forcequit), [`window`](#bxrig-window), [`overview`](#bxrig-overview), [`quicklook`](#bxrig-quicklook), [`dolphin`](#bxrig-dolphin), [`dictation`](#bxrig-dictation), [`strata`](#bxrig-strata), [`gpu`](#bxrig-gpu), [`input`](#bxrig-input), [`airplay`](#bxrig-airplay)
 
 ## Start here
 
@@ -195,7 +195,7 @@ bxrig menu search 'time zone'
 bxrig menu open capture
 ```
 
-> Bind it to a key; the first entry, Search, lists every entry as one flat list. `menu open ROUTE` opens one submenu (system, capture, toggle, agent, shortcuts, trigger > capture); `menu open` lists the routes.
+> Bind it to a key; the first entry, Search, lists every entry as one flat list. `menu open ROUTE` opens one submenu (system, capture, toggle, hardware, agent, shortcuts, trigger > capture); `menu open` lists the routes.
 
 ### `bxrig apps` {#bxrig-apps}
 
@@ -1349,16 +1349,64 @@ bxrig qr 'wifi text' --out=wifi.png
 
 ### `bxrig record` {#bxrig-record}
 
-Screen recording: start, stop, toggle.
+Screen recording: start, stop, toggle, with desktop or microphone audio if you like.
 
 ```text
-bxrig record [toggle|start|stop|status] [--region] [--dry-run] [--json]
+bxrig record [toggle|start|stop|status] [--region] [--audio=desktop|mic] [--dry-run] [--json]
 ```
 
 ```bash
 bxrig record toggle
 bxrig record start --region
+bxrig record toggle --audio=desktop
 ```
+
+> --audio=desktop adds what the speakers play, --audio=mic the default microphone (both through pactl). Desktop and microphone together are not offered: wf-recorder takes one audio source. Exit 2 for another audio value.
+
+### `bxrig browser` {#bxrig-browser}
+
+Your default browser in a private window.
+
+```text
+bxrig browser private [URL] [--dry-run] [--json]
+```
+
+```bash
+bxrig browser private
+bxrig browser private https://example.com --dry-run
+```
+
+> Reads the default web browser (set by `default browser` or the wizard) and starts it with its private flag: Firefox --private-window, Chromium, Brave and Chrome --incognito, Edge --inprivate. Another browser exits 4.
+
+### `bxrig files` {#bxrig-files}
+
+Your default file manager in the folder of the focused window.
+
+```text
+bxrig files here [DIR] [--dry-run] [--json]
+```
+
+```bash
+bxrig files here
+bxrig files here ~/Documents
+```
+
+> Without DIR it uses the working directory of the focused window's newest child process (Hyprland), else your home folder, and opens it with xdg-open, so `default filemanager` decides which file manager.
+
+### `bxrig webcam` {#bxrig-webcam}
+
+A small live webcam preview, on or off with one key.
+
+```text
+bxrig webcam toggle|status [--dry-run] [--json]
+```
+
+```bash
+bxrig webcam toggle
+bxrig webcam status
+```
+
+> mpv on /dev/video0 in a window of class bxrig-webcam, which the Hyprland module floats and sizes. Exit 4 without mpv or a webcam.
 
 ### `bxrig clipboard` {#bxrig-clipboard}
 
@@ -1399,16 +1447,21 @@ bxrig forcequit
 
 ### `bxrig window` {#bxrig-window}
 
-Minimize and restore windows.
+Minimize and restore windows, and the quake console.
 
 ```text
-bxrig window minimize|restore
+bxrig window minimize|restore|quake [--json]
+bxrig window quake send [--json]
 ```
 
 ```bash
 bxrig window minimize
 bxrig window restore
+bxrig window quake
+bxrig window quake send
 ```
+
+> quake shows or hides the special workspace qconsole (the default terminal starts there the first time); quake send moves the focused window onto it. Hyprland only.
 
 ### `bxrig overview` {#bxrig-overview}
 
