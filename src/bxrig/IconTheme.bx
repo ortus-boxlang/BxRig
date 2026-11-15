@@ -9,7 +9,7 @@
 // opts (tests): { home, share, noGsettings }. The folders searched: ~/.local/share/icons, ~/.icons, /usr/share/icons (BXRIG_SHARE_DIR replaces /usr/share).
 class IconTheme {
     function init( opts = {} ) {
-        variables.environ = new bxrig.Env( structKeyExists( arguments.opts, "home" ) ? { HOME: arguments.opts.home, BXRIG_CONFIG_HOME: "", XDG_CONFIG_HOME: "", XDG_DATA_HOME: "", XDG_CACHE_HOME: "", XDG_STATE_HOME: "" } : {} );
+        variables.environ = new bxrig.util.Env( structKeyExists( arguments.opts, "home" ) ? { HOME: arguments.opts.home, BXRIG_CONFIG_HOME: "", XDG_CONFIG_HOME: "", XDG_DATA_HOME: "", XDG_CACHE_HOME: "", XDG_STATE_HOME: "" } : {} );
         variables.opts = arguments.opts;
         variables.picked = "";
         return this;

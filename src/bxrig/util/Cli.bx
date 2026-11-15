@@ -2,7 +2,7 @@
 class Cli {
     function init( version ) {
         variables.version = arguments.version;
-        variables.exit = new bxrig.Exit();
+        variables.exit = new bxrig.util.Exit();
         return this;
     }
 
@@ -27,7 +27,7 @@ class Cli {
 
     // The same helpers bound to one command name: `variables.out = variables.cli.scoped( "time" )`.
     function scoped( command ) {
-        return new bxrig.Out( this, arguments.command );
+        return new bxrig.util.Out( this, arguments.command );
     }
 
     // Prints a key/value listing as lines, or as the JSON envelope with --json.

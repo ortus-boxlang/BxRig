@@ -1,5 +1,5 @@
 // Fmt: sizes and ages in words. Run from src/: matchbox ../tests/fmt_test.bxs
-f = new bxrig.Fmt();
+f = new bxrig.util.Fmt();
 testkit = new lib.Check( "fmt" );
 testkit.check( "bytes B", f.bytes( 900 ) == "900 B" );
 testkit.check( "bytes KB", f.bytes( 2048 ) == "2 KB" && f.bytes( 1536 ) == "1.5 KB" );

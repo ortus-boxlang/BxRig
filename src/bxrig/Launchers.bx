@@ -13,7 +13,7 @@
 // Exit: 0 done, 2 plan without --yes, 4 precondition (no terminal, root, base64 missing), 6 write failed.
 class Launchers {
     function init( cli, runner = "" ) {
-        variables.environ = new bxrig.Env();
+        variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
         variables.runner = arguments.runner;
         variables.inst = new bxrig.Installer( arguments.runner );
@@ -74,7 +74,7 @@ class Launchers {
         if ( arguments.item.term ) for ( var t in arguments.termArgv ) words.append( word( t ) );
         words.append( word( variables.environ.self() ) );
         for ( var a in arguments.item.argv ) words.append( word( a ) );
-        return new bxrig.DesktopEntry().render( [ "Type=Application", "Name=BxRig " & arguments.item.title, "Comment=" & arguments.item.comment,
+        return new bxrig.util.DesktopEntry().render( [ "Type=Application", "Name=BxRig " & arguments.item.title, "Comment=" & arguments.item.comment,
             "Exec=" & words.toList( " " ), "Icon=" & arguments.item.icon, "Terminal=false", "Categories=" & arguments.item.category & ";", "X-BxRig-Launcher=tui" ] );
     }
 
@@ -82,7 +82,7 @@ class Launchers {
     function extras() {
         var nl = chr( 10 );
         var dirText = function( title, comment, icon ) {
-            return new bxrig.DesktopEntry().render( [ "Type=Directory", "Name=" & title, "Comment=" & comment, "Icon=" & icon, "X-BxRig-Launcher=tui" ] );
+            return new bxrig.util.DesktopEntry().render( [ "Type=Directory", "Name=" & title, "Comment=" & comment, "Icon=" & icon, "X-BxRig-Launcher=tui" ] );
         };
         var out = [ { name: "bxrig-directory", target: directoryDir() & "/bxrig.directory", mode: "644", content: dirText( "BxRig", "Your dev rig", "bxrig" ) } ];
         var inner = "";

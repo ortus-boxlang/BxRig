@@ -1,7 +1,7 @@
 // Cli.say / Cli.fail / Out: return codes and scoping. (Printing is covered by the --json | jq assertions of the shell tests.)
 // Run from src/: (cd src && matchbox ../tests/out_test.bxs)
 testkit = new lib.Check( "out" );
-cli = new bxrig.Cli( "0.0.0" );
+cli = new bxrig.util.Cli( "0.0.0" );
 testkit.check( "say returns the code (lines)", cli.say( "demo", 0, {}, false, [] ) == 0 );
 testkit.check( "say returns the code (json)", cli.say( "demo", 4, { a: 1 }, true ) == 4 );
 testkit.check( "fail returns the code", cli.fail( "demo", 6, "boom", false ) == 6 );

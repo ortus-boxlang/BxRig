@@ -11,9 +11,9 @@ class Strata {
     ];
 
     function init( cli, runner = "" ) {
-        variables.environ = new bxrig.Env();
+        variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
-        variables.out = new bxrig.Out( variables.cli, "strata integrations" );
+        variables.out = new bxrig.util.Out( variables.cli, "strata integrations" );
         variables.inst = new bxrig.Installer( arguments.runner );
         return this;
     }

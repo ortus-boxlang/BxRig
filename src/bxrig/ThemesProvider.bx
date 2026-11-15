@@ -1,13 +1,13 @@
 // Theme picker: the 15 bundled themes (and your own); Enter applies one. Reads `theme list`.
 class ThemesProvider {
-    function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.Proc(); return this; }
+    function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
     function id() { return "themes"; }
     function icon() { return "brush"; }
     function title() { return "Themes"; }
     function hint() { return "Enter applies a theme"; }
     function live() { return false; }
-    function refreshSeconds() { return new bxrig.Exit().ok(); }
-    function detailLines() { return new bxrig.Exit().usage(); }
+    function refreshSeconds() { return new bxrig.util.Exit().ok(); }
+    function detailLines() { return new bxrig.util.Exit().usage(); }
     function emptyText() { return "No themes found."; }
     function columns() { return [ { key: "mark", label: "", w: 3 }, { key: "name", label: "name", w: 24 }, { key: "mode", label: "mode", w: 8 }, { key: "origin", label: "from", w: 10 }, { key: "swatch", label: "", w: 0 } ]; }
     function style( r ) { return r.current ? "ok" : ""; }

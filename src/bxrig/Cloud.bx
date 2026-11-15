@@ -10,9 +10,9 @@
 // 2026-11-12: rclone (extra) ships /usr/bin/rclone and lists fuse3 as its optional dependency "for rclone mount"; fuse3 ships fusermount3.
 class Cloud {
     function init( cli, runner = "" ) {
-        variables.text = new bxrig.Text();
+        variables.text = new bxrig.util.Text();
         variables.cli = arguments.cli;
-        variables.proc = new bxrig.Proc( arguments.runner );
+        variables.proc = new bxrig.util.Proc( arguments.runner );
         variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }
@@ -29,7 +29,7 @@ class Cloud {
     }
 
     function needRclone( cmd, asJson ) {
-        if ( variables.proc.has( "rclone" ) ) return new bxrig.Exit().ok();
+        if ( variables.proc.has( "rclone" ) ) return new bxrig.util.Exit().ok();
         return variables.cli.say( arguments.cmd, "precondition", { error: "rclone is not installed" }, arguments.asJson, [ "error: rclone is not installed. Install: bxrig install rclone fuse3" ] );
     }
 

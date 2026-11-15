@@ -22,7 +22,7 @@ class Clipboard {
     function missing( cmd, asJson ) {
         var lacking = [];
         for ( var t in [ "cliphist", "wl-copy" ] ) if ( !variables.proc.has( t ) ) lacking.append( t == "wl-copy" ? "wl-clipboard" : t );
-        if ( !lacking.len() ) return new bxrig.Exit().ok();
+        if ( !lacking.len() ) return new bxrig.util.Exit().ok();
         return variables.cli.say( arguments.cmd, "precondition", { error: "missing " & lacking.toList( ", " ) }, arguments.asJson, [ "error: missing " & lacking.toList( ", " ) & ". Install: bxrig install " & lacking.toList( " " ) ] );
     }
 

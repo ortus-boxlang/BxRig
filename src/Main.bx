@@ -10,8 +10,8 @@ class {
         var cmd = p.len() ? p[1] : "help";
         var appVersion = "0.11.0-dev";
         var asJson = structKeyExists( args.options, "json" );
-        var cli = new bxrig.Cli( appVersion );
-        var xit = new bxrig.Exit();
+        var cli = new bxrig.util.Cli( appVersion );
+        var xit = new bxrig.util.Exit();
         var catalog = new bxrig.Catalog();
         var config = new bxrig.ConfigService();
         // One flag check for every command, from the registry (docs/reference/cli.json): a flag the command does not list is a usage error and nothing runs.

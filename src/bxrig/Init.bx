@@ -30,17 +30,17 @@ class Init {
         if ( structIsEmpty( saved ) ) {
             if ( arguments.asJson ) println( variables.cli.envelope( "init --export", 4, { error: "No saved answers" } ) );
             else println( "error: there are no saved answers yet. Run the wizard first: bxrig init" );
-            return new bxrig.Exit().precondition();
+            return new bxrig.util.Exit().precondition();
         }
         if ( fileExists( arguments.file ) && !arguments.force ) {
             if ( arguments.asJson ) println( variables.cli.envelope( "init --export", 4, { error: arguments.file & " exists" } ) );
             else println( "error: " & arguments.file & " already exists (use --force to replace it)" );
-            return new bxrig.Exit().precondition();
+            return new bxrig.util.Exit().precondition();
         }
         variables.config.writeAtomic( arguments.file, jsonSerialize( saved ) & chr( 10 ), "600" );
         if ( arguments.asJson ) println( variables.cli.envelope( "init --export", 0, { file: arguments.file } ) );
         else println( "Your answers were copied to " & arguments.file & ". On the other machine: bxrig init --from=" & arguments.file );
-        return new bxrig.Exit().ok();
+        return new bxrig.util.Exit().ok();
     }
 
     // `init --print-answers`
@@ -53,7 +53,7 @@ class Init {
         }
         if ( arguments.asJson ) println( variables.cli.envelope( "init --print-answers", 0, { answers: saved, file: answersFile() } ) );
         else println( jsonSerialize( saved ) );
-        return new bxrig.Exit().ok();
+        return new bxrig.util.Exit().ok();
     }
 
     // Catalog app id -> its shells (only for apps that name some), so Customize never installs a Hyprland-only app on Plasma.

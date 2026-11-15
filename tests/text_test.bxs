@@ -1,7 +1,7 @@
 // Text: merge, pad, padLeft, lines.
 // Run from src/: (cd src && matchbox ../tests/text_test.bxs)
 testkit = new lib.Check( "text" );
-t = new bxrig.Text();
+t = new bxrig.util.Text();
 m = t.merge( { a: 1, b: 2 }, { b: 3, c: 4 } );
 testkit.check( "merge: extra wins, both kept", m.a == 1 && m.b == 3 && m.c == 4 );
 base = { a: 1 }; t.merge( base, { a: 9 } );

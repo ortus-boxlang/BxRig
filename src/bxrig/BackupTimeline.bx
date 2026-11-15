@@ -13,8 +13,8 @@
 class BackupTimeline {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
-        variables.fmt = new bxrig.Fmt();
-        variables.out = new bxrig.Out( variables.cli, "backup" );
+        variables.fmt = new bxrig.util.Fmt();
+        variables.out = new bxrig.util.Out( variables.cli, "backup" );
         variables.runner = arguments.runner;
         return this;
     }
@@ -108,7 +108,7 @@ class BackupTimeline {
             var isRemote = arrayFind( [ "s3", "b2", "azure", "gs", "sftp", "rest", "rclone" ], t.type ) > 0;
             if ( isRemote && arguments.localOnly ) { row.error = "not read (--local)"; rows.append( row ); continue; }
             if ( !len( bd.secrets().fetch( bd.passwordKey( n ) ) ) ) { row.error = "not initialized"; rows.append( row ); continue; }
-            if ( !new bxrig.Proc( variables.runner ).has( "restic" ) ) { row.error = "restic is not installed"; rows.append( row ); continue; }
+            if ( !new bxrig.util.Proc( variables.runner ).has( "restic" ) ) { row.error = "restic is not installed"; rows.append( row ); continue; }
             var env = bd.envFor( n, t );
             if ( structKeyExists( env, "__unmounted" ) ) { row.error = "the NAS share is not mounted"; rows.append( row ); continue; }
             var r = bd.restic( env, [ "snapshots", "--json" ], 120 );

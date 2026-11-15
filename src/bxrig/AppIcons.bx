@@ -18,8 +18,8 @@
 // opts (tests): { share, home, iconBase, cache: {ImageCache opts} }. Environment: BXRIG_SHARE_DIR replaces /usr/share.
 class AppIcons {
     function init( opts = {} ) {
-        variables.desk = new bxrig.DesktopEntry();
-        variables.environ = new bxrig.Env( structKeyExists( arguments.opts, "home" ) ? { HOME: arguments.opts.home, BXRIG_CONFIG_HOME: "", XDG_CONFIG_HOME: "", XDG_DATA_HOME: "", XDG_CACHE_HOME: "", XDG_STATE_HOME: "" } : {} );
+        variables.desk = new bxrig.util.DesktopEntry();
+        variables.environ = new bxrig.util.Env( structKeyExists( arguments.opts, "home" ) ? { HOME: arguments.opts.home, BXRIG_CONFIG_HOME: "", XDG_CONFIG_HOME: "", XDG_DATA_HOME: "", XDG_CACHE_HOME: "", XDG_STATE_HOME: "" } : {} );
         variables.opts = arguments.opts;
         variables.cache = new bxrig.ImageCache( arguments.opts.cache ?: {} );
         variables.seen = {};

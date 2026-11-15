@@ -13,7 +13,7 @@ class ImageCache {
     // opts (tests and callers that know better): { base, allowHttp, maxTime, capKb, maxBytes }. The environment covers the same things:
     // BXRIG_CACHE_HOME, BXRIG_IMAGE_ALLOW_HTTP=1, BXRIG_IMAGE_MAX_TIME (seconds, default 15), BXRIG_IMAGE_CAP_KB (default 204800).
     function init( opts = {} ) {
-        variables.environ = new bxrig.Env();
+        variables.environ = new bxrig.util.Env();
         variables.opts = arguments.opts;
         variables.maxBytes = arguments.opts.maxBytes ?: 5242880;
         variables.capKb = arguments.opts.capKb ?: int( val( variables.environ.get( "BXRIG_IMAGE_CAP_KB", "204800" ) ) );

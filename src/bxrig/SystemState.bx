@@ -53,7 +53,7 @@ class SystemState {
     function defaultBrowser() {
         var out = "";
         try { out = trim( systemExecute( "xdg-settings", [ "get", "default-web-browser" ], 10, true ).output ); } catch ( any e ) { return ""; }
-        var dft = new bxrig.Defaults( new bxrig.Cli( "0" ) );
+        var dft = new bxrig.Defaults( new bxrig.util.Cli( "0" ) );
         for ( var id in [ "firefox", "chromium", "brave", "google-chrome", "edge" ] ) if ( len( dft.browserDesktop( id ) ) && dft.browserDesktop( id ) == out ) return id;
         return "";
     }

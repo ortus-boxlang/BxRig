@@ -1,20 +1,20 @@
 // Env: one precedence rule (BXRIG_*_HOME, then XDG_*_HOME, then the default under $HOME), and the two data folders kept apart.
 // Run from src/: (cd src && matchbox ../tests/env_test.bxs)
 testkit = new lib.Check( "env" );
-e = new bxrig.Env( { HOME: "/h" } );
+e = new bxrig.util.Env( { HOME: "/h" } );
 testkit.check( "home", e.home() == "/h" );
 testkit.check( "defaults", e.xdgConfig() == "/h/.config" && e.xdgData() == "/h/.local/share" && e.xdgState() == "/h/.local/state" && e.xdgCache() == "/h/.cache" );
 testkit.check( "own folders", e.config() == "/h/.config/bxrig" && e.data() == "/h/.local/share/bxrig" && e.state() == "/h/.local/state/bxrig" && e.cache() == "/h/.cache/bxrig" );
 testkit.check( "sub paths", e.config( "x.json" ) == "/h/.config/bxrig/x.json" && e.xdgConfig( "hypr" ) == "/h/.config/hypr" );
-x = new bxrig.Env( { HOME: "/h", XDG_CONFIG_HOME: "/x/cfg", XDG_DATA_HOME: "/x/data", XDG_STATE_HOME: "/x/state", XDG_CACHE_HOME: "/x/cache" } );
+x = new bxrig.util.Env( { HOME: "/h", XDG_CONFIG_HOME: "/x/cfg", XDG_DATA_HOME: "/x/data", XDG_STATE_HOME: "/x/state", XDG_CACHE_HOME: "/x/cache" } );
 testkit.check( "XDG_CONFIG_HOME applies to every config path", x.xdgConfig( "hypr" ) == "/x/cfg/hypr" && x.config( "a.json" ) == "/x/cfg/bxrig/a.json" );
 testkit.check( "XDG data, state and cache", x.xdgData( "applications" ) == "/x/data/applications" && x.state() == "/x/state/bxrig" && x.cache() == "/x/cache/bxrig" );
 testkit.check( "XDG_DATA_HOME does not move BxRig's own data folder", x.data() == "/h/.local/share/bxrig" );
-b = new bxrig.Env( { HOME: "/h", XDG_CONFIG_HOME: "/x/cfg", BXRIG_CONFIG_HOME: "/b/cfg", BXRIG_DATA_HOME: "/b/data", BXRIG_STATE_HOME: "/b/state", BXRIG_CACHE_HOME: "/b/cache" } );
+b = new bxrig.util.Env( { HOME: "/h", XDG_CONFIG_HOME: "/x/cfg", BXRIG_CONFIG_HOME: "/b/cfg", BXRIG_DATA_HOME: "/b/data", BXRIG_STATE_HOME: "/b/state", BXRIG_CACHE_HOME: "/b/cache" } );
 testkit.check( "BXRIG_CONFIG_HOME beats XDG_CONFIG_HOME", b.xdgConfig() == "/b/cfg" && b.config() == "/b/cfg/bxrig" );
 testkit.check( "BXRIG_DATA_HOME is the own folder itself", b.data() == "/b/data" && b.data( "databases" ) == "/b/data/databases" );
 testkit.check( "BXRIG_STATE_HOME and BXRIG_CACHE_HOME", b.state() == "/b/state/bxrig" && b.cache( "apps" ) == "/b/cache/apps" );
-testkit.check( "empty value falls back", new bxrig.Env( { HOME: "/h", BXRIG_CONFIG_HOME: "" } ).xdgConfig() == "/h/.config" );
+testkit.check( "empty value falls back", new bxrig.util.Env( { HOME: "/h", BXRIG_CONFIG_HOME: "" } ).xdgConfig() == "/h/.config" );
 testkit.check( "get with a fallback", e.get( "NOPE_NOT_SET_XYZ", "dflt" ) == "dflt" );
 testkit.check( "self", e.self() == "bxrig" || len( e.self() ) > 0 );
 testkit.done( "env tests passed" );

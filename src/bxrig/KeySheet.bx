@@ -15,9 +15,9 @@ class KeySheet {
 
     function run( asJson ) {
         var list = lines();
-        if ( arguments.asJson ) { println( variables.cli.envelope( "keys sheet", 0, { lines: list } ) ); return new bxrig.Exit().ok(); }
-        try { new bxrig.Runner( variables.cli, variables.runnerArg ).select( "Shortcuts", list ); return new bxrig.Exit().ok(); } catch ( any e ) {}
+        if ( arguments.asJson ) { println( variables.cli.envelope( "keys sheet", 0, { lines: list } ) ); return new bxrig.util.Exit().ok(); }
+        try { new bxrig.Runner( variables.cli, variables.runnerArg ).select( "Shortcuts", list ); return new bxrig.util.Exit().ok(); } catch ( any e ) {}
         for ( var l in list ) println( l );
-        return new bxrig.Exit().ok();
+        return new bxrig.util.Exit().ok();
     }
 }

@@ -5,7 +5,7 @@
 class Quicklook {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
-        variables.out = new bxrig.Out( variables.cli, "quicklook" );
+        variables.out = new bxrig.util.Out( variables.cli, "quicklook" );
         variables.inst = new bxrig.Installer( arguments.runner );
         return this;
     }

@@ -10,8 +10,8 @@
 // Exit: 0 after leaving, 2 for an unknown page or usage, 4 when there is no terminal.
 class ControlCenter {
     function init( cli, runner = "" ) {
-        variables.proc = new bxrig.Proc();
-        variables.environ = new bxrig.Env();
+        variables.proc = new bxrig.util.Proc();
+        variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
         variables.runner = arguments.runner;
         return this;
@@ -24,7 +24,7 @@ class ControlCenter {
         var rows = new bxrig.ControlCenterPages().list();
         if ( arguments.asJson ) println( variables.cli.envelope( "tui list", 0, { pages: rows } ) );
         else for ( var r in rows ) println( r.id & "  " & r.title );
-        return new bxrig.Exit().ok();
+        return new bxrig.util.Exit().ok();
     }
 
     function provider( demo ) {
@@ -107,10 +107,10 @@ class ControlCenter {
             var st = p.state();
             if ( arguments.asJson ) println( variables.cli.envelope( "tui " & p.id(), 0, st ) );
             else println( p.title() & ": " & ( structKeyExists( st, "attention" ) ? st.attention.len() & " things to look at" : ( isArray( st.rows ) ? st.rows.len() : st.rows ) & " rows" ) );
-            return new bxrig.Exit().ok();
+            return new bxrig.util.Exit().ok();
         }
         println( "Unknown page " & arguments.pageId & ". Pages: " & pageIds().toList( ", " ) );
-        return new bxrig.Exit().usage();
+        return new bxrig.util.Exit().usage();
     }
 
     // Icons are Nerd Font glyphs. "on" and "off" are explicit; "" follows BXRIG_ICONS, then looks for a Nerd Font on the machine.

@@ -24,7 +24,7 @@ count 'fail() { echo "FAIL'        tests 4
 count 'function check( label, ok )' tests 2
 count 'jsonDeserialize( fileRead(' src/bxrig 37
 count 'getSystemSetting( "HOME"'   src/bxrig 12
-# exit codes are named (src/bxrig/Exit.bx): no number as the code argument of say( ) / fail( ), and no CLIExit( N ) in Main.bx except 130 (Ctrl+C)
+# exit codes are named (src/bxrig/util/Exit.bx): no number as the code argument of say( ) / fail( ), and no CLIExit( N ) in Main.bx except 130 (Ctrl+C)
 bare="$(grep -rhoE '(out)\.(say|fail)\( *[0-9]+ *,|(cli)\.(say|fail)\( *[^,()]+, *[0-9]+ *,' "$root/src/bxrig" | wc -l)"
 (( bare == 0 )) || { echo "FAIL: $bare say/fail calls pass a bare number as the exit code (use a name from Exit.bx)"; fails=$((fails+1)); }
 bare="$(grep -oE 'CLIExit\( *[0-9]+ *\)' "$root/src/Main.bx" | grep -vc '130' || true)"

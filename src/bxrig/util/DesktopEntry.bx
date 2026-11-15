@@ -5,7 +5,7 @@
 //   launcher  one of BxRig's own page launchers (X-BxRig-Launcher), a shortcut to a BxRig screen and not an app you installed
 class DesktopEntry {
     function init( env = "" ) {
-        variables.environ = isSimpleValue( arguments.env ) ? new bxrig.Env() : arguments.env;
+        variables.environ = isSimpleValue( arguments.env ) ? new bxrig.util.Env() : arguments.env;
         return this;
     }
 

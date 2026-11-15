@@ -12,7 +12,7 @@
 class Pkg {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
-        variables.text = new bxrig.Text();
+        variables.text = new bxrig.util.Text();
         variables.inst = new bxrig.Installer( arguments.runner );
         variables.proc = variables.inst.proc();
         return this;

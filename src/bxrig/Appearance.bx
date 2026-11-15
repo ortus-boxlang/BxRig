@@ -18,10 +18,10 @@
 // Exit: 0 done, 2 bad usage, 4 precondition (a font or file that is not there), 6 a command failed.
 class Appearance {
     function init( cli, runner = "" ) {
-        variables.environ = new bxrig.Env();
+        variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
-        variables.out = new bxrig.Out( variables.cli, "appearance" );
-        variables.proc = new bxrig.Proc( arguments.runner );
+        variables.out = new bxrig.util.Out( variables.cli, "appearance" );
+        variables.proc = new bxrig.util.Proc( arguments.runner );
         variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }

@@ -13,9 +13,9 @@
 // Exit: 0 done (or nothing to do), 2 plan or bad usage, 4 precondition, 6 a command failed.
 class Refresh {
     function init( cli, runner = "" ) {
-        variables.environ = new bxrig.Env();
+        variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
-        variables.out = new bxrig.Out( variables.cli, "refresh" );
+        variables.out = new bxrig.util.Out( variables.cli, "refresh" );
         variables.inst = new bxrig.Installer( arguments.runner );
         variables.proc = variables.inst.proc();
         variables.config = new bxrig.ConfigService().quiet( true );

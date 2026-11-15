@@ -10,11 +10,11 @@
 // A plan until --yes (--dry-run too). Exit: 0 done, 2 plan or bad usage, 4 precondition, 6 a command failed.
 class Vm {
     function init( cli, runner = "" ) {
-        variables.environ = new bxrig.Env();
+        variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
-        variables.text = new bxrig.Text();
-        variables.fmt = new bxrig.Fmt();
-        variables.proc = new bxrig.Proc( arguments.runner );
+        variables.text = new bxrig.util.Text();
+        variables.fmt = new bxrig.util.Fmt();
+        variables.proc = new bxrig.util.Proc( arguments.runner );
         variables.config = new bxrig.ConfigService().quiet( true );
         variables.data = new bxrig.VmData();
         return this;
@@ -388,7 +388,7 @@ class Vm {
     // An app-menu entry that runs `bxrig vm open NAME` (removed with the VM).
     function writeLauncher( rec ) {
         var nl = chr( 10 );
-        var text = new bxrig.DesktopEntry().render( [ "Type=Application", "Name=" & arguments.rec.name & " (" & ( arguments.rec.kind == "windows" ? "Windows" : "Linux" ) & " VM)",
+        var text = new bxrig.util.DesktopEntry().render( [ "Type=Application", "Name=" & arguments.rec.name & " (" & ( arguments.rec.kind == "windows" ? "Windows" : "Linux" ) & " VM)",
             "Comment=Open the BxRig VM " & arguments.rec.name, "Exec=sh -c 'PATH=" & '"$HOME/.local/bin:$PATH"' & "; bxrig vm open " & arguments.rec.name & "'", "Icon=computer", "Terminal=false", "Categories=System;" ] );
         variables.config.writeAtomic( desktopFile( arguments.rec.name ), text, "644" );
     }

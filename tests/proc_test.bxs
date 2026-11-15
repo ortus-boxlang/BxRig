@@ -1,7 +1,7 @@
 // Proc: exec never throws, has uses command -v, works uses --version, a runner replaces the process.
 // Run from src/: (cd src && matchbox ../tests/proc_test.bxs)
 testkit = new lib.Check( "proc" );
-p = new bxrig.Proc();
+p = new bxrig.util.Proc();
 r = p.exec( [ "sh", "-c", "echo hi; exit 3" ], 10 );
 testkit.check( "exec gives exit code and output", r.exitCode == 3 && trim( r.output ) == "hi" );
 r = p.exec( [ "definitely-not-a-program-xyz" ], 10 );
@@ -12,20 +12,20 @@ testkit.check( "has does not run the tool (a name with a quote is just not found
 testkit.check( "works: sh has no --version but exists, so works is false and has is true", p.has( "sh" ) && !p.works( "definitely-not-a-program-xyz" ) );
 calls = [];
 fake = function( argv, timeout ) { calls.append( argv.toList( " " ) & "@" & timeout ); return { exitCode: 0, timeout: false, output: "0" }; };
-q = new bxrig.Proc( fake );
+q = new bxrig.util.Proc( fake );
 testkit.check( "a runner replaces the process", q.exec( [ "echo", "x" ], 5 ).exitCode == 0 && calls[ 1 ] == "echo x@5" );
 testkit.check( "has through a runner uses sh -c with the name as an argument", q.has( "foo" ) && find( "sh -c command -v ""$1"" _ foo@10", calls[ 2 ] ) > 0 );
 testkit.check( "isRoot reads id -u through the runner", q.isRoot() && calls[ 3 ] == "id -u@10" );
 testkit.check( "runner() hands the same runner to a collaborator", !isSimpleValue( q.runner() ) );
 bad = function( argv, timeout ) { throw( type = "x", message = "cannot start" ); };
-b = new bxrig.Proc( bad );
+b = new bxrig.util.Proc( bad );
 r = b.exec( [ "x" ], 1 );
 testkit.check( "a throwing runner gives 127 and the reason", r.exitCode == 127 && find( "cannot start", r.output ) > 0 );
 caught = false;
 try { b.raw( [ "x" ], 1 ); } catch ( any e ) { caught = true; }
 testkit.check( "raw may throw", caught );
 n = 0;
-q2 = new bxrig.Proc( function( argv, timeout ) { calls.append( argv.toList( " " ) ); return { exitCode: 0, timeout: false, output: "" }; } );
+q2 = new bxrig.util.Proc( function( argv, timeout ) { calls.append( argv.toList( " " ) ); return { exitCode: 0, timeout: false, output: "" }; } );
 q2.self( [ "tui", "list" ], 7 );
 testkit.check( "self runs BXRIG_SELF with the arguments", calls[ calls.len() ] == q2.selfPath() & " tui list" );
 testkit.done( "proc tests passed" );

@@ -24,7 +24,7 @@ class Exit {
         return variables.table[ arguments.c ];
     }
 
-    // One method per name, for `return new bxrig.Exit().usage();` where there is no Out to ask.
+    // One method per name, for `return new bxrig.util.Exit().usage();` where there is no Out to ask.
     function ok() { return 0; }
     function negative() { return 1; }
     function usage() { return 2; }

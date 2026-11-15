@@ -15,10 +15,10 @@
 // Exit: 0 done, 2 bad usage, 4 precondition (unknown or invalid theme), 6 a file could not be written.
 class Theme {
     function init( cli, runner = "" ) {
-        variables.environ = new bxrig.Env();
+        variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
-        variables.out = new bxrig.Out( variables.cli, "theme" );
-        variables.proc = new bxrig.Proc( arguments.runner );
+        variables.out = new bxrig.util.Out( variables.cli, "theme" );
+        variables.proc = new bxrig.util.Proc( arguments.runner );
         variables.config = new bxrig.ConfigService().quiet( true );
         variables.tc = new bxrig.ThemeColors();
         variables.td = new bxrig.ThemeData();

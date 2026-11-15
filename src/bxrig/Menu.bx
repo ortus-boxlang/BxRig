@@ -9,7 +9,7 @@
 // started with --yes only after you confirm). Exit: 0 done or cancelled, 4 precondition (no menu program, no terminal for a `run` entry).
 class Menu {
     function init( cli, runner = "" ) {
-        variables.environ = new bxrig.Env();
+        variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
         variables.inst = new bxrig.Installer( arguments.runner );
         variables.proc = variables.inst.proc();
@@ -165,40 +165,40 @@ class Menu {
             var sp = [ variables.environ.self() ];
             for ( var a in arguments.entry.argv ) sp.append( a );
             detach( sp );
-            return new bxrig.Exit().ok();
+            return new bxrig.util.Exit().ok();
         }
         var term = terminalArgv();
-        if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.Exit().precondition(); }
+        if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.util.Exit().precondition(); }
         var argv = [];
         for ( var t in term ) argv.append( t );
         for ( var w in [ "sh", "-c", 'bxrig_cmd="$1"; shift; "$bxrig_cmd" "$@"; echo; echo "Press Enter to close"; read _', "_", variables.environ.self() ] ) argv.append( w );
         for ( var a2 in arguments.entry.argv ) argv.append( a2 );
         detach( argv );
-        return new bxrig.Exit().ok();
+        return new bxrig.util.Exit().ok();
     }
 
     // A Control Center page in its own terminal window: the terminal closes when you leave the page (no "press Enter" step).
     function startTui( entry ) {
         var term = terminalArgv();
-        if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.Exit().precondition(); }
+        if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.util.Exit().precondition(); }
         var argv = [];
         for ( var t in term ) argv.append( t );
         argv.append( variables.environ.self() );
         for ( var a in arguments.entry.argv ) argv.append( a );
         detach( argv );
-        return new bxrig.Exit().ok();
+        return new bxrig.util.Exit().ok();
     }
 
     // A command in its own terminal window that closes when it ends (the wizard).
     function startTerm( entry ) {
         var term = terminalArgv();
-        if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.Exit().precondition(); }
+        if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.util.Exit().precondition(); }
         var argv = [];
         for ( var t in term ) argv.append( t );
         argv.append( variables.environ.self() );
         for ( var a in arguments.entry.argv ) argv.append( a );
         detach( argv );
-        return new bxrig.Exit().ok();
+        return new bxrig.util.Exit().ok();
     }
 
     function sub( argv, value ) {

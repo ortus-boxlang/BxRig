@@ -11,7 +11,7 @@
 // The state of a list (cursor, scroll, filter) is kept by TuiList; the event loop is TuiRunner.
 class TuiKit {
     function init( tui ) {
-        variables.fmt = new bxrig.Fmt();
+        variables.fmt = new bxrig.util.Fmt();
         variables.tui = arguments.tui;
         variables.pal = {
             BASE: "##303446", MANTLE: "##292c3c", CRUST: "##232634", SURFACE0: "##414559", SURFACE1: "##51576d", OVERLAY: "##737994",

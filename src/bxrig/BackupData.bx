@@ -27,10 +27,10 @@
 // Exit: 0 ok, 2 bad usage or a plan without --yes, 4 precondition (no restic, no target, not initialized), 6 a command failed.
 class BackupData {
     function init( cli, runner = "" ) {
-        variables.environ = new bxrig.Env();
+        variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
-        variables.out = new bxrig.Out( variables.cli, "backup" );
-        variables.proc = new bxrig.Proc( arguments.runner );
+        variables.out = new bxrig.util.Out( variables.cli, "backup" );
+        variables.proc = new bxrig.util.Proc( arguments.runner );
         variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }

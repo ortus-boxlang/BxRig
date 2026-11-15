@@ -1,13 +1,13 @@
 // Java Manager: your Java homes (BxRig installs, SDKMAN, the system) through `bxrig java`. Install, set the default, remove.
 class JavaProvider {
-    function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.Proc(); variables.view = "homes"; return this; }
+    function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); variables.view = "homes"; return this; }
     function id() { return "java"; }
     function icon() { return "coffee"; }
     function title() { return "Java"; }
     function hint() { return variables.view == "homes" ? "* default for new shells   > this shell   (a: what you can install)" : "everything SDKMAN offers   (a: back to your homes)"; }
     function live() { return false; }
-    function refreshSeconds() { return new bxrig.Exit().ok(); }
-    function detailLines() { return new bxrig.Exit().usage(); }
+    function refreshSeconds() { return new bxrig.util.Exit().ok(); }
+    function detailLines() { return new bxrig.util.Exit().usage(); }
     function emptyText() { return variables.view == "homes" ? "No Java found. Press a to see what you can install, or i and type 21." : "Could not read the list. Check your network."; }
     function columns() {
         if ( variables.view == "available" ) return [ { key: "mark", label: "", w: 4 }, { key: "vendor", label: "vendor", w: 20 }, { key: "version", label: "version", w: 22 }, { key: "id", label: "identifier", w: 0 } ];

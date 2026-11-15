@@ -11,7 +11,7 @@
 class Installer {
     function init( runner ) {
         variables.custom = arguments.runner ?: "";
-        variables.procs = new bxrig.Proc( variables.custom );
+        variables.procs = new bxrig.util.Proc( variables.custom );
         return this;
     }
 
@@ -48,7 +48,7 @@ class Installer {
     // The launcher file for a web app: a .desktop entry that opens the URL in a frameless brave window.
     function launcherFile( app, home ) {
         var url = replace( app.url, "%", "%%", "all" );
-        var content = new bxrig.DesktopEntry().render( [ "Type=Application", "Name=" & app.name, "Comment=" & ( app.description ?: app.name ),
+        var content = new bxrig.util.DesktopEntry().render( [ "Type=Application", "Name=" & app.name, "Comment=" & ( app.description ?: app.name ),
             "Exec=brave --app=" & url, "Icon=brave-browser", "Categories=Network;" ] );
         return { path: home & "/.local/share/applications/bxrig-" & app.id & ".desktop", content: content };
     }
@@ -149,9 +149,9 @@ class Installer {
 
     // 0 nothing failed, 7 some done and some failed, else 5 when pacman failed, 6 for AUR or PKGBUILD only.
     function exitCode( result ) {
-        if ( !result.failed.len() ) return new bxrig.Exit().ok();
-        if ( result.done.len() ) return new bxrig.Exit().partial();
-        for ( var f in result.failed ) if ( f.source == "pacman" ) return new bxrig.Exit().official();
-        return new bxrig.Exit().failed();
+        if ( !result.failed.len() ) return new bxrig.util.Exit().ok();
+        if ( result.done.len() ) return new bxrig.util.Exit().partial();
+        for ( var f in result.failed ) if ( f.source == "pacman" ) return new bxrig.util.Exit().official();
+        return new bxrig.util.Exit().failed();
     }
 }

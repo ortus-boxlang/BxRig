@@ -5,8 +5,8 @@
 // Exit: 0 after leaving, 4 when there is no terminal.
 class TimeMachine {
     function init( cli, runner = "" ) {
-        variables.proc = new bxrig.Proc();
-        variables.environ = new bxrig.Env();
+        variables.proc = new bxrig.util.Proc();
+        variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
         variables.runner = arguments.runner;
         variables.demo = false;

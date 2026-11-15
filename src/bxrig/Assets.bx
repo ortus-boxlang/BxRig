@@ -4,7 +4,7 @@
 // Exit codes: list 0; install 0 done, 2 without --yes, 4 precondition (root, no base64).
 class Assets {
     function init( cli, runner = "" ) {
-        variables.environ = new bxrig.Env();
+        variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
         variables.inst = new bxrig.Installer( arguments.runner );
         variables.data = new bxrig.AssetData();

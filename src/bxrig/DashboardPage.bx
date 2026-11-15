@@ -4,7 +4,7 @@
 // An intent is a struct: {} (nothing), { action: "goto", page }, { action: "launch", target } (leave the Control Center and run that screen: "timemachine", or "wizard" for the setup wizard, prefilled from this machine), { action: "cli", title, args } (plan first).
 class DashboardPage {
     function init( data ) {
-        variables.fmt = new bxrig.Fmt();
+        variables.fmt = new bxrig.util.Fmt();
         variables.provider = arguments.data;
         variables.data = {};
         variables.att = [];

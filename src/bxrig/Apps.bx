@@ -8,7 +8,7 @@
 class Apps {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
-        variables.desk = new bxrig.DesktopEntry();
+        variables.desk = new bxrig.util.DesktopEntry();
         variables.inst = new bxrig.Installer( arguments.runner );
         return this;
     }

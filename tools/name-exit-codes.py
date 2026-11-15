@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Replaces numeric exit codes at the say( ) and fail( ) call sites of the command classes with the names in src/bxrig/Exit.bx.
+"""Replaces numeric exit codes at the say( ) and fail( ) call sites of the command classes with the names in src/bxrig/util/Exit.bx.
 Only the code argument is touched: out.say( 4, ... ), cli.say( cmd, 4, ... ), the same for fail, and a ternary there (dryRun ? 0 : 2).
 The number on the wire does not change. 2 becomes "usage" (a Usage line or no mention of a plan) or "plan" (the line talks about a plan, --yes or --dry-run)."""
 import re, glob, os, sys
@@ -61,7 +61,7 @@ for f in sorted(glob.glob(root + '/src/bxrig/*.bx')):
                 low = body.lower()
                 name = NM[n]
                 if n == 2 and ('plan' in low or 'nothing was changed' in low) and 'usage' not in low: name = 'plan'
-                return 'return new bxrig.Exit().%s();' % name
+                return 'return new bxrig.util.Exit().%s();' % name
             nb = re.sub(r'return (\d+);', r, body)
             out.append(t[last:a]); out.append(nb); last = b
     out.append(t[last:])
@@ -69,8 +69,8 @@ for f in sorted(glob.glob(root + '/src/bxrig/*.bx')):
     if t != o: open(f, 'w').write(t)
 print('named', ret, 'return statements')
 m = open(root + '/src/Main.bx').read(); mo = m
-if 'var xit = new bxrig.Exit();' not in m:
-    m = m.replace('        var cli = new bxrig.Cli( appVersion );', '        var cli = new bxrig.Cli( appVersion );\n        var xit = new bxrig.Exit();', 1)
+if 'var xit = new bxrig.util.Exit();' not in m:
+    m = m.replace('        var cli = new bxrig.util.Cli( appVersion );', '        var cli = new bxrig.util.Cli( appVersion );\n        var xit = new bxrig.util.Exit();', 1)
 cnt = 0
 def ce(mm):
     global cnt

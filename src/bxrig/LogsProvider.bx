@@ -1,13 +1,13 @@
 // Logs: the journal without remembering journalctl flags. p cycles the lowest priority shown (error, warning, info); / filters the lines.
 class LogsProvider {
-    function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.Proc(); variables.prio = 2; return this; }
+    function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); variables.prio = 2; return this; }
     function id() { return "logs"; }
     function icon() { return "file"; }
     function title() { return "Logs"; }
     function hint() { return "this boot · priority " & levels()[ variables.prio ] & " and worse"; }
     function live() { return false; }
-    function refreshSeconds() { return new bxrig.Exit().ok(); }
-    function detailLines() { return new bxrig.Exit().usage(); }
+    function refreshSeconds() { return new bxrig.util.Exit().ok(); }
+    function detailLines() { return new bxrig.util.Exit().usage(); }
     function emptyText() { return "No log lines at this priority."; }
     function levels() { return [ "error", "warning", "info" ]; }
     function columns() { return [ { key: "time", label: "time", w: 10 }, { key: "level", label: "level", w: 9 }, { key: "unit", label: "from", w: 22 }, { key: "message", label: "message", w: 0 } ]; }

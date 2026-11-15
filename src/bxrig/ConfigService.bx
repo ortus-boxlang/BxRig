@@ -1,7 +1,7 @@
 // Safe config files: atomic replace, backups, journal, drift, lock (docs/architecture/COMMAND-CONTRACT.md section 6).
 class ConfigService {
     function init() {
-     variables.environ = new bxrig.Env();
+     variables.environ = new bxrig.util.Env();
      variables.silent = false;
      return this;
     }

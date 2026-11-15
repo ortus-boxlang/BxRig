@@ -10,8 +10,8 @@
 // firefox), not verified here.
 class Web {
     function init( cli, runner = "" ) {
-        variables.environ = new bxrig.Env();
-        variables.text = new bxrig.Text();
+        variables.environ = new bxrig.util.Env();
+        variables.text = new bxrig.util.Text();
         variables.cli = arguments.cli;
         variables.inst = new bxrig.Installer( arguments.runner );
         variables.config = new bxrig.ConfigService().quiet( true );
@@ -52,7 +52,7 @@ class Web {
     function entryText( name, url, browser ) {
         var b = browsers()[ arguments.browser ];
         var exec = b.app ? b.cmd & " --app=" & arguments.url : b.cmd & " --new-window " & arguments.url;
-        return new bxrig.DesktopEntry().render( [ "# Written by bxrig (web add). Edit it freely: BxRig will not overwrite a changed file.", "Type=Application",
+        return new bxrig.util.DesktopEntry().render( [ "# Written by bxrig (web add). Edit it freely: BxRig will not overwrite a changed file.", "Type=Application",
             "Name=" & arguments.name, "Exec=" & exec, "Icon=web-browser", "Categories=Network;", "X-BxRig-Web=" & arguments.url ] );
     }
 

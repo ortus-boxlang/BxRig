@@ -8,9 +8,9 @@
 // missing, bad name, no such session), 6 a tmux command failed.
 class AiSession {
     function init( cli, runner = "" ) {
-        variables.text = new bxrig.Text();
+        variables.text = new bxrig.util.Text();
         variables.cli = arguments.cli;
-        variables.proc = new bxrig.Proc( arguments.runner );
+        variables.proc = new bxrig.util.Proc( arguments.runner );
         variables.ai = new bxrig.Ai( arguments.cli, arguments.runner );
         variables.agents = new bxrig.AiAgents();
         return this;

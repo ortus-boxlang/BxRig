@@ -14,9 +14,9 @@
 // Exit: 0 ok, 2 bad usage or a plan without --yes, 4 precondition (unknown zone, no tool), 5 and 6 and 7 from the install steps.
 class Time {
     function init( cli, runner = "" ) {
-        variables.environ = new bxrig.Env();
+        variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
-        variables.out = new bxrig.Out( variables.cli, "time" );
+        variables.out = new bxrig.util.Out( variables.cli, "time" );
         variables.inst = new bxrig.Installer( arguments.runner );
         variables.proc = variables.inst.proc();
         return this;

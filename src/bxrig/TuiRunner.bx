@@ -29,6 +29,6 @@ class TuiRunner {
         } finally {
             tui.shutdown();
         }
-        return new bxrig.Exit().ok();
+        return new bxrig.util.Exit().ok();
     }
 }

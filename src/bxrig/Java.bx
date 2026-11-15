@@ -13,9 +13,9 @@
 // Exit: 0 ok, 2 a plan was shown without --yes (or bad usage), 4 unknown home or release or a home that cannot be removed, 6 download or unpack failed.
 class Java {
     function init( cli, runner = "" ) {
-        variables.environ = new bxrig.Env();
+        variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
-        variables.out = new bxrig.Out( variables.cli, "java" );
+        variables.out = new bxrig.util.Out( variables.cli, "java" );
         variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }

@@ -9,8 +9,8 @@
 // bad name or port, vm.max_map_count too low), 6 the container command failed.
 class Db {
     function init( cli, runner = "" ) {
-        variables.text = new bxrig.Text();
-        variables.environ = new bxrig.Env();
+        variables.text = new bxrig.util.Text();
+        variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
         variables.inst = new bxrig.Installer( arguments.runner );
         variables.config = new bxrig.ConfigService();

@@ -14,8 +14,8 @@
 class Display {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
-        variables.out = new bxrig.Out( variables.cli, "display" );
-        variables.proc = new bxrig.Proc( arguments.runner );
+        variables.out = new bxrig.util.Out( variables.cli, "display" );
+        variables.proc = new bxrig.util.Proc( arguments.runner );
         variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }

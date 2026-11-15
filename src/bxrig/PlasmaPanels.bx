@@ -13,8 +13,8 @@
 class PlasmaPanels {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
-        variables.out = new bxrig.Out( variables.cli, "plasma panels" );
-        variables.proc = new bxrig.Proc( arguments.runner );
+        variables.out = new bxrig.util.Out( variables.cli, "plasma panels" );
+        variables.proc = new bxrig.util.Proc( arguments.runner );
         variables.config = new bxrig.ConfigService();
         return this;
     }
@@ -128,7 +128,7 @@ class PlasmaPanels {
         }
         var dir = getDirectoryFromPath( autostartFile() );
         if ( !directoryExists( dir ) ) directoryCreate( dir, true );
-        fileWrite( autostartFile(), new bxrig.DesktopEntry().render( [ "Type=Application", "Name=BxRig Plasma panels (one time)", "Exec=bxrig plasma panels apply --yes --preset=" & replace( op.preset, " ", "-", "all" ), "X-KDE-autostart-after=panel" ] ) );
+        fileWrite( autostartFile(), new bxrig.util.DesktopEntry().render( [ "Type=Application", "Name=BxRig Plasma panels (one time)", "Exec=bxrig plasma panels apply --yes --preset=" & replace( op.preset, " ", "-", "all" ), "X-KDE-autostart-after=panel" ] ) );
         return variables.out.say( "ok", data, arguments.asJson, [ "Plasma is not running here. The layout is saved (" & scriptFile() & ") and a one-time autostart entry applies it at your next Plasma login." ] );
     }
 

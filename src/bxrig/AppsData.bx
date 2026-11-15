@@ -13,9 +13,9 @@
 // Every external command is optional: a missing pacman, checkupdates, flatpak or network gives an empty list and a sentence in state().
 class AppsData {
     function init( cli = {}, demo = false ) {
-        variables.desk = new bxrig.DesktopEntry();
-        variables.proc = new bxrig.Proc();
-        variables.environ = new bxrig.Env();
+        variables.desk = new bxrig.util.DesktopEntry();
+        variables.proc = new bxrig.util.Proc();
+        variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
         variables.demo = arguments.demo;
         variables.repoMap = {};

@@ -8,8 +8,8 @@
 class Notify {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
-        variables.out = new bxrig.Out( variables.cli, "notify" );
-        variables.proc = new bxrig.Proc( arguments.runner );
+        variables.out = new bxrig.util.Out( variables.cli, "notify" );
+        variables.proc = new bxrig.util.Proc( arguments.runner );
         return this;
     }
 
