@@ -1,5 +1,6 @@
 // The BxRig menu as data. It follows Omarchy's skeleton (Apps, Install, Remove, Appearance, Trigger, Setup, Update, Agent, Learn, About,
-// System) and adds Develop for what is ours (BoxLang, databases, virtual machines, containers, the editor).
+// System) and adds what is ours: Develop (BoxLang, databases, virtual machines, containers, the editor), Shortcuts (list, search, rebind, run),
+// Hardware (the display, laptop panel, brightness, webcam, GPU and input checks; `menu open hardware`) and Control Center (the TUI pages).
 // Entry kinds:
 //   sub        children
 //   spawn      starts `bxrig ARGV` detached (no window)
@@ -139,6 +140,8 @@ class MenuTree {
                     spawn( "QR code", [ "screenshot", "qr" ] ),
                     spawn( "Screen recording: start or stop", [ "record", "toggle" ] ),
                     spawn( "Record a region of the screen", [ "record", "toggle", "--region" ] ),
+                    spawn( "Screen recording with desktop audio", [ "record", "toggle", "--audio=desktop" ] ),
+                    spawn( "Screen recording with microphone audio", [ "record", "toggle", "--audio=mic" ] ),
                     spawn( "Color picker", [ "screenshot", "color" ] )
                 ] ),
                 sub( "Notices", [
@@ -163,6 +166,10 @@ class MenuTree {
                 spawn( "Force quit an app", [ "forcequit" ] ),
                 spawn( "Minimize window", [ "window", "minimize" ] ),
                 spawn( "Restore window", [ "window", "restore" ] ),
+                spawn( "Quake console: show or hide", [ "window", "quake" ] ),
+                spawn( "Send the window to the quake console", [ "window", "quake", "send" ] ),
+                spawn( "Private browser window", [ "browser", "private" ] ),
+                spawn( "File manager in the current folder", [ "files", "here" ] ),
                 spawn( "Overview", [ "overview" ] )
             ] ),
             sub( "Shortcuts", [
@@ -179,6 +186,17 @@ class MenuTree {
                     run( "Mac keys on a PC keyboard (Alt and Win swapped)", [ "keys", "style", "mac", "--keyboard=pc", "--yes" ] ),
                     run( "Mac keys on an Apple keyboard", [ "keys", "style", "mac", "--keyboard=apple", "--yes" ] )
                 ] )
+            ] ),
+            sub( "Hardware", [
+                run( "Monitors", [ "display", "list" ] ),
+                sub( "Laptop panel", [ spawn( "On", [ "display", "laptop", "on" ] ), spawn( "Off", [ "display", "laptop", "off" ] ) ] ),
+                sub( "Mirror the laptop panel", [ spawn( "On", [ "display", "mirror", "on" ] ), spawn( "Off", [ "display", "mirror", "off" ] ) ] ),
+                sub( "Brightness", [ spawn( "Up", [ "display", "brightness", "up" ] ), spawn( "Down", [ "display", "brightness", "down" ] ), spawn( "50%", [ "display", "brightness", "set", "50" ] ), spawn( "100%", [ "display", "brightness", "set", "100" ] ) ] ),
+                spawn( "Webcam preview on or off", [ "webcam", "toggle" ] ),
+                run( "GPU check", [ "gpu", "doctor" ] ),
+                run( "Input devices and gestures", [ "input", "doctor" ] ),
+                spawn( "AirPlay receiver on", [ "airplay", "on" ] ),
+                spawn( "AirPlay receiver off", [ "airplay", "off" ] )
             ] ),
             sub( "Setup", [
                 sub( "Power", [
@@ -245,12 +263,6 @@ class MenuTree {
                     run( "Remotes", [ "cloud", "remotes" ] ),
                     run( "Add or configure a remote", [ "cloud", "configure" ] ),
                     run( "Mounted folders: status", [ "cloud", "status" ] )
-                ] ),
-                sub( "Hardware", [
-                    run( "GPU check", [ "gpu", "doctor" ] ),
-                    run( "Input devices and gestures", [ "input", "doctor" ] ),
-                    spawn( "AirPlay receiver on", [ "airplay", "on" ] ),
-                    spawn( "AirPlay receiver off", [ "airplay", "off" ] )
                 ] ),
                 sub( "Backup", [
                     run( "BxTimeMachine: every backup on one timeline", [ "timemachine" ] ),
@@ -397,7 +409,7 @@ class MenuTree {
     function sectionIcons() {
         return {
             "Apps": "applications-other", "Setup wizard (re-run, prefilled)": "system-run", "Install": "system-software-install", "Remove": "edit-delete",
-            "Appearance": "preferences-desktop-theme", "Trigger": "input-keyboard", "Shortcuts": "preferences-desktop-keyboard-shortcuts", "Setup": "preferences-system", "Update": "system-software-update",
+            "Appearance": "preferences-desktop-theme", "Trigger": "input-keyboard", "Shortcuts": "preferences-desktop-keyboard-shortcuts", "Hardware": "computer", "Setup": "preferences-system", "Update": "system-software-update",
             "Develop": "applications-development", "Agent": "applications-science", "Learn": "help-browser", "About": "help-about",
             "System": "system-shutdown", "Control Center": "utilities-system-monitor"
         };

@@ -21,7 +21,19 @@ for ( r in sc.table() ) {
         if ( n != 1 ) { okRoutes = false; println( "route " & want & " matches " & n ); }
     }
 }
-testkit.check( "menu open: system, capture, toggle and agent each match exactly one submenu", okRoutes );
+testkit.check( "menu open: system, capture, toggle, hardware and agent each match exactly one submenu", okRoutes );
+hwRoute = routes.filter( function( x ) { return lCase( x.label ) == "hardware"; } );
+hwLabels = hwRoute.len() == 1 ? hwRoute[ 1 ].children.map( function( e ) { return e.label; } ).toList( "|" ) : "";
+testkit.check( "the Hardware section is top level and holds display, laptop panel, mirror, brightness, webcam, GPU, input", hwRoute.len() == 1 && hwRoute[ 1 ].path == "Hardware" && find( "Monitors", hwLabels ) > 0 && find( "Laptop panel", hwLabels ) > 0 && find( "Mirror the laptop panel", hwLabels ) > 0 && find( "Brightness", hwLabels ) > 0 && find( "Webcam preview on or off", hwLabels ) > 0 && find( "GPU check", hwLabels ) > 0 && find( "Input devices and gestures", hwLabels ) > 0 );
+testkit.check( "Setup no longer has its own Hardware submenu", arrayFind( flat, "Setup > Hardware > GPU check" ) == 0 && arrayFind( flat, "Hardware > GPU check" ) > 0 );
+testkit.check( "new runner entries: record with audio, quake console, private browser, files here", arrayFind( flat, "Trigger > Capture > Screen recording with desktop audio" ) > 0 && arrayFind( flat, "Trigger > Capture > Screen recording with microphone audio" ) > 0 && arrayFind( flat, "Trigger > Quake console: show or hide" ) > 0 && arrayFind( flat, "Trigger > Send the window to the quake console" ) > 0 && arrayFind( flat, "Trigger > Private browser window" ) > 0 && arrayFind( flat, "Trigger > File manager in the current folder" ) > 0 );
+// each new key runs a command that is also an entry of the runner
+runnerArgvs = menu.flatten( tree ).filter( function( f ) { return structKeyExists( f.entry, "argv" ); } ).map( function( f ) { return f.entry.argv.toList( " " ); } );
+okEntries = true;
+for ( id in [ "browser-private", "files-here", "quake-toggle", "quake-send", "webcam", "screen-record-audio" ] ) {
+    if ( !arrayFind( runnerArgvs, sc.argvOf( id ).toList( " " ) ) ) { okEntries = false; println( "no runner entry for " & id ); }
+}
+testkit.check( "each new key's command is also an entry of the runner", okEntries );
 testkit.check( "menu open with an unknown route exits 4", menu.open( "no-such-section", false ) == 4 );
 testkit.check( "menu open with no route lists the routes (exit 0)", menu.open( "", false ) == 0 );
 // the pick lists
