@@ -250,6 +250,86 @@ def protected(k, text):
 	return set()
 
 
+def bracket_levels(text):
+	"""BoxLang: the indent level of every line from its bracket depth ({ ( [ outside strings and comments).
+	A line that starts with closers is one level out per closer; the statements under `case x:` / `default:` are one
+	level in. Returns { line: (level, in_block_comment) } for the lines that do not start inside a string."""
+	levels, line, i, n = {}, 0, 0, len(text)
+	depth, state, comment = 0, [], False
+	line_start = True
+	case_depth = []  # depths at which a case label opened
+	def record(idx):
+		nonlocal depth
+		rest = text[idx:text.find("\n", idx) if text.find("\n", idx) >= 0 else n].lstrip(" \t")
+		closers = 0
+		for ch in rest:
+			if ch in "})]":
+				closers += 1
+			else:
+				break
+		lvl = depth - closers
+		while case_depth and case_depth[-1] > depth:
+			case_depth.pop()
+		label = re.match(r"(case\b.*|default\s*):\s*($|//)", rest) is not None
+		if case_depth and case_depth[-1] == depth and not label and not rest.startswith("}"):
+			lvl += 1
+		if label:
+			if not case_depth or case_depth[-1] != depth:
+				case_depth.append(depth)
+		levels[line] = (max(lvl, 0), comment)
+	record(0)
+	while i < n:
+		c = text[i]
+		if c == "\n":
+			line += 1
+			i += 1
+			if not state:
+				record(i)
+			continue
+		top = state[-1] if state else None
+		if comment:
+			if text.startswith("*/", i):
+				comment = False
+				i += 2
+			else:
+				i += 1
+			continue
+		if top and top[0] == "str":
+			q = top[1]
+			if c == q:
+				if i + 1 < n and text[i + 1] == q:
+					i += 2
+					continue
+				state.pop()
+			elif c == "#":
+				if i + 1 < n and text[i + 1] == "#":
+					i += 2
+					continue
+				state.append(("interp",))
+			i += 1
+			continue
+		if top and top[0] == "interp" and c == "#":
+			state.pop()
+			i += 1
+			continue
+		if text.startswith("//", i):
+			j = text.find("\n", i)
+			i = n if j < 0 else j
+			continue
+		if text.startswith("/*", i):
+			comment = True
+			i += 2
+			continue
+		if c in "'\"":
+			state.append(("str", c))
+		elif c in "{([":
+			depth += 1
+		elif c in "})]":
+			depth -= 1
+		i += 1
+	return levels
+
+
 def unit_for(widths):
 	"""The indent step of a file indented with spaces: 4 when the indents are multiples of 4, else 2."""
 	widths = [w for w in widths if w]
@@ -261,7 +341,7 @@ def unit_for(widths):
 		return 4
 	if twos >= 0.9 * len(widths):
 		return 2
-	return 4
+	return 1
 
 
 def format_text(path, text):
@@ -286,7 +366,14 @@ def format_text(path, text):
 			if "\t" not in lead:
 				widths.append(len(lead))
 		unit = unit_for(widths)
+		levels = bracket_levels(text) if k in (".bx", ".bxs", ".cfc") else None
 		for idx, l in enumerate(lines):
+			if levels is not None and idx not in prot and idx in levels and l.strip():
+				lvl, in_comment = levels[idx]
+				body = l.lstrip(" \t").rstrip(" \t")
+				# a block comment's own lines keep their " * " one space in
+				out.append("\t" * lvl + (" " if in_comment and body.startswith("*") else "") + body)
+				continue
 			if idx in prot:
 				out.append(l)
 				continue

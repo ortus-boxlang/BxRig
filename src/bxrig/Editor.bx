@@ -31,7 +31,7 @@ class Editor {
 	// The relative path in the nvim folder of each layer file, and the template that holds its text.
 	function layerFiles() {
 		return [ "lua/config/bxrig.lua", "lua/plugins/bxrig.lua", "plugin/after/bxrig-transparency.lua", "lua/plugins/boxlang.lua",
-				 "lua/plugins/bxrig-themes.lua", "lua/plugins/bxrig-theme-reload.lua" ];
+			"lua/plugins/bxrig-themes.lua", "lua/plugins/bxrig-theme-reload.lua" ];
 	}
 
 	function entryFor( dir, rel ) {

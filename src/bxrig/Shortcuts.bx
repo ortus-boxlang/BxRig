@@ -28,7 +28,7 @@ class Shortcuts {
 	// Valid key names besides single letters and digits.
 	function namedKeys() {
 		var out = [ "Space", "Tab", "Return", "Escape", "grave", "comma", "period", "slash", "minus", "equal", "Left", "Right", "Up", "Down",
-					"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "mouse_down", "mouse_up", "mouse:272", "mouse:273" ];
+			"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "mouse_down", "mouse_up", "mouse:272", "mouse:273" ];
 		for ( var b in bareKeys() ) out.append( b );
 		return out;
 	}
@@ -147,7 +147,7 @@ class Shortcuts {
 			// menus and launchers
 			bx( "menu", G.menu, "BxRig menu (the runner: AI, databases, settings)", "Super+Space", "Super+Space", "menu" ),
 			row( "launcher", G.menu, "Launch apps (the launcher you chose; Noctalia if it cannot run)", "Super+Alt+Space", "Super+Alt+Space", "hypr-bind",
-				 'hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; bxrig runner launch || noctalia msg panel-toggle launcher'']])', "runner launch" ),
+				'hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; bxrig runner launch || noctalia msg panel-toggle launcher'']])', "runner launch" ),
 			bx( "key-sheet", G.menu, "Shortcut cheat sheet", "Super+K", "Super+K", "keys sheet" ),
 			bx( "menu-system", G.menu, "System menu", "Super+Escape", "Super+Escape", "menu open system" ),
 			bx( "menu-hardware", G.menu, "Hardware menu", "Super+Ctrl+H", "Super+Ctrl+H", "menu open hardware" ),
@@ -270,8 +270,8 @@ class Shortcuts {
 	// The table as text lines for `keys show`.
 	function show() {
 		return table().map( function( r ) {
-			return { id: r.id, group: r.group, keys: r.keys, custom: r.kind != "remap" && structKeyExists( variables.overrides, r.id ), action: r.action, how: r.kind == "remap" ? "xremap" : ( r.kind == "hypr-bind" ? "Hyprland binding" : "desktop binding" ), runs: len( r.words ) > 0 };
-		} );
+				return { id: r.id, group: r.group, keys: r.keys, custom: r.kind != "remap" && structKeyExists( variables.overrides, r.id ), action: r.action, how: r.kind == "remap" ? "xremap" : ( r.kind == "hypr-bind" ? "Hyprland binding" : "desktop binding" ), runs: len( r.words ) > 0 };
+			} );
 	}
 
 	// Double use of a combo: { within: [ { combo, ids } ], remapShadows: [ { id, combo, remap } ], user: [ { id, combo, file, line } ] }.
@@ -331,83 +331,83 @@ class Shortcuts {
 		var out = [ "# Written by bxrig (keys). Cmd-style keys, same on Hyprland and Plasma." ];
         if ( new bxrig.KeyStyle().swapActive( variables.keyStyle ) ) {
             out.append( "# Mac style on a PC keyboard: Alt acts as Cmd and Win as Option (left keys only; Right Alt stays AltGr)." );
-			out.append( "modmap:" );
-			out.append( "  - name: Alt and Win swapped" );
-			out.append( "    remap:" );
-			out.append( "      Alt_L: Super_L" );
-			out.append( "      Super_L: Alt_L" );
-		}
-		out.append( "keymap:" );
-		out.append( "  - name: Cmd keys in terminals" );
-		out.append( "    application:" );
-		out.append( "      only: [" & termList & "]" );
+		out.append( "modmap:" );
+		out.append( "  - name: Alt and Win swapped" );
 		out.append( "    remap:" );
-		for ( var r in remaps ) out.append( "      " & xremapKey( r ) & ": " & ( structKeyExists( r, "termTo" ) ? r.termTo : r.to ) );
-		out.append( "  - name: Cmd keys everywhere else" );
-		out.append( "    application:" );
-		out.append( "      not: [" & termList & "]" );
-		out.append( "    remap:" );
-		for ( var r2 in remaps ) out.append( "      " & xremapKey( r2 ) & ": " & r2.to );
-		return out.toList( chr( 10 ) ) & chr( 10 );
+		out.append( "      Alt_L: Super_L" );
+		out.append( "      Super_L: Alt_L" );
 	}
+	out.append( "keymap:" );
+	out.append( "  - name: Cmd keys in terminals" );
+	out.append( "    application:" );
+	out.append( "      only: [" & termList & "]" );
+	out.append( "    remap:" );
+	for ( var r in remaps ) out.append( "      " & xremapKey( r ) & ": " & ( structKeyExists( r, "termTo" ) ? r.termTo : r.to ) );
+	out.append( "  - name: Cmd keys everywhere else" );
+	out.append( "    application:" );
+	out.append( "      not: [" & termList & "]" );
+	out.append( "    remap:" );
+	for ( var r2 in remaps ) out.append( "      " & xremapKey( r2 ) & ": " & r2.to );
+	return out.toList( chr( 10 ) ) & chr( 10 );
+}
 
-	// The Hyprland Lua module (Hyprland 0.55+ reads hyprland.lua; Noctalia's docs use the same API).
-	// Written to ~/.config/hypr/bxrig.lua; hyprland.lua loads it with `require("bxrig")` (see hyprlandLoadLine).
-	// Lines come from the Noctalia v5 Hyprland docs: https://docs.noctalia.dev/noctalia/v5.4.0/compositor-settings/hyprland/
-	function hyprland() {
-		var lua = new bxrig.LuaModule();
-		var out = [
-			'-- Written by bxrig (keys). Edit with `bxrig keys apply`, not by hand.',
-			'-- Style: ' & variables.keyStyle.style & '. Every binding below is a row of `bxrig keys show`; change one with `bxrig keys set`.',
-			'local mainMod = "SUPER"',
-			'local ipc = "noctalia msg "',
-			'-- The programs your hyprland.lua chose (it sets BXRIG_PROGRAMS before it loads this file)',
-			'local programs = rawget(_G, "BXRIG_PROGRAMS") or {}',
-			'local terminal = programs.terminal or "kitty"',
-			'local browser = programs.browser or "brave"',
-			'local fileManager = programs.fileManager or "dolphin"',
-			'',
-			'-- Noctalia starts with the session',
-			'hl.on("hyprland.start", function()',
-			'  hl.exec_cmd("noctalia")',
-			'  -- clipboard history (cliphist stores what wl-paste sees; pick it with the clipboard key)',
-			'  hl.exec_cmd("wl-paste --type text --watch cliphist store")',
-			'  hl.exec_cmd("wl-paste --type image --watch cliphist store")',
-			'end)',
-			'',
-			'-- Bindings from the bxrig table (the Super+Tab switcher key is remapped to Alt+Tab by xremap in the Mac style)'
-		];
-		for ( var r in table() ) if ( ( r.kind == "bind" || r.kind == "hypr-bind" ) && len( r.keys ) ) out.append( bindLine( r ) );
-		out.append( '' );
-		out.append( '-- Theme accent: `bxrig theme set` writes ~/.config/bxrig/theme/hypr.lua (the focused and unfocused border colours)' );
-		for ( var l1 in lua.optional( "hypr", "accent", "hl.config({ general = { col = { active_border = accent.active, inactive_border = accent.inactive } } })" ) ) out.append( l1 );
-		out.append( '' );
-		out.append( '-- Look settings: `bxrig appearance` writes ~/.config/bxrig/theme/look.lua (gaps, corners, opacity, animations, layout, one-window ratio)' );
-		for ( var l2 in lua.optional( "look", "look", "hl.config(look)" ) ) out.append( l2 );
-		out.append( '' );
-		out.append( '-- Monitors: `bxrig display` writes ~/.config/bxrig/theme/monitors.lua (scale, rotation, position, mirror, laptop panel)' );
-		for ( var l3 in lua.optional( "monitors", "mons", "for _, m in ipairs(mons) do hl.monitor(m) end" ) ) out.append( l3 );
-		out.append( '' );
-		out.append( '-- The pull-down AI shell (bxrig ai shell) lives on the special workspace "ai"; its window class is set by the terminal it starts' );
-		out.append( 'hl.window_rule({ name = "bxrig-ai", match = { class = "^com.bxrig.ai$" }, workspace = "special:ai", float = true })' );
-		out.append( '' );
-		out.append( '-- The webcam preview (bxrig webcam toggle) floats at a small size' );
-		out.append( 'hl.window_rule({ name = "bxrig-webcam", match = { class = "^bxrig-webcam$" }, float = true, size = { 360, 270 } })' );
-		out.append( '' );
-		out.append( '-- Noctalia settings window floats; its panels get blur and no layer animation' );
-		out.append( 'hl.window_rule({ match = { class = "dev.noctalia.Noctalia" }, float = true, size = { 1080, 920 } })' );
-		out.append( 'hl.layer_rule({ name = "noctalia", match = { namespace = "^noctalia-(bar-.+|notification|dock|panel|attached-panel|osd|window-switcher)$" }, no_anim = true, ignore_alpha = 0.5, blur = true, blur_popups = true })' );
-		return out.toList( chr( 10 ) ) & chr( 10 );
-	}
+// The Hyprland Lua module (Hyprland 0.55+ reads hyprland.lua; Noctalia's docs use the same API).
+// Written to ~/.config/hypr/bxrig.lua; hyprland.lua loads it with `require("bxrig")` (see hyprlandLoadLine).
+// Lines come from the Noctalia v5 Hyprland docs: https://docs.noctalia.dev/noctalia/v5.4.0/compositor-settings/hyprland/
+function hyprland() {
+	var lua = new bxrig.LuaModule();
+	var out = [
+		'-- Written by bxrig (keys). Edit with `bxrig keys apply`, not by hand.',
+		'-- Style: ' & variables.keyStyle.style & '. Every binding below is a row of `bxrig keys show`; change one with `bxrig keys set`.',
+		'local mainMod = "SUPER"',
+		'local ipc = "noctalia msg "',
+		'-- The programs your hyprland.lua chose (it sets BXRIG_PROGRAMS before it loads this file)',
+		'local programs = rawget(_G, "BXRIG_PROGRAMS") or {}',
+		'local terminal = programs.terminal or "kitty"',
+		'local browser = programs.browser or "brave"',
+		'local fileManager = programs.fileManager or "dolphin"',
+		'',
+		'-- Noctalia starts with the session',
+		'hl.on("hyprland.start", function()',
+		'  hl.exec_cmd("noctalia")',
+		'  -- clipboard history (cliphist stores what wl-paste sees; pick it with the clipboard key)',
+		'  hl.exec_cmd("wl-paste --type text --watch cliphist store")',
+		'  hl.exec_cmd("wl-paste --type image --watch cliphist store")',
+		'end)',
+		'',
+		'-- Bindings from the bxrig table (the Super+Tab switcher key is remapped to Alt+Tab by xremap in the Mac style)'
+	];
+	for ( var r in table() ) if ( ( r.kind == "bind" || r.kind == "hypr-bind" ) && len( r.keys ) ) out.append( bindLine( r ) );
+	out.append( '' );
+	out.append( '-- Theme accent: `bxrig theme set` writes ~/.config/bxrig/theme/hypr.lua (the focused and unfocused border colours)' );
+	for ( var l1 in lua.optional( "hypr", "accent", "hl.config({ general = { col = { active_border = accent.active, inactive_border = accent.inactive } } })" ) ) out.append( l1 );
+	out.append( '' );
+	out.append( '-- Look settings: `bxrig appearance` writes ~/.config/bxrig/theme/look.lua (gaps, corners, opacity, animations, layout, one-window ratio)' );
+	for ( var l2 in lua.optional( "look", "look", "hl.config(look)" ) ) out.append( l2 );
+	out.append( '' );
+	out.append( '-- Monitors: `bxrig display` writes ~/.config/bxrig/theme/monitors.lua (scale, rotation, position, mirror, laptop panel)' );
+	for ( var l3 in lua.optional( "monitors", "mons", "for _, m in ipairs(mons) do hl.monitor(m) end" ) ) out.append( l3 );
+	out.append( '' );
+	out.append( '-- The pull-down AI shell (bxrig ai shell) lives on the special workspace "ai"; its window class is set by the terminal it starts' );
+	out.append( 'hl.window_rule({ name = "bxrig-ai", match = { class = "^com.bxrig.ai$" }, workspace = "special:ai", float = true })' );
+	out.append( '' );
+	out.append( '-- The webcam preview (bxrig webcam toggle) floats at a small size' );
+	out.append( 'hl.window_rule({ name = "bxrig-webcam", match = { class = "^bxrig-webcam$" }, float = true, size = { 360, 270 } })' );
+	out.append( '' );
+	out.append( '-- Noctalia settings window floats; its panels get blur and no layer animation' );
+	out.append( 'hl.window_rule({ match = { class = "dev.noctalia.Noctalia" }, float = true, size = { 1080, 920 } })' );
+	out.append( 'hl.layer_rule({ name = "noctalia", match = { namespace = "^noctalia-(bar-.+|notification|dock|panel|attached-panel|osd|window-switcher)$" }, no_anim = true, ignore_alpha = 0.5, blur = true, blur_popups = true })' );
+	return out.toList( chr( 10 ) ) & chr( 10 );
+}
 
-	// The one line hyprland.lua needs to load the module above.
-	function hyprlandLoadLine() {
-		return 'require("bxrig")';
-	}
+// The one line hyprland.lua needs to load the module above.
+function hyprlandLoadLine() {
+	return 'require("bxrig")';
+}
 
-	// kglobalshortcutsrc fragment for Plasma.
-	function plasma() {
-		var out = [ "# Written by bxrig (keys)." ];
+// kglobalshortcutsrc fragment for Plasma.
+function plasma() {
+	var out = [ "# Written by bxrig (keys)." ];
         for ( var r in table() ) if ( r.kind == "bind" ) {
             out.append( "[" & r.plasma.group & "]" );
             out.append( r.plasma.key & "=" & r.plasma.value );

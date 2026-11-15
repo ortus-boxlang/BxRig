@@ -353,11 +353,11 @@ class Appearance {
 	function status( asJson ) {
 		var s = readState();
 		var lines = [ "Font:       " & ( len( s.font ) ? s.font : "(default)" ),
-					  "Bar:        position " & ( s.bar.position ?: "(default)" ) & ", style " & ( s.bar.style ?: "(default)" ) & ", clock " & ( s.bar.clock ?: "(default)" ) & ", battery % " & ( s.bar.battery_percent ?: "(default)" ),
-					  "Dock:       mode " & ( s.dock.mode ?: "(default)" ) & ", position " & ( s.dock.position ?: "(default)" ),
-					  "Windows:    gaps " & ( s.windows.gaps ?: "on" ) & ", corners " & ( s.windows.corners ?: "theme" ) & ", opacity " & ( s.windows.opacity ?: "(default)" ) & ", one-window ratio " & ( s.windows.one_window_ratio ?: "off" ),
-					  "Animations: " & ( len( s.animations ) ? s.animations : "on" ),
-					  "Layout:     " & ( len( s.layout ) ? s.layout : "dwindle" ) ];
+			"Bar:        position " & ( s.bar.position ?: "(default)" ) & ", style " & ( s.bar.style ?: "(default)" ) & ", clock " & ( s.bar.clock ?: "(default)" ) & ", battery % " & ( s.bar.battery_percent ?: "(default)" ),
+			"Dock:       mode " & ( s.dock.mode ?: "(default)" ) & ", position " & ( s.dock.position ?: "(default)" ),
+			"Windows:    gaps " & ( s.windows.gaps ?: "on" ) & ", corners " & ( s.windows.corners ?: "theme" ) & ", opacity " & ( s.windows.opacity ?: "(default)" ) & ", one-window ratio " & ( s.windows.one_window_ratio ?: "off" ),
+			"Animations: " & ( len( s.animations ) ? s.animations : "on" ),
+			"Layout:     " & ( len( s.layout ) ? s.layout : "dwindle" ) ];
 		return variables.out.say( "ok", s, arguments.asJson, lines );
 	}
 

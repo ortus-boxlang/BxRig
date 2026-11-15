@@ -33,8 +33,8 @@ class Theme {
 	// Directories that hold themes, with where they come from.
 	function sources() {
 		return [ { origin: "user", dir: cfg() & "/bxrig/themes" },
-				 { origin: "omarchy", dir: cfg() & "/omarchy/themes" },
-				 { origin: "omarchy", dir: variables.environ.home() & "/.local/share/omarchy/themes" } ];
+			{ origin: "omarchy", dir: cfg() & "/omarchy/themes" },
+			{ origin: "omarchy", dir: variables.environ.home() & "/.local/share/omarchy/themes" } ];
 	}
 
 	// name -> { name, origin, dir } (dir is "" for a bundled theme); the first source that has a name wins.

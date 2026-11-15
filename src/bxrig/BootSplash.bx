@@ -50,7 +50,7 @@ class BootSplash {
 	function splashHint() {
 		var b = bootDir();
 		if ( fileExists( b & "/limine.conf" ) || fileExists( b & "/limine/limine.conf" ) || fileExists( "/etc/default/limine" ) )
-			return "Limine: add `quiet splash` to KERNEL_CMDLINE in /etc/default/limine (CachyOS), or to the cmdline: lines of limine.conf, then reboot";
+		return "Limine: add `quiet splash` to KERNEL_CMDLINE in /etc/default/limine (CachyOS), or to the cmdline: lines of limine.conf, then reboot";
 		if ( fileExists( "/etc/default/grub" ) ) return "GRUB: add `quiet splash` to GRUB_CMDLINE_LINUX_DEFAULT in /etc/default/grub, then `sudo grub-mkconfig -o /boot/grub/grub.cfg`";
 		if ( directoryExists( b & "/loader/entries" ) ) return "systemd-boot: add `quiet splash` to the options line of your entry in " & b & "/loader/entries/, then reboot";
 		return "add `quiet splash` to your kernel command line, then reboot";
@@ -79,12 +79,12 @@ class BootSplash {
 		if ( p.errors.len() ) return p;
 		if ( !variables.pacman.isInstalled( "plymouth" ) ) p.steps.append( { id: "package", title: "install plymouth", commands: [ variables.pacman.installArgv( [ "plymouth" ], false ) ] } );
 		p.steps.append( { id: "theme", title: "put the BxRig theme in " & themeDir(), stage: true,
-			commands: [ [ "sudo", "install", "-d", "-m", "755", themeDir() ], [ "sudo", "sh", "-c", 'cp -f "$1"/* "$2"/ && chmod 644 "$2"/*', "_", arguments.staging, themeDir() ] ] } );
+				commands: [ [ "sudo", "install", "-d", "-m", "755", themeDir() ], [ "sudo", "sh", "-c", 'cp -f "$1"/* "$2"/ && chmod 644 "$2"/*', "_", arguments.staging, themeDir() ] ] } );
 		if ( !hasHook() ) {
 			if ( !fileExists( mkinitcpio() ) ) p.notes.append( "No " & mkinitcpio() & ": add the plymouth hook to your initramfs yourself" );
 			else p.steps.append( { id: "hook", title: "add the plymouth hook to HOOKS in " & mkinitcpio() & " (backup: " & mkinitcpio() & ".bxrig-backup)",
-				commands: [ [ "sudo", "cp", "-n", mkinitcpio(), mkinitcpio() & ".bxrig-backup" ],
-							[ "sudo", "sed", "-i", "-E", hookSed(), mkinitcpio() ] ] } );
+					commands: [ [ "sudo", "cp", "-n", mkinitcpio(), mkinitcpio() & ".bxrig-backup" ],
+						[ "sudo", "sed", "-i", "-E", hookSed(), mkinitcpio() ] ] } );
 		}
 		p.steps.append( { id: "default", title: "make bxrig the boot theme and rebuild the initramfs", commands: [ [ "sudo", "plymouth-set-default-theme", "-R", "bxrig" ] ] } );
 		if ( !hasSplash() ) p.notes.append( "The splash shows only with `splash` on the kernel command line. " & splashHint() & "." );
@@ -95,7 +95,7 @@ class BootSplash {
 		if ( arguments.verb == "status" ) {
 			var d = { installed: directoryExists( themeDir() ), current: currentTheme(), hook: hasHook(), splash: hasSplash() };
 			return variables.out.say( "ok", d, arguments.asJson, [ "theme: " & ( d.installed ? "installed" : "not installed" ) & ( len( d.current ) ? " (active: " & d.current & ")" : "" ),
-				"plymouth hook: " & ( d.hook ? "yes" : "no" ), "splash on the kernel command line: " & ( d.splash ? "yes" : "no (" & splashHint() & ")" ) ] );
+					"plymouth hook: " & ( d.hook ? "yes" : "no" ), "splash on the kernel command line: " & ( d.splash ? "yes" : "no (" & splashHint() & ")" ) ] );
 		}
 		if ( arguments.verb == "undo" ) return undo( arguments.yes, arguments.dry, arguments.asJson );
 		var staging = variables.environ.cache( "boot-splash" );

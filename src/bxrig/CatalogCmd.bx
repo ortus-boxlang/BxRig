@@ -14,66 +14,66 @@ class CatalogCmd {
 		var catOpts = [ "json", "group", "category", "tier", "kind", "source" ];
 		for ( var o in options ) if ( !arrayFind( catOpts, o ) && !arrayFind( [ "yes", "dry-run", "force", "quiet" ], o ) ) catBad = true;
 		if ( catBad ) {
-		 println( new bxrig.CommandSpec().usage( "catalog" ) );
-		 return new bxrig.util.Exit().usage();
+			println( new bxrig.CommandSpec().usage( "catalog" ) );
+			return new bxrig.util.Exit().usage();
 		}
 		var cat = variables.catalog.load();
 		if ( catVerb == "version" ) {
-		 if ( asJson ) println( variables.cli.envelope( "catalog version", 0, { catalog_version: cat.catalog_version, schema: cat.schema, apps: cat.apps.len() } ) );
-		 else println( "catalog " & cat.catalog_version & " (schema " & cat.schema & ", " & cat.apps.len() & " apps)" );
-		 return new bxrig.util.Exit().ok();
+			if ( asJson ) println( variables.cli.envelope( "catalog version", 0, { catalog_version: cat.catalog_version, schema: cat.schema, apps: cat.apps.len() } ) );
+			else println( "catalog " & cat.catalog_version & " (schema " & cat.schema & ", " & cat.apps.len() & " apps)" );
+			return new bxrig.util.Exit().ok();
 		}
 		if ( catVerb == "groups" ) {
-		 var rows = [];
-		 for ( var g in cat.groups ) {
-		  var cs = cat.categories.filter( function( c ) { return c.group == g.id; } ).map( function( c ) { return c.title; } );
-		  var n = cat.apps.filter( function( a ) { return a.group == g.id; } ).len();
-		  rows.append( { id: g.id, title: g.title, blurb: g.blurb, order: g.order, apps: n, categories: cs } );
-		 }
-		 if ( asJson ) println( variables.cli.envelope( "catalog groups", 0, rows ) );
-		 else for ( var r in rows ) println( r.id & ": " & r.title & " (" & r.apps & " apps) - " & r.categories.toList( ", " ) );
-		 return new bxrig.util.Exit().ok();
+			var rows = [];
+			for ( var g in cat.groups ) {
+				var cs = cat.categories.filter( function( c ) { return c.group == g.id; } ).map( function( c ) { return c.title; } );
+				var n = cat.apps.filter( function( a ) { return a.group == g.id; } ).len();
+				rows.append( { id: g.id, title: g.title, blurb: g.blurb, order: g.order, apps: n, categories: cs } );
+			}
+			if ( asJson ) println( variables.cli.envelope( "catalog groups", 0, rows ) );
+			else for ( var r in rows ) println( r.id & ": " & r.title & " (" & r.apps & " apps) - " & r.categories.toList( ", " ) );
+			return new bxrig.util.Exit().ok();
 		}
 		if ( catVerb == "show" ) {
-		 var found = variables.catalog.find( cat, catArg );
-		 if ( structIsEmpty( found ) ) {
-		  println( "Unknown catalog id: " & catArg );
-		  return new bxrig.util.Exit().timeout();
-		 }
-		 if ( asJson ) {
-		  println( variables.cli.envelope( "catalog show", 0, found ) );
-		 } else {
-		  println( found.name & " (" & found.id & ")" );
-		  println( found.description );
-		  println( "group: " & found.group & "/" & found.category & "  tier: " & found.tier & "  kind: " & found.kind );
-		  println( "source: " & found.source & ( structKeyExists( found, "targets" ) ? "  targets: " & found.targets.toList( " " ) : "" ) & ( structKeyExists( found, "url" ) ? "  url: " & found.url : "" ) );
-		  if ( structKeyExists( found, "homepage" ) ) println( "homepage: " & found.homepage );
-		  if ( !isNull( found.macos ) ) println( "macOS: " & found.macos );
-		  if ( structKeyExists( found, "note" ) ) println( "note: " & found.note );
-		 }
-		 return new bxrig.util.Exit().ok();
+			var found = variables.catalog.find( cat, catArg );
+			if ( structIsEmpty( found ) ) {
+				println( "Unknown catalog id: " & catArg );
+				return new bxrig.util.Exit().timeout();
+			}
+			if ( asJson ) {
+				println( variables.cli.envelope( "catalog show", 0, found ) );
+			} else {
+				println( found.name & " (" & found.id & ")" );
+				println( found.description );
+				println( "group: " & found.group & "/" & found.category & "  tier: " & found.tier & "  kind: " & found.kind );
+				println( "source: " & found.source & ( structKeyExists( found, "targets" ) ? "  targets: " & found.targets.toList( " " ) : "" ) & ( structKeyExists( found, "url" ) ? "  url: " & found.url : "" ) );
+				if ( structKeyExists( found, "homepage" ) ) println( "homepage: " & found.homepage );
+				if ( !isNull( found.macos ) ) println( "macOS: " & found.macos );
+				if ( structKeyExists( found, "note" ) ) println( "note: " & found.note );
+			}
+			return new bxrig.util.Exit().ok();
 		}
 		if ( catVerb == "check" ) {
-		 var res = variables.catalog.check( cat );
-		 var code = res.errors.len() ? 1 : 0;
-		 if ( asJson ) {
-		  println( variables.cli.envelope( "catalog check", code, res ) );
-		 } else {
-		  for ( var e in res.errors ) println( "error: " & e );
-		  for ( var w in res.warnings ) println( "warning: " & w );
-		  println( "catalog check: " & res.errors.len() & " errors, " & res.warnings.len() & " warnings, " & cat.apps.len() & " apps" );
-		 }
-		 return code;
+			var res = variables.catalog.check( cat );
+			var code = res.errors.len() ? 1 : 0;
+			if ( asJson ) {
+				println( variables.cli.envelope( "catalog check", code, res ) );
+			} else {
+				for ( var e in res.errors ) println( "error: " & e );
+				for ( var w in res.warnings ) println( "warning: " & w );
+				println( "catalog check: " & res.errors.len() & " errors, " & res.warnings.len() & " warnings, " & cat.apps.len() & " apps" );
+			}
+			return code;
 		}
 		// list
 		var sel = cat.apps.filter( function( a ) {
-		 if ( structKeyExists( options, "group" ) && a.group != options.group ) return false;
-		 if ( structKeyExists( options, "category" ) && a.category != options.category ) return false;
-		 if ( structKeyExists( options, "tier" ) && a.tier != options.tier ) return false;
-		 if ( structKeyExists( options, "kind" ) && a.kind != options.kind ) return false;
-		 if ( structKeyExists( options, "source" ) && a.source != options.source ) return false;
-		 return true;
-		} );
+				if ( structKeyExists( options, "group" ) && a.group != options.group ) return false;
+				if ( structKeyExists( options, "category" ) && a.category != options.category ) return false;
+				if ( structKeyExists( options, "tier" ) && a.tier != options.tier ) return false;
+				if ( structKeyExists( options, "kind" ) && a.kind != options.kind ) return false;
+				if ( structKeyExists( options, "source" ) && a.source != options.source ) return false;
+				return true;
+			} );
 		if ( asJson ) println( variables.cli.envelope( "catalog list", 0, sel ) );
 		else for ( var a in sel ) println( variables.catalog.row( a ) );
 		return new bxrig.util.Exit().ok();

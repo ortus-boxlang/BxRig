@@ -151,9 +151,9 @@ class AppsData {
 			var pk2 = structKeyExists( owner, e4.file ) ? owner[ e4.file ] : "";
 			var d = len( pk2 ) && structKeyExists( qi, pk2 ) ? qi[ pk2 ] : {};
 			rows.append( {
-				kind: "installed", id: pk2, name: e4.name, pkg: pk2, version: d.version ?: "", source: len( pk2 ) ? sourceFor( pk2, foreign ) : "built here", size: d.size ?: 0,
-				installed: d.installed ?: "", description: len( e4.comment ) ? e4.comment : ( d.description ?: "" ), exec: e4.exec, icon: e4.icon, file: e4.file
-			} );
+					kind: "installed", id: pk2, name: e4.name, pkg: pk2, version: d.version ?: "", source: len( pk2 ) ? sourceFor( pk2, foreign ) : "built here", size: d.size ?: 0,
+					installed: d.installed ?: "", description: len( e4.comment ) ? e4.comment : ( d.description ?: "" ), exec: e4.exec, icon: e4.icon, file: e4.file
+				} );
 		}
 		if ( arguments.all && pacmanOk ) {
 			var shown = {};
@@ -200,9 +200,9 @@ class AppsData {
 		for ( var a in data.apps ) {
 			var targets = a.targets ?: [];
 			rows.append( {
-				kind: "app", id: a.id, name: a.name, pkg: targets.len() ? targets[ 1 ] : "", description: a.description, source: a.source == "pacman" ? ( a.repo ?: "repo" ) : ( a.source == "aur" ? "AUR" : ( a.source == "web" ? "web app" : ( a.source == "pkgbuild" ? "built here" : a.source ) ) ),
-				group: a.group, groupTitle: groupTitle[ a.group ] ?: a.group, category: a.category, appKind: a.kind, homepage: a.homepage ?: "", catalog: true, aur: a.source == "aur"
-			} );
+					kind: "app", id: a.id, name: a.name, pkg: targets.len() ? targets[ 1 ] : "", description: a.description, source: a.source == "pacman" ? ( a.repo ?: "repo" ) : ( a.source == "aur" ? "AUR" : ( a.source == "web" ? "web app" : ( a.source == "pkgbuild" ? "built here" : a.source ) ) ),
+					group: a.group, groupTitle: groupTitle[ a.group ] ?: a.group, category: a.category, appKind: a.kind, homepage: a.homepage ?: "", catalog: true, aur: a.source == "aur"
+				} );
 		}
 		return rows;
 	}
@@ -288,9 +288,9 @@ class AppsData {
 			var j = jsonDeserialize( fileRead( f ) );
 			var results = isStruct( j ) && structKeyExists( j, "data" ) && structKeyExists( j.data, "results" ) ? j.data.results : [];
 			for ( var x in results ) rows.append( {
-				kind: "package", id: x.name, name: x.name, pkg: x.name, version: x.version ?: "", description: x.description ?: "", source: ( x.source ?: "repo" ) == "aur" ? "AUR" : ( len( x.repo ?: "" ) ? x.repo : "repo" ),
-				installed: x.installed ?: false, aur: ( x.source ?: "" ) == "aur", votes: x.votes ?: 0
-			} );
+					kind: "package", id: x.name, name: x.name, pkg: x.name, version: x.version ?: "", description: x.description ?: "", source: ( x.source ?: "repo" ) == "aur" ? "AUR" : ( len( x.repo ?: "" ) ? x.repo : "repo" ),
+					installed: x.installed ?: false, aur: ( x.source ?: "" ) == "aur", votes: x.votes ?: 0
+				} );
 		} catch ( any e ) { return { done: true, rows: [], error: "The package search answered something unexpected." }; }
 		return { done: true, rows: rows };
 	}
@@ -400,10 +400,10 @@ class AppsData {
 
 	function demoUpdates() {
 		return { done: true, missing: false, rows: [
-			{ kind: "update", id: "firefox", name: "firefox", pkg: "firefox", version: "133.0-1", newVersion: "133.0.3-1", source: "extra", description: "" },
-			{ kind: "update", id: "linux-cachyos", name: "linux-cachyos", pkg: "linux-cachyos", version: "6.18.3-2", newVersion: "6.18.4-1", source: "cachyos", description: "" },
-			{ kind: "update", id: "visual-studio-code-bin", name: "visual-studio-code-bin", pkg: "visual-studio-code-bin", version: "1.95.3-1", newVersion: "1.96.0-1", source: "AUR", description: "" }
-		] };
+				{ kind: "update", id: "firefox", name: "firefox", pkg: "firefox", version: "133.0-1", newVersion: "133.0.3-1", source: "extra", description: "" },
+				{ kind: "update", id: "linux-cachyos", name: "linux-cachyos", pkg: "linux-cachyos", version: "6.18.3-2", newVersion: "6.18.4-1", source: "cachyos", description: "" },
+				{ kind: "update", id: "visual-studio-code-bin", name: "visual-studio-code-bin", pkg: "visual-studio-code-bin", version: "1.95.3-1", newVersion: "1.96.0-1", source: "AUR", description: "" }
+			] };
 	}
 
 	function demoDetails( row ) {

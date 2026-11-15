@@ -158,10 +158,10 @@ class WizardApp {
 			case "multi":
 				var names = [];
 				for ( var v in answerList( arguments.q.id ) ) {
-					var shown = v;
-					for ( var o in arguments.q.options ) if ( o.value == v ) { shown = o.label; break; }
-					names.append( shown );
-				}
+				var shown = v;
+				for ( var o in arguments.q.options ) if ( o.value == v ) { shown = o.label; break; }
+				names.append( shown );
+			}
 				return names.len() ? names.toList( ", " ) : "none";
 			case "text":
 				var t = answerString( arguments.q.id );

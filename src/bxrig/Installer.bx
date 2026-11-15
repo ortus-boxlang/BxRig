@@ -47,7 +47,7 @@ class Installer {
 	function launcherFile( app, home ) {
 		var url = replace( app.url, "%", "%%", "all" );
 		var content = new bxrig.util.DesktopEntry().render( [ "Type=Application", "Name=" & app.name, "Comment=" & ( app.description ?: app.name ),
-			"Exec=brave --app=" & url, "Icon=brave-browser", "Categories=Network;" ] );
+				"Exec=brave --app=" & url, "Icon=brave-browser", "Categories=Network;" ] );
 		return { path: home & "/.local/share/applications/bxrig-" & app.id & ".desktop", content: content };
 	}
 
@@ -68,10 +68,10 @@ class Installer {
 		}
 		var dir = reReplace( getTempDirectory(), "/+$", "" ) & "/bxrig-pkg-" & app.id & "-" & left( createUUID(), 8 );
 		return { step: { kind: "pkgbuild", ids: [ app.id ], dir: dir, commands: [
-			[ "git", "clone", "--quiet", cloneUrl( app.pkgbuild.repo ), dir ],
-			[ "git", "-C", dir, "checkout", "--quiet", ref ],
-			[ "env", "-C", dir & "/" & app.pkgbuild.path, "makepkg", "-si", "--noconfirm", "--needed" ]
-		] } };
+					[ "git", "clone", "--quiet", cloneUrl( app.pkgbuild.repo ), dir ],
+					[ "git", "-C", dir, "checkout", "--quiet", ref ],
+					[ "env", "-C", dir & "/" & app.pkgbuild.path, "makepkg", "-si", "--noconfirm", "--needed" ]
+				] } };
 	}
 
 	// True on CachyOS (os-release ID; BXRIG_OS_RELEASE overrides the file for tests). Its own repository (repo: cachyos in the

@@ -20,7 +20,7 @@ class Pkg {
 		return this;
 	}
 
-		// Letters, digits and . _ + - and spaces: safe to put in a URL path and a pacman pattern.
+	// Letters, digits and . _ + - and spaces: safe to put in a URL path and a pacman pattern.
 	function validText( t ) { return reFind( "^[A-Za-z0-9._+ -]{1,60}$", arguments.t ) > 0; }
 
 	// Names pacman has installed, as a set.
@@ -84,9 +84,9 @@ class Pkg {
 	function rank( rows, text ) {
 		var t = lCase( trim( arguments.text ) );
 		var scored = arguments.rows.map( function( r ) {
-			var s = lCase( r.name ) == t ? 0 : ( left( lCase( r.name ), len( t ) ) == t ? 1 : 2 );
-			return { s: s * 10 + ( r.source == "repo" ? 0 : 5 ), p: r.popularity + 0, row: r };
-		} );
+				var s = lCase( r.name ) == t ? 0 : ( left( lCase( r.name ), len( t ) ) == t ? 1 : 2 );
+				return { s: s * 10 + ( r.source == "repo" ? 0 : 5 ), p: r.popularity + 0, row: r };
+			} );
 		arraySort( scored, function( a, b ) { return a.s != b.s ? ( a.s < b.s ? -1 : 1 ) : ( a.p > b.p ? -1 : ( a.p < b.p ? 1 : 0 ) ); } );
 		return scored.map( function( x ) { return x.row; } );
 	}

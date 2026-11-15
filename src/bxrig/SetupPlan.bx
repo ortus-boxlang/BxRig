@@ -106,8 +106,8 @@ class SetupPlan {
 	function hyprlandPackages( terminal = "ghostty" ) {
 		var t = new bxrig.TerminalConfig().find( arguments.terminal );
 		return [ "hyprland", "noctalia", "uwsm", "hyprlock", "hypridle", "xdg-desktop-portal-hyprland", "hyprpolkitagent",
-				 "qt6ct", "nwg-look", "hyprpicker", "grim", "slurp", "wl-clipboard", "brightnessctl", structKeyExists( t, "pkg" ) ? t.pkg : "ghostty",
-				 "adw-gtk-theme", "noto-fonts", "noto-fonts-emoji" ];
+			"qt6ct", "nwg-look", "hyprpicker", "grim", "slurp", "wl-clipboard", "brightnessctl", structKeyExists( t, "pkg" ) ? t.pkg : "ghostty",
+			"adw-gtk-theme", "noto-fonts", "noto-fonts-emoji" ];
 	}
 
 	// The default window layouts `setup hyprland --layout` offers: Hyprland's tiling layouts, scrolling (a carousel of columns), and floating.
@@ -211,13 +211,13 @@ class SetupPlan {
 		if ( !arguments.facts.hasNvm ) {
 			var script = arguments.facts.workDir & "/nvm-install.sh";
 			out.steps.append( { id: "nvm", title: "download and run " & pin.installer & " (external script, shown and run; it adds nvm " & pin.version & " to your shell startup files)", kind: "script", commands: [
-				[ "mkdir", "-p", arguments.facts.workDir ],
-				variables.http.downloadArgv( pin.installer, script, 120 ),
-				[ "env", "NVM_DIR=" & arguments.facts.nvmDir, "bash", script ] ] } );
+						[ "mkdir", "-p", arguments.facts.workDir ],
+						variables.http.downloadArgv( pin.installer, script, 120 ),
+						[ "env", "NVM_DIR=" & arguments.facts.nvmDir, "bash", script ] ] } );
 		}
 		if ( !len( arguments.facts.nodeVersion ) ) {
 			out.steps.append( { id: "node", title: "nvm install " & pin.node & " and make it the default (Node.js managed by nvm)", kind: "script", commands: [
-				[ "env", "NVM_DIR=" & arguments.facts.nvmDir, "bash", "-c", '. "$NVM_DIR/nvm.sh" && nvm install "$1" && nvm alias default "$1"', "_", pin.node ] ] } );
+						[ "env", "NVM_DIR=" & arguments.facts.nvmDir, "bash", "-c", '. "$NVM_DIR/nvm.sh" && nvm install "$1" && nvm alias default "$1"', "_", pin.node ] ] } );
 		} else out.notes.append( "Node.js " & arguments.facts.nodeVersion & " is already installed with nvm." );
 		if ( out.steps.len() ) out.notes.append( "Open a new terminal so nvm is on your PATH." );
 		return out;
@@ -289,9 +289,9 @@ class SetupPlan {
 		}
 		if ( !facts.udevRule ) {
 			out.steps.append( { id: "udev", title: "let the input group use /dev/uinput (" & udevRulePath() & ")", kind: "sudo", commands: [
-				[ "sudo", "sh", "-c", "echo '" & udevRule() & "' > " & udevRulePath() ],
-				[ "sudo", "udevadm", "control", "--reload-rules" ],
-				[ "sudo", "udevadm", "trigger" ] ] } );
+						[ "sudo", "sh", "-c", "echo '" & udevRule() & "' > " & udevRulePath() ],
+						[ "sudo", "udevadm", "control", "--reload-rules" ],
+						[ "sudo", "udevadm", "trigger" ] ] } );
 			out.added.udev = true;
 		}
 		if ( !arrayFind( facts.groups, "input" ) ) {

@@ -4,20 +4,20 @@ resolverClass = new bxrig.Resolver();
 testkit = new lib.Check( "resolver" );
 function idsOf( r ) { return r.selected.map( function( a ) { return a.id; } ).toList( "," ); }
 function reasonOf( r, id ) {
- for ( s in r.skipped ) if ( s.id == id ) return s.reason;
- return "";
+	for ( s in r.skipped ) if ( s.id == id ) return s.reason;
+	return "";
 }
 fixture = {
- profiles: [ { id: "dev", title: "Dev", blurb: "x", order: 1 } ],
- apps: [
-  { id: "git", tier: "default", source: "pacman", profiles: { dev: "default" } },
-  { id: "jq", tier: "optional", source: "pacman", profiles: { dev: "optional" } },
-  { id: "hyprsunset", tier: "default", source: "pacman", shells: [ "hyprland" ] },
-  { id: "dolphin", tier: "default", source: "pacman", shells: [ "plasma" ] },
-  { id: "intellij", tier: "default", source: "unresolved", profiles: { dev: "default" } },
-  { id: "btop", tier: "default", source: "pacman" },
-  { id: "zed", tier: "optional", source: "pacman" }
- ]
+	profiles: [ { id: "dev", title: "Dev", blurb: "x", order: 1 } ],
+	apps: [
+		{ id: "git", tier: "default", source: "pacman", profiles: { dev: "default" } },
+		{ id: "jq", tier: "optional", source: "pacman", profiles: { dev: "optional" } },
+		{ id: "hyprsunset", tier: "default", source: "pacman", shells: [ "hyprland" ] },
+		{ id: "dolphin", tier: "default", source: "pacman", shells: [ "plasma" ] },
+		{ id: "intellij", tier: "default", source: "unresolved", profiles: { dev: "default" } },
+		{ id: "btop", tier: "default", source: "pacman" },
+		{ id: "zed", tier: "optional", source: "pacman" }
+	]
 };
 // default set
 r = resolverClass.resolve( fixture, {} );

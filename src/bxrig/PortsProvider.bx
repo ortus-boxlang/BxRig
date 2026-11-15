@@ -87,6 +87,6 @@ class PortsProvider {
 	function demoRows() {
 		var d = function( port, proc, pid, user, up, cmd, conflict = false ) { return { port: port, proto: "tcp", process: proc, pid: pid, user: user, up: up, command: cmd, conflict: conflict, dev: isDev( port ), system: user == "root" }; };
 		return [ d( 22, "sshd", 611, "root", "3d", "/usr/bin/sshd -D" ), d( 3000, "node", 9921, "you", "41m", "node vite --port 3000" ), d( 5432, "postgres", 4102, "you", "3d", "podman: postgres:16", true ), d( 5432, "postgres", 8815, "postgres", "5d", "/usr/bin/postgres -D /var/lib/postgres/data", true ),
-				 d( 6379, "redis-server", 4177, "you", "3d", "podman: redis:7" ), d( 8080, "java", 12044, "you", "12m", "boxlang app.bxs" ), d( 8500, "java", 12310, "you", "12m", "commandbox server start" ) ];
+			d( 6379, "redis-server", 4177, "you", "3d", "podman: redis:7" ), d( 8080, "java", 12044, "you", "12m", "boxlang app.bxs" ), d( 8500, "java", 12310, "you", "12m", "commandbox server start" ) ];
 	}
 }

@@ -75,7 +75,7 @@ class Launchers {
 		words.append( word( variables.environ.self() ) );
 		for ( var a in arguments.item.argv ) words.append( word( a ) );
 		return new bxrig.util.DesktopEntry().render( [ "Type=Application", "Name=BxRig " & arguments.item.title, "Comment=" & arguments.item.comment,
-			"Exec=" & words.toList( " " ), "Icon=" & arguments.item.icon, "Terminal=false", "Categories=" & arguments.item.category & ";", "X-BxRig-Launcher=tui" ] );
+				"Exec=" & words.toList( " " ), "Icon=" & arguments.item.icon, "Terminal=false", "Categories=" & arguments.item.category & ";", "X-BxRig-Launcher=tui" ] );
 	}
 
 	// The files that make the "BxRig" submenu: one folder file per folder (name and icon) and the menu merge with the nested <Menu>.
@@ -89,11 +89,11 @@ class Launchers {
 		for ( var f in folders() ) {
 			out.append( { name: "bxrig-directory-" & f.id, target: directoryDir() & "/bxrig-" & f.id & ".directory", mode: "644", content: dirText( f.title, f.comment, f.icon ) } );
 			inner &= "    <Menu>" & nl & "      <Name>BxRig " & f.title & "</Name>" & nl & "      <Directory>bxrig-" & f.id & ".directory</Directory>" & nl
-				& "      <Include><Category>X-BxRig-" & f.title & "</Category></Include>" & nl & "    </Menu>" & nl;
+			& "      <Include><Category>X-BxRig-" & f.title & "</Category></Include>" & nl & "    </Menu>" & nl;
 		}
 		var menu = "<!DOCTYPE Menu PUBLIC ""-//freedesktop//DTD Menu 1.0//EN"" ""http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd"">" & nl
-			& "<!-- X-BxRig-Launcher=tui -->" & nl & "<Menu>" & nl & "  <Name>Applications</Name>" & nl & "  <Menu>" & nl & "    <Name>BxRig</Name>" & nl
-			& "    <Directory>bxrig.directory</Directory>" & nl & "    <Include><Category>X-BxRig</Category></Include>" & nl & inner & "  </Menu>" & nl & "</Menu>" & nl;
+		& "<!-- X-BxRig-Launcher=tui -->" & nl & "<Menu>" & nl & "  <Name>Applications</Name>" & nl & "  <Menu>" & nl & "    <Name>BxRig</Name>" & nl
+		& "    <Directory>bxrig.directory</Directory>" & nl & "    <Include><Category>X-BxRig</Category></Include>" & nl & inner & "  </Menu>" & nl & "</Menu>" & nl;
 		out.append( { name: "bxrig-menu", target: menuFile(), mode: "644", content: menu } );
 		return out;
 	}

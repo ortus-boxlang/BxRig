@@ -21,9 +21,9 @@ class JavaProvider {
 		return [
 			{ key: "d", label: "default", run: function( r ) { return me.viewName() == "homes" ? { action: "cli", title: "Default Java: " & r.version, args: [ "java", "default", r.id ] } : {}; } },
 			{ key: "i", label: "install", run: function( r ) {
-				if ( me.viewName() == "available" ) return { action: "cli", title: "Install Java " & r.version, args: [ "java", "install", r.id ] };
-				return { action: "ask", title: "Install Java", prompt: "Which major version? (21, 17, 25 ...)", make: function( v ) { return { action: "cli", title: "Install Java " & v, args: [ "java", "install", v ] }; } };
-			} },
+					if ( me.viewName() == "available" ) return { action: "cli", title: "Install Java " & r.version, args: [ "java", "install", r.id ] };
+					return { action: "ask", title: "Install Java", prompt: "Which major version? (21, 17, 25 ...)", make: function( v ) { return { action: "cli", title: "Install Java " & v, args: [ "java", "install", v ] }; } };
+				} },
 			{ key: "x", label: "remove", run: function( r ) { return me.viewName() == "homes" ? { action: "cli", title: "Remove " & r.id, args: [ "java", "remove", r.id ] } : {}; } },
 			{ key: "a", label: "available", run: function( r ) { me.toggle(); return { action: "reload" }; } }
 		];

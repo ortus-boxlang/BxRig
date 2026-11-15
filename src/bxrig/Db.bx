@@ -91,7 +91,7 @@ class Db {
 		if ( len( arguments.pw ) > 128 ) return "The password must be at most 128 characters";
 		if ( reFind( "[[:space:][:cntrl:]]", arguments.pw ) ) return "The password cannot contain spaces, tabs or line breaks";
 		if ( arguments.engineId == "opensearch" && !( reFind( "[A-Z]", arguments.pw ) && reFind( "[a-z]", arguments.pw ) && reFind( "[0-9]", arguments.pw ) && reFind( "[^A-Za-z0-9]", arguments.pw ) ) )
-			return "OpenSearch needs an uppercase letter, a lowercase letter, a digit and a special character";
+		return "OpenSearch needs an uppercase letter, a lowercase letter, a digit and a special character";
 		return "";
 	}
 
@@ -145,7 +145,7 @@ class Db {
 	// The container run command for an engine (argv after the engine program). secretEnvFile is "" for engines without a password.
 	function runArgs( e, name, container, port, envFile ) {
 		var a = [ "run", "-d", "--name", arguments.container, "--label", "io.bxrig.database=true", "--label", "io.bxrig.engine=" & arguments.e.id,
-				  "--label", "io.bxrig.instance=" & arguments.name, "--restart", "unless-stopped" ];
+			"--label", "io.bxrig.instance=" & arguments.name, "--restart", "unless-stopped" ];
 		for ( var m in variables.engines.portMaps( arguments.e, arguments.port ) ) { a.append( "-p" ); a.append( "127.0.0.1:" & m ); }
 		a.append( "-v" ); a.append( arguments.container & ":" & arguments.e.volume );
 		if ( len( arguments.envFile ) ) { a.append( "--env-file" ); a.append( arguments.envFile ); }

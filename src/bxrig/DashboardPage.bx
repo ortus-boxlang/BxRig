@@ -29,7 +29,7 @@ class DashboardPage {
 	function state() { return { data: variables.data, attention: variables.att, cursor: variables.cursor }; }
 	function keyMap() {
 		return new bxrig.KeyMap().bind( "↑↓", [ "Up", "k" ], "move", "up" ).bind( "", [ "Down", "j" ], "", "down" ).bind( "Enter", "Enter", "fix it", "fix" )
-			.bind( "r", "r", "refresh", "refresh" ).bind( "b", "b", "backups", "backups" ).bind( "w", "w", "wizard", "wizard" );
+		.bind( "r", "r", "refresh", "refresh" ).bind( "b", "b", "backups", "backups" ).bind( "w", "w", "wizard", "wizard" );
 	}
 
 	function keys() { return keyMap().hints(); }

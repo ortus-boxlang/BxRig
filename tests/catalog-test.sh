@@ -28,7 +28,7 @@ cat="$root/catalog/apps.json"
 # Negative cases for the check itself (needs a MatchBox to run the script).
 mb="${MATCHBOX:-$(command -v matchbox || true)}"
 if [[ -n "$mb" ]]; then
- (cd "$root/src" && "$mb" ../tests/catalog_check.bxs) | tail -n 1 | grep -Fq 'negative tests passed' || fail 'catalog check negative tests'
+	(cd "$root/src" && "$mb" ../tests/catalog_check.bxs) | tail -n 1 | grep -Fq 'negative tests passed' || fail 'catalog check negative tests'
 fi
 # Owner's 2026-11-09 corrections
 for id in amp-desktop elsewhen learn-omarchy; do [[ "$(jq --arg i "$id" '[.apps[]|select(.id==$i)]|length' "$cat")" == 0 ]] || fail "$id must not be in the catalog"; done

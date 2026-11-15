@@ -22,15 +22,15 @@ class NoctaliaConfig {
 	// The palette file: dark = Frappe neutrals with the brand greens, light = Latte neutrals with darker greens for contrast.
 	function palette() {
 		var dark = { primary: "#00FF78", on_primary: "#232634", secondary: "#00DBFF", on_secondary: "#232634", tertiary: "#ca9ee6", error: "#e78284",
-					 surface: "#303446", on_surface: "#c6d0f5", surface_container: "#414559", on_surface_variant: "#a5adce", outline_variant: "#626880",
+			surface: "#303446", on_surface: "#c6d0f5", surface_container: "#414559", on_surface_variant: "#a5adce", outline_variant: "#626880",
                      shadow: "#232634", hover: "#51576d" };
         var darkTerm = { normal: { black: "#51576d", red: "#e78284", green: "#a6d189", yellow: "#e5c890", blue: "#8caaee", magenta: "#ca9ee6", cyan: "#81c8be", white: "#b5bfe2" },
                          bright: { black: "#626880", red: "#e78284", green: "#00FF78", yellow: "#e5c890", blue: "#8caaee", magenta: "#ca9ee6", cyan: "#00DBFF", white: "#c6d0f5" } };
         var light = { primary: "#00a34d", on_primary: "#eff1f5", secondary: "#0090ad", on_secondary: "#eff1f5", tertiary: "#8839ef", error: "#d20f39",
                       surface: "#eff1f5", on_surface: "#4c4f69", surface_container: "#ccd0da", on_surface_variant: "#5c5f77", outline_variant: "#9ca0b0",
-					  shadow: "#dce0e8", hover: "#bcc0cc" };
+			shadow: "#dce0e8", hover: "#bcc0cc" };
 		var lightTerm = { normal: { black: "#5c5f77", red: "#d20f39", green: "#40a02b", yellow: "#df8e1d", blue: "#1e66f5", magenta: "#8839ef", cyan: "#179299", white: "#acb0be" },
-						  bright: { black: "#6c6f85", red: "#d20f39", green: "#00a34d", yellow: "#df8e1d", blue: "#1e66f5", magenta: "#8839ef", cyan: "#0090ad", white: "#bcc0cc" } };
+			bright: { black: "#6c6f85", red: "#d20f39", green: "#00a34d", yellow: "#df8e1d", blue: "#1e66f5", magenta: "#8839ef", cyan: "#0090ad", white: "#bcc0cc" } };
 		return '{' & chr( 10 ) & '  "version": 2,' & chr( 10 ) & variant( "dark", dark, darkTerm ) & "," & chr( 10 ) & variant( "light", light, lightTerm ) & chr( 10 ) & '}' & chr( 10 );
 	}
 
