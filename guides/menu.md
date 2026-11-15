@@ -17,7 +17,7 @@ summary: One menu for everything BxRig does, on your launcher, with search.
 | Appearance | Theme, mode, font, background, bar, dock, windows, animations. See [Appearance](appearance.md). |
 | Trigger | Screenshots, recording (screen, a region, with desktop or microphone audio), the color picker, notices (time, battery, weather), toggles (do not disturb, dictation, dock, stay awake, night light), emoji, clipboard history, force quit, minimize and restore, overview, the quake console, a private browser window, the file manager in the current folder. |
 | Shortcuts | List, search, rebind and run a shortcut, check conflicts, write them to Hyprland and Plasma, pick the Traditional or Mac style. See [Shortcuts](shortcuts.md). |
-| Hardware | Monitors, laptop panel, mirror, brightness, webcam preview, GPU check, input devices and gestures, AirPlay. |
+| Hardware | Monitors, laptop panel, mirror, brightness, webcam preview, GPU check, input devices and gestures, Audio, Bluetooth and Wi-Fi (they open the Noctalia control center panel, like `Super+Alt+C`), the terminal fallbacks `Audio mixer (terminal)` (wiremix) and `Bluetooth devices (terminal)` (bluetui), the status checks for audio, Bluetooth and Wi-Fi, AirPlay. |
 | Setup | Power, Display, Defaults, Keyboard, Security, Time, DNS, Kernel, Cloud storage, Backup, NAS. |
 | Update | BxRig updates, the system update (a snapshot first), skills, re-apply appearance and display. |
 | Develop | BoxLang, databases, virtual machines, containers, the editor. |

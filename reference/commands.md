@@ -57,7 +57,7 @@ Settings that only touch your own config (a theme, the bar, the font) act at onc
 
 **Develop**: [`boxlang`](#bxrig-boxlang), [`editor`](#bxrig-editor), [`db`](#bxrig-db), [`containers`](#bxrig-containers), [`vm`](#bxrig-vm), [`ai`](#bxrig-ai), [`skills`](#bxrig-skills)
 
-**Everyday tools**: [`screenshot`](#bxrig-screenshot), [`qr`](#bxrig-qr), [`record`](#bxrig-record), [`browser`](#bxrig-browser), [`files`](#bxrig-files), [`webcam`](#bxrig-webcam), [`clipboard`](#bxrig-clipboard), [`emoji`](#bxrig-emoji), [`forcequit`](#bxrig-forcequit), [`window`](#bxrig-window), [`overview`](#bxrig-overview), [`quicklook`](#bxrig-quicklook), [`dolphin`](#bxrig-dolphin), [`dictation`](#bxrig-dictation), [`strata`](#bxrig-strata), [`gpu`](#bxrig-gpu), [`input`](#bxrig-input), [`airplay`](#bxrig-airplay)
+**Everyday tools**: [`screenshot`](#bxrig-screenshot), [`qr`](#bxrig-qr), [`record`](#bxrig-record), [`browser`](#bxrig-browser), [`files`](#bxrig-files), [`webcam`](#bxrig-webcam), [`clipboard`](#bxrig-clipboard), [`emoji`](#bxrig-emoji), [`forcequit`](#bxrig-forcequit), [`window`](#bxrig-window), [`overview`](#bxrig-overview), [`quicklook`](#bxrig-quicklook), [`dolphin`](#bxrig-dolphin), [`dictation`](#bxrig-dictation), [`strata`](#bxrig-strata), [`gpu`](#bxrig-gpu), [`input`](#bxrig-input), [`audio`](#bxrig-audio), [`bluetooth`](#bxrig-bluetooth), [`wifi`](#bxrig-wifi), [`airplay`](#bxrig-airplay)
 
 ## Start here
 
@@ -1577,6 +1577,51 @@ bxrig input doctor | gestures [--yes] [--dry-run] [--json]
 ```bash
 bxrig input doctor
 ```
+
+### `bxrig audio` {#bxrig-audio}
+
+Sound server status: outputs, inputs, volumes and the defaults.
+
+```text
+bxrig audio status [--json]
+```
+
+```bash
+bxrig audio status
+bxrig audio status --json
+```
+
+> Read only, through `pactl`. Volume and mixing are in the bar panel (Super+Ctrl+A) and in the terminal mixer in the Hardware menu. Exit 4 when `pactl` is missing or no sound server answers.
+
+### `bxrig bluetooth` {#bxrig-bluetooth}
+
+Bluetooth status: the service, the adapter and the paired devices.
+
+```text
+bxrig bluetooth status [--json]
+```
+
+```bash
+bxrig bluetooth status
+bxrig bluetooth status --json
+```
+
+> Read only, through `bluetoothctl` and `systemctl`. Pairing is in the bar panel (Super+Ctrl+B) and in the terminal UI in the Hardware menu. Exit 4 when `bluetoothctl` is missing.
+
+### `bxrig wifi` {#bxrig-wifi}
+
+Wi-Fi status: the radio, the Wi-Fi devices and the network you are on.
+
+```text
+bxrig wifi status [--json]
+```
+
+```bash
+bxrig wifi status
+bxrig wifi status --json
+```
+
+> Read only, through `nmcli` (NetworkManager). Joining a network is in the bar panel (Super+Ctrl+N). Exit 4 when `nmcli` is missing.
 
 ### `bxrig airplay` {#bxrig-airplay}
 
