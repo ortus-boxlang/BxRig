@@ -1,0 +1,66 @@
+// `bxrig bluetooth status [--json]`: the adapter and the paired devices (read only; pairing and connecting live in the Noctalia bar panel,
+// `Super+Ctrl+B`, and in bluetui, the terminal fallback in the Hardware menu). It asks `bluetoothctl` and `systemctl is-active bluetooth.service`.
+// Data: { service, adapter, powered, discoverable, pairable, name, devices: [ { address, name, connected } ] }
+// (adapter is false when bluez sees no controller, for example when the service is off; the other adapter fields are then false and empty).
+// Exit: 0 ok, 2 bad usage, 4 precondition (bluetoothctl is not installed).
+class Bluetooth {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( variables.cli, "bluetooth" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.systemd = new bxrig.util.Systemd( variables.proc );
+		return this;
+	}
+
+	// The value of a "Key: value" line of `bluetoothctl show`, or "".
+	function field( textOut, key ) {
+		for ( var l in listToArray( arguments.textOut, chr( 10 ) ) ) {
+			var t = trim( l );
+			if ( left( t, len( arguments.key ) + 2 ) == arguments.key & ": " ) return trim( mid( t, len( arguments.key ) + 3, len( t ) ) );
+		}
+		return "";
+	}
+
+	// [ { address, name } ] from `bluetoothctl devices [Filter]` lines ("Device AA:BB:CC:DD:EE:FF Name").
+	function parseDevices( textOut ) {
+		var out = [];
+		for ( var l in listToArray( arguments.textOut, chr( 10 ) ) ) {
+			var t = trim( l );
+			if ( left( t, 7 ) != "Device " ) continue;
+			var rest = mid( t, 8, len( t ) );
+			var sp = find( " ", rest );
+			out.append( { address: sp ? left( rest, sp - 1 ) : rest, name: sp ? trim( mid( rest, sp + 1, len( rest ) ) ) : "" } );
+		}
+		return out;
+	}
+
+	function ctl( words ) {
+		var argv = [ "bluetoothctl" ];
+		for ( var w in arguments.words ) argv.append( w );
+		var r = variables.proc.exec( argv, 15 );
+		return r.exitCode == 0 ? r.output : "";
+	}
+
+	function statusCmd( asJson ) {
+		if ( !variables.proc.has( "bluetoothctl" ) ) return variables.out.precondition( "bluetoothctl is not installed (bxrig install bluez)", arguments.asJson );
+		var svc = variables.systemd.active( "bluetooth.service" );
+		var show = ctl( [ "show" ] );
+		var adapter = len( field( show, "Powered" ) ) > 0;
+		var data = { service: svc, adapter: adapter, powered: field( show, "Powered" ) == "yes", discoverable: field( show, "Discoverable" ) == "yes", pairable: field( show, "Pairable" ) == "yes", name: field( show, "Alias" ), devices: [] };
+		var connected = {};
+		for ( var c in parseDevices( ctl( [ "devices", "Connected" ] ) ) ) connected[ c.address ] = true;
+		for ( var d in parseDevices( ctl( [ "devices", "Paired" ] ) ) ) data.devices.append( { address: d.address, name: d.name, connected: structKeyExists( connected, d.address ) } );
+		var lines = [ "service: " & ( svc ? "running" : "not running (sudo systemctl enable --now bluetooth.service)" ) ];
+		if ( !adapter ) lines.append( "adapter: none found" );
+		else lines.append( "adapter: " & ( len( data.name ) ? data.name & ", " : "" ) & ( data.powered ? "on" : "off" ) & ( data.discoverable ? ", discoverable" : "" ) & ( data.pairable ? ", pairable" : "" ) );
+		for ( var dv in data.devices ) lines.append( "device: " & ( len( dv.name ) ? dv.name : dv.address ) & "  " & dv.address & ( dv.connected ? "  connected" : "" ) );
+		if ( !data.devices.len() ) lines.append( "devices: none paired" );
+		return variables.out.say( "ok", data, arguments.asJson, lines );
+	}
+
+	function run( words, asJson = false ) {
+		var verb = arguments.words.len() ? arguments.words[ 1 ] : "";
+		if ( ( verb == "" || verb == "status" ) && arguments.words.len() <= 1 ) return statusCmd( arguments.asJson );
+		return variables.out.usage( "unknown bluetooth command. Usage: bluetooth status [--json]", arguments.asJson );
+	}
+}

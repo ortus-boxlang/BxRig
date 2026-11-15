@@ -2507,6 +2507,48 @@
 					"flags": []
 				},
 				{
+					"name": "audio",
+					"summary": "Sound server status: outputs, inputs, volumes and the defaults.",
+					"usage": [
+						"audio status [--json]"
+					],
+					"examples": [
+						"bxrig audio status",
+						"bxrig audio status --json"
+					],
+					"mutates": false,
+					"flags": [],
+					"note": "Read only, through `pactl`. Volume and mixing are in the bar panel (Super+Ctrl+A) and in the terminal mixer in the Hardware menu. Exit 4 when `pactl` is missing or no sound server answers."
+				},
+				{
+					"name": "bluetooth",
+					"summary": "Bluetooth status: the service, the adapter and the paired devices.",
+					"usage": [
+						"bluetooth status [--json]"
+					],
+					"examples": [
+						"bxrig bluetooth status",
+						"bxrig bluetooth status --json"
+					],
+					"mutates": false,
+					"flags": [],
+					"note": "Read only, through `bluetoothctl` and `systemctl`. Pairing is in the bar panel (Super+Ctrl+B) and in the terminal UI in the Hardware menu. Exit 4 when `bluetoothctl` is missing."
+				},
+				{
+					"name": "wifi",
+					"summary": "Wi-Fi status: the radio, the Wi-Fi devices and the network you are on.",
+					"usage": [
+						"wifi status [--json]"
+					],
+					"examples": [
+						"bxrig wifi status",
+						"bxrig wifi status --json"
+					],
+					"mutates": false,
+					"flags": [],
+					"note": "Read only, through `nmcli` (NetworkManager). Joining a network is in the bar panel (Super+Ctrl+N). Exit 4 when `nmcli` is missing."
+				},
+				{
 					"name": "airplay",
 					"summary": "AirPlay receiver: on, off, status.",
 					"usage": [

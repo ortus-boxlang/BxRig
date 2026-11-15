@@ -306,6 +306,17 @@ class {
 			case "airplay":
 				if ( p.len() == 2 ) CLIExit( new bxrig.MacExtras( cli ).airplay( p[2], asJson ) );
 				println( new bxrig.CommandSpec().usage( "airplay" ) ); CLIExit( xit.usage() ); break;
+			case "audio":
+			case "bluetooth":
+			case "wifi":
+				// Read-only status of the sound server, Bluetooth and Wi-Fi. See COMMAND-CONTRACT.md 13.55.
+				hwWords = [];
+				for ( hwi = 2; hwi <= p.len(); hwi++ ) hwWords.append( p[ hwi ] );
+				if ( hwWords.len() > 1 || ( hwWords.len() == 1 && hwWords[ 1 ] != "status" ) ) { println( new bxrig.CommandSpec().usage( p[ 1 ] ) ); CLIExit( xit.usage() ); }
+				if ( p[ 1 ] == "audio" ) CLIExit( new bxrig.Audio( cli ).run( hwWords, asJson ) );
+				if ( p[ 1 ] == "bluetooth" ) CLIExit( new bxrig.Bluetooth( cli ).run( hwWords, asJson ) );
+				CLIExit( new bxrig.Wifi( cli ).run( hwWords, asJson ) );
+				break;
 			case "settings":
 				if ( p.len() == 3 && p[2] == "export" ) CLIExit( new bxrig.Settings( cli ).exportFile( p[3], structKeyExists( args.options, "force" ), asJson ) );
 				if ( p.len() == 3 && p[2] == "import" ) CLIExit( new bxrig.Settings( cli ).importFile( p[3], structKeyExists( args.options, "yes" ), asJson ) );

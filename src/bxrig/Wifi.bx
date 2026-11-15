@@ -1,0 +1,61 @@
+// `bxrig wifi status [--json]`: the Wi-Fi radio, the Wi-Fi devices and the network you are on (read only; joining networks lives in the Noctalia
+// bar panel, `Super+Ctrl+N`). It asks NetworkManager through `nmcli -t` (terse output, `\:` is a colon inside a value).
+// Data: { radio, devices: [ { device, state, connection } ], ssid, signal } (radio is enabled or disabled; ssid is "" and signal -1 when not connected).
+// Exit: 0 ok, 2 bad usage, 4 precondition (nmcli is not installed).
+class Wifi {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( variables.cli, "wifi" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		return this;
+	}
+
+	// Splits one terse nmcli line on the colons that are not escaped, and unescapes `\:` and `\\`.
+	function fields( line ) {
+		var out = [];
+		var cur = "";
+		var s = arguments.line;
+		var i = 1;
+		while ( i <= len( s ) ) {
+			var ch = mid( s, i, 1 );
+			if ( ch == chr( 92 ) && i < len( s ) ) { cur = cur & mid( s, i + 1, 1 ); i = i + 2; continue; }
+			if ( ch == ":" ) { out.append( cur ); cur = ""; } else cur = cur & ch;
+			i = i + 1;
+		}
+		out.append( cur );
+		return out;
+	}
+
+	function nm( words ) {
+		var argv = [ "nmcli", "-t" ];
+		for ( var w in arguments.words ) argv.append( w );
+		var r = variables.proc.exec( argv, 15 );
+		return r.exitCode == 0 ? r.output : "";
+	}
+
+	function statusCmd( asJson ) {
+		if ( !variables.proc.has( "nmcli" ) ) return variables.out.precondition( "nmcli is not installed (NetworkManager)", arguments.asJson );
+		var data = { radio: trim( nm( [ "-f", "WIFI", "general" ] ) ), devices: [], ssid: "", signal: -1 };
+		for ( var l in listToArray( nm( [ "-f", "DEVICE,TYPE,STATE,CONNECTION", "device", "status" ] ), chr( 10 ) ) ) {
+			var f = fields( l );
+			if ( f.len() >= 4 && f[ 2 ] == "wifi" ) data.devices.append( { device: f[ 1 ], state: f[ 3 ], connection: f[ 4 ] } );
+		}
+		if ( data.radio == "enabled" ) {
+			for ( var a in listToArray( nm( [ "-f", "ACTIVE,SSID,SIGNAL", "device", "wifi", "list", "--rescan", "no" ] ), chr( 10 ) ) ) {
+				var af = fields( a );
+				if ( af.len() >= 3 && af[ 1 ] == "yes" ) { data.ssid = af[ 2 ]; data.signal = isNumeric( af[ 3 ] ) ? int( af[ 3 ] ) : -1; break; }
+			}
+		}
+		var lines = [ "radio: " & ( len( data.radio ) ? data.radio : "unknown" ) ];
+		for ( var d in data.devices ) lines.append( "device: " & d.device & "  " & d.state & ( len( d.connection ) && d.connection != "--" ? "  " & d.connection : "" ) );
+		if ( !data.devices.len() ) lines.append( "device: no Wi-Fi device found" );
+		if ( len( data.ssid ) ) lines.append( "network: " & data.ssid & ( data.signal >= 0 ? ", signal " & data.signal & "%" : "" ) );
+		return variables.out.say( "ok", data, arguments.asJson, lines );
+	}
+
+	function run( words, asJson = false ) {
+		var verb = arguments.words.len() ? arguments.words[ 1 ] : "";
+		if ( ( verb == "" || verb == "status" ) && arguments.words.len() <= 1 ) return statusCmd( arguments.asJson );
+		return variables.out.usage( "unknown wifi command. Usage: wifi status [--json]", arguments.asJson );
+	}
+}

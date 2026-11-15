@@ -1,0 +1,83 @@
+// audio status, bluetooth status, wifi status: argv, parsing, exit codes and the JSON data, with a fake runner (nothing is started).
+// Run from src/: (cd src && matchbox ../tests/hardware_status_test.bxs)
+testkit = new lib.Check( "hardware status" );
+cli = new bxrig.util.Cli( "0.0.0" );
+nl = chr( 10 );
+calls = [];
+answers = {};
+runner = function( argv, timeout ) {
+	line = argv.toList( " " );
+	calls.append( line );
+	for ( k in answers ) if ( find( k, line ) ) return { exitCode: answers[ k ].code, timeout: false, output: answers[ k ].out };
+	return { exitCode: 0, timeout: false, output: "" };
+};
+function said( cmd ) { for ( c in calls ) if ( find( cmd, c ) ) return true; return false; }
+
+// ---- audio ----
+sinks = '[{"name":"alsa_output.pci","description":"Built-in Audio Speakers","mute":false,"state":"RUNNING","volume":{"front-left":{"value":42598,"value_percent":"65%","db":"-11.00 dB"},"front-right":{"value":42598,"value_percent":"65%"}}},{"name":"bluez_output.AA","description":"Headset","mute":true,"state":"SUSPENDED","volume":{"mono":{"value":65536,"value_percent":"100%"}}}]';
+sources = '[{"name":"alsa_input.pci","description":"Built-in Microphone","mute":false,"state":"SUSPENDED","volume":{"mono":{"value":39000,"value_percent":"60%"}}},{"name":"alsa_output.pci.monitor","description":"Monitor of Speakers","mute":false,"state":"RUNNING","volume":{"mono":{"value":65536,"value_percent":"100%"}}}]';
+answers = {
+	"command -v": { code: 0, out: "" },
+	"pactl --format=json info": { code: 0, out: '{"server_name":"PulseAudio (on PipeWire 1.6.11)","default_sink_name":"alsa_output.pci","default_source_name":"alsa_input.pci"}' },
+	"pactl --format=json list sinks": { code: 0, out: sinks },
+	"pactl --format=json list sources": { code: 0, out: sources }
+};
+au = new bxrig.Audio( cli, runner );
+testkit.check( "audio: pactl is called with an argv array and --format=json", ( function() { calls = []; au.pactlJson( [ "list", "sinks" ] ); return said( "pactl --format=json list sinks" ); } )() );
+d = au.devices( jsonDeserialize( sinks ), "alsa_output.pci" );
+testkit.check( "audio: the default output is marked, volume is the first channel in percent, mute is read", d.len() == 2 && d[ 1 ].default && !d[ 2 ].default && d[ 1 ].volume == 65 && d[ 2 ].volume == 100 && d[ 2 ].muted && !d[ 1 ].muted && d[ 1 ].state == "running" );
+i = au.devices( jsonDeserialize( sources ), "alsa_input.pci", true );
+testkit.check( "audio: monitors of outputs are not listed as inputs", i.len() == 1 && i[ 1 ].name == "alsa_input.pci" && i[ 1 ].default );
+testkit.check( "audio: status with a sound server exits 0", au.statusCmd( true ) == 0 );
+answers[ "command -v" ] = { code: 1, out: "" };
+testkit.check( "audio: pactl missing exits 4", au.statusCmd( true ) == 4 );
+answers[ "command -v" ] = { code: 0, out: "" };
+answers[ "pactl --format=json info" ] = { code: 1, out: "Connection refused" };
+testkit.check( "audio: no sound server exits 4", au.statusCmd( true ) == 4 );
+testkit.check( "audio: an unknown verb or extra word exits 2", au.run( [ "volume" ], true ) == 2 && au.run( [ "status", "x" ], true ) == 2 );
+testkit.check( "audio: no verb means status", ( function() { answers[ "pactl --format=json info" ] = { code: 0, out: "{}" }; return au.run( [], true ); } )() == 0 );
+
+// ---- bluetooth ----
+show = "Controller AA:BB:CC:DD:EE:FF (public)" & nl & chr( 9 ) & "Alias: laptop" & nl & chr( 9 ) & "Powered: yes" & nl & chr( 9 ) & "Discoverable: no" & nl & chr( 9 ) & "Pairable: yes" & nl;
+answers = {
+	"command -v": { code: 0, out: "" },
+	"bluetoothctl show": { code: 0, out: show },
+	"bluetoothctl devices Paired": { code: 0, out: "Device 11:22:33:44:55:66 Magic Mouse" & nl & "Device 77:88:99:AA:BB:CC Headset XM5" & nl },
+	"bluetoothctl devices Connected": { code: 0, out: "Device 77:88:99:AA:BB:CC Headset XM5" & nl },
+	"systemctl is-active": { code: 0, out: "active" }
+};
+bt = new bxrig.Bluetooth( cli, runner );
+testkit.check( "bluetooth: fields come from the Key: value lines", bt.field( show, "Powered" ) == "yes" && bt.field( show, "Alias" ) == "laptop" && bt.field( show, "Pairable" ) == "yes" && bt.field( show, "Nope" ) == "" );
+pd = bt.parseDevices( "Device 77:88:99:AA:BB:CC Headset XM5" & nl & "noise" & nl );
+testkit.check( "bluetooth: a device line gives the address and the whole name", pd.len() == 1 && pd[ 1 ].address == "77:88:99:AA:BB:CC" && pd[ 1 ].name == "Headset XM5" );
+calls = [];
+testkit.check( "bluetooth: status exits 0 and asks for show, Paired and Connected", bt.statusCmd( true ) == 0 && said( "bluetoothctl show" ) && said( "bluetoothctl devices Paired" ) && said( "bluetoothctl devices Connected" ) && said( "systemctl is-active --quiet bluetooth.service" ) );
+answers[ "command -v" ] = { code: 1, out: "" };
+testkit.check( "bluetooth: bluetoothctl missing exits 4", bt.statusCmd( true ) == 4 );
+answers[ "command -v" ] = { code: 0, out: "" };
+answers[ "bluetoothctl show" ] = { code: 1, out: "No default controller available" };
+answers[ "systemctl is-active" ] = { code: 3, out: "inactive" };
+testkit.check( "bluetooth: no adapter and a stopped service are reported, still exit 0", bt.statusCmd( true ) == 0 );
+testkit.check( "bluetooth: an unknown verb exits 2", bt.run( [ "pair" ], true ) == 2 );
+
+// ---- wifi ----
+answers = {
+	"command -v": { code: 0, out: "" },
+	"nmcli -t -f WIFI general": { code: 0, out: "enabled" & nl },
+	"nmcli -t -f DEVICE,TYPE,STATE,CONNECTION device status": { code: 0, out: "wlan0:wifi:connected:Home\:5G" & nl & "eth0:ethernet:unavailable:--" & nl & "lo:loopback:unmanaged:--" & nl },
+	"nmcli -t -f ACTIVE,SSID,SIGNAL device wifi list --rescan no": { code: 0, out: "no:Neighbour:30" & nl & "yes:Home\:5G:72" & nl }
+};
+wf = new bxrig.Wifi( cli, runner );
+f = wf.fields( "yes:Home" & chr( 92 ) & ":5G:72" );
+testkit.check( "wifi: an escaped colon stays inside the value", f.len() == 3 && f[ 2 ] == "Home:5G" && f[ 3 ] == "72" );
+calls = [];
+testkit.check( "wifi: status exits 0 and asks nmcli -t for the radio, the devices and the active network", wf.statusCmd( true ) == 0 && said( "nmcli -t -f WIFI general" ) && said( "device wifi list --rescan no" ) );
+answers[ "command -v" ] = { code: 1, out: "" };
+testkit.check( "wifi: nmcli missing exits 4", wf.statusCmd( true ) == 4 );
+answers[ "command -v" ] = { code: 0, out: "" };
+answers[ "nmcli -t -f WIFI general" ] = { code: 0, out: "disabled" & nl };
+calls = [];
+testkit.check( "wifi: a disabled radio is reported without scanning the networks", wf.statusCmd( true ) == 0 && !said( "device wifi list" ) );
+testkit.check( "wifi: an unknown verb exits 2", wf.run( [ "connect" ], true ) == 2 );
+
+testkit.done( "hardware status tests passed" );
