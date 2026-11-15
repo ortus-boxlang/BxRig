@@ -23,6 +23,23 @@ class Props {
         return out;
     }
 
+    // Shell-style export text or a .env file: [ { name, value } ] in file order. `export ` before a name is dropped; a value in single quotes
+    // is read as the shell does ('\'' is one quote), one in double quotes loses its quotes. Empty values are skipped. Names are not checked
+    // (the caller knows which names it accepts).
+    function exports( text ) {
+        var q = chr( 39 );
+        var out = [];
+        for ( var p in pairs( arguments.text ) ) {
+            var n = p.key;
+            if ( left( n, 7 ) == "export " ) n = trim( mid( n, 8, len( n ) ) );
+            var v = p.value;
+            if ( len( v ) >= 2 && left( v, 1 ) == q && right( v, 1 ) == q ) v = replace( mid( v, 2, len( v ) - 2 ), q & chr( 92 ) & q & q, q, "all" );
+            else if ( len( v ) >= 2 && left( v, 1 ) == '"' && right( v, 1 ) == '"' ) v = mid( v, 2, len( v ) - 2 );
+            if ( len( v ) ) out.append( { name: n, value: v } );
+        }
+        return out;
+    }
+
     // A value without one pair of surrounding double or single quotes.
     function unquote( value ) {
         var v = trim( arguments.value );

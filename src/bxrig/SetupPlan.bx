@@ -343,17 +343,7 @@ class SetupPlan {
             return out;
         }
         // keep every other line of the state file; replace or add Session= in [Last]
-        var lines = []; var inLast = false; var done = false; var hadLast = false;
-        for ( var line in facts.stateLines ) {
-            var t = trim( line );
-            if ( left( t, 1 ) == "[" ) {
-                if ( inLast && !done ) { lines.append( "Session=" & out.chosen ); done = true; }
-                inLast = lCase( t ) == "[last]"; if ( inLast ) hadLast = true;
-            } else if ( inLast && lCase( left( t, 8 ) ) == "session=" ) { lines.append( "Session=" & out.chosen ); done = true; continue; }
-            lines.append( line );
-        }
-        if ( !hadLast ) { lines.append( "[Last]" ); lines.append( "Session=" & out.chosen ); }
-        else if ( !done ) lines.append( "Session=" & out.chosen );
+        var lines = new bxrig.util.Ini().set( facts.stateLines, "Last", "Session", out.chosen );
         // each line carries its own newline, so the script needs no escape sequences
         var write = [ "sudo", "sh", "-c", 'printf %s "$@" > "$0"', facts.stateFile ];
         for ( var l in lines ) write.append( l & chr( 10 ) );

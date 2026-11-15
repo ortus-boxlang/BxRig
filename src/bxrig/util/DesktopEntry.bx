@@ -23,22 +23,20 @@ class DesktopEntry {
     function parse( file ) {
         var e = { name: "", exec: "", icon: "", type: "", hidden: false, comment: "", categories: "", launcher: false };
         try {
-            var inEntry = false;
-            for ( var raw in listToArray( fileRead( arguments.file ), chr( 10 ), true ) ) {
-                var line = trim( raw );
-                if ( left( line, 1 ) == "[" ) { inEntry = compare( line, "[Desktop Entry]" ) == 0; continue; }
-                if ( !inEntry || !find( "=", line ) ) continue;
-                var at = find( "=", line );
-                var key = left( line, at - 1 );
-                var val = mid( line, at + 1, len( line ) );
-                if ( compare( key, "Name" ) == 0 && !len( e.name ) ) e.name = val;
-                else if ( compare( key, "Exec" ) == 0 && !len( e.exec ) ) e.exec = val;
-                else if ( compare( key, "Icon" ) == 0 && !len( e.icon ) ) e.icon = trim( val );
-                else if ( compare( key, "Comment" ) == 0 && !len( e.comment ) ) e.comment = val;
-                else if ( compare( key, "Categories" ) == 0 ) e.categories = val;
-                else if ( compare( key, "Type" ) == 0 ) e.type = val;
-                else if ( ( compare( key, "NoDisplay" ) == 0 || compare( key, "Hidden" ) == 0 ) && lCase( val ) == "true" ) e.hidden = true;
-                else if ( compare( key, "X-BxRig-Launcher" ) == 0 ) e.launcher = true;
+            for ( var sec in new bxrig.util.Ini().sections( fileRead( arguments.file ) ) ) {
+                if ( compare( sec.name, "Desktop Entry" ) != 0 ) continue;
+                for ( var kv in sec.pairs ) {
+                    var key = kv.key;
+                    var val = kv.value;
+                    if ( compare( key, "Name" ) == 0 && !len( e.name ) ) e.name = val;
+                    else if ( compare( key, "Exec" ) == 0 && !len( e.exec ) ) e.exec = val;
+                    else if ( compare( key, "Icon" ) == 0 && !len( e.icon ) ) e.icon = trim( val );
+                    else if ( compare( key, "Comment" ) == 0 && !len( e.comment ) ) e.comment = val;
+                    else if ( compare( key, "Categories" ) == 0 ) e.categories = val;
+                    else if ( compare( key, "Type" ) == 0 ) e.type = val;
+                    else if ( ( compare( key, "NoDisplay" ) == 0 || compare( key, "Hidden" ) == 0 ) && lCase( val ) == "true" ) e.hidden = true;
+                    else if ( compare( key, "X-BxRig-Launcher" ) == 0 ) e.launcher = true;
+                }
             }
         } catch ( any x ) {}
         return e;

@@ -46,13 +46,7 @@ class Session {
 
     // The value of Session= under [Last] in the state file, or "".
     function current() {
-        var inLast = false;
-        for ( var line in stateLines() ) {
-            var t = trim( line );
-            if ( left( t, 1 ) == "[" ) inLast = lCase( t ) == "[last]";
-            else if ( inLast && lCase( left( t, 8 ) ) == "session=" ) return mid( t, 9, len( t ) );
-        }
-        return "";
+        return new bxrig.util.Ini().get( stateLines().toList( chr( 10 ) ), "Last", "Session" );
     }
 
     // The automatic-login session SDDM is configured with (/etc/sddm.conf and /etc/sddm.conf.d), or "".
@@ -62,12 +56,7 @@ class Session {
         var found = "";
         for ( var file in files ) {
             if ( !fileExists( file ) ) continue;
-            var inAuto = false;
-            for ( var line in listToArray( fileRead( file ), chr( 10 ) ) ) {
-                var t = trim( line );
-                if ( left( t, 1 ) == "[" ) inAuto = lCase( t ) == "[autologin]";
-                else if ( inAuto && lCase( left( t, 8 ) ) == "session=" ) found = mid( t, 9, len( t ) );
-            }
+            found = new bxrig.util.Ini().last( fileRead( file ), "Autologin", "Session", found );
         }
         return found;
     }

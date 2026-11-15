@@ -24,26 +24,9 @@ class KeysEditor {
         if ( !directoryExists( dir ) ) return out;
         for ( var f in directoryList( dir, false, "name" ) ) {
             if ( right( f, 4 ) != ".lua" || f == "bxrig.lua" ) continue;
-            var n = 0;
-            for ( var line in listToArray( fileRead( dir & "/" & f ), chr( 10 ), true ) ) {
-                n++;
-                var t = trim( line );
-                if ( left( t, 8 ) != "hl.bind(" ) continue;
-                var cut = find( ", hl.", t );
-                var fn = find( ", function", t );
-                if ( fn > 0 && ( cut == 0 || fn < cut ) ) cut = fn;
-                var pre = cut > 0 ? left( t, cut - 1 ) : t;
-                var toks = [];
-                if ( find( "mainMod", pre ) ) toks.append( "Super" );
-                var pos = 1;
-                while ( true ) {
-                    var m = reFind( '"([^"]*)"', pre, pos, true );
-                    if ( m.pos[ 1 ] == 0 ) break;
-                    for ( var piece in listToArray( mid( pre, m.pos[ 2 ], m.len[ 2 ] ), "+" ) ) if ( len( trim( piece ) ) ) toks.append( trim( piece ) );
-                    pos = m.pos[ 1 ] + m.len[ 1 ];
-                }
-                var norm = toks.len() > 1 ? variables.sc.normalize( toks.toList( "+" ) ) : "";
-                if ( len( norm ) ) out.append( { combo: norm, file: f, line: n } );
+            for ( var b in new bxrig.util.Lua().binds( fileRead( dir & "/" & f ) ) ) {
+                var norm = b.tokens.len() > 1 ? variables.sc.normalize( b.tokens.toList( "+" ) ) : "";
+                if ( len( norm ) ) out.append( { combo: norm, file: f, line: b.line } );
             }
         }
         return out;
