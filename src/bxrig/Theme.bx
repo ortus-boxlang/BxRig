@@ -145,6 +145,8 @@ class Theme {
         ];
         // Rofi reads config.rasi: a stub that imports the generated theme, written only when you have none.
         out.append( { name: "theme-rofi-config", target: cfg() & "/rofi/config.rasi", mode: "644", content: '@theme "' & d & '/rofi.rasi"' & chr( 10 ) } );
+        // Plasma: the theme's own colour scheme (applied by notify with plasma-apply-colorscheme)
+        out.append( { name: "theme-kde", target: variables.environ.xdgData( "color-schemes/BxRig.colors" ), mode: "644", content: variables.tc.kdeColors( arguments.c, "BxRig" ) } );
         // btop only reads a theme named in btop.conf: the file is created when missing, otherwise only its color_theme line changes.
         out.append( { name: "theme-btop-config", target: cfg() & "/btop/btop.conf", mode: "644", content: btopConfig( cfg() & "/btop/btop.conf" ) } );
         if ( len( arguments.neovimText ) ) out.append( { name: "theme-neovim", target: variables.config.stateDir() & "/current/theme/neovim.lua", mode: "644", content: arguments.neovimText } );
@@ -264,8 +266,17 @@ class Theme {
             }
         }
         if ( findNoCase( "KDE", getSystemSetting( "XDG_CURRENT_DESKTOP", "" ) ) && variables.proc.has( "plasma-apply-colorscheme" ) ) {
-            var kp = variables.proc.exec( [ "plasma-apply-colorscheme", arguments.mode == "light" ? "BreezeLight" : "BreezeDark" ], 30 );
+            // the theme's own scheme (BxRig.colors); Plasma reloads a scheme only when the name changes, so it goes through Breeze first
+            variables.proc.exec( [ "plasma-apply-colorscheme", arguments.mode == "light" ? "BreezeLight" : "BreezeDark" ], 30 );
+            var kp = variables.proc.exec( [ "plasma-apply-colorscheme", "BxRig" ], 30 );
             out.plasma = kp.exitCode == 0 ? "applied" : "failed";
+            // the desktop and the lock screen show the theme's wallpaper too
+            if ( len( arguments.wallpaper ) && fileExists( arguments.wallpaper ) ) {
+                if ( variables.proc.has( "plasma-apply-wallpaperimage" ) ) variables.proc.exec( [ "plasma-apply-wallpaperimage", arguments.wallpaper ], 30 );
+                if ( variables.proc.has( "kwriteconfig6" ) ) {
+                    for ( var key in [ "Image", "PreviewImage" ] ) variables.proc.exec( [ "kwriteconfig6", "--file", "kscreenlockerrc", "--group", "Greeter", "--group", "Wallpaper", "--group", "org.kde.image", "--group", "General", "--key", key, "file://" & arguments.wallpaper ], 15 );
+                }
+            }
         }
         out.gtk = "skipped";
         if ( variables.proc.has( "gsettings" ) ) {
