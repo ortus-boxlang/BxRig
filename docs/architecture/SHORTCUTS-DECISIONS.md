@@ -83,3 +83,7 @@ Shortcuts( overrides = "", style = "" )   // style: "traditional" | "mac" | a Ke
 CLI additions (cli.json): keys style [traditional|mac] [--keyboard=pc|apple] [--swap=on|off] [--yes] | keys search TEXT | keys run ID
                           notify time|battery|weather | screenshot color | dictation toggle | menu open ROUTE
 ```
+8. `Super+Shift+3/4/5` are the screenshot keys (r10) and used to be "send window to workspace 3/4/5" too (both fired). The table leaves workspace moves 3 to 5 unbound. Which keys do you want for them?
+9. "Full screen desktop" (`Super+Ctrl+Alt+F`, r31): what should it do (Omarchy's meaning is not in the repo)? Not bound.
+10. Traditional copy, paste, cut and select all (r9) use xremap, like Mac style. The wizard installs xremap only when Mac keys are on. Should it always install it?
+11. Not built, so not bound: private browser window, file manager in the current directory, quake console, webcam, menu key `Super+Ctrl+H` (no Hardware section).
