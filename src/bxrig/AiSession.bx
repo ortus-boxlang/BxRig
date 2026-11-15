@@ -84,7 +84,7 @@ class AiSession {
         if ( !new bxrig.util.Names().valid( "label", replace( arguments.name, prefix(), "" ) ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: bad session name" ] );
         var session = fullName( arguments.name );
         if ( !arrayFind( names(), session ) ) return variables.cli.say( cmd, "precondition", { error: "No such session" }, arguments.asJson, [ "error: no session " & session ] );
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", { session: session }, arguments.asJson, [ "Plan: end " & session & " and whatever is running in it.", "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "end " & session & " and whatever is running in it.", { session: session }, arguments.asJson );
         var r = variables.proc.exec( [ "tmux", "kill-session", "-t", session ], 15 );
         if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
         return variables.cli.say( cmd, "ok", { session: session }, arguments.asJson, [ session & " was ended." ] );

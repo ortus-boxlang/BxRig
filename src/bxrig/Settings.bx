@@ -58,7 +58,7 @@ class Settings {
         if ( !e.ok ) return variables.out.say( "precondition", { error: e.error }, arguments.asJson, [ "error: " & e.error ] );
         var clash = e.files.filter( function( f ) { return fileExists( root() & "/" & f ); } );
         var data = { file: arguments.file, files: e.files, existing: clash };
-        if ( !arguments.yes ) return variables.out.say( "plan", data, arguments.asJson, [ "Plan: import " & e.files.len() & " files into " & root() & "/bxrig (" & clash.len() & " exist and are backed up first)", "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.out.plan( "import " & e.files.len() & " files into " & root() & "/bxrig (" & clash.len() & " exist and are backed up first)", data, arguments.asJson );
         var stamp = trim( variables.proc.exec( [ "date", "+%Y%m%d-%H%M%S" ], 10 ).output );
         for ( var f in clash ) fileCopy( root() & "/" & f, root() & "/" & f & ".bak-" & stamp );
         var r = variables.proc.exec( [ "tar", "-xzf", arguments.file, "-C", root() ], 120 );

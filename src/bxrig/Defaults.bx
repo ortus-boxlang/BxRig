@@ -39,10 +39,7 @@ class Defaults {
         if ( !desktopInstalled( file ) ) return variables.cli.say( cmd, "precondition", { error: arguments.id & " is not installed" }, arguments.asJson, [ "error: " & arguments.id & " is not installed (" & file & " not found). Install it first: bxrig install " & arguments.id ] );
         if ( !variables.proc.has( "xdg-settings" ) ) return variables.cli.say( cmd, "precondition", { error: "xdg-settings was not found" }, arguments.asJson, [ "error: xdg-settings was not found (install xdg-utils)" ] );
         var data = { browser: arguments.id, desktop: file };
-        if ( !arguments.yes || arguments.dryRun ) {
-            var code = arguments.dryRun ? 0 : 2;
-            return variables.cli.say( cmd, code, data, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": make " & arguments.id & " (" & file & ") your default web browser", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dryRun );
-        }
+        if ( !arguments.yes || arguments.dryRun ) return variables.cli.scoped( cmd ).plan( "make " & arguments.id & " (" & file & ") your default web browser", data, arguments.asJson, arguments.dryRun );
         var r = variables.inst.proc().exec( [ "xdg-settings", "set", "default-web-browser", file ], 30 );
         if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
         return variables.cli.say( cmd, "ok", data, arguments.asJson, [ arguments.id & " is now your default web browser." ] );
@@ -60,10 +57,7 @@ class Defaults {
         var state = variables.config.configState( entry );
         var kde = variables.proc.has( "kwriteconfig6" );
         var data = { terminal: arguments.id, desktop: file, list: entry.target, kde: kde, list_kept: state == "drifted" || state == "blocked" };
-        if ( !arguments.yes || arguments.dryRun ) {
-            var code = arguments.dryRun ? 0 : 2;
-            return variables.cli.say( cmd, code, data, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": make " & arguments.id & " your default terminal (" & entry.target & ( kde ? " and KDE's setting" : "" ) & ")", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dryRun );
-        }
+        if ( !arguments.yes || arguments.dryRun ) return variables.cli.scoped( cmd ).plan( "make " & arguments.id & " your default terminal (" & entry.target & ( kde ? " and KDE's setting" : "" ) & ")", data, arguments.asJson, arguments.dryRun );
         var notes = [];
         if ( state == "drifted" || state == "blocked" ) notes.append( entry.target & " was changed by you, so it was kept" );
         else if ( variables.config.configWrite( entry, entry.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, "failed", { error: "Could not write " & entry.target }, arguments.asJson, [ "error: could not write " & entry.target ] );
@@ -90,10 +84,7 @@ class Defaults {
         if ( !desktopInstalled( file ) ) return variables.cli.say( cmd, "precondition", { error: arguments.id & " is not installed" }, arguments.asJson, [ "error: " & arguments.id & " is not installed (" & file & " not found). Install it first: bxrig install " & arguments.id ] );
         if ( !variables.proc.has( "xdg-mime" ) ) return variables.cli.say( cmd, "precondition", { error: "xdg-mime was not found" }, arguments.asJson, [ "error: xdg-mime was not found (install xdg-utils)" ] );
         var data = { filemanager: arguments.id, desktop: file };
-        if ( !arguments.yes || arguments.dryRun ) {
-            var code = arguments.dryRun ? 0 : 2;
-            return variables.cli.say( cmd, code, data, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": make " & arguments.id & " (" & file & ") your default file manager", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dryRun );
-        }
+        if ( !arguments.yes || arguments.dryRun ) return variables.cli.scoped( cmd ).plan( "make " & arguments.id & " (" & file & ") your default file manager", data, arguments.asJson, arguments.dryRun );
         var r = variables.inst.proc().exec( [ "xdg-mime", "default", file, "inode/directory" ], 30 );
         if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
         return variables.cli.say( cmd, "ok", data, arguments.asJson, [ arguments.id & " is now your default file manager." ] );

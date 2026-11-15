@@ -138,7 +138,7 @@ class Update {
         if ( !len( target ) ) return variables.out.say( "precondition", { error: "cannot find the installed bxrig" }, arguments.asJson, [ "error: cannot find the installed bxrig binary" ] );
         var data = { channel: d.channel, target: target, latest: p.version ?: "" };
         if ( structKeyExists( p, "sha256" ) && sha( target ) == p.sha256 ) return variables.out.say( "ok", variables.text.merge( data, { updated: false } ), arguments.asJson, [ "Already on the latest " & d.channel & " build." ] );
-        if ( !arguments.yes ) return variables.out.say( "plan", data, arguments.asJson, [ "Plan: replace " & target & " with the " & d.channel & " build " & ( p.version ?: "" ), "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.out.plan( "replace " & target & " with the " & d.channel & " build " & ( p.version ?: "" ), data, arguments.asJson );
         var tmp = target & ".new-" & left( createUUID(), 8 );
         var dl = variables.http.download( base() & "/" & d.channel & "/bxrig-linux-x86_64", tmp, 600 );
         var sum = variables.http.get( base() & "/" & d.channel & "/bxrig-linux-x86_64.sha256", 30 );
@@ -181,11 +181,9 @@ class Update {
         if ( variables.aur.available() ) steps.append( variables.aur.upgradeArgv() );
         var data = { steps: steps.map( function( s ) { return s.toList( " " ); } ), snapshot: snap.len() > 0 };
         if ( !arguments.yes ) {
-            var plan = [ "Plan:" ];
-            for ( var st in data.steps ) plan.append( "  " & st );
-            plan.append( snap.len() ? "A snapshot is taken first." : "No snapshot tool found (snapper or timeshift): the update runs without one." );
-            plan.append( "Nothing was changed. Add --yes to apply." );
-            return variables.out.say( "plan", data, arguments.asJson, plan );
+            var shown = data.steps.map( function( st ) { return "  " & st; } );
+            shown.append( snap.len() ? "A snapshot is taken first." : "No snapshot tool found (snapper or timeshift): the update runs without one." );
+            return variables.out.plan( "", data, arguments.asJson, false, shown );
         }
         for ( var s in steps ) {
             var r = variables.proc.exec( s, 3600 );

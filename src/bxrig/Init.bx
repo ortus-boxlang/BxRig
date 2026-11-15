@@ -108,11 +108,11 @@ class Init {
         if ( !arguments.yes || arguments.dryRun ) {
             var code = arguments.dryRun ? 0 : 2;
             if ( arguments.asJson ) { println( variables.cli.envelope( "init", code, data, arguments.dryRun ) ); return code; }
-            println( ( arguments.dryRun ? "Dry run" : "Plan" ) & ": init, " & plan.steps.len() & " steps" );
+            println( new bxrig.util.Mutation().banner( arguments.dryRun ) & "init, " & plan.steps.len() & " steps" );
             for ( var s in plan.steps ) println( "  " & s.id & ": " & s.title & "   (" & commandFor( s ).toList( " " ) & ")" );
             if ( data.apps.new.len() || data.apps.installed.len() ) println( "  apps: " & data.apps.new.len() & " to install" & ( data.apps.new.len() ? " (" & data.apps.new.toList( ", " ) & ")" : "" ) & ", " & data.apps.installed.len() & " already installed and left alone" & ( data.apps.installed.len() ? " (" & data.apps.installed.toList( ", " ) & ")" : "" ) );
             if ( plan.pending.len() ) println( "  not applied yet (saved, no command for them): " & plan.pending.toList( ", " ) );
-            println( arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+            println( new bxrig.util.Mutation().footer( arguments.dryRun ) );
             return code;
         }
         var stopped = false;

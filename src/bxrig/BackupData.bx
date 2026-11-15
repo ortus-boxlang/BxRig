@@ -115,9 +115,9 @@ class BackupData {
 
     function plan( title, lines, yes, dry, asJson, data = {} ) {
         if ( !arguments.yes || arguments.dry ) {
-            var out = [ ( arguments.dry ? "Dry run: " : "Plan: " ) & arguments.title ];
+            var out = [ new bxrig.util.Mutation().banner( arguments.dry ) & arguments.title ];
             for ( var l in arguments.lines ) out.append( "  " & l );
-            out.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+            out.append( new bxrig.util.Mutation().footer( arguments.dry ) );
             return { done: false, code: variables.out.say( arguments.dry ? "ok" : "plan", arguments.data, arguments.asJson, out, arguments.dry ) };
         }
         return { done: true, code: 0 };

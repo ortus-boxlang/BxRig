@@ -50,6 +50,9 @@ bare="$(grep -rhoE '(out)\.(say|fail)\( *[0-9]+ *,|(cli)\.(say|fail)\( *[^,()]+,
 (( bare == 0 )) || { echo "FAIL: $bare say/fail calls pass a bare number as the exit code (use a name from Exit.bx)"; fails=$((fails+1)); }
 bare="$(grep -oE 'CLIExit\( *[0-9]+ *\)' "$root/src/Main.bx" | grep -vc '130' || true)"
 (( bare == 0 )) || { echo "FAIL: $bare CLIExit( N ) calls in Main.bx pass a bare number (use xit.NAME())"; fails=$((fails+1)); }
+# plans and dry runs are worded in util/Mutation (banner, footer, show; Out.plan)
+n="$(grep -rn 'Nothing was changed\. Add --yes\|"Dry run" : "Plan"' "$root/src" --include='*.bx' | grep -v '/util/Mutation.bx' | wc -l)"
+(( n == 0 )) || { echo "FAIL: $n hand-written plan or dry-run footers outside src/bxrig/util/Mutation.bx (use Out.plan, Mutation.banner and Mutation.footer)"; fails=$((fails+1)); }
 # environment variable names are listed once (util/Env.names), page icon names once (ControlCenterPages)
 n="$(grep -rn 'getSystemSetting(' "$root/src" --include='*.bx' | grep -v '/util/Env.bx' | wc -l)"
 (( n == 0 )) || { echo "FAIL: $n getSystemSetting calls outside src/bxrig/util/Env.bx (use Env.named( id ), the ids are listed in Env.names())"; fails=$((fails+1)); }

@@ -145,7 +145,7 @@ class Nas {
         if ( structIsEmpty( r ) ) return variables.out.fail( "precondition", "no NAS called " & arguments.name, arguments.asJson );
         var mounted = structKeyArray( r.shares ?: {} ).filter( function( sh ) { return r.shares[ sh ].auto ?: false; } );
         if ( mounted.len() ) return variables.out.fail( "precondition", "turn the automatic mounts off first: " & mounted.map( function( sh ) { return "bxrig nas auto off " & name & " " & sh; } ).toList( "; " ), arguments.asJson );
-        if ( !arguments.yes || arguments.dry ) return variables.out.say( arguments.dry ? "ok" : "plan", { name: arguments.name }, arguments.asJson, [ ( arguments.dry ? "Dry run: " : "Plan: " ) & "forget the NAS " & arguments.name & " and its stored password (the files on the NAS are not touched)", "Nothing was changed." & ( arguments.dry ? "" : " Add --yes to apply." ) ], arguments.dry );
+        if ( !arguments.yes || arguments.dry ) return variables.out.plan( "forget the NAS " & arguments.name & " and its stored password (the files on the NAS are not touched)", { name: arguments.name }, arguments.asJson, arguments.dry );
         var s = read();
         structDelete( s.nas, arguments.name );
         write( s );

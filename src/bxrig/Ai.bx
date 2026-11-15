@@ -46,7 +46,7 @@ class Ai {
         var a = variables.agents.find( arguments.id );
         if ( structIsEmpty( a ) ) return variables.cli.say( cmd, "precondition", { error: "Unknown agent" }, arguments.asJson, [ "error: unknown agent " & arguments.id & " (use " & variables.agents.ids().toList( ", " ) & ")" ] );
         if ( !installed( a.command ) ) return variables.cli.say( cmd, "precondition", { error: a.id & " is not installed" }, arguments.asJson, [ "error: " & a.name & " is not installed (" & a.command & " was not found). Install it first: bxrig install " & a.id ] );
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", { default: a.id }, arguments.asJson, [ "Plan: make " & a.name & " your default coding agent.", "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "make " & a.name & " your default coding agent.", { default: a.id }, arguments.asJson );
         var body = serializeJSON( { default: a.id } ) & chr( 10 );
         if ( variables.config.writeText( "ai-settings", file(), body ) != 0 ) return variables.cli.say( cmd, "failed", { error: "Could not write " & file() }, arguments.asJson, [ "error: could not write " & file() ] );
         return variables.cli.say( cmd, "ok", { default: a.id }, arguments.asJson, [ a.name & " is now your default coding agent." ] );

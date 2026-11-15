@@ -228,11 +228,11 @@ class BackupConfig {
         }
         var d = { id: arguments.id, files: todo, packages: missingPk, foreign: foreignPk };
         if ( !arguments.yes || arguments.dry ) {
-            var lines = [ ( arguments.dry ? "Dry run: " : "Plan: " ) & "restore " & arguments.id & ": " & todo.len() & " files differ" ];
+            var lines = [ new bxrig.util.Mutation().banner( arguments.dry ) & "restore " & arguments.id & ": " & todo.len() & " files differ" ];
             for ( var t in todo ) lines.append( "  " & ( t.state == "missing" ? "create   " : "replace  " ) & "~/" & t.file );
             lines.append( "A safety snapshot of your files as they are now is taken first." );
             if ( wantPk ) { lines.append( "  packages: sudo pacman -S --needed " & missingPk.len() & " from the repositories" ); if ( foreignPk.len() ) lines.append( "  not installed here (AUR or local), install them with yay: " & foreignPk.toList( " " ) ); }
-            lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+            lines.append( new bxrig.util.Mutation().footer( arguments.dry ) );
             variables.proc.exec( [ "rm", "-rf", dir ], 30 );
             return variables.out.say( arguments.dry ? "ok" : "plan", d, arguments.asJson, lines, arguments.dry );
         }
@@ -271,7 +271,7 @@ class BackupConfig {
         var all = snapshots();
         var gone = [];
         for ( var gi = keep + 1; gi <= all.len(); gi++ ) gone.append( all[ gi ].id );
-        if ( !arguments.yes || arguments.dry ) return variables.out.say( arguments.dry ? "ok" : "plan", { keep: keep, remove: gone }, arguments.asJson, [ ( arguments.dry ? "Dry run: " : "Plan: " ) & "keep the newest " & keep & " snapshots, remove " & gone.len() & ( gone.len() ? ": " & gone.toList( ", " ) : "" ), "Nothing was changed." & ( arguments.dry ? "" : " Add --yes to apply." ) ], arguments.dry );
+        if ( !arguments.yes || arguments.dry ) return variables.out.plan( "keep the newest " & keep & " snapshots, remove " & gone.len() & ( gone.len() ? ": " & gone.toList( ", " ) : "" ), { keep: keep, remove: gone }, arguments.asJson, arguments.dry );
         var removed = pruneTo( keep );
         var s = readSettings(); s.config.keep = keep; writeSettings( s );
         return variables.out.say( "ok", { keep: keep, removed: removed }, arguments.asJson, [ "Removed " & removed.len() & " snapshots." ] );

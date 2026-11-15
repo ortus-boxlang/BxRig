@@ -204,14 +204,14 @@ class Setup {
         if ( !yes || dryRun ) {
             var code = dryRun ? 0 : 2;
             if ( asJson ) { println( variables.cli.envelope( command, code, data, dryRun ) ); return code; }
-            println( ( dryRun ? "Dry run" : "Plan" ) & ": " & command & ", " & plan.steps.len() & " steps" );
+            println( new bxrig.util.Mutation().banner( dryRun ) & command & ", " & plan.steps.len() & " steps" );
             for ( var w in plan.warnings ) println( "  warning: " & w );
             for ( var s in plan.steps ) {
                 println( "  " & s.id & ": " & s.title );
                 for ( var c in s.commands ) println( "    " & c.toList( " " ) );
             }
             for ( var n in plan.notes ) println( "  note: " & n );
-            println( dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+            println( new bxrig.util.Mutation().footer( dryRun ) );
             return code;
         }
         var stopped = false; var firstKind = "";

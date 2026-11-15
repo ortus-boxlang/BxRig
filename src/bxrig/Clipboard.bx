@@ -53,7 +53,7 @@ class Clipboard {
     function clear( yes, asJson ) {
         var cmd = "clipboard clear";
         if ( !variables.proc.has( "cliphist" ) ) return variables.cli.say( cmd, "precondition", { error: "cliphist is not installed" }, arguments.asJson, [ "error: cliphist is not installed. Install: bxrig install cliphist" ] );
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", {}, arguments.asJson, [ "Plan: wipe the whole clipboard history (cliphist wipe).", "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "wipe the whole clipboard history (cliphist wipe).", {}, arguments.asJson );
         var r = variables.proc.exec( [ "cliphist", "wipe" ], 30 );
         if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
         return variables.cli.say( cmd, "ok", {}, arguments.asJson, [ "The clipboard history was wiped." ] );

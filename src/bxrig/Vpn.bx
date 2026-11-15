@@ -20,7 +20,7 @@ class Vpn {
         var steps = [ variables.systemd.enableArgv( "nordvpnd", false, true ), [ "sudo", "gpasswd", "-a", user, "nordvpn" ] ];
         var data = { steps: steps };
         if ( !len( user ) ) return variables.cli.say( cmd, "precondition", { error: "No USER" }, arguments.asJson, [ "error: could not tell which user to add to the nordvpn group" ] );
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", data, arguments.asJson, [ "Plan:", "  " & steps[ 1 ].toList( " " ), "  " & steps[ 2 ].toList( " " ), "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "", data, arguments.asJson, false, [ "  " & steps[ 1 ].toList( " " ), "  " & steps[ 2 ].toList( " " ) ] );
         for ( var s in steps ) {
             var r = variables.inst.proc().exec( s, 60 );
             if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ), step: s }, arguments.asJson, [ "error: " & s.toList( " " ) & ": " & trim( r.output ) ] );

@@ -133,10 +133,10 @@ class Java {
         var m = int( val( arguments.major ) );
         var rel = releases();
         if ( rel.ok && !arrayFind( rel.releases, m ) ) return variables.out.fail( "precondition", "Temurin has no Java " & m & " release. See: bxrig java available", arguments.asJson );
-        var plan = [ "Plan: download the latest Temurin JDK " & m & " from " & api() & " and unpack it into " & dataDir() & "/ (a folder named after its version).", "Nothing else changes. Make it the default with: bxrig java default " & m ];
+        var planTitle = "download the latest Temurin JDK " & m & " from " & api() & " and unpack it into " & dataDir() & "/ (a folder named after its version).";
+        var plan = [ "Nothing else changes. Make it the default with: bxrig java default " & m ];
         var data = { major: m, dir: dataDir() };
-        if ( arguments.dry ) { plan.append( "Dry run: nothing was changed." ); return variables.out.say( "ok", data, arguments.asJson, plan, true ); }
-        if ( !arguments.yes ) { plan.append( "Nothing was changed. Add --yes to install." ); return variables.out.say( "plan", data, arguments.asJson, plan ); }
+        if ( !arguments.yes || arguments.dry ) return variables.out.plan( planTitle, data, arguments.asJson, arguments.dry, plan, "Add --yes to install." );
         var tmp = dataDir() & "/.download-" & m;
         directoryCreate( tmp, true, true );
         var tar = tmp & "/jdk.tar.gz";
@@ -165,18 +165,16 @@ class Java {
 
     function setDefault( ref, unset, yes, dry, asJson ) {
         if ( arguments.unset ) {
-            var plan0 = [ "Plan: stop setting JAVA_HOME in new shells (removes " & shFile() & " and " & fishFile() & ")." ];
-            if ( arguments.dry ) { plan0.append( "Dry run: nothing was changed." ); return variables.out.say( "ok", {}, arguments.asJson, plan0, true ); }
-            if ( !arguments.yes ) { plan0.append( "Nothing was changed. Add --yes to apply." ); return variables.out.say( "plan", {}, arguments.asJson, plan0 ); }
+            if ( !arguments.yes || arguments.dry ) return variables.out.plan( "stop setting JAVA_HOME in new shells (removes " & shFile() & " and " & fishFile() & ").", {}, arguments.asJson, arguments.dry );
             for ( var f in [ shFile(), fishFile() ] ) if ( fileExists( f ) ) fileDelete( f );
             return variables.out.say( "ok", { default: "" }, arguments.asJson, [ "New shells no longer set JAVA_HOME." ] );
         }
         var h = find( arguments.ref );
         if ( !structCount( h ) ) return variables.out.fail( "precondition", "no Java home matches " & arguments.ref & ". See: bxrig java list", arguments.asJson );
-        var plan = [ "Plan: new shells use " & h.id & " (Java " & h.version & ", " & h.path & ").", "Writes " & shFile() & " and " & fishFile() & "; the shell starters source them. Open a new terminal, or run: eval " & chr( 34 ) & "$(bxrig java env " & h.id & ")" & chr( 34 ) ];
+        var planTitle = "new shells use " & h.id & " (Java " & h.version & ", " & h.path & ").";
+        var plan = [ "Writes " & shFile() & " and " & fishFile() & "; the shell starters source them. Open a new terminal, or run: eval " & chr( 34 ) & "$(bxrig java env " & h.id & ")" & chr( 34 ) ];
         var data = { id: h.id, path: h.path, version: h.version };
-        if ( arguments.dry ) { plan.append( "Dry run: nothing was changed." ); return variables.out.say( "ok", data, arguments.asJson, plan, true ); }
-        if ( !arguments.yes ) { plan.append( "Nothing was changed. Add --yes to apply." ); return variables.out.say( "plan", data, arguments.asJson, plan ); }
+        if ( !arguments.yes || arguments.dry ) return variables.out.plan( planTitle, data, arguments.asJson, arguments.dry, plan );
         writeEnv( h );
         return variables.out.say( "ok", data, arguments.asJson, [ "Default Java is now " & h.id & " (" & h.version & ").", "Open a new terminal, or run: eval " & chr( 34 ) & "$(bxrig java env " & h.id & ")" & chr( 34 ) ] );
     }
@@ -186,10 +184,10 @@ class Java {
         if ( !structCount( h ) ) return variables.out.fail( "precondition", "no Java home matches " & arguments.ref, arguments.asJson );
         if ( !h.removable ) return variables.out.fail( "precondition", h.id & " came from " & h.source & ", so BxRig will not delete it. Remove it with that tool.", arguments.asJson );
         if ( h.source == "sdkman" ) return new bxrig.Sdk( variables.cli ).act( "remove", "java", listLast( h.path, "/" ), arguments.yes, arguments.dry, arguments.asJson );
-        var plan = [ "Plan: delete " & h.path & " (" & h.id & ")." ];
+        var planTitle = "delete " & h.path & " (" & h.id & ").";
+        var plan = [];
         if ( h.default ) plan.append( "It is the default for new shells; the default is cleared too." );
-        if ( arguments.dry ) { plan.append( "Dry run: nothing was changed." ); return variables.out.say( "ok", { id: h.id }, arguments.asJson, plan, true ); }
-        if ( !arguments.yes ) { plan.append( "Nothing was changed. Add --yes to delete." ); return variables.out.say( "plan", { id: h.id }, arguments.asJson, plan ); }
+        if ( !arguments.yes || arguments.dry ) return variables.out.plan( planTitle, { id: h.id }, arguments.asJson, arguments.dry, plan, "Add --yes to delete." );
         directoryDelete( h.path, true );
         if ( h.default ) for ( var f in [ shFile(), fishFile() ] ) if ( fileExists( f ) ) fileDelete( f );
         return variables.out.say( "ok", { id: h.id, removed: true }, arguments.asJson, [ "Removed " & h.id ] );

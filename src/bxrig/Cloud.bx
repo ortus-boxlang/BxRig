@@ -71,7 +71,7 @@ class Cloud {
         var state = variables.config.configState( entry );
         var data = { remote: arguments.name, folder: dir, unit: entry.target };
         if ( state == "drifted" || state == "blocked" ) return variables.cli.say( cmd, "precondition", data, arguments.asJson, [ "error: " & entry.target & " was changed by you, so it was kept. Unmount it first (bxrig cloud unmount " & arguments.name & " --yes) and delete the file to start over." ] );
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", data, arguments.asJson, [ "Plan: mount " & arguments.name & ": at " & dir & " through the user service " & unitName( arguments.name ) & " (starts at every login).", "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "mount " & arguments.name & ": at " & dir & " through the user service " & unitName( arguments.name ) & " (starts at every login).", data, arguments.asJson );
         if ( variables.config.configWrite( entry, entry.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, "failed", data, arguments.asJson, [ "error: could not write " & entry.target ] );
         variables.systemd.reload( true );
         var r = variables.systemd.enable( unitName( arguments.name ), true );
@@ -85,7 +85,7 @@ class Cloud {
         if ( !new bxrig.util.Names().valid( "label", arguments.name ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: bad name" ] );
         var unit = unitDir() & "/" & unitName( arguments.name );
         if ( !fileExists( unit ) ) return variables.cli.say( cmd, "precondition", { error: "No such mount" }, arguments.asJson, [ "error: BxRig has no mount for " & arguments.name ] );
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", { remote: arguments.name }, arguments.asJson, [ "Plan: stop and disable " & unitName( arguments.name ) & ".", "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "stop and disable " & unitName( arguments.name ) & ".", { remote: arguments.name }, arguments.asJson );
         var r = variables.systemd.disable( unitName( arguments.name ), true, 60 );
         if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
         var m = reFind( "--vfs-cache-mode writes", fileRead( unit ) );

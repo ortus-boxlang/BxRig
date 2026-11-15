@@ -263,7 +263,7 @@ class Dotfiles {
         var lines = summary( p );
         if ( !arguments.yes || arguments.dryRun ) {
             var code = arguments.dryRun ? 0 : 2;
-            lines.append( arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply" & ( p.conflicts.len() ? " (you will be asked about the files you already have, or add --overwrite)" : "" ) & "." );
+            lines.append( new bxrig.util.Mutation().footer( arguments.dryRun, "Add --yes to apply" & ( p.conflicts.len() ? " (you will be asked about the files you already have, or add --overwrite)" : "" ) & "." ) );
             return variables.cli.say( cmd, code, data, arguments.asJson, lines, arguments.dryRun );
         }
         // your files win, but only with your say-so
@@ -355,7 +355,7 @@ class Dotfiles {
         if ( j.method == "chezmoi" || j.method == "yadm" ) what = [ "put back " & j.backups.len() & " original files (files " & j.method & " created stay; use " & j.method & " itself to remove them)" ];
         if ( !arguments.yes || arguments.dryRun ) {
             var code = arguments.dryRun ? 0 : 2;
-            var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": would " & what.toList( " and " ), arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ];
+            var lines = [ new bxrig.util.Mutation().banner( arguments.dryRun ) & "would " & what.toList( " and " ), new bxrig.util.Mutation().footer( arguments.dryRun ) ];
             return variables.cli.say( cmd, code, { would: what }, arguments.asJson, lines, arguments.dryRun );
         }
         var removed = 0;

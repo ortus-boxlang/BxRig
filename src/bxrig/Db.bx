@@ -196,7 +196,7 @@ class Db {
         var verb = len( state ) ? "start the stopped container " & res.container : "create " & res.container & " from " & e.image & " on 127.0.0.1:" & p & " (data in the volume " & res.container & ")" & ( wants ? " with a password you choose" : "" );
         if ( !arguments.yes || arguments.dryRun ) {
             var code = arguments.dryRun ? 0 : 2;
-            var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": " & cmd & " " & e.id, "  would " & verb, arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ];
+            var lines = [ new bxrig.util.Mutation().banner( arguments.dryRun ) & cmd & " " & e.id, "  would " & verb, new bxrig.util.Mutation().footer( arguments.dryRun ) ];
             return variables.cli.say( cmd, code, variables.text.merge( data, { would: verb } ), arguments.asJson, lines, arguments.dryRun );
         }
         if ( len( state ) ) {
@@ -267,10 +267,7 @@ class Db {
         try { hasVolume = engineExec( [ "volume", "inspect", res.container ], 30 ).exitCode == 0; } catch ( any e ) {}
         if ( !hasContainer && !hasFiles && !hasVolume ) return variables.cli.say( cmd, "precondition", { error: "There is nothing to remove for " & res.container }, arguments.asJson, [ "error: there is nothing to remove for " & res.container ] );
         var what = "remove the container " & res.container & ( arguments.keepData ? " (the data volume and password file are KEPT)" : " AND DELETE ITS DATA (the data volume and the password file)" );
-        if ( !arguments.yes || arguments.dryRun ) {
-            var code = arguments.dryRun ? 0 : 2;
-            return variables.cli.say( cmd, code, { container: res.container, would: what, deletes_data: !arguments.keepData }, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": would " & what, arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dryRun );
-        }
+        if ( !arguments.yes || arguments.dryRun ) return variables.cli.scoped( cmd ).plan( "would " & what, { container: res.container, would: what, deletes_data: !arguments.keepData }, arguments.asJson, arguments.dryRun );
         if ( hasContainer ) {
             var r = engineExec( [ "rm", "-f", res.container ], 120 );
             if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { container: res.container, error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );

@@ -100,9 +100,9 @@ class Refresh {
         for ( var c in comps ) for ( var x in unitsFor( c, arguments.opts ) ) units.append( x );
         var rows = units.map( function( x ) { return x.kind == "file" ? { component: x.component, kind: "file", name: x.name, target: x.target, state: x.state, result: verdict( x.state, force ) } : { component: x.component, kind: "command", name: x.name, result: "runs: " & x.argv.toList( " " ) }; } );
         if ( !arguments.yes || arguments.dry ) {
-            var lines = [ ( arguments.dry ? "Dry run: " : "Plan: " ) & "refresh " & what ];
+            var lines = [ new bxrig.util.Mutation().banner( arguments.dry ) & "refresh " & what ];
             for ( var r in rows ) lines.append( "  " & r.component & ": " & r.name & ( r.kind == "file" ? " -> " & r.target : "" ) & "   " & r.result );
-            lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+            lines.append( new bxrig.util.Mutation().footer( arguments.dry ) );
             return variables.out.say( arguments.dry ? "ok" : "plan", { component: what, units: rows, force: arguments.force }, arguments.asJson, lines, arguments.dry );
         }
         var done = [];

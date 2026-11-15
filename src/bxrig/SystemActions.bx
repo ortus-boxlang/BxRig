@@ -36,7 +36,7 @@ class SystemActions {
         var data = { action: arguments.verb, via: c.via, command: c.argv.toList( " " ) };
         if ( arguments.dryRun || ( needsYes( arguments.verb ) && !arguments.yes ) ) {
             var dry = arguments.dryRun;
-            return variables.out.say( dry ? "ok" : "plan", data, arguments.asJson, [ ( dry ? "Dry run" : "Plan" ) & ": " & arguments.verb & " with `" & data.command & "`" & ( needsYes( arguments.verb ) ? " (ends your session)" : "" ), dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], dry );
+            return variables.out.plan( arguments.verb & " with `" & data.command & "`" & ( needsYes( arguments.verb ) ? " (ends your session)" : "" ), data, arguments.asJson, dry );
         }
         var r = variables.proc.exec( c.argv, 30 );
         return variables.out.say( r.exitCode == 0 ? "ok" : "failed", data, arguments.asJson, [ r.exitCode == 0 ? arguments.verb & ": done" : "error: " & arguments.verb & " failed: " & trim( r.output ) ] );

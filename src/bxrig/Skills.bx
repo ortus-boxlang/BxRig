@@ -164,7 +164,7 @@ class Skills {
         var list = arguments.what.len() ? arguments.what : [ "bxrig" ];
         for ( var w in list ) if ( w != "bxrig" && structIsEmpty( parseRef( w ) ) ) return variables.out.say( "precondition", { error: "bad reference " & w }, arguments.asJson, [ "error: unknown skill or bad reference: " & w ] );
         var data = { install: list, store: store() };
-        if ( !arguments.yes || arguments.dryRun ) return variables.out.say( arguments.dryRun ? "ok" : "plan", data, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": install " & list.toList( ", " ) & " into " & store() & " and link them into your agents' skills folders", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes || arguments.dryRun ) return variables.out.plan( "install " & list.toList( ", " ) & " into " & store() & " and link them into your agents' skills folders", data, arguments.asJson, arguments.dryRun );
         var m = loadManifest();
         var done = [];
         for ( var w2 in list ) {
@@ -200,7 +200,7 @@ class Skills {
     function remove( name, yes, asJson ) {
         var m = loadManifest();
         if ( !structKeyExists( m.skills, arguments.name ) ) return variables.out.say( "precondition", { error: "not installed" }, arguments.asJson, [ "error: " & arguments.name & " was not installed by BxRig" ] );
-        if ( !arguments.yes ) return variables.out.say( "plan", { remove: arguments.name }, arguments.asJson, [ "Plan: remove the skill " & arguments.name & " and its links", "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.out.plan( "remove the skill " & arguments.name & " and its links", { remove: arguments.name }, arguments.asJson );
         for ( var a in agents() ) {
             var t = a.dir & "/" & arguments.name;
             if ( variables.proc.exec( [ "test", "-L", t ], 10 ).exitCode == 0 ) variables.proc.exec( [ "rm", "-f", t ], 10 );

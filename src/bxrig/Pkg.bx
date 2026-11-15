@@ -162,10 +162,10 @@ class Pkg {
         var data = { packages: apps.map( function( a ) { return { name: a.id, source: a.source == "pacman" ? "repo" : "aur" }; } ), skipped: skipped, steps: built.steps };
         if ( !apps.len() ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Nothing to do: " & skipped.map( function( s ) { return s.name; } ).toList( ", " ) & " already installed." ] );
         if ( !arguments.yes || arguments.dryRun ) {
-            var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": install " & apps.map( function( a ) { return a.id & " (" & ( a.source == "pacman" ? "repo" : "AUR" ) & ")"; } ).toList( ", " ) ];
+            var lines = [ new bxrig.util.Mutation().banner( arguments.dryRun ) & "install " & apps.map( function( a ) { return a.id & " (" & ( a.source == "pacman" ? "repo" : "AUR" ) & ")"; } ).toList( ", " ) ];
             for ( var st in built.steps ) for ( var c in st.commands ) lines.append( "  " & st.kind & ": " & c.toList( " " ) );
             if ( hasAur ) lines.append( "AUR packages are built from user-submitted scripts. Read one first with: yay -G NAME" );
-            lines.append( arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+            lines.append( new bxrig.util.Mutation().footer( arguments.dryRun ) );
             return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", data, arguments.asJson, lines, arguments.dryRun );
         }
         if ( hasAur && variables.inst.isRoot() ) return variables.cli.fail( cmd, "precondition", "AUR packages are never built as root", arguments.asJson );
@@ -199,10 +199,10 @@ class Pkg {
             return variables.cli.say( arguments.cmd, blocked.len() ? "precondition" : "ok", data, arguments.asJson, [ blocked.len() ? "error: nothing removed (" & why & ")" : "Nothing to do (" & sk & ")." ] );
         }
         if ( !arguments.yes || arguments.dryRun ) {
-            var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": remove " & todo.toList( ", " ) & " with their unused dependencies and system config files (pacman -Rns). Your files in ~/.config and ~/.local are not touched." ];
+            var lines = [ new bxrig.util.Mutation().banner( arguments.dryRun ) & "remove " & todo.toList( ", " ) & " with their unused dependencies and system config files (pacman -Rns). Your files in ~/.config and ~/.local are not touched." ];
             for ( var b in blocked ) lines.append( "  skipped " & b.name & ": " & b.reason );
             for ( var s in skipped ) lines.append( "  skipped " & s.name & ": " & s.reason );
-            lines.append( arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+            lines.append( new bxrig.util.Mutation().footer( arguments.dryRun ) );
             return variables.cli.say( arguments.cmd, arguments.dryRun ? "ok" : "plan", data, arguments.asJson, lines, arguments.dryRun );
         }
         var done = [];
@@ -249,7 +249,7 @@ class Pkg {
             return variables.cli.say( cmd, "ok", extra, arguments.asJson, [ "Nothing to do: nothing of that is installed." ] );
         }
         if ( !pkgs.len() ) {
-            if ( !arguments.yes || arguments.dryRun ) return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", extra, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": remove the web app launchers " & gone.map( function( g ) { return g.id; } ).toList( ", " ), arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dryRun );
+            if ( !arguments.yes || arguments.dryRun ) return variables.cli.scoped( cmd ).plan( "remove the web app launchers " & gone.map( function( g ) { return g.id; } ).toList( ", " ), extra, arguments.asJson, arguments.dryRun );
             for ( var g in gone ) fileDelete( g.path );
             return variables.cli.say( cmd, "ok", extra, arguments.asJson, gone.map( function( g ) { return "Removed web app: " & g.id; } ) );
         }

@@ -339,9 +339,9 @@ class Vm {
         else { data.tag = rec.tag; data.image = variables.data.linuxImage() & ":" & rec.imageTag; data.gpu = rec.gpu; }
         var what = "create " & containerName( nm ) & " from " & data.image & ( arguments.kind == "windows" ? " (Windows " & variables.data.windowsVersion( rec.version ).name & ", " & rec.ram & " RAM, " & rec.cpus & " CPUs, " & rec.disk & " disk)" : " (" & rec.tag & ( rec.gpu != "none" ? ", GPU " & rec.gpu : "" ) & ")" ) & "; data in " & dir & ( len( rec.share ) ? "; shared folder " & rec.share : "" ) & "; ports on 127.0.0.1 " & ( arguments.kind == "windows" ? "web " & rec.ports.web & ", RDP " & rec.ports.rdp : "web " & rec.ports.web );
         if ( !arguments.yes || arguments.dryRun ) {
-            var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": " & cmd & " " & arguments.kind & " " & nm, "  would " & what ];
+            var lines = [ new bxrig.util.Mutation().banner( arguments.dryRun ) & cmd & " " & arguments.kind & " " & nm, "  would " & what ];
             if ( arguments.kind == "windows" ) lines.append( "  The Windows install downloads about " & numberFormat( variables.data.windowsVersion( rec.version ).size, "0.0" ) & " GB and takes a while; you need your own Windows license." );
-            lines.append( arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+            lines.append( new bxrig.util.Mutation().footer( arguments.dryRun ) );
             return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", variables.text.merge( data, { would: what } ), arguments.asJson, lines, arguments.dryRun );
         }
         if ( !engineAvailable() ) return variables.cli.fail( cmd, "precondition", engineCli() & " is required but was not found (bxrig profile-install containers, or bxrig db engine docker)", arguments.asJson );
@@ -523,7 +523,7 @@ class Vm {
         var dir = dataDir( arguments.name );
         var kb = duKb( dir );
         var what = "remove the container " & res.container & ( arguments.keepData ? " (the data in " & dir & ", the password and the record are KEPT)" : " AND DELETE ITS DATA (" & variables.fmt.kb( kb ) & " in " & dir & "), its stored password and its record. The shared folder is not touched" );
-        if ( !arguments.yes || arguments.dryRun ) return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", { name: arguments.name, would: what, deletes_data: !arguments.keepData, size_kb: kb }, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": would " & what, arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dryRun );
+        if ( !arguments.yes || arguments.dryRun ) return variables.cli.scoped( cmd ).plan( "would " & what, { name: arguments.name, would: what, deletes_data: !arguments.keepData, size_kb: kb }, arguments.asJson, arguments.dryRun );
         if ( len( stateOf( res.container ) ) ) {
             var r = engineExec( [ "rm", "-f", res.container ], 180 );
             if ( r.exitCode != 0 ) return variables.cli.fail( cmd, "failed", trim( r.output ), arguments.asJson );

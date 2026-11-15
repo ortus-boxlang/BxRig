@@ -210,7 +210,7 @@ class MacExtras {
         if ( !variables.proc.has( "libinput-gestures-setup" ) ) return need( cmd, "libinput-gestures-setup", "Install it: bxrig install libinput-gestures", arguments.asJson );
         var entry = { name: "libinput-gestures", target: gesturesFile(), mode: "644", content: gesturesText() };
         var data = { file: gesturesFile() };
-        if ( !arguments.yes || arguments.dryRun ) return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", data, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": write " & gesturesFile() & " (3-finger swipe left/right: workspaces, up: overview) and start libinput-gestures at login", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes || arguments.dryRun ) return variables.cli.scoped( cmd ).plan( "write " & gesturesFile() & " (3-finger swipe left/right: workspaces, up: overview) and start libinput-gestures at login", data, arguments.asJson, arguments.dryRun );
         var st = variables.config.configState( entry );
         if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( entry, entry.content, "apply", true, false );
         variables.proc.exec( [ "libinput-gestures-setup", "autostart" ], 30 );

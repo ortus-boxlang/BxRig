@@ -47,7 +47,7 @@ class Containers {
         var argv = variables.systemd.enableArgv( "podman.socket", true );
         var host = "unix://" & new bxrig.util.Env().named( "xdgRuntimeDir", "/run/user/1000" ) & "/podman/podman.sock";
         if ( !variables.proc.has( "podman" ) ) return variables.cli.say( cmd, "precondition", { error: "Podman is not installed" }, arguments.asJson, [ "error: Podman is not installed. Install it: bxrig profile-install containers" ] );
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", { command: argv, docker_host: host }, arguments.asJson, [ "Plan: " & argv.toList( " " ), "Then tools that speak the Docker API use DOCKER_HOST=" & host, "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( argv.toList( " " ), { command: argv, docker_host: host }, arguments.asJson, false, [ "Then tools that speak the Docker API use DOCKER_HOST=" & host ] );
         var r = variables.proc.exec( argv, 30 );
         if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
         return variables.cli.say( cmd, "ok", { docker_host: host }, arguments.asJson, [ "The Podman socket is active.", "Point Docker-API tools at it: export DOCKER_HOST=" & host ] );
@@ -61,7 +61,7 @@ class Containers {
         for ( var p in [ "podman-docker", "podman-compose" ] ) if ( !variables.pacman.isInstalled( p ) ) pkgs.append( p );
         var data = { packages: pkgs };
         if ( !pkgs.len() ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Already in place: `docker` runs Podman and podman-compose is installed." ] );
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", data, arguments.asJson, [ "Plan: " & variables.pacman.installLine( pkgs ), "After it, `docker ...` and `docker compose ...` run on Podman.", "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( variables.pacman.installLine( pkgs ), data, arguments.asJson, false, [ "After it, `docker ...` and `docker compose ...` run on Podman." ] );
         var r = variables.proc.exec( variables.pacman.installArgv( pkgs ), 1800 );
         if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: could not install " & pkgs.toList( ", " ) & ": " & trim( r.output ) ] );
         return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Installed " & pkgs.toList( ", " ) & ". `docker` now runs Podman. Optional: bxrig containers socket enable" ] );

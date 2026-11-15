@@ -25,7 +25,7 @@ class SshKey {
         var argv = [ "ssh-keygen", "-t", "ed25519", "-f", keyFile() ];
         if ( len( arguments.email ) ) { argv.append( "-C" ); argv.append( arguments.email ); }
         var data = { created: false, key: keyFile(), command: argv };
-        if ( !arguments.yes || arguments.dryRun ) return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", data, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": " & argv.toList( " " ), "ssh-keygen will ask for a passphrase (empty for none).", "Nothing was changed." & ( arguments.dryRun ? "" : " Add --yes to apply." ) ], arguments.dryRun );
+        if ( !arguments.yes || arguments.dryRun ) return variables.cli.scoped( cmd ).plan( argv.toList( " " ), data, arguments.asJson, arguments.dryRun, [ "ssh-keygen will ask for a passphrase (empty for none)." ] );
         variables.inst.proc().exec( [ "sh", "-c", 'mkdir -p "$1" && chmod 700 "$1"', "_", dir() ], 10 );
         var r = systemExecute( argv[ 1 ], argv.slice( 2 ), 0, false, ".", "", "", true, {}, true );
         if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: "ssh-keygen failed" }, arguments.asJson, [ "error: ssh-keygen failed (exit " & r.exitCode & ")" ] );

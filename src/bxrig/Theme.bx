@@ -251,7 +251,7 @@ class Theme {
         var wall = arguments.keepWallpaper ? "" : t.wallpaper;
         var entries = files( p.colors, t.neovimText );
         var data = { theme: t.name, origin: t.origin, light: variables.tc.isLight( p.colors ), mode: stateMode, applied_mode: m, wallpaper: wall, files: entries.map( function( e ) { return e.target; } ) };
-        if ( arguments.dry ) return variables.out.say( "ok", data, arguments.asJson, [ "Plan: theme " & t.name & " (" & ( data.light ? "light" : "dark" ) & ", mode " & m & ")", "Files: " & entries.map( function( e ) { return e.target; } ).toList( ", " ), "Nothing was changed." ], true );
+        if ( arguments.dry ) return variables.out.plan( "theme " & t.name & " (" & ( data.light ? "light" : "dark" ) & ", mode " & m & ")", data, arguments.asJson, true, [ "Files: " & entries.map( function( e ) { return e.target; } ).toList( ", " ) ] );
         data.written = []; data.unchanged = []; data.failed = [];
         for ( var e in entries ) {
             if ( variables.config.configState( e ) == "clean" ) { data.unchanged.append( e.name ); continue; }
@@ -293,11 +293,11 @@ class Theme {
         directoryCreate( outDir(), true, true );
         fileWrite( outDir() & "/vscode.json", jsonSerialize( colors ) & chr( 10 ) );
         if ( !arguments.yes || arguments.dry ) {
-            var lines = [ ( arguments.dry ? "Dry run: " : "Plan: " ) & "put the " & t.name & " colours into " & plan.len() & " VS Code settings file(s)" ];
+            var lines = [ new bxrig.util.Mutation().banner( arguments.dry ) & "put the " & t.name & " colours into " & plan.len() & " VS Code settings file(s)" ];
             for ( var pf in plan ) lines.append( "  " & pf.file );
             for ( var sk in skipped ) lines.append( "  note: " & sk );
             lines.append( "Your file is rewritten as plain JSON (a backup is kept; only workbench.colorCustomizations is changed)." );
-            lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+            lines.append( new bxrig.util.Mutation().footer( arguments.dry ) );
             return variables.out.say( arguments.dry ? "ok" : "plan", d, arguments.asJson, lines, arguments.dry );
         }
         for ( var u in plan ) {
@@ -318,7 +318,7 @@ class Theme {
         var t = len( st.name ) ? find( st.name ) : { found: false };
         var c = t.found ? variables.tc.parse( t.colorsText ) : { ok: false };
         var m = c.ok ? resolveMode( arguments.value, c.colors ) : ( arguments.value == "theme" ? "dark" : arguments.value );
-        if ( arguments.dry ) return variables.out.say( "ok", { mode: arguments.value, applied_mode: m }, arguments.asJson, [ "Plan: theme mode " & arguments.value & " (applies " & m & ")", "Nothing was changed." ], true );
+        if ( arguments.dry ) return variables.out.plan( "theme mode " & arguments.value & " (applies " & m & ")", { mode: arguments.value, applied_mode: m }, arguments.asJson, true );
         writeState( st.name, arguments.value );
         var n = notify( m, "" );
         return variables.out.say( "ok", { mode: arguments.value, applied_mode: m, noctalia: n.noctalia, plasma: n.plasma }, arguments.asJson, [ "Theme mode: " & arguments.value & " (applies " & m & "). Noctalia: " & n.noctalia & "  Plasma: " & n.plasma ] );

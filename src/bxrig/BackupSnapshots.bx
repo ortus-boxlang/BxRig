@@ -48,10 +48,10 @@ class BackupSnapshots {
         var d = arguments.data;
         d.commands = arguments.cmds.map( function( c ) { return c.toList( " " ); } );
         if ( !arguments.yes || arguments.dry ) {
-            var lines = [ ( arguments.dry ? "Dry run: " : "Plan: " ) & arguments.title ];
+            var lines = [ new bxrig.util.Mutation().banner( arguments.dry ) & arguments.title ];
             for ( var c in arguments.cmds ) lines.append( "  " & c.toList( " " ) );
             if ( structKeyExists( d, "notes" ) ) for ( var nt in d.notes ) lines.append( "  note: " & nt );
-            lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+            lines.append( new bxrig.util.Mutation().footer( arguments.dry ) );
             return variables.out.say( arguments.dry ? "ok" : "plan", d, arguments.asJson, lines, arguments.dry );
         }
         for ( var x in arguments.cmds ) {

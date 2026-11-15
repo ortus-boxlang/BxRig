@@ -94,7 +94,7 @@ class KeysEditor {
         var clash = userBinds().filter( function( ub ) { return ub.combo == combo; } );
         if ( clash.len() && !arguments.force ) return variables.cli.say( cmd, "precondition", { error: "Used in your files", file: clash[ 1 ].file, line: clash[ 1 ].line }, arguments.asJson, [ "error: " & arguments.keys & " is already bound in your " & clash[ 1 ].file & " line " & clash[ 1 ].line & " (add --force to use it anyway)" ] );
         var data = { id: arguments.id, keys: arguments.keys, was: row.keys };
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", data, arguments.asJson, [ "Plan: " & row.action & " changes from " & ( len( row.keys ) ? row.keys : "no keys" ) & " to " & arguments.keys, "Nothing was changed. Add --yes to apply, then: bxrig keys apply --yes" ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( row.action & " changes from " & ( len( row.keys ) ? row.keys : "no keys" ) & " to " & arguments.keys, data, arguments.asJson, false, [], "Add --yes to apply, then: bxrig keys apply --yes" );
         var cur = variables.sc.loadOverrides();
         cur[ arguments.id ] = arguments.keys;
         if ( !writeOverrides( cur ) ) return variables.cli.say( cmd, "failed", { error: "Could not write " & file() }, arguments.asJson, [ "error: could not write " & file() ] );
@@ -106,7 +106,7 @@ class KeysEditor {
         var cmd = "keys reset";
         var cur = variables.sc.loadOverrides();
         if ( !structKeyExists( cur, arguments.id ) ) return variables.cli.say( cmd, "precondition", { error: "No override" }, arguments.asJson, [ "error: " & arguments.id & " has no custom keys" ] );
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", { id: arguments.id }, arguments.asJson, [ "Plan: " & arguments.id & " goes back to its default keys.", "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( arguments.id & " goes back to its default keys.", { id: arguments.id }, arguments.asJson );
         structDelete( cur, arguments.id );
         if ( !writeOverrides( cur ) ) return variables.cli.say( cmd, "failed", { error: "Could not write " & file() }, arguments.asJson, [ "error: could not write " & file() ] );
         return variables.cli.say( cmd, "ok", { id: arguments.id }, arguments.asJson, [ arguments.id & " is back to its default keys. Write it: bxrig keys apply --yes" ] );

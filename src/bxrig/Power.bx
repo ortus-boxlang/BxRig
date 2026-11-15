@@ -105,12 +105,9 @@ class Power {
         if ( !arrayFind( [ "suspend", "lock", "ignore" ], want ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "power lid" ), arguments.asJson );
         var tmp = new bxrig.util.SystemFile().tempPath( "lid" );
         var cmds = [ new bxrig.util.SystemFile().installArgv( tmp, lidFile() ) ];
-        var plan = [ "Plan: closing the lid will " & want, "  write " & lidFile(), "  sudo install ...", "  note: logind reads it on the next login or reboot (it is not restarted here, that would end your session)" ];
+        var plan = [ "  write " & lidFile(), "  sudo install ...", "  note: logind reads it on the next login or reboot (it is not restarted here, that would end your session)" ];
         var data = { action: want, file: lidFile(), commands: cmds.map( function( c ) { return c.toList( " " ); } ) };
-        if ( !arguments.yes || arguments.dry ) {
-            plan.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return variables.out.say( arguments.dry ? "ok" : "plan", data, arguments.asJson, plan, arguments.dry );
-        }
+        if ( !arguments.yes || arguments.dry ) return variables.out.plan( "closing the lid will " & want, data, arguments.asJson, arguments.dry, plan );
         fileWrite( tmp, lidConf( want ) );
         var r = variables.proc.exec( cmds[ 1 ], 30 );
         try { fileDelete( tmp ); } catch ( any e ) {}
@@ -122,12 +119,7 @@ class Power {
         if ( !batteries().len() && !arguments.force ) return variables.out.say( "ok", { skipped: "no battery" }, arguments.asJson, [ "No battery found: this is a desktop, so there is nothing to set up. (--force installs the tools anyway.)" ] );
         var steps = [ variables.pacman.installArgv( [ "power-profiles-daemon", "upower" ] ), variables.systemd.enableArgv( [ "power-profiles-daemon.service", "upower.service" ], false, true ) ];
         var data = { steps: steps.map( function( s ) { return s.toList( " " ); } ) };
-        if ( !arguments.yes || arguments.dry ) {
-            var lines = [ arguments.dry ? "Dry run: laptop power tools" : "Plan: laptop power tools" ];
-            for ( var s in steps ) lines.append( "  " & s.toList( " " ) );
-            lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return variables.out.say( arguments.dry ? "ok" : "plan", data, arguments.asJson, lines, arguments.dry );
-        }
+        if ( !arguments.yes || arguments.dry ) return variables.out.plan( "laptop power tools", data, arguments.asJson, arguments.dry, steps.map( function( s ) { return "  " & s.toList( " " ); } ) );
         for ( var st in steps ) {
             var r = variables.proc.exec( st, 300 );
             if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ), step: st.toList( " " ) }, arguments.asJson, [ "error: " & st.toList( " " ) & ": " & trim( r.output ) ] );

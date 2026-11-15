@@ -107,7 +107,7 @@ class Editor {
         var pkgs = [];
         for ( var p in [ "neovim", "git", "ripgrep", "fd", "lazygit" ] ) if ( !variables.pacman.isInstalled( p ) ) pkgs.append( p );
         var data = { target: dir, packages: pkgs, layer: layerFiles() };
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", data, arguments.asJson, [ "Plan:" & ( pkgs.len() ? " " & variables.pacman.installLine( pkgs ) & ";" : "" ) & " git clone https://github.com/LazyVim/starter " & dir & "; remove " & dir & "/.git; add the BxRig layer (" & layerFiles().len() & " files: transparency, BoxLang syntax, theme following, no news popups) and the neo-tree extra", "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( ( pkgs.len() ? variables.pacman.installLine( pkgs ) & "; " : "" ) & "git clone https://github.com/LazyVim/starter " & dir & "; remove " & dir & "/.git; add the BxRig layer (" & layerFiles().len() & " files: transparency, BoxLang syntax, theme following, no news popups) and the neo-tree extra", data, arguments.asJson );
         if ( pkgs.len() ) {
             var ins = variables.proc.exec( variables.pacman.installArgv( pkgs ), 1800 );
             if ( ins.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( ins.output ) }, arguments.asJson, [ "error: could not install " & pkgs.toList( ", " ) & ": " & trim( ins.output ) ] );
@@ -130,7 +130,7 @@ class Editor {
         var data = { target: e.target, state: st };
         if ( st == "clean" ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Already in place: " & e.target ] );
         if ( st == "drifted" || st == "blocked" ) return variables.cli.say( cmd, "precondition", data, arguments.asJson, [ "error: " & e.target & " exists and is not the BxRig file, so it was left alone." ] );
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", data, arguments.asJson, [ "Plan: write " & e.target & " (ortus-boxlang/vim-boxlang). Nothing else changes.", "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "write " & e.target & " (ortus-boxlang/vim-boxlang). Nothing else changes.", data, arguments.asJson );
         if ( variables.config.configWrite( e, e.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, "failed", data, arguments.asJson, [ "error: could not write " & e.target ] );
         return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "BoxLang plugin added: " & e.target & ". Restart nvim; it installs the plugin on the first run." ] );
     }
@@ -158,7 +158,7 @@ class Editor {
         var cmd = "editor refresh";
         var dir = target();
         if ( !directoryExists( dir ) ) return variables.cli.say( cmd, "precondition", { error: "no nvim config", target: dir }, arguments.asJson, [ "error: " & dir & " was not found (bxrig editor lazyvim --yes creates it)" ] );
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", { target: dir, force: arguments.force }, arguments.asJson, [ "Plan: rewrite the BxRig layer files in " & dir & " that are unchanged" & ( arguments.force ? ", and the ones you changed too (backed up first)" : " (files you changed are kept)" ), "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "rewrite the BxRig layer files in " & dir & " that are unchanged" & ( arguments.force ? ", and the ones you changed too (backed up first)" : " (files you changed are kept)" ), { target: dir, force: arguments.force }, arguments.asJson );
         var l = layer( dir, arguments.force );
         return variables.cli.say( cmd, l.failed.len() ? "failed" : "ok", l, arguments.asJson, [ "Layer: " & l.written.len() & " written, " & l.kept.len() & " kept" & ( l.failed.len() ? ", failed: " & l.failed.toList( ", " ) : "" ) ] );
     }

@@ -99,7 +99,7 @@ class Time {
         if ( !variables.proc.has( "tzupdate" ) ) {
             var built = variables.inst.steps( [ { id: "tzupdate", source: "aur", targets: [ "tzupdate" ] } ], variables.inst.isRoot() );
             d.install = built.steps;
-            if ( !arguments.yes || arguments.dry ) return variables.out.say( arguments.dry ? "ok" : "plan", d, arguments.asJson, [ ( arguments.dry ? "Dry run" : "Plan" ) & ": install tzupdate (AUR), then set the time zone from your IP address", "Nothing was changed." & ( arguments.dry ? "" : " Add --yes to apply." ) ], arguments.dry );
+            if ( !arguments.yes || arguments.dry ) return variables.out.plan( "install tzupdate (AUR), then set the time zone from your IP address", d, arguments.asJson, arguments.dry );
             var res = variables.inst.run( built.steps );
             if ( variables.inst.exitCode( res ) != 0 ) return variables.out.say( variables.inst.exitCode( res ), { failed: res.failed }, arguments.asJson, res.failed.map( function( f ) { return "Failed: " & f.id & ": " & f.error; } ) );
         }
@@ -125,10 +125,10 @@ class Time {
         d.install = built.steps;
         var after = [ new bxrig.util.SystemFile().installArgv( tmpU, unitFile() ), new bxrig.util.SystemFile().installArgv( tmpG, geoclueFile() ), variables.systemd.reloadArgv( false, true ), variables.systemd.enableArgv( "automatic-timezoned.service", false, true ) ];
         if ( !arguments.yes || arguments.dry ) {
-            var lines = [ ( arguments.dry ? "Dry run" : "Plan" ) & ": follow your location with the time zone", privacy ];
+            var lines = [ new bxrig.util.Mutation().banner( arguments.dry ) & "follow your location with the time zone", privacy ];
             for ( var st in built.steps ) for ( var c in st.commands ) lines.append( "  " & st.kind & ": " & c.toList( " " ) );
             for ( var a in after ) lines.append( "  " & a.toList( " " ) );
-            lines.append( "Nothing was changed." & ( arguments.dry ? "" : " Add --yes to apply." ) );
+            lines.append( new bxrig.util.Mutation().footer( arguments.dry ) );
             d.commands = after.map( function( c ) { return c.toList( " " ); } );
             return variables.out.say( arguments.dry ? "ok" : "plan", d, arguments.asJson, lines, arguments.dry );
         }

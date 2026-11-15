@@ -116,13 +116,13 @@ class Packages {
                 println( variables.cli.envelope( cmd, code, { selection: selection, would_install: wouldInstall, steps: built.steps, done: [], failed: built.blocked, skipped: res.skipped }, dryRun ) );
                 return code;
             }
-            println( ( dryRun ? "Dry run" : "Plan" ) & ": " & wouldInstall.len() & " apps, " & built.steps.len() & " steps" );
+            println( new bxrig.util.Mutation().banner( dryRun ) & wouldInstall.len() & " apps, " & built.steps.len() & " steps" );
             for ( var step in built.steps ) {
                 for ( var c in step.commands ) println( "  " & step.kind & ": " & c.toList( " " ) );
                 if ( structKeyExists( step, "files" ) ) for ( var f in step.files ) println( "  " & step.kind & ": write " & f.path );
             }
             for ( var b in built.blocked ) println( "  cannot install " & b.id & ": " & b.error );
-            println( dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+            println( new bxrig.util.Mutation().footer( dryRun ) );
             return code;
         }
         var needsUser = false; var needsYay = false;

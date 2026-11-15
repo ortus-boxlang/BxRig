@@ -29,10 +29,7 @@ class Dictation {
         var e = engine( len( arguments.id ) ? arguments.id : "superwhisper" );
         if ( structIsEmpty( e ) ) return variables.out.say( "precondition", { error: "Unknown engine " & arguments.id }, arguments.asJson, [ "error: unknown engine " & arguments.id & " (use superwhisper or voxtype)" ] );
         var data = { engine: e.id, apps: e.apps, shortcut: e.key };
-        if ( !arguments.yes || arguments.dryRun ) {
-            var code = arguments.dryRun ? 0 : 2;
-            return variables.out.say( code, data, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": install " & e.apps.toList( ", " ) & " for dictation with " & e.name, "Shortcut: " & e.key, arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ] );
-        }
+        if ( !arguments.yes || arguments.dryRun ) return variables.out.plan( "install " & e.apps.toList( ", " ) & " for dictation with " & e.name, data, arguments.asJson, arguments.dryRun, [ "Shortcut: " & e.key ] );
         var argv = [ "bxrig", "install" ];
         for ( var a in e.apps ) argv.append( a );
         argv.append( "--yes" );

@@ -84,7 +84,7 @@ class Web {
         var state = variables.config.configState( entry );
         var data = { name: arguments.name, url: arguments.url, browser: b, file: entry.target, app_mode: browsers()[ b ].app };
         if ( state == "drifted" || state == "blocked" ) return variables.cli.say( cmd, "precondition", variables.text.merge( data, { error: "Changed by you" } ), arguments.asJson, [ "error: " & entry.target & " was changed by you, so it was kept. Delete it (bxrig web rm " & arguments.name & " --yes) to start over." ] );
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", data, arguments.asJson, [ "Plan: add the web app " & arguments.name & " (" & arguments.url & ") with " & b & ( browsers()[ b ].app ? " in app mode" : " (no app mode: opens a new window)" ), "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "add the web app " & arguments.name & " (" & arguments.url & ") with " & b & ( browsers()[ b ].app ? " in app mode" : " (no app mode: opens a new window)" ), data, arguments.asJson );
         if ( variables.config.configWrite( entry, entry.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, "failed", variables.text.merge( data, { error: "Could not write the entry" } ), arguments.asJson, [ "error: could not write " & entry.target ] );
         return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Added " & arguments.name & ". Find it in your app launcher." ] );
     }
@@ -114,7 +114,7 @@ class Web {
         if ( !new bxrig.util.Names().valid( "label", arguments.name ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: bad name" ] );
         var f = fileFor( arguments.name );
         if ( !fileExists( f ) ) return variables.cli.say( cmd, "precondition", { error: "No such web app" }, arguments.asJson, [ "error: there is no web app " & arguments.name ] );
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", { name: arguments.name }, arguments.asJson, [ "Plan: delete " & f, "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "delete " & f, { name: arguments.name }, arguments.asJson );
         fileDelete( f );
         return variables.cli.say( cmd, "ok", { name: arguments.name }, arguments.asJson, [ arguments.name & " was removed." ] );
     }
@@ -130,7 +130,7 @@ class Web {
         var selected = cat.apps.filter( function( a ) { return a.source == "web" && structKeyExists( a, "bundle" ) && arrayFind( wanted, a.bundle ) > 0; } );
         var ids = selected.map( function( a ) { return a.id; } );
         var data = { bundle: arguments.name, apps: ids };
-        if ( !arguments.yes || arguments.dryRun ) return variables.cli.say( "web install", arguments.dryRun ? "ok" : "plan", data, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": add " & ids.len() & " web apps (" & ids.toList( ", " ) & ")", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes || arguments.dryRun ) return variables.cli.scoped( "web install" ).plan( "add " & ids.len() & " web apps (" & ids.toList( ", " ) & ")", data, arguments.asJson, arguments.dryRun );
         var built = new bxrig.Installer().steps( selected, false );
         var r = new bxrig.Installer().run( built.steps );
         if ( r.failed.len() ) return variables.cli.say( "web install", "failed", { failed: r.failed }, arguments.asJson, [ "error: " & r.failed.len() & " web apps could not be added" ] );
