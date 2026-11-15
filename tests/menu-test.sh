@@ -32,11 +32,11 @@ run "$binary" menu search 'next theme' | grep -q 'Appearance > Next theme   (ope
 run "$binary" menu search zzzznothing | grep -q 'No menu entry matches' || fail 'menu search without a match'
 run "$binary" menu search lock --json | jq -e '.data.results | map(.path) | index("System > Lock") != null' >/dev/null || fail 'menu search json'
 for q in 'Setup > Time > Set the time zone' 'Setup > DNS > Cloudflare' 'Setup > Kernel > Installed and available' 'Setup > Security > Passwordless sudo > Turn on' 'Setup > Power > Profile > Balanced' 'Setup > Display > Monitors' 'Trigger > Toggle > Stay awake' 'Agent > Open an agent' 'Appearance > Bar > Position > Top' 'Setup > Backup > BxTimeMachine: every backup on one timeline' 'Setup > NAS > Find NAS boxes on the network' 'Setup > Backup > My files > Schedule > Every day'; do
-  run "$binary" menu search "${q##* > }" --json | jq -e --arg p "$q" '.data.results | map(.path) | index($p) != null' >/dev/null || fail "the menu has no entry: $q"
+	run "$binary" menu search "${q##* > }" --json | jq -e --arg p "$q" '.data.results | map(.path) | index($p) != null' >/dev/null || fail "the menu has no entry: $q"
 done
 # every spawn and run entry names a real command (the first word must be a known route)
 run "$binary" menu items --json | jq -r 'def f: if .kind == "sub" then .children[] | f else select(.argv != null) | .argv[0] end; [.data.menu[] | f] | unique | .[]' | while read -r w; do
-  c="$(set +e; run "$binary" "$w" >/dev/null 2>&1 < /dev/null; echo $?)"; [[ "$c" != 127 ]] || fail "the menu runs an unknown command: $w"
+	c="$(set +e; run "$binary" "$w" >/dev/null 2>&1 < /dev/null; echo $?)"; [[ "$c" != 127 ]] || fail "the menu runs an unknown command: $w"
 done
 run "$binary" runner menu-set rofi >/dev/null
 

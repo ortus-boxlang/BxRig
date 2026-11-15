@@ -13,10 +13,10 @@ run "$binary" assets list --json | jq -e '(.data.assets | length) == 9' >/dev/nu
 [[ "$(MOCK_UID=0 code "$binary" assets install --yes)" == 4 ]] || fail 'root exits 4'
 [[ "$(code "$binary" assets install --yes)" == 0 ]] || fail 'install --yes exits 0'
 for f in "$root"/assets/wallpapers/*.jpg; do f="wallpapers/$(basename "$f")"
-  cmp "$tmp/home/Pictures/BxRig/$(basename "$f")" "$root/assets/$f" || fail "$f differs from the source image"
+	cmp "$tmp/home/Pictures/BxRig/$(basename "$f")" "$root/assets/$f" || fail "$f differs from the source image"
 done
 for sz in 16 24 32 48 64 128 256; do
-  cmp "$tmp/home/.local/share/icons/hicolor/${sz}x${sz}/apps/bxrig.png" "$root/assets/icons/$sz.png" || fail "icon $sz differs"
+	cmp "$tmp/home/.local/share/icons/hicolor/${sz}x${sz}/apps/bxrig.png" "$root/assets/icons/$sz.png" || fail "icon $sz differs"
 done
 cmp "$tmp/home/.local/share/icons/hicolor/scalable/apps/bxrig.svg" "$root/assets/icons/bxrig.svg" || fail 'scalable icon differs'
 # a file the user replaced is kept

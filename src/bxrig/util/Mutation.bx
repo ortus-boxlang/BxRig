@@ -3,46 +3,46 @@
 //   new bxrig.util.Mutation( out, proc ).run( title, cmds, yes, dry, asJson, data, shown, timeout ) -> exit code
 // out is an Out bound to the command (or Cli.scoped( "x" )), proc a Proc. `shown` adds lines (what will be written) before the commands in the plan.
 class Mutation {
-    function init( out = "", proc = "" ) {
-        variables.out = arguments.out;
-        variables.proc = arguments.proc;
-        return this;
-    }
+	function init( out = "", proc = "" ) {
+		variables.out = arguments.out;
+		variables.proc = arguments.proc;
+		return this;
+	}
 
-    // The plan a mutating command prints instead of changing anything: "Plan: TITLE" (or "Dry run: TITLE"), the extra lines, then the footer.
-    // The caller keeps its own test (`if ( !yes || dry ) return mutation.show( ... )`); the wording and the exit code (plan 2, dry run 0) live here only.
-    // `hint` is what to add to go on (the footer of a dry run never has one). data goes into the JSON envelope.
-    function show( title, data, asJson, dry = false, extra = [], hint = "Add --yes to apply." ) {
-        var lines = [ trim( banner( arguments.dry ) & arguments.title ) ];
-        for ( var l in arguments.extra ) lines.append( l );
-        lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. " & arguments.hint );
-        return variables.out.say( arguments.dry ? "ok" : "plan", arguments.data, arguments.asJson, lines, arguments.dry );
-    }
+	// The plan a mutating command prints instead of changing anything: "Plan: TITLE" (or "Dry run: TITLE"), the extra lines, then the footer.
+	// The caller keeps its own test (`if ( !yes || dry ) return mutation.show( ... )`); the wording and the exit code (plan 2, dry run 0) live here only.
+	// `hint` is what to add to go on (the footer of a dry run never has one). data goes into the JSON envelope.
+	function show( title, data, asJson, dry = false, extra = [], hint = "Add --yes to apply." ) {
+		var lines = [ trim( banner( arguments.dry ) & arguments.title ) ];
+		for ( var l in arguments.extra ) lines.append( l );
+		lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. " & arguments.hint );
+		return variables.out.say( arguments.dry ? "ok" : "plan", arguments.data, arguments.asJson, lines, arguments.dry );
+	}
 
-    // The first words of a plan line: "Plan: " or, for a dry run, "Dry run: ".
-    function banner( dry = false ) {
-        return arguments.dry ? "Dry run: " : "Plan: ";
-    }
+	// The first words of a plan line: "Plan: " or, for a dry run, "Dry run: ".
+	function banner( dry = false ) {
+		return arguments.dry ? "Dry run: " : "Plan: ";
+	}
 
-    // The footer alone, for a plan a caller builds line by line (a list of files, a table): the lines to append after its own.
-    function footer( dry = false, hint = "Add --yes to apply." ) {
-        return arguments.dry ? "Nothing was changed." : "Nothing was changed. " & arguments.hint;
-    }
+	// The footer alone, for a plan a caller builds line by line (a list of files, a table): the lines to append after its own.
+	function footer( dry = false, hint = "Add --yes to apply." ) {
+		return arguments.dry ? "Nothing was changed." : "Nothing was changed. " & arguments.hint;
+	}
 
-    function run( title, cmds, yes, dry, asJson, data = {}, shown = [], timeout = 600 ) {
-        var d = arguments.data;
-        d.commands = arguments.cmds.map( function( c ) { return c.toList( " " ); } );
-        if ( !arguments.yes || arguments.dry ) {
-            var lines = [ trim( banner( arguments.dry ) & arguments.title ) ];
-            for ( var s in arguments.shown ) lines.append( "  " & s );
-            for ( var c in arguments.cmds ) lines.append( "  " & c.toList( " " ) );
-            lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return variables.out.say( arguments.dry ? "ok" : "plan", d, arguments.asJson, lines, arguments.dry );
-        }
-        for ( var x in arguments.cmds ) {
-            var r = variables.proc.exec( x, arguments.timeout );
-            if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ), step: x.toList( " " ) }, arguments.asJson, [ "error: " & x.toList( " " ) & ": " & trim( r.output ) ] );
-        }
-        return variables.out.say( "ok", d, arguments.asJson, [ arguments.title & ": done" ] );
-    }
+	function run( title, cmds, yes, dry, asJson, data = {}, shown = [], timeout = 600 ) {
+		var d = arguments.data;
+		d.commands = arguments.cmds.map( function( c ) { return c.toList( " " ); } );
+		if ( !arguments.yes || arguments.dry ) {
+			var lines = [ trim( banner( arguments.dry ) & arguments.title ) ];
+			for ( var s in arguments.shown ) lines.append( "  " & s );
+			for ( var c in arguments.cmds ) lines.append( "  " & c.toList( " " ) );
+			lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+			return variables.out.say( arguments.dry ? "ok" : "plan", d, arguments.asJson, lines, arguments.dry );
+		}
+		for ( var x in arguments.cmds ) {
+			var r = variables.proc.exec( x, arguments.timeout );
+			if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ), step: x.toList( " " ) }, arguments.asJson, [ "error: " & x.toList( " " ) & ": " & trim( r.output ) ] );
+		}
+		return variables.out.say( "ok", d, arguments.asJson, [ arguments.title & ": done" ] );
+	}
 }

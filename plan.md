@@ -7,7 +7,7 @@
 
 ## 0. Status on 2026-11-15
 
-What exists, verified against the tree (version 0.11.0-dev, MatchBox 0.14.0 from the `bxcachy` branch):
+What exists, verified against the tree (version 0.11.0-dev, MatchBox 0.14.0 from the `bxrig` branch (renamed from `bxcachy`)):
 
 | Area | State |
 | --- | --- |

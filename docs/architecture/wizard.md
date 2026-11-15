@@ -46,7 +46,7 @@ Text fields take typing directly (Backspace deletes, Ctrl-U clears).
 ## Look
 
 Catppuccin Frappe neutrals with the Ortus brand gradient (cyan `#00DBFF` to green `#00FF78`), true colour, a fade-in between
-screens and a soft shimmer. The splash uses the official BoxLang icon as half-block pixel art (`assets/wizard/art-*.txt`, embedded by `bootstrap/gen-wizard.sh` into `src/bxrig/WizardData.bx`). Every screen shows "Powered by BoxLang / www.boxlang.io". It needs a 76x24 terminal; larger is nicer.
+screens and a soft shimmer. The splash uses the official BoxLang icon as half-block pixel art (`assets/wizard/art-*.txt`, packed into the binary as resources and read by `src/bxrig/WizardData.bx`). Every screen shows "Powered by BoxLang / www.boxlang.io". It needs a 76x24 terminal; larger is nicer.
 
 ## Code
 
@@ -55,7 +55,7 @@ screens and a soft shimmer. The splash uses the official BoxLang icon as half-bl
 | `WizardApp` | State and key handling, no drawing (unit tested). |
 | `WizardView` | Draws a frame on the canvas and records click regions; testable with `tui.render_to_string`. |
 | `Wizard` | The run loop: events in, frames out. |
-| `WizardData` | Generated: demo pages and splash art. |
+| `WizardData` | The demo pages and splash art (resources). |
 
 ## Developing
 

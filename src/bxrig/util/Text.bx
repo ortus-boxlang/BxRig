@@ -1,33 +1,33 @@
 // Small string and struct helpers that used to be copied into many classes. No state.
 class Text {
-    // A new struct with the keys of `base`, then those of `extra` (extra wins).
-    function merge( base, extra ) {
-        var out = {};
-        for ( var k in structKeyArray( arguments.base ) ) out[ k ] = arguments.base[ k ];
-        for ( var k in structKeyArray( arguments.extra ) ) out[ k ] = arguments.extra[ k ];
-        return out;
-    }
+	// A new struct with the keys of `base`, then those of `extra` (extra wins).
+	function merge( base, extra ) {
+		var out = {};
+		for ( var k in structKeyArray( arguments.base ) ) out[ k ] = arguments.base[ k ];
+		for ( var k in structKeyArray( arguments.extra ) ) out[ k ] = arguments.extra[ k ];
+		return out;
+	}
 
-    // `s` cut or padded with spaces to exactly `w` columns; text that does not fit loses its last column to a space.
-    function pad( s, w ) {
-        var t = arguments.s & "";
-        return len( t ) >= arguments.w ? left( t, max( 0, arguments.w - 1 ) ) & " " : t & repeatString( " ", arguments.w - len( t ) );
-    }
+	// `s` cut or padded with spaces to exactly `w` columns; text that does not fit loses its last column to a space.
+	function pad( s, w ) {
+		var t = arguments.s & "";
+		return len( t ) >= arguments.w ? left( t, max( 0, arguments.w - 1 ) ) & " " : t & repeatString( " ", arguments.w - len( t ) );
+	}
 
-    // `s` right-aligned in `w` columns (never cut).
-    function padLeft( s, w ) {
-        var t = arguments.s & "";
-        return len( t ) >= arguments.w ? t : repeatString( " ", arguments.w - len( t ) ) & t;
-    }
+	// `s` right-aligned in `w` columns (never cut).
+	function padLeft( s, w ) {
+		var t = arguments.s & "";
+		return len( t ) >= arguments.w ? t : repeatString( " ", arguments.w - len( t ) ) & t;
+	}
 
-    // The lines of a text (split on newlines, empty lines kept), trimmed of a trailing carriage return.
-    function lines( s ) {
-        var out = [];
-        for ( var l in listToArray( arguments.s, chr( 10 ), true ) ) out.append( reReplace( l, chr( 13 ) & "$", "" ) );
-        return out;
-    }
+	// The lines of a text (split on newlines, empty lines kept), trimmed of a trailing carriage return.
+	function lines( s ) {
+		var out = [];
+		for ( var l in listToArray( arguments.s, chr( 10 ), true ) ) out.append( reReplace( l, chr( 13 ) & "$", "" ) );
+		return out;
+	}
 
-    function nl() {
-        return chr( 10 );
-    }
+	function nl() {
+		return chr( 10 );
+	}
 }

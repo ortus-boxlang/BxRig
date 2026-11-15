@@ -3,12 +3,12 @@
 //   refreshSeconds()  how often the page reloads by itself; default 0 (only when you ask)
 //   detailLines()     how many lines of detail the page shows under the list; default 2
 class ProviderSpec {
-    function init( provider ) {
-        variables.p = arguments.provider;
-        return this;
-    }
+	function init( provider ) {
+		variables.p = arguments.provider;
+		return this;
+	}
 
-    function live() { return !isNull( variables.p.live ) ? variables.p.live() : false; }
-    function refreshSeconds() { return !isNull( variables.p.refreshSeconds ) ? variables.p.refreshSeconds() : 0; }
-    function detailLines() { return !isNull( variables.p.detailLines ) ? variables.p.detailLines() : 2; }
+	function live() { return !isNull( variables.p.live ) ? variables.p.live() : false; }
+	function refreshSeconds() { return !isNull( variables.p.refreshSeconds ) ? variables.p.refreshSeconds() : 0; }
+	function detailLines() { return !isNull( variables.p.detailLines ) ? variables.p.detailLines() : 2; }
 }

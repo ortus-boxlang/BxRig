@@ -28,15 +28,15 @@ testkit.check( "the registry lists every provider once, and the menu ones have a
 testkit.check( "providers without a dmenu mode have an empty menu", structIsEmpty( reg.get( "noctalia" ).menu ) && structIsEmpty( reg.get( "krunner" ).menu ) );
 seen = { payload: "", argv: [] };
 function stub( answer ) {
-    return function( argv, timeout ) {
-        if ( argv[ 1 ] == "sh" && left( argv[ 3 ], 10 ) == "command -v" ) return { exitCode: 0, output: "", timeout: false };
-        seen.argv = argv; seen.payload = fileRead( argv[ 5 ] );
-        return { exitCode: answer == "CANCEL" ? 1 : 0, output: answer, timeout: false };
-    };
+	return function( argv, timeout ) {
+		if ( argv[ 1 ] == "sh" && left( argv[ 3 ], 10 ) == "command -v" ) return { exitCode: 0, output: "", timeout: false };
+		seen.argv = argv; seen.payload = fileRead( argv[ 5 ] );
+		return { exitCode: answer == "CANCEL" ? 1 : 0, output: answer, timeout: false };
+	};
 }
 function sel( provider, answer, entries ) {
-    var cfg = new bxrig.Runner().defaults( "Hyprland" ); cfg.menu_provider = provider;
-    return new bxrig.Runner( "", stub( answer ) ).select( "Menu", entries, cfg );
+	var cfg = new bxrig.Runner().defaults( "Hyprland" ); cfg.menu_provider = provider;
+	return new bxrig.Runner( "", stub( answer ) ).select( "Menu", entries, cfg );
 }
 entries = [ "Apps", { label: "Settings", icon: "gear" }, "Quit" ];
 testkit.check( "rofi: 0-based index in, 1-based position out; icon protocol sent", sel( "rofi", "1", entries ) == 2 && find( "Settings" & chr( 0 ) & "icon" & chr( 31 ) & "gear", seen.payload ) > 0 );

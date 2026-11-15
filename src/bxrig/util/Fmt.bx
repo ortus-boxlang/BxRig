@@ -6,47 +6,47 @@
 //   span( s )        "90s", "1h", "2d"                a duration as one word
 // The two size functions differ on purpose: one takes bytes, the other kilobytes, and disk sizes read better without decimals above 1 MB.
 class Fmt {
-    function bytes( n ) {
-        var b = arguments.n;
-        var one = function( v ) { var r = numberFormat( v, "0.0" ); return right( r, 2 ) == ".0" ? left( r, len( r ) - 2 ) : r; };
-        if ( b < 1024 ) return b & " B";
-        if ( b < 1048576 ) return one( b / 1024 ) & " KB";
-        if ( b < 1073741824 ) return one( b / 1048576 ) & " MB";
-        return one( b / 1073741824 ) & " GB";
-    }
+	function bytes( n ) {
+		var b = arguments.n;
+		var one = function( v ) { var r = numberFormat( v, "0.0" ); return right( r, 2 ) == ".0" ? left( r, len( r ) - 2 ) : r; };
+		if ( b < 1024 ) return b & " B";
+		if ( b < 1048576 ) return one( b / 1024 ) & " KB";
+		if ( b < 1073741824 ) return one( b / 1048576 ) & " MB";
+		return one( b / 1073741824 ) & " GB";
+	}
 
-    function kb( n ) {
-        var k = arguments.n + 0;
-        if ( k >= 1048576 ) return numberFormat( k / 1048576, "0.0" ) & " GB";
-        if ( k >= 1024 ) return numberFormat( k / 1024, "0" ) & " MB";
-        return k & " KB";
-    }
+	function kb( n ) {
+		var k = arguments.n + 0;
+		if ( k >= 1048576 ) return numberFormat( k / 1048576, "0.0" ) & " GB";
+		if ( k >= 1024 ) return numberFormat( k / 1024, "0" ) & " MB";
+		return k & " KB";
+	}
 
-    function age( seconds ) {
-        var a = max( 0, arguments.seconds );
-        if ( a < 90 ) return "just now";
-        if ( a < 5400 ) return round( a / 60 ) & " minutes ago";
-        if ( a < 129600 ) return round( a / 3600 ) & " hours ago";
-        if ( a < 2 * 86400 ) return "yesterday";
-        if ( a < 14 * 86400 ) return int( a / 86400 ) & " days ago";
-        if ( a < 60 * 86400 ) return int( a / ( 7 * 86400 ) ) & " weeks ago";
-        if ( a < 730 * 86400 ) return int( a / ( 30 * 86400 ) ) & " months ago";
-        return int( a / ( 365 * 86400 ) ) & " years ago";
-    }
+	function age( seconds ) {
+		var a = max( 0, arguments.seconds );
+		if ( a < 90 ) return "just now";
+		if ( a < 5400 ) return round( a / 60 ) & " minutes ago";
+		if ( a < 129600 ) return round( a / 3600 ) & " hours ago";
+		if ( a < 2 * 86400 ) return "yesterday";
+		if ( a < 14 * 86400 ) return int( a / 86400 ) & " days ago";
+		if ( a < 60 * 86400 ) return int( a / ( 7 * 86400 ) ) & " weeks ago";
+		if ( a < 730 * 86400 ) return int( a / ( 30 * 86400 ) ) & " months ago";
+		return int( a / ( 365 * 86400 ) ) & " years ago";
+	}
 
-    // 90 -> "1m", 5400 -> "1h", 200000 -> "2d": a duration as one short word.
-    function span( seconds ) {
-        var s = max( 0, arguments.seconds );
-        if ( s < 90 ) return s & "s";
-        if ( s < 5400 ) return round( s / 60 ) & "m";
-        if ( s < 129600 ) return round( s / 3600 ) & "h";
-        return int( s / 86400 ) & "d";
-    }
+	// 90 -> "1m", 5400 -> "1h", 200000 -> "2d": a duration as one short word.
+	function span( seconds ) {
+		var s = max( 0, arguments.seconds );
+		if ( s < 90 ) return s & "s";
+		if ( s < 5400 ) return round( s / 60 ) & "m";
+		if ( s < 129600 ) return round( s / 3600 ) & "h";
+		return int( s / 86400 ) & "d";
+	}
 
-    function ageShort( seconds ) {
-        var a = max( 0, arguments.seconds );
-        if ( a < 5400 ) return round( a / 60 ) & " min ago";
-        if ( a < 129600 ) return round( a / 3600 ) & " h ago";
-        return int( a / 86400 ) & " days ago";
-    }
+	function ageShort( seconds ) {
+		var a = max( 0, arguments.seconds );
+		if ( a < 5400 ) return round( a / 60 ) & " min ago";
+		if ( a < 129600 ) return round( a / 3600 ) & " h ago";
+		return int( a / 86400 ) & " days ago";
+	}
 }

@@ -5,5 +5,5 @@ barWidget.render(ui.glyph({ name = "world" }))
 barWidget.setTooltip("World Clock")
 
 function onClick()
-  noctalia.togglePanel("bxrig/world-clock:panel")
+	noctalia.togglePanel("bxrig/world-clock:panel")
 end

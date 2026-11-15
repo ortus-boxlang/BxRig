@@ -9,173 +9,173 @@
 //
 // The runner, `function( argv, timeout )` returning { exitCode, timeout, output }, is injectable for tests.
 class Installer {
-    function init( runner ) {
-        variables.custom = arguments.runner ?: "";
-        variables.procs = new bxrig.util.Proc( variables.custom );
-        variables.pacman = new bxrig.util.Pacman( variables.procs );
-        variables.aur = new bxrig.util.Aur( variables.procs );
-        variables.http = new bxrig.util.Http( variables.procs );
-        return this;
-    }
+	function init( runner ) {
+		variables.custom = arguments.runner ?: "";
+		variables.procs = new bxrig.util.Proc( variables.custom );
+		variables.pacman = new bxrig.util.Pacman( variables.procs );
+		variables.aur = new bxrig.util.Aur( variables.procs );
+		variables.http = new bxrig.util.Http( variables.procs );
+		return this;
+	}
 
-    // The process runner this installer uses (same injected runner), for collaborators: `variables.proc = variables.inst.proc();`
-    function proc() {
-        return variables.procs;
-    }
+	// The process runner this installer uses (same injected runner), for collaborators: `variables.proc = variables.inst.proc();`
+	function proc() {
+		return variables.procs;
+	}
 
-    // The injected runner, or "" when commands run for real (lets a collaborator share the same runner).
-    function runner() {
-        return variables.custom;
-    }
+	// The injected runner, or "" when commands run for real (lets a collaborator share the same runner).
+	function runner() {
+		return variables.custom;
+	}
 
-    // True when the effective user is root (uid 0).
-    function isRoot() {
-        return variables.procs.isRoot();
-    }
+	// True when the effective user is root (uid 0).
+	function isRoot() {
+		return variables.procs.isRoot();
+	}
 
-    // True when a command is installed (`command -v`; use Proc.works for a version check).
-    function hasCommand( name ) {
-        return variables.procs.has( arguments.name );
-    }
+	// True when a command is installed (`command -v`; use Proc.works for a version check).
+	function hasCommand( name ) {
+		return variables.procs.has( arguments.name );
+	}
 
-    // The https clone URL for a catalog pkgbuild repo ("owner/name" on GitHub).
-    function cloneUrl( repo ) {
-        return "https://github.com/" & repo & ".git";
-    }
+	// The https clone URL for a catalog pkgbuild repo ("owner/name" on GitHub).
+	function cloneUrl( repo ) {
+		return "https://github.com/" & repo & ".git";
+	}
 
-    // The launcher file for a web app: a .desktop entry that opens the URL in a frameless brave window.
-    function launcherFile( app, home ) {
-        var url = replace( app.url, "%", "%%", "all" );
-        var content = new bxrig.util.DesktopEntry().render( [ "Type=Application", "Name=" & app.name, "Comment=" & ( app.description ?: app.name ),
-            "Exec=brave --app=" & url, "Icon=brave-browser", "Categories=Network;" ] );
-        return { path: home & "/.local/share/applications/bxrig-" & app.id & ".desktop", content: content };
-    }
+	// The launcher file for a web app: a .desktop entry that opens the URL in a frameless brave window.
+	function launcherFile( app, home ) {
+		var url = replace( app.url, "%", "%%", "all" );
+		var content = new bxrig.util.DesktopEntry().render( [ "Type=Application", "Name=" & app.name, "Comment=" & ( app.description ?: app.name ),
+			"Exec=brave --app=" & url, "Icon=brave-browser", "Categories=Network;" ] );
+		return { path: home & "/.local/share/applications/bxrig-" & app.id & ".desktop", content: content };
+	}
 
-    // Writes one launcher: creates the folder, writes a temporary file beside it and moves it into place.
-    function writeFile( file ) {
-        var dir = getDirectoryFromPath( file.path );
-        if ( !directoryExists( dir ) ) directoryCreate( dir, true );
-        var tmp = file.path & ".tmp" & left( createUUID(), 8 );
-        fileWrite( tmp, file.content );
-        fileMove( tmp, file.path );
-    }
+	// Writes one launcher: creates the folder, writes a temporary file beside it and moves it into place.
+	function writeFile( file ) {
+		var dir = getDirectoryFromPath( file.path );
+		if ( !directoryExists( dir ) ) directoryCreate( dir, true );
+		var tmp = file.path & ".tmp" & left( createUUID(), 8 );
+		fileWrite( tmp, file.content );
+		fileMove( tmp, file.path );
+	}
 
-    // The build step for a pinned PKGBUILD entry, or a { blocked } struct when it cannot be built yet.
-    function pkgbuildStep( app ) {
-        var ref = app.pkgbuild.ref;
-        if ( !reFind( "^[0-9a-f]{40}$", ref ) ) {
-            return { blocked: { id: app.id, source: "pkgbuild", error: "the PKGBUILD ref is not a full commit" } };
-        }
-        var dir = reReplace( getTempDirectory(), "/+$", "" ) & "/bxrig-pkg-" & app.id & "-" & left( createUUID(), 8 );
-        return { step: { kind: "pkgbuild", ids: [ app.id ], dir: dir, commands: [
-            [ "git", "clone", "--quiet", cloneUrl( app.pkgbuild.repo ), dir ],
-            [ "git", "-C", dir, "checkout", "--quiet", ref ],
-            [ "env", "-C", dir & "/" & app.pkgbuild.path, "makepkg", "-si", "--noconfirm", "--needed" ]
-        ] } };
-    }
+	// The build step for a pinned PKGBUILD entry, or a { blocked } struct when it cannot be built yet.
+	function pkgbuildStep( app ) {
+		var ref = app.pkgbuild.ref;
+		if ( !reFind( "^[0-9a-f]{40}$", ref ) ) {
+			return { blocked: { id: app.id, source: "pkgbuild", error: "the PKGBUILD ref is not a full commit" } };
+		}
+		var dir = reReplace( getTempDirectory(), "/+$", "" ) & "/bxrig-pkg-" & app.id & "-" & left( createUUID(), 8 );
+		return { step: { kind: "pkgbuild", ids: [ app.id ], dir: dir, commands: [
+			[ "git", "clone", "--quiet", cloneUrl( app.pkgbuild.repo ), dir ],
+			[ "git", "-C", dir, "checkout", "--quiet", ref ],
+			[ "env", "-C", dir & "/" & app.pkgbuild.path, "makepkg", "-si", "--noconfirm", "--needed" ]
+		] } };
+	}
 
-    // True on CachyOS (os-release ID; BXRIG_OS_RELEASE overrides the file for tests). Its own repository (repo: cachyos in the
-    // catalog) exists only there; elsewhere those packages come from the AUR under the same names.
-    function onCachyos() {
-        if ( !structKeyExists( variables, "cachy" ) ) {
-            variables.cachy = false;
-            var f = new bxrig.util.Env().named( "osRelease", "/etc/os-release" );
-            if ( fileExists( f ) ) for ( var line in listToArray( fileRead( f ), chr( 10 ) ) ) {
-                if ( left( line, 3 ) == "ID=" ) variables.cachy = lCase( replace( mid( line, 4, len( line ) ), '"', "", "all" ) ) == "cachyos";
-            }
-        }
-        return variables.cachy;
-    }
+	// True on CachyOS (os-release ID; BXRIG_OS_RELEASE overrides the file for tests). Its own repository (repo: cachyos in the
+	// catalog) exists only there; elsewhere those packages come from the AUR under the same names.
+	function onCachyos() {
+		if ( !structKeyExists( variables, "cachy" ) ) {
+			variables.cachy = false;
+			var f = new bxrig.util.Env().named( "osRelease", "/etc/os-release" );
+			if ( fileExists( f ) ) for ( var line in listToArray( fileRead( f ), chr( 10 ) ) ) {
+				if ( left( line, 3 ) == "ID=" ) variables.cachy = lCase( replace( mid( line, 4, len( line ) ), '"', "", "all" ) ) == "cachyos";
+			}
+		}
+		return variables.cachy;
+	}
 
-    // Builds the steps for the selected apps, in catalog order within each kind: pacman, aur, pkgbuild.
-    // The pacman step installs all its packages in one transaction; `pkgs` maps each app to its packages so a failed transaction
-    // can be retried one app at a time (see run).
-    function steps( selected, asRoot, home = "" ) {
-        var homeDir = len( home ) ? home : new bxrig.util.Env().named( "home", "" );
-        var pacmanIds = []; var pacmanTargets = []; var pkgs = {};
-        var aur = []; var builds = []; var webs = []; var scripts = []; var blocked = [];
-        for ( var app in selected ) {
-            var targets = structKeyExists( app, "targets" ) ? app.targets : [];
-            var src = app.source;
-            // a CachyOS-repository package off CachyOS: the AUR (aur_targets when the AUR name differs)
-            if ( src == "pacman" && ( app.repo ?: "" ) == "cachyos" && !onCachyos() ) {
-                src = "aur";
-                if ( structKeyExists( app, "aur_targets" ) ) targets = app.aur_targets;
-            }
-            if ( src == "pacman" ) {
-                pacmanIds.append( app.id );
-                pkgs[ app.id ] = targets;
-                for ( var t in targets ) if ( !arrayFind( pacmanTargets, t ) ) pacmanTargets.append( t );
-            } else if ( src == "aur" ) {
-                aur.append( { kind: "aur", ids: [ app.id ], commands: [ variables.aur.installArgv( targets ) ] } );
-            } else if ( app.source == "pkgbuild" ) {
-                var built = pkgbuildStep( app );
-                if ( structKeyExists( built, "blocked" ) ) blocked.append( built.blocked );
-                else builds.append( built.step );
-            } else if ( app.source == "script" ) {
-                // the vendor installer: downloaded and piped to its shell; URL and arguments travel as arguments, never interpolated
-                var shellName = structKeyExists( app.script, "shell" ) ? app.script.shell : "bash";
-                var argv2 = variables.http.installerArgv( app.script.url, shellName, structKeyExists( app.script, "args" ) ? app.script.args : [] );
-                scripts.append( { kind: "script", ids: [ app.id ], commands: [ argv2 ] } );
-            } else if ( app.source == "web" ) {
-                webs.append( { kind: "web", ids: [ app.id ], commands: [], files: [ launcherFile( app, homeDir ) ] } );
-            } else {
-                blocked.append( { id: app.id, source: app.source, error: "no installable source in the catalog yet" } );
-            }
-        }
-        var out = [];
-        if ( pacmanIds.len() ) {
-            out.append( { kind: "pacman", ids: pacmanIds, pkgs: pkgs, asRoot: asRoot, commands: [ variables.pacman.installArgv( pacmanTargets, asRoot ) ] } );
-        }
-        for ( var s in aur ) out.append( s );
-        for ( var s in builds ) out.append( s );
-        for ( var s in scripts ) out.append( s );
-        for ( var s in webs ) out.append( s );
-        return { steps: out, blocked: blocked };
-    }
+	// Builds the steps for the selected apps, in catalog order within each kind: pacman, aur, pkgbuild.
+	// The pacman step installs all its packages in one transaction; `pkgs` maps each app to its packages so a failed transaction
+	// can be retried one app at a time (see run).
+	function steps( selected, asRoot, home = "" ) {
+		var homeDir = len( home ) ? home : new bxrig.util.Env().named( "home", "" );
+		var pacmanIds = []; var pacmanTargets = []; var pkgs = {};
+		var aur = []; var builds = []; var webs = []; var scripts = []; var blocked = [];
+		for ( var app in selected ) {
+			var targets = structKeyExists( app, "targets" ) ? app.targets : [];
+			var src = app.source;
+			// a CachyOS-repository package off CachyOS: the AUR (aur_targets when the AUR name differs)
+			if ( src == "pacman" && ( app.repo ?: "" ) == "cachyos" && !onCachyos() ) {
+				src = "aur";
+				if ( structKeyExists( app, "aur_targets" ) ) targets = app.aur_targets;
+			}
+			if ( src == "pacman" ) {
+				pacmanIds.append( app.id );
+				pkgs[ app.id ] = targets;
+				for ( var t in targets ) if ( !arrayFind( pacmanTargets, t ) ) pacmanTargets.append( t );
+			} else if ( src == "aur" ) {
+				aur.append( { kind: "aur", ids: [ app.id ], commands: [ variables.aur.installArgv( targets ) ] } );
+			} else if ( app.source == "pkgbuild" ) {
+				var built = pkgbuildStep( app );
+				if ( structKeyExists( built, "blocked" ) ) blocked.append( built.blocked );
+				else builds.append( built.step );
+			} else if ( app.source == "script" ) {
+				// the vendor installer: downloaded and piped to its shell; URL and arguments travel as arguments, never interpolated
+				var shellName = structKeyExists( app.script, "shell" ) ? app.script.shell : "bash";
+				var argv2 = variables.http.installerArgv( app.script.url, shellName, structKeyExists( app.script, "args" ) ? app.script.args : [] );
+				scripts.append( { kind: "script", ids: [ app.id ], commands: [ argv2 ] } );
+			} else if ( app.source == "web" ) {
+				webs.append( { kind: "web", ids: [ app.id ], commands: [], files: [ launcherFile( app, homeDir ) ] } );
+			} else {
+				blocked.append( { id: app.id, source: app.source, error: "no installable source in the catalog yet" } );
+			}
+		}
+		var out = [];
+		if ( pacmanIds.len() ) {
+			out.append( { kind: "pacman", ids: pacmanIds, pkgs: pkgs, asRoot: asRoot, commands: [ variables.pacman.installArgv( pacmanTargets, asRoot ) ] } );
+		}
+		for ( var s in aur ) out.append( s );
+		for ( var s in builds ) out.append( s );
+		for ( var s in scripts ) out.append( s );
+		for ( var s in webs ) out.append( s );
+		return { steps: out, blocked: blocked };
+	}
 
-    // Runs the steps in order. A failing step fails only its own apps; later steps still run.
-    function run( steps ) {
-        var done = []; var failed = [];
-        for ( var step in steps ) {
-            var problem = "";
-            if ( structKeyExists( step, "files" ) ) {
-                for ( var f in step.files ) {
-                    try { writeFile( f ); } catch ( any e ) { problem = "web launcher failed: " & e.message; }
-                }
-            }
-            for ( var cmd in step.commands ) {
-                if ( len( problem ) ) break;
-                var r = variables.procs.exec( cmd, 1800 );
-                if ( r.timeout ) problem = step.kind & " timed out";
-                else if ( r.exitCode != 0 ) problem = step.kind & " failed (exit " & r.exitCode & ")";
-            }
-            if ( structKeyExists( step, "dir" ) ) {
-                try { if ( directoryExists( step.dir ) ) directoryDelete( step.dir, true ); } catch ( any e ) {}
-            }
-            // one pacman transaction failed (one unknown or conflicting package fails them all): each app again on its own,
-            // so only the apps that really cannot be installed are reported failed
-            if ( len( problem ) && step.kind == "pacman" && step.ids.len() > 1 && structKeyExists( step, "pkgs" ) ) {
-                for ( var id in step.ids ) {
-                    var one = variables.procs.exec( variables.pacman.installArgv( step.pkgs[ id ], step.asRoot ), 1800 );
-                    if ( one.timeout || one.exitCode != 0 ) failed.append( { id: id, source: "pacman", error: "pacman failed (exit " & ( one.timeout ? 124 : one.exitCode ) & ")" } );
-                    else done.append( { id: id, source: "pacman" } );
-                }
-                continue;
-            }
-            for ( var id in step.ids ) {
-                if ( len( problem ) ) failed.append( { id: id, source: step.kind, error: problem } );
-                else done.append( { id: id, source: step.kind } );
-            }
-        }
-        return { done: done, failed: failed };
-    }
+	// Runs the steps in order. A failing step fails only its own apps; later steps still run.
+	function run( steps ) {
+		var done = []; var failed = [];
+		for ( var step in steps ) {
+			var problem = "";
+			if ( structKeyExists( step, "files" ) ) {
+				for ( var f in step.files ) {
+					try { writeFile( f ); } catch ( any e ) { problem = "web launcher failed: " & e.message; }
+				}
+			}
+			for ( var cmd in step.commands ) {
+				if ( len( problem ) ) break;
+				var r = variables.procs.exec( cmd, 1800 );
+				if ( r.timeout ) problem = step.kind & " timed out";
+				else if ( r.exitCode != 0 ) problem = step.kind & " failed (exit " & r.exitCode & ")";
+			}
+			if ( structKeyExists( step, "dir" ) ) {
+				try { if ( directoryExists( step.dir ) ) directoryDelete( step.dir, true ); } catch ( any e ) {}
+			}
+			// one pacman transaction failed (one unknown or conflicting package fails them all): each app again on its own,
+			// so only the apps that really cannot be installed are reported failed
+			if ( len( problem ) && step.kind == "pacman" && step.ids.len() > 1 && structKeyExists( step, "pkgs" ) ) {
+				for ( var id in step.ids ) {
+					var one = variables.procs.exec( variables.pacman.installArgv( step.pkgs[ id ], step.asRoot ), 1800 );
+					if ( one.timeout || one.exitCode != 0 ) failed.append( { id: id, source: "pacman", error: "pacman failed (exit " & ( one.timeout ? 124 : one.exitCode ) & ")" } );
+					else done.append( { id: id, source: "pacman" } );
+				}
+				continue;
+			}
+			for ( var id in step.ids ) {
+				if ( len( problem ) ) failed.append( { id: id, source: step.kind, error: problem } );
+				else done.append( { id: id, source: step.kind } );
+			}
+		}
+		return { done: done, failed: failed };
+	}
 
-    // 0 nothing failed, 7 some done and some failed, else 5 when pacman failed, 6 for AUR or PKGBUILD only.
-    function exitCode( result ) {
-        if ( !result.failed.len() ) return new bxrig.util.Exit().ok();
-        if ( result.done.len() ) return new bxrig.util.Exit().partial();
-        for ( var f in result.failed ) if ( f.source == "pacman" ) return new bxrig.util.Exit().official();
-        return new bxrig.util.Exit().failed();
-    }
+	// 0 nothing failed, 7 some done and some failed, else 5 when pacman failed, 6 for AUR or PKGBUILD only.
+	function exitCode( result ) {
+		if ( !result.failed.len() ) return new bxrig.util.Exit().ok();
+		if ( result.done.len() ) return new bxrig.util.Exit().partial();
+		for ( var f in result.failed ) if ( f.source == "pacman" ) return new bxrig.util.Exit().official();
+		return new bxrig.util.Exit().failed();
+	}
 }

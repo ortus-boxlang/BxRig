@@ -40,14 +40,14 @@ out="$("$binary" tui nope 2>&1 || true)"; [[ "$out" == *"Pages: dashboard, apps,
 
 # the sidebar in a real pseudo-terminal: the Control Center opens it, a page alone collapses it, the flags and a narrow terminal decide
 if command -v python3 >/dev/null; then
-  frame() { python3 "$(dirname "$0")/pty-frame.py" "$binary" "$@"; }
-  frame 120 38 tui --demo | grep -q 'tab  next page' || fail 'tui opens the sidebar'
-  [[ -z "$(frame 120 38 tui databases --demo | grep 'tab  next page')" ]] || fail 'tui PAGE starts collapsed'
-  frame 120 38 tui databases --demo | grep -q 'Databases' || fail 'tui PAGE shows the page'
-  frame 120 38 tui databases --sidebar --demo | grep -q 'tab  next page' || fail '--sidebar opens it on a page'
-  [[ -z "$(frame 120 38 tui --no-sidebar --demo | grep 'tab  next page')" ]] || fail '--no-sidebar collapses the Control Center'
-  [[ -z "$(frame 80 30 tui --demo | grep 'tab  next page')" ]] || fail 'a narrow terminal starts collapsed'
-  frame 80 30 tui --sidebar --demo | grep -q 'tab  next page' || fail '--sidebar wins on a narrow terminal'
+	frame() { python3 "$(dirname "$0")/pty-frame.py" "$binary" "$@"; }
+	frame 120 38 tui --demo | grep -q 'tab  next page' || fail 'tui opens the sidebar'
+	[[ -z "$(frame 120 38 tui databases --demo | grep 'tab  next page')" ]] || fail 'tui PAGE starts collapsed'
+	frame 120 38 tui databases --demo | grep -q 'Databases' || fail 'tui PAGE shows the page'
+	frame 120 38 tui databases --sidebar --demo | grep -q 'tab  next page' || fail '--sidebar opens it on a page'
+	[[ -z "$(frame 120 38 tui --no-sidebar --demo | grep 'tab  next page')" ]] || fail '--no-sidebar collapses the Control Center'
+	[[ -z "$(frame 80 30 tui --demo | grep 'tab  next page')" ]] || fail 'a narrow terminal starts collapsed'
+	frame 80 30 tui --sidebar --demo | grep -q 'tab  next page' || fail '--sidebar wins on a narrow terminal'
 fi
 
 # usage and unknown pages

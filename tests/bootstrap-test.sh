@@ -20,13 +20,13 @@ export PATH="$tmp:$PATH"
 bash "$root/bootstrap/install.sh" check | grep -F 'installed: git'
 bash "$root/bootstrap/install.sh" check | grep -F 'missing: jdk21-openjdk'
 if bash "$root/bootstrap/install.sh" packages >/dev/null 2>&1; then
-  echo 'FAIL: unattended install without --yes' >&2; exit 1
+	echo 'FAIL: unattended install without --yes' >&2; exit 1
 fi
 if bash "$root/bootstrap/install.sh" --unknown >/dev/null 2>&1; then
-  echo 'FAIL: invalid bootstrap command accepted' >&2; exit 1
+	echo 'FAIL: invalid bootstrap command accepted' >&2; exit 1
 fi
 if bash "$root/bootstrap/install.sh" toolchains >/dev/null 2>&1; then
-  echo 'FAIL: toolchain installation without confirmation' >&2; exit 1
+	echo 'FAIL: toolchain installation without confirmation' >&2; exit 1
 fi
 echo 'bootstrap check tests passed'
 
@@ -34,11 +34,11 @@ echo 'bootstrap check tests passed'
 sys="$tmp/sys"; bin="$tmp/bin"; home="$tmp/home"
 mkdir -p "$sys" "$bin" "$home/.local/bin"
 for t in bash env grep awk df id uname head tr cat sort dirname mktemp sed cut mkdir chmod rm wc sha256sum basename ls cp mv find cmp tail stat readlink ln jq; do
-  p="$(command -v "$t")" && ln -sf "$p" "$sys/$t"
+	p="$(command -v "$t")" && ln -sf "$p" "$sys/$t"
 done
 # Fixture repository: a copy of the script next to a box.json with known pins. Tests run this copy.
 repo="$tmp/repo"; mkdir -p "$repo/bootstrap" "$repo/src"
-cp "$root/bootstrap/install.sh" "$repo/bootstrap/install.sh"; cp -r "$root/src/." "$repo/src/"
+cp "$root/bootstrap/install.sh" "$repo/bootstrap/install.sh"; cp -rL "$root/src/." "$repo/src/"   # -L: src/resources links to the data folders
 cat > "$repo/box.json" <<'JSON'
 { "name": "bxrig", "version": "0.11.0-dev",
   "toolchain": {
@@ -52,10 +52,10 @@ cat > "$repo/box.json" <<'JSON'
 JSON
 REALJQ="$(command -v jq)"
 mock() { printf '#!/usr/bin/env bash\n%s\n' "$2" > "$bin/$1"; chmod +x "$bin/$1"; }
-reset_mocks() { rm -f "$bin"/*; 
-  mock pacman 'case "$1" in -Qq) [[ " ${MOCK_INSTALLED:-} " == *" $2 "* ]] ;; *) exit 9 ;; esac'
-  mock sudo 'echo "sudo must not run in read-only modes" >&2; exit 9'
-  mock id '[[ "$1" == -u ]] && echo "${MOCK_UID:-1000}" || /usr/bin/id "$@"'
+reset_mocks() { rm -f "$bin"/*;
+	mock pacman 'case "$1" in -Qq) [[ " ${MOCK_INSTALLED:-} " == *" $2 "* ]] ;; *) exit 9 ;; esac'
+	mock sudo 'echo "sudo must not run in read-only modes" >&2; exit 9'
+	mock id '[[ "$1" == -u ]] && echo "${MOCK_UID:-1000}" || /usr/bin/id "$@"'
 }
 run() { env -i HOME="$home" PATH="$bin:$sys" BXRIG_SKIP_NETWORK=1 BXRIG_OS_RELEASE="${OSREL:-$tmp/os-arch}" MOCK_INSTALLED="${MOCK_INSTALLED:-}" MOCK_UID="${MOCK_UID:-1000}" "$@"; }
 printf 'ID=cachyos\nID_LIKE=arch\n' > "$tmp/os-arch"
@@ -192,8 +192,8 @@ echo 'bootstrap toolchain tests passed'
 
 # ---- B4: --install installs missing packages, yay only if absent, and Rust; reruns change nothing ----
 install_mocks() {
-  reset_mocks; : > "$tmp/pacman.log"; : > "$tmp/state"
-  mock pacman 'case "$1" in
+	reset_mocks; : > "$tmp/pacman.log"; : > "$tmp/state"
+	mock pacman 'case "$1" in
   -Qq) grep -qx -- "$2" "$STATE" ;;
   -Syu) shift; echo "Syu $*" >> "$PLOG"; [[ "${MOCK_SYU_FAIL:-0}" == 1 ]] && exit 1; for p in "$@"; do [[ "$p" == --needed ]] || echo "$p" >> "$STATE"; done ;;
   -S) shift; echo "S $*" >> "$PLOG"; [[ " $* " == *" yay "* && "${MOCK_YAY_FAIL:-0}" == 1 ]] && exit 1
@@ -202,9 +202,9 @@ install_mocks() {
       exit 0 ;;
   *) exit 9 ;;
 esac'
-  mock sudo '"$@"'
-  mock rustup '[[ "${MOCK_RUSTUP_FAIL:-0}" == 1 ]] && exit 1; if [[ "$1 $2" == "default stable" ]]; then echo "rustup $*" >> "$PLOG"; printf "#!/usr/bin/env bash\necho \"rustc 1.90.0\"\n" > "$BINDIR/rustc"; chmod +x "$BINDIR/rustc"; fi'
-  mock java 'echo "openjdk version \"21.0.13\" 2026-04-21" >&2'
+	mock sudo '"$@"'
+	mock rustup '[[ "${MOCK_RUSTUP_FAIL:-0}" == 1 ]] && exit 1; if [[ "$1 $2" == "default stable" ]]; then echo "rustup $*" >> "$PLOG"; printf "#!/usr/bin/env bash\necho \"rustc 1.90.0\"\n" > "$BINDIR/rustc"; chmod +x "$BINDIR/rustc"; fi'
+	mock java 'echo "openjdk version \"21.0.13\" 2026-04-21" >&2'
 }
 irun() { env -i HOME="$home" PATH="$bin:$sys" BXRIG_SKIP_NETWORK=1 BXRIG_OS_RELEASE="$tmp/os-arch" STATE="$tmp/state" PLOG="$tmp/pacman.log" BINDIR="$bin" REALJQ="$REALJQ" SYSDIR="$sys" MOCK_UID="${MOCK_UID:-1000}" MOCK_YAY_FAIL="${MOCK_YAY_FAIL:-0}" MOCK_SYU_FAIL="${MOCK_SYU_FAIL:-0}" MOCK_RUSTUP_FAIL="${MOCK_RUSTUP_FAIL:-0}" "$@"; }
 
@@ -371,7 +371,7 @@ echo 'bootstrap latest-BoxLang tests passed'
 # ---- box.json: the one place that names tool versions ----
 # The real manifest is valid, complete and agrees with the source's version string.
 for k in .name .version .toolchain.java.version .toolchain.java.package .toolchain.boxlang.version .toolchain.bvm.installer .toolchain.mvm.installer .toolchain.matchbox.version .toolchain.rust.channel; do
-  jq -e "$k" "$root/box.json" >/dev/null || { echo "FAIL: real box.json lacks $k" >&2; exit 1; }
+	jq -e "$k" "$root/box.json" >/dev/null || { echo "FAIL: real box.json lacks $k" >&2; exit 1; }
 done
 [[ "BxRig $(jq -r .version "$root/box.json")" == "$SRCVER" ]] || { echo 'FAIL: box.json version differs from src/bxrig/util/Version.bx (run bootstrap/gen-version.sh)' >&2; exit 1; }
 # A different pin in box.json changes the plan (no copy of the version lives in the script).
@@ -425,7 +425,7 @@ if out="$(MVM_FAKE="$FLAKY_MVM" trun env BXRIG_RETRY_WAITS="0 0 0" MVM_FAIL_TIME
 need "$out" 'Failed after 3 attempts'; need "$out" 'HTTP 403'
 echo 'bootstrap retry tests passed'
 
-# ---- MatchBox from the published bxcachy-branch build (box.json "downloads"): download, sha256, no mvm ----
+# ---- MatchBox from the published bxrig-branch build (box.json "downloads"): download, sha256, no mvm ----
 jq '.toolchain.matchbox = { "version": "0.13.0", "downloads": "https://downloads.example.test/bxrig/matchbox" }' "$repo/box.json" > "$tmp/box-dl.json"
 MB_BIN='#!/usr/bin/env bash
 [[ "$1" == --version ]] && echo "matchbox version 0.13.0" || echo "matchbox"'

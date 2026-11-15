@@ -1,9 +1,9 @@
 return {
-  { "EdenEast/nightfox.nvim", priority = 1000 },
-  {
-    "LazyVim/LazyVim",
-    opts = {
-      colorscheme = "dayfox",
-    },
-  },
+	{ "EdenEast/nightfox.nvim", priority = 1000 },
+	{
+		"LazyVim/LazyVim",
+		opts = {
+			colorscheme = "dayfox",
+		},
+	},
 }

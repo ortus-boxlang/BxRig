@@ -6,12 +6,12 @@ vim.g.autoformat = false
 --   set -as terminal-features ",*:clipboard"
 -- to your tmux.conf so tmux passes it on.
 if vim.env.SSH_TTY or vim.env.SSH_CONNECTION then
-  local ok, osc52 = pcall(require, "vim.ui.clipboard.osc52")
-  if ok then
-    vim.g.clipboard = {
-      name = "OSC 52",
-      copy = { ["+"] = osc52.copy("+"), ["*"] = osc52.copy("*") },
-      paste = { ["+"] = osc52.paste("+"), ["*"] = osc52.paste("*") },
-    }
-  end
+	local ok, osc52 = pcall(require, "vim.ui.clipboard.osc52")
+	if ok then
+		vim.g.clipboard = {
+			name = "OSC 52",
+			copy = { ["+"] = osc52.copy("+"), ["*"] = osc52.copy("*") },
+			paste = { ["+"] = osc52.paste("+"), ["*"] = osc52.paste("*") },
+		}
+	end
 end

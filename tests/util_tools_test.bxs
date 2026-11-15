@@ -3,10 +3,10 @@ testkit = new lib.Check( "util tools" );
 calls = [];
 answers = {};
 fake = function( argv, timeout ) {
-    calls.append( argv.toList( " " ) );
-    key = argv.toList( " " );
-    if ( structKeyExists( answers, key ) ) return answers[ key ];
-    return { exitCode: 0, timeout: false, output: "" };
+	calls.append( argv.toList( " " ) );
+	key = argv.toList( " " );
+	if ( structKeyExists( answers, key ) ) return answers[ key ];
+	return { exitCode: 0, timeout: false, output: "" };
 };
 proc = new bxrig.util.Proc( fake );
 pac = new bxrig.util.Pacman( proc );

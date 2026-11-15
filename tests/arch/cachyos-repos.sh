@@ -10,7 +10,7 @@ pacman-key --init
 # imported key ID to match the one published by CachyOS before trusting it.
 curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&options=mr&search=0x$key" -o /tmp/cachyos.asc
 gpg --show-keys --with-colons /tmp/cachyos.asc | awk -F: '/^fpr/{print $10}' | grep -q "$key\$" \
-  || { echo "CachyOS key $key not found in downloaded key" >&2; exit 1; }
+	|| { echo "CachyOS key $key not found in downloaded key" >&2; exit 1; }
 pacman-key --add /tmp/cachyos.asc
 rm -f /tmp/cachyos.asc
 pacman-key --lsign-key "$key"
@@ -18,8 +18,8 @@ listing="$(curl -fsSL "$base/")"
 pick() { grep -o "href=\"$1-[0-9][^\"]*\\.pkg\\.tar\\.zst\"" <<<"$listing" | sed 's/href="//;s/"$//' | sort -V | tail -1; }
 pkgs=()
 for p in cachyos-keyring cachyos-mirrorlist cachyos-v3-mirrorlist cachyos-v4-mirrorlist; do
-  f="$(pick "$p")"; [[ -n "$f" ]] || { echo "cannot find $p" >&2; exit 1; }
-  curl -fsSL -o "/tmp/$f" "$base/$f"; pkgs+=("/tmp/$f")
+	f="$(pick "$p")"; [[ -n "$f" ]] || { echo "cannot find $p" >&2; exit 1; }
+	curl -fsSL -o "/tmp/$f" "$base/$f"; pkgs+=("/tmp/$f")
 done
 pacman -U --noconfirm "${pkgs[@]}"
 rm -f /tmp/cachyos-*.pkg.tar.zst
@@ -32,7 +32,7 @@ sed -i 's/^Architecture = .*/Architecture = x86_64 x86_64_v3 x86_64_v4/' /etc/pa
 # result does not depend on which CPU the CI runner happens to have. A real CachyOS
 # machine puts the v3/v4 repos first; that difference is covered by the hardware test.
 if ! grep -q '^\[multilib\]' /etc/pacman.conf; then
-  printf '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n' >> /etc/pacman.conf
+	printf '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n' >> /etc/pacman.conf
 fi
 cat >> /etc/pacman.conf <<'CONF'
 

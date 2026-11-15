@@ -103,12 +103,12 @@ testkit.check( "the password question appears only once a database is picked", !
 
 // ---- pages that appear only for some answers ----
 function withPages() {
-    var spec = jsonDeserialize( new bxrig.WizardData().demoPages() );
-    var extra = { id: "extra", title: "Extra", intro: "", when: { id: "app_mode", equals: "custom" }, questions: [ { type: "multi", id: "extra_pick", label: "Pick", default: [ "a" ], options: [ { value: "a", label: "A", description: "" }, { value: "b", label: "B", description: "" } ] } ] };
-    var pages = [];
-    for ( var i = 1; i <= spec.pages.len(); i++ ) { pages.append( spec.pages[ i ] ); if ( i == 1 ) pages.append( extra ); }
-    spec.pages = pages;
-    return spec;
+	var spec = jsonDeserialize( new bxrig.WizardData().demoPages() );
+	var extra = { id: "extra", title: "Extra", intro: "", when: { id: "app_mode", equals: "custom" }, questions: [ { type: "multi", id: "extra_pick", label: "Pick", default: [ "a" ], options: [ { value: "a", label: "A", description: "" }, { value: "b", label: "B", description: "" } ] } ] };
+	var pages = [];
+	for ( var i = 1; i <= spec.pages.len(); i++ ) { pages.append( spec.pages[ i ] ); if ( i == 1 ) pages.append( extra ); }
+	spec.pages = pages;
+	return spec;
 }
 a = new bxrig.WizardApp( withPages() );
 testkit.check( "a page with `when` is hidden until its answer matches", !a.pageVisible( 2 ) && a.visiblePages().len() == a.pageCount() - 1 && a.stepCount() == a.pageCount() );

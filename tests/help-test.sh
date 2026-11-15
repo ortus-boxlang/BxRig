@@ -17,5 +17,5 @@ grep -q 'Changes the system: needs --yes' <<<"$one" || fail 'help says when --ye
 "$binary" help --json | jq -e '(.data.groups | length == 7) and ([.data.groups[].commands[]] | length >= 80)' >/dev/null || fail 'help list --json'
 set +e; "$binary" help nonsense >/dev/null 2>&1; c=$?; set -e; [[ $c == 2 ]] || fail "unknown command exits 2 (got $c)"
 # the docs page and the embedded data are current
-bash "$root/bootstrap/gen-docs.sh" --check >/dev/null || fail 'docs/reference/commands.md or HelpData.bx is stale'
+bash "$root/bootstrap/gen-docs.sh" --check >/dev/null || fail 'docs/reference/commands.md or CommandFlagData.bx is stale'
 echo "help-test: ok"

@@ -18,7 +18,7 @@ run "$binary" setup boot --dry-run --json | jq -e '(.data.steps | map(.id) | ind
 echo 'HOOKS=(base udev autodetect block filesystems fsck)' > "$tmp/mk.conf"
 sedexpr="$(run "$binary" setup boot --dry-run --json | jq -r '.data.steps[] | select(.id=="hook") | .commands[1][4]')"
 for pair in 'HOOKS=(base udev autodetect)|HOOKS=(base udev plymouth autodetect)' 'HOOKS=(base systemd autodetect sd-encrypt)|HOOKS=(base systemd plymouth autodetect sd-encrypt)' 'HOOKS=(base udev plymouth)|HOOKS=(base udev plymouth)'; do
-  echo "${pair%%|*}" > "$tmp/t.conf"; sed -i -E "$sedexpr" "$tmp/t.conf"
-  [[ "$(cat "$tmp/t.conf")" == "${pair##*|}" ]] || fail "hook edit: ${pair%%|*} -> $(cat "$tmp/t.conf")"
+	echo "${pair%%|*}" > "$tmp/t.conf"; sed -i -E "$sedexpr" "$tmp/t.conf"
+	[[ "$(cat "$tmp/t.conf")" == "${pair##*|}" ]] || fail "hook edit: ${pair%%|*} -> $(cat "$tmp/t.conf")"
 done
 echo "boot-test: ok"

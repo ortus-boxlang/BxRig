@@ -7,328 +7,328 @@
 //
 // Screens: "welcome", "page" (page number pageIndex(), 1 based) and "review". outcome() is "running", "done" or "cancelled".
 class WizardApp {
-    function init( spec, preset = {} ) {
-        variables.spec = arguments.spec;
-        variables.screen = "welcome";
-        variables.page = 1;
-        variables.furthest = 0;   // the highest step reached: pages 1..n, then n + 1 for the review
-        variables.focus = 1;      // index into rows() of the focused row on the current page
-        variables.outcome = "running";
-        variables.answers = {};
-        for ( var pg in variables.spec.pages ) {
-            for ( var q in pg.questions ) {
-                if ( q.type == "info" ) continue;
-                variables.answers[ q.id ] = defaultFor( q );
-            }
-        }
-        for ( var id in structKeyArray( arguments.preset ) ) {
-            if ( variables.answers.keyExists( id ) ) variables.answers[ id ] = arguments.preset[ id ];
-        }
-        return this;
-    }
+	function init( spec, preset = {} ) {
+		variables.spec = arguments.spec;
+		variables.screen = "welcome";
+		variables.page = 1;
+		variables.furthest = 0;   // the highest step reached: pages 1..n, then n + 1 for the review
+		variables.focus = 1;      // index into rows() of the focused row on the current page
+		variables.outcome = "running";
+		variables.answers = {};
+		for ( var pg in variables.spec.pages ) {
+			for ( var q in pg.questions ) {
+				if ( q.type == "info" ) continue;
+				variables.answers[ q.id ] = defaultFor( q );
+			}
+		}
+		for ( var id in structKeyArray( arguments.preset ) ) {
+			if ( variables.answers.keyExists( id ) ) variables.answers[ id ] = arguments.preset[ id ];
+		}
+		return this;
+	}
 
-    // Whether a question (or a page) is shown: no `when`, or the answer to when.id is one of when.in, equals when.equals, or (a list answer) contains when.has.
-    // Hidden questions have no rows, are left out of the review and out of finalAnswers().
-    function isVisible( q ) {
-        if ( !structKeyExists( arguments.q, "when" ) ) return true;
-        var w = arguments.q.when;
-        var current = answerString( w.id );
-        if ( structKeyExists( w, "nonempty" ) ) return answerList( w.id ).len() > 0;
-        if ( structKeyExists( w, "has" ) ) return arrayFind( answerList( w.id ), w.has ) > 0;
-        if ( structKeyExists( w, "in" ) ) return arrayFind( w.in, current ) > 0;
-        if ( structKeyExists( w, "equals" ) ) return current == w.equals;
-        return true;
-    }
+	// Whether a question (or a page) is shown: no `when`, or the answer to when.id is one of when.in, equals when.equals, or (a list answer) contains when.has.
+	// Hidden questions have no rows, are left out of the review and out of finalAnswers().
+	function isVisible( q ) {
+		if ( !structKeyExists( arguments.q, "when" ) ) return true;
+		var w = arguments.q.when;
+		var current = answerString( w.id );
+		if ( structKeyExists( w, "nonempty" ) ) return answerList( w.id ).len() > 0;
+		if ( structKeyExists( w, "has" ) ) return arrayFind( answerList( w.id ), w.has ) > 0;
+		if ( structKeyExists( w, "in" ) ) return arrayFind( w.in, current ) > 0;
+		if ( structKeyExists( w, "equals" ) ) return current == w.equals;
+		return true;
+	}
 
-    // The answers of the questions that are shown (what the caller acts on).
-    function finalAnswers() {
-        var out = {};
-        for ( var pg in variables.spec.pages ) {
-            if ( !isVisible( pg ) ) continue;
-            for ( var q in pg.questions ) if ( q.type != "info" && isVisible( q ) ) out[ q.id ] = variables.answers[ q.id ];
-        }
-        return out;
-    }
+	// The answers of the questions that are shown (what the caller acts on).
+	function finalAnswers() {
+		var out = {};
+		for ( var pg in variables.spec.pages ) {
+			if ( !isVisible( pg ) ) continue;
+			for ( var q in pg.questions ) if ( q.type != "info" && isVisible( q ) ) out[ q.id ] = variables.answers[ q.id ];
+		}
+		return out;
+	}
 
-    // Whether page n is shown: a page may carry `when` like a question (the app pages appear only for "customize").
-    function pageVisible( n ) { return arguments.n >= 1 && arguments.n <= pageCount() && isVisible( variables.spec.pages[ arguments.n ] ); }
+	// Whether page n is shown: a page may carry `when` like a question (the app pages appear only for "customize").
+	function pageVisible( n ) { return arguments.n >= 1 && arguments.n <= pageCount() && isVisible( variables.spec.pages[ arguments.n ] ); }
 
-    // The numbers of the pages that are shown, in order.
-    function visiblePages() {
-        var out = [];
-        for ( var i = 1; i <= pageCount(); i++ ) if ( pageVisible( i ) ) out.append( i );
-        return out;
-    }
+	// The numbers of the pages that are shown, in order.
+	function visiblePages() {
+		var out = [];
+		for ( var i = 1; i <= pageCount(); i++ ) if ( pageVisible( i ) ) out.append( i );
+		return out;
+	}
 
-    // Steps in the progress display: the shown pages plus the review.
-    function stepCount() { return visiblePages().len() + 1; }
+	// Steps in the progress display: the shown pages plus the review.
+	function stepCount() { return visiblePages().len() + 1; }
 
-    // The 1-based step of a page number among the shown pages (0 when it is hidden).
-    function stepOf( n ) {
-        var v = visiblePages();
-        for ( var i = 1; i <= v.len(); i++ ) if ( v[ i ] == arguments.n ) return i;
-        return 0;
-    }
+	// The 1-based step of a page number among the shown pages (0 when it is hidden).
+	function stepOf( n ) {
+		var v = visiblePages();
+		for ( var i = 1; i <= v.len(); i++ ) if ( v[ i ] == arguments.n ) return i;
+		return 0;
+	}
 
-    function nextVisible( from ) {
-        for ( var i = arguments.from + 1; i <= pageCount(); i++ ) if ( pageVisible( i ) ) return i;
-        return 0;
-    }
+	function nextVisible( from ) {
+		for ( var i = arguments.from + 1; i <= pageCount(); i++ ) if ( pageVisible( i ) ) return i;
+		return 0;
+	}
 
-    function prevVisible( from ) {
-        for ( var i = arguments.from - 1; i >= 1; i-- ) if ( pageVisible( i ) ) return i;
-        return 0;
-    }
+	function prevVisible( from ) {
+		for ( var i = arguments.from - 1; i >= 1; i-- ) if ( pageVisible( i ) ) return i;
+		return 0;
+	}
 
-    // What a question starts as: its default, else the first option (choice), none (multi), empty, its default number, no.
-    function defaultFor( q ) {
-        switch ( q.type ) {
-            case "choice":  return q.keyExists( "default" ) ? q.default : ( q.options.len() ? q.options[ 1 ].value : "" );
-            case "multi":   return q.keyExists( "default" ) ? q.default : [];
-            case "text":    return q.keyExists( "default" ) ? q.default : "";
-            case "number":  return q.keyExists( "default" ) ? q.default : q.min;
-            case "confirm": return q.keyExists( "default" ) ? q.default : false;
-        }
-        return "";
-    }
+	// What a question starts as: its default, else the first option (choice), none (multi), empty, its default number, no.
+	function defaultFor( q ) {
+		switch ( q.type ) {
+			case "choice":  return q.keyExists( "default" ) ? q.default : ( q.options.len() ? q.options[ 1 ].value : "" );
+			case "multi":   return q.keyExists( "default" ) ? q.default : [];
+			case "text":    return q.keyExists( "default" ) ? q.default : "";
+			case "number":  return q.keyExists( "default" ) ? q.default : q.min;
+			case "confirm": return q.keyExists( "default" ) ? q.default : false;
+		}
+		return "";
+	}
 
-    function spec()      { return variables.spec; }
-    function screen()    { return variables.screen; }
-    function pageIndex() { return variables.page; }
-    function furthest()  { return variables.furthest; }
-    function focus()     { return variables.focus; }
-    function outcome()   { return variables.outcome; }
-    function answers()   { return variables.answers; }
-    function pageCount() { return variables.spec.pages.len(); }
+	function spec()      { return variables.spec; }
+	function screen()    { return variables.screen; }
+	function pageIndex() { return variables.page; }
+	function furthest()  { return variables.furthest; }
+	function focus()     { return variables.focus; }
+	function outcome()   { return variables.outcome; }
+	function answers()   { return variables.answers; }
+	function pageCount() { return variables.spec.pages.len(); }
 
-    // The rows of a page, in order: { kind: heading|group|opt|field|info|space, q, i, group }.
-    // q is the question number and i the option number (both 1 based) where they apply.
-    function rowsOf( pg ) {
-        var out = [];
-        var qn = 0;
-        for ( var q in arguments.pg.questions ) {
-            qn++;
-            if ( !isVisible( q ) ) continue;
-            if ( out.len() ) out.append( { kind: "space", q: 0, i: 0, group: "" } );
-            if ( q.type == "info" ) {
-                out.append( { kind: "info", q: qn, i: 0, group: "" } );
-            } else if ( q.type == "choice" || q.type == "multi" ) {
-                out.append( { kind: "heading", q: qn, i: 0, group: "" } );
-                var group = "";
-                var oi = 0;
-                for ( var o in q.options ) {
-                    oi++;
-                    var og = o.keyExists( "group" ) ? o.group : "";
-                    if ( og != group ) {
-                        group = og;
-                        if ( len( group ) ) out.append( { kind: "group", q: qn, i: 0, group: group } );
-                    }
-                    out.append( { kind: "opt", q: qn, i: oi, group: "" } );
-                }
-            } else {
-                out.append( { kind: "heading", q: qn, i: 0, group: "" } );
-                out.append( { kind: "field", q: qn, i: 0, group: "" } );
-            }
-        }
-        return out;
-    }
+	// The rows of a page, in order: { kind: heading|group|opt|field|info|space, q, i, group }.
+	// q is the question number and i the option number (both 1 based) where they apply.
+	function rowsOf( pg ) {
+		var out = [];
+		var qn = 0;
+		for ( var q in arguments.pg.questions ) {
+			qn++;
+			if ( !isVisible( q ) ) continue;
+			if ( out.len() ) out.append( { kind: "space", q: 0, i: 0, group: "" } );
+			if ( q.type == "info" ) {
+				out.append( { kind: "info", q: qn, i: 0, group: "" } );
+			} else if ( q.type == "choice" || q.type == "multi" ) {
+				out.append( { kind: "heading", q: qn, i: 0, group: "" } );
+				var group = "";
+				var oi = 0;
+				for ( var o in q.options ) {
+					oi++;
+					var og = o.keyExists( "group" ) ? o.group : "";
+					if ( og != group ) {
+						group = og;
+						if ( len( group ) ) out.append( { kind: "group", q: qn, i: 0, group: group } );
+					}
+					out.append( { kind: "opt", q: qn, i: oi, group: "" } );
+				}
+			} else {
+				out.append( { kind: "heading", q: qn, i: 0, group: "" } );
+				out.append( { kind: "field", q: qn, i: 0, group: "" } );
+			}
+		}
+		return out;
+	}
 
-    // The rows of the current page ([] on other screens).
-    function rows() {
-        return variables.screen == "page" ? rowsOf( variables.spec.pages[ variables.page ] ) : [];
-    }
+	// The rows of the current page ([] on other screens).
+	function rows() {
+		return variables.screen == "page" ? rowsOf( variables.spec.pages[ variables.page ] ) : [];
+	}
 
-    function isFocusable( row ) {
-        return row.kind == "opt" || row.kind == "field";
-    }
+	function isFocusable( row ) {
+		return row.kind == "opt" || row.kind == "field";
+	}
 
-    // Typed accessors for answers.
-    function answerString( id ) { return variables.answers.keyExists( arguments.id ) ? toString( variables.answers[ arguments.id ] ) : ""; }
-    function answerList( id )   { return variables.answers.keyExists( arguments.id ) ? variables.answers[ arguments.id ] : []; }
-    function answerNumber( id ) { return variables.answers.keyExists( arguments.id ) ? variables.answers[ arguments.id ] : 0; }
-    function answerBool( id )   { return variables.answers.keyExists( arguments.id ) ? variables.answers[ arguments.id ] == true : false; }
+	// Typed accessors for answers.
+	function answerString( id ) { return variables.answers.keyExists( arguments.id ) ? toString( variables.answers[ arguments.id ] ) : ""; }
+	function answerList( id )   { return variables.answers.keyExists( arguments.id ) ? variables.answers[ arguments.id ] : []; }
+	function answerNumber( id ) { return variables.answers.keyExists( arguments.id ) ? variables.answers[ arguments.id ] : 0; }
+	function answerBool( id )   { return variables.answers.keyExists( arguments.id ) ? variables.answers[ arguments.id ] == true : false; }
 
-    // A readable value for the review screen.
-    function display( q ) {
-        switch ( arguments.q.type ) {
-            case "choice":
-                var v = answerString( arguments.q.id );
-                for ( var o in arguments.q.options ) if ( o.value == v ) return o.label;
-                return v;
-            case "multi":
-                var names = [];
-                for ( var v in answerList( arguments.q.id ) ) {
-                    var shown = v;
-                    for ( var o in arguments.q.options ) if ( o.value == v ) { shown = o.label; break; }
-                    names.append( shown );
-                }
-                return names.len() ? names.toList( ", " ) : "none";
-            case "text":
-                var t = answerString( arguments.q.id );
-                return len( t ) ? t : "not set";
-            case "number":
-                return toString( answerNumber( arguments.q.id ) );
-            case "confirm":
-                return answerBool( arguments.q.id ) ? "yes" : "no";
-        }
-        return "";
-    }
+	// A readable value for the review screen.
+	function display( q ) {
+		switch ( arguments.q.type ) {
+			case "choice":
+				var v = answerString( arguments.q.id );
+				for ( var o in arguments.q.options ) if ( o.value == v ) return o.label;
+				return v;
+			case "multi":
+				var names = [];
+				for ( var v in answerList( arguments.q.id ) ) {
+					var shown = v;
+					for ( var o in arguments.q.options ) if ( o.value == v ) { shown = o.label; break; }
+					names.append( shown );
+				}
+				return names.len() ? names.toList( ", " ) : "none";
+			case "text":
+				var t = answerString( arguments.q.id );
+				return len( t ) ? t : "not set";
+			case "number":
+				return toString( answerNumber( arguments.q.id ) );
+			case "confirm":
+				return answerBool( arguments.q.id ) ? "yes" : "no";
+		}
+		return "";
+	}
 
-    // The row to focus first on a page: its first focusable one.
-    function firstFocus( pg ) {
-        var rs = rowsOf( arguments.pg );
-        for ( var i = 1; i <= rs.len(); i++ ) if ( isFocusable( rs[ i ] ) ) return i;
-        return 1;
-    }
+	// The row to focus first on a page: its first focusable one.
+	function firstFocus( pg ) {
+		var rs = rowsOf( arguments.pg );
+		for ( var i = 1; i <= rs.len(); i++ ) if ( isFocusable( rs[ i ] ) ) return i;
+		return 1;
+	}
 
-    function gotoPage( n ) {
-        if ( !pageVisible( arguments.n ) ) return this;
-        variables.screen = "page";
-        variables.page = arguments.n;
-        variables.furthest = max( variables.furthest, arguments.n );
-        variables.focus = firstFocus( variables.spec.pages[ arguments.n ] );
-        return this;
-    }
+	function gotoPage( n ) {
+		if ( !pageVisible( arguments.n ) ) return this;
+		variables.screen = "page";
+		variables.page = arguments.n;
+		variables.furthest = max( variables.furthest, arguments.n );
+		variables.focus = firstFocus( variables.spec.pages[ arguments.n ] );
+		return this;
+	}
 
-    function gotoReview() {
-        variables.furthest = pageCount() + 1;
-        variables.screen = "review";
-        return this;
-    }
+	function gotoReview() {
+		variables.furthest = pageCount() + 1;
+		variables.screen = "review";
+		return this;
+	}
 
-    function nextPage() {
-        if ( variables.screen == "welcome" ) gotoPage( nextVisible( 0 ) );
-        else if ( variables.screen == "page" ) { var nx = nextVisible( variables.page ); if ( nx ) gotoPage( nx ); else gotoReview(); }
-        else variables.outcome = "done";
-        return this;
-    }
+	function nextPage() {
+		if ( variables.screen == "welcome" ) gotoPage( nextVisible( 0 ) );
+		else if ( variables.screen == "page" ) { var nx = nextVisible( variables.page ); if ( nx ) gotoPage( nx ); else gotoReview(); }
+		else variables.outcome = "done";
+		return this;
+	}
 
-    function prevPage() {
-        if ( variables.screen == "page" ) { var pv = prevVisible( variables.page ); if ( pv ) gotoPage( pv ); else variables.screen = "welcome"; }
-        else if ( variables.screen == "review" ) gotoPage( prevVisible( pageCount() + 1 ) );
-        return this;
-    }
+	function prevPage() {
+		if ( variables.screen == "page" ) { var pv = prevVisible( variables.page ); if ( pv ) gotoPage( pv ); else variables.screen = "welcome"; }
+		else if ( variables.screen == "review" ) gotoPage( prevVisible( pageCount() + 1 ) );
+		return this;
+	}
 
-    function moveFocus( down ) {
-        var rs = rows();
-        var i = variables.focus;
-        while ( true ) {
-            i += arguments.down ? 1 : -1;
-            if ( i < 1 || i > rs.len() ) return this;
-            if ( isFocusable( rs[ i ] ) ) { variables.focus = i; return this; }
-        }
-    }
+	function moveFocus( down ) {
+		var rs = rows();
+		var i = variables.focus;
+		while ( true ) {
+			i += arguments.down ? 1 : -1;
+			if ( i < 1 || i > rs.len() ) return this;
+			if ( isFocusable( rs[ i ] ) ) { variables.focus = i; return this; }
+		}
+	}
 
-    function focusedRow() {
-        var rs = rows();
-        return variables.focus >= 1 && variables.focus <= rs.len() ? rs[ variables.focus ] : { kind: "space", q: 0, i: 0, group: "" };
-    }
+	function focusedRow() {
+		var rs = rows();
+		return variables.focus >= 1 && variables.focus <= rs.len() ? rs[ variables.focus ] : { kind: "space", q: 0, i: 0, group: "" };
+	}
 
-    // Select or toggle whatever has focus (space, or a click).
-    function activate() {
-        if ( variables.screen != "page" ) return this;
-        var pg = variables.spec.pages[ variables.page ];
-        var row = focusedRow();
-        if ( row.kind == "opt" ) {
-            var q = pg.questions[ row.q ];
-            var value = q.options[ row.i ].value;
-            if ( q.type == "choice" ) {
-                variables.answers[ q.id ] = value;
-            } else {
-                var current = answerList( q.id );
-                var kept = current.filter( function( x ) { return x != value; } );
-                variables.answers[ q.id ] = kept.len() == current.len() ? current.append( value ) : kept;
-            }
-        } else if ( row.kind == "field" ) {
-            var q = pg.questions[ row.q ];
-            if ( q.type == "confirm" ) variables.answers[ q.id ] = !answerBool( q.id );
-        }
-        var rs = rows();
-        if ( variables.focus > rs.len() || !isFocusable( rs[ variables.focus ] ) ) variables.focus = firstFocus( pg );
-        return this;
-    }
+	// Select or toggle whatever has focus (space, or a click).
+	function activate() {
+		if ( variables.screen != "page" ) return this;
+		var pg = variables.spec.pages[ variables.page ];
+		var row = focusedRow();
+		if ( row.kind == "opt" ) {
+			var q = pg.questions[ row.q ];
+			var value = q.options[ row.i ].value;
+			if ( q.type == "choice" ) {
+				variables.answers[ q.id ] = value;
+			} else {
+				var current = answerList( q.id );
+				var kept = current.filter( function( x ) { return x != value; } );
+				variables.answers[ q.id ] = kept.len() == current.len() ? current.append( value ) : kept;
+			}
+		} else if ( row.kind == "field" ) {
+			var q = pg.questions[ row.q ];
+			if ( q.type == "confirm" ) variables.answers[ q.id ] = !answerBool( q.id );
+		}
+		var rs = rows();
+		if ( variables.focus > rs.len() || !isFocusable( rs[ variables.focus ] ) ) variables.focus = firstFocus( pg );
+		return this;
+	}
 
-    // Enter: finish this question and go to the next one, or to the next page after the last.
-    function advance() {
-        if ( variables.screen != "page" ) return nextPage();
-        var pg = variables.spec.pages[ variables.page ];
-        var rs = rowsOf( pg );
-        var row = focusedRow();
-        if ( !isFocusable( row ) ) return nextPage();
-        if ( pg.questions[ row.q ].type == "choice" ) activate();
-        for ( var i = variables.focus + 1; i <= rs.len(); i++ ) {
-            if ( isFocusable( rs[ i ] ) && rs[ i ].q != row.q ) { variables.focus = i; return this; }
-        }
-        return nextPage();
-    }
+	// Enter: finish this question and go to the next one, or to the next page after the last.
+	function advance() {
+		if ( variables.screen != "page" ) return nextPage();
+		var pg = variables.spec.pages[ variables.page ];
+		var rs = rowsOf( pg );
+		var row = focusedRow();
+		if ( !isFocusable( row ) ) return nextPage();
+		if ( pg.questions[ row.q ].type == "choice" ) activate();
+		for ( var i = variables.focus + 1; i <= rs.len(); i++ ) {
+			if ( isFocusable( rs[ i ] ) && rs[ i ].q != row.q ) { variables.focus = i; return this; }
+		}
+		return nextPage();
+	}
 
-    function adjustNumber( delta ) {
-        var row = focusedRow();
-        if ( row.kind != "field" ) return this;
-        var q = variables.spec.pages[ variables.page ].questions[ row.q ];
-        if ( q.type != "number" ) return this;
-        variables.answers[ q.id ] = min( q.max, max( q.min, answerNumber( q.id ) + arguments.delta ) );
-        return this;
-    }
+	function adjustNumber( delta ) {
+		var row = focusedRow();
+		if ( row.kind != "field" ) return this;
+		var q = variables.spec.pages[ variables.page ].questions[ row.q ];
+		if ( q.type != "number" ) return this;
+		variables.answers[ q.id ] = min( q.max, max( q.min, answerNumber( q.id ) + arguments.delta ) );
+		return this;
+	}
 
-    // The id of the text question that has focus, or "".
-    function textFieldId() {
-        if ( variables.screen != "page" ) return "";
-        var row = focusedRow();
-        if ( row.kind != "field" ) return "";
-        var q = variables.spec.pages[ variables.page ].questions[ row.q ];
-        return q.type == "text" ? q.id : "";
-    }
+	// The id of the text question that has focus, or "".
+	function textFieldId() {
+		if ( variables.screen != "page" ) return "";
+		var row = focusedRow();
+		if ( row.kind != "field" ) return "";
+		var q = variables.spec.pages[ variables.page ].questions[ row.q ];
+		return q.type == "text" ? q.id : "";
+	}
 
-    // A key event from poll_event: { key, ctrl, alt, shift }. Single characters are typed text or shortcuts; named keys
-    // (Enter, Escape, Tab, Up...) are longer than one character.
-    function onKey( key ) {
-        if ( arguments.key == "Ctrl+c" ) { variables.outcome = "cancelled"; return this; }
-        if ( variables.screen == "welcome" ) {
-            if ( arguments.key == "Enter" || arguments.key == " " ) nextPage();
-            else if ( arguments.key == "Escape" || arguments.key == "q" ) variables.outcome = "cancelled";
-            return this;
-        }
-        if ( variables.screen == "review" ) {
-            if ( arguments.key == "Enter" ) variables.outcome = "done";
-            else if ( arguments.key == "Escape" || arguments.key == "Left" || arguments.key == "BackTab" || arguments.key == "PageUp" ) prevPage();
-            return this;
-        }
-        var tid = textFieldId();
-        if ( len( tid ) ) {
-            if ( len( arguments.key ) == 1 ) { variables.answers[ tid ] = answerString( tid ) & arguments.key; return this; }
-            if ( arguments.key == "Backspace" ) { var s = answerString( tid ); variables.answers[ tid ] = len( s ) > 1 ? left( s, len( s ) - 1 ) : ""; return this; }
-            if ( arguments.key == "Ctrl+u" ) { variables.answers[ tid ] = ""; return this; }
-        }
-        switch ( arguments.key ) {
-            case "Up": case "k":                      moveFocus( false ); break;
-            case "Down": case "j":                    moveFocus( true ); break;
-            case " ":                                  activate(); break;
-            case "Enter":                              advance(); break;
-            case "Left": case "-":                     adjustNumber( -1 ); break;
-            case "Right": case "+":                    adjustNumber( 1 ); break;
-            case "Tab": case "PageDown":               nextPage(); break;
-            case "BackTab": case "PageUp": case "Escape": prevPage(); break;
-        }
-        return this;
-    }
+	// A key event from poll_event: { key, ctrl, alt, shift }. Single characters are typed text or shortcuts; named keys
+	// (Enter, Escape, Tab, Up...) are longer than one character.
+	function onKey( key ) {
+		if ( arguments.key == "Ctrl+c" ) { variables.outcome = "cancelled"; return this; }
+		if ( variables.screen == "welcome" ) {
+			if ( arguments.key == "Enter" || arguments.key == " " ) nextPage();
+			else if ( arguments.key == "Escape" || arguments.key == "q" ) variables.outcome = "cancelled";
+			return this;
+		}
+		if ( variables.screen == "review" ) {
+			if ( arguments.key == "Enter" ) variables.outcome = "done";
+			else if ( arguments.key == "Escape" || arguments.key == "Left" || arguments.key == "BackTab" || arguments.key == "PageUp" ) prevPage();
+			return this;
+		}
+		var tid = textFieldId();
+		if ( len( tid ) ) {
+			if ( len( arguments.key ) == 1 ) { variables.answers[ tid ] = answerString( tid ) & arguments.key; return this; }
+			if ( arguments.key == "Backspace" ) { var s = answerString( tid ); variables.answers[ tid ] = len( s ) > 1 ? left( s, len( s ) - 1 ) : ""; return this; }
+			if ( arguments.key == "Ctrl+u" ) { variables.answers[ tid ] = ""; return this; }
+		}
+		switch ( arguments.key ) {
+			case "Up": case "k":                      moveFocus( false ); break;
+			case "Down": case "j":                    moveFocus( true ); break;
+			case " ":                                  activate(); break;
+			case "Enter":                              advance(); break;
+			case "Left": case "-":                     adjustNumber( -1 ); break;
+			case "Right": case "+":                    adjustNumber( 1 ); break;
+			case "Tab": case "PageDown":               nextPage(); break;
+			case "BackTab": case "PageUp": case "Escape": prevPage(); break;
+		}
+		return this;
+	}
 
-    // A click on something the view drew: { kind: page|review|focus, n }. Sidebar entries only work once reached.
-    function act( action ) {
-        if ( arguments.action.kind == "page" && arguments.action.n <= variables.furthest ) gotoPage( arguments.action.n );
-        else if ( arguments.action.kind == "review" && variables.furthest >= pageCount() + 1 ) variables.screen = "review";
-        else if ( arguments.action.kind == "focus" ) { variables.focus = arguments.action.n; activate(); }
-        return this;
-    }
+	// A click on something the view drew: { kind: page|review|focus, n }. Sidebar entries only work once reached.
+	function act( action ) {
+		if ( arguments.action.kind == "page" && arguments.action.n <= variables.furthest ) gotoPage( arguments.action.n );
+		else if ( arguments.action.kind == "review" && variables.furthest >= pageCount() + 1 ) variables.screen = "review";
+		else if ( arguments.action.kind == "focus" ) { variables.focus = arguments.action.n; activate(); }
+		return this;
+	}
 
-    // The mouse wheel moves focus.
-    function onScroll( direction ) {
-        if ( variables.screen == "page" ) moveFocus( arguments.direction == "down" );
-        return this;
-    }
+	// The mouse wheel moves focus.
+	function onScroll( direction ) {
+		if ( variables.screen == "page" ) moveFocus( arguments.direction == "down" );
+		return this;
+	}
 
-    // The answers as pretty JSON.
-    function answersJson() {
-        return jsonSerialize( finalAnswers() );
-    }
+	// The answers as pretty JSON.
+	function answersJson() {
+		return jsonSerialize( finalAnswers() );
+	}
 }

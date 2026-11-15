@@ -4,78 +4,78 @@
 //
 // Exit codes: show 0; set 0 done, 2 without --yes, 4 precondition (root, no sudo, session not installed), 5/6/7 as `setup`.
 class Session {
-    function init( cli, runner = "" ) {
-        variables.cli = arguments.cli;
-        variables.inst = new bxrig.Installer( arguments.runner );
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.inst = new bxrig.Installer( arguments.runner );
+		return this;
+	}
 
-    // Directories that hold session .desktop files (BXRIG_SESSION_DIRS overrides, colon separated, for tests).
-    function sessionDirs() {
-        return listToArray( new bxrig.util.Env().named( "sessionDirs", "/usr/share/wayland-sessions:/usr/share/xsessions" ), ":" );
-    }
+	// Directories that hold session .desktop files (BXRIG_SESSION_DIRS overrides, colon separated, for tests).
+	function sessionDirs() {
+		return listToArray( new bxrig.util.Env().named( "sessionDirs", "/usr/share/wayland-sessions:/usr/share/xsessions" ), ":" );
+	}
 
-    // SDDM's state file (BXRIG_SDDM_STATE overrides, for tests).
-    function stateFile() {
-        return new bxrig.util.Env().named( "sddmState", "/var/lib/sddm/state.conf" );
-    }
+	// SDDM's state file (BXRIG_SDDM_STATE overrides, for tests).
+	function stateFile() {
+		return new bxrig.util.Env().named( "sddmState", "/var/lib/sddm/state.conf" );
+	}
 
-    // The installed sessions: [ { file, path, name } ].
-    function sessions() {
-        var out = [];
-        for ( var dir in sessionDirs() ) {
-            if ( !directoryExists( dir ) ) continue;
-            for ( var f in directoryList( dir, false, "name" ) ) {
-                if ( !reFind( "\.desktop$", f ) ) continue;
-                var name = f;
-                for ( var line in listToArray( fileRead( dir & "/" & f ), chr( 10 ) ) ) if ( left( line, 5 ) == "Name=" ) { name = mid( line, 6, len( line ) ); break; }
-                out.append( { file: f, path: dir & "/" & f, name: name } );
-            }
-        }
-        return out;
-    }
+	// The installed sessions: [ { file, path, name } ].
+	function sessions() {
+		var out = [];
+		for ( var dir in sessionDirs() ) {
+			if ( !directoryExists( dir ) ) continue;
+			for ( var f in directoryList( dir, false, "name" ) ) {
+				if ( !reFind( "\.desktop$", f ) ) continue;
+				var name = f;
+				for ( var line in listToArray( fileRead( dir & "/" & f ), chr( 10 ) ) ) if ( left( line, 5 ) == "Name=" ) { name = mid( line, 6, len( line ) ); break; }
+				out.append( { file: f, path: dir & "/" & f, name: name } );
+			}
+		}
+		return out;
+	}
 
-    // The state file as lines ([] when missing or unreadable).
-    function stateLines() {
-        try {
-            return fileExists( stateFile() ) ? listToArray( fileRead( stateFile() ), chr( 10 ), true ) : [];
-        } catch ( any e ) {
-            return [];
-        }
-    }
+	// The state file as lines ([] when missing or unreadable).
+	function stateLines() {
+		try {
+			return fileExists( stateFile() ) ? listToArray( fileRead( stateFile() ), chr( 10 ), true ) : [];
+		} catch ( any e ) {
+			return [];
+		}
+	}
 
-    // The value of Session= under [Last] in the state file, or "".
-    function current() {
-        return new bxrig.util.Ini().get( stateLines().toList( chr( 10 ) ), "Last", "Session" );
-    }
+	// The value of Session= under [Last] in the state file, or "".
+	function current() {
+		return new bxrig.util.Ini().get( stateLines().toList( chr( 10 ) ), "Last", "Session" );
+	}
 
-    // The automatic-login session SDDM is configured with (/etc/sddm.conf and /etc/sddm.conf.d), or "".
-    function autologin() {
-        var files = [ "/etc/sddm.conf" ];
-        if ( directoryExists( "/etc/sddm.conf.d" ) ) for ( var f in directoryList( "/etc/sddm.conf.d", false, "name" ) ) if ( reFind( "\.conf$", f ) ) files.append( "/etc/sddm.conf.d/" & f );
-        var found = "";
-        for ( var file in files ) {
-            if ( !fileExists( file ) ) continue;
-            found = new bxrig.util.Ini().last( fileRead( file ), "Autologin", "Session", found );
-        }
-        return found;
-    }
+	// The automatic-login session SDDM is configured with (/etc/sddm.conf and /etc/sddm.conf.d), or "".
+	function autologin() {
+		var files = [ "/etc/sddm.conf" ];
+		if ( directoryExists( "/etc/sddm.conf.d" ) ) for ( var f in directoryList( "/etc/sddm.conf.d", false, "name" ) ) if ( reFind( "\.conf$", f ) ) files.append( "/etc/sddm.conf.d/" & f );
+		var found = "";
+		for ( var file in files ) {
+			if ( !fileExists( file ) ) continue;
+			found = new bxrig.util.Ini().last( fileRead( file ), "Autologin", "Session", found );
+		}
+		return found;
+	}
 
-    // `session show`
-    function show( asJson ) {
-        var all = sessions();
-        var data = { sessions: all, preselected: current(), autologin: autologin(), state_file: stateFile() };
-        if ( asJson ) { println( variables.cli.envelope( "session show", 0, data ) ); return new bxrig.util.Exit().ok(); }
-        for ( var s in all ) println( s.file & "  " & s.name & ( current() == s.path || current() == s.file ? "  (preselected)" : "" ) );
-        println( "login screen starts on: " & ( len( data.preselected ) ? data.preselected : "the last session used" ) );
-        if ( len( data.autologin ) ) println( "automatic login: " & data.autologin );
-        return new bxrig.util.Exit().ok();
-    }
+	// `session show`
+	function show( asJson ) {
+		var all = sessions();
+		var data = { sessions: all, preselected: current(), autologin: autologin(), state_file: stateFile() };
+		if ( asJson ) { println( variables.cli.envelope( "session show", 0, data ) ); return new bxrig.util.Exit().ok(); }
+		for ( var s in all ) println( s.file & "  " & s.name & ( current() == s.path || current() == s.file ? "  (preselected)" : "" ) );
+		println( "login screen starts on: " & ( len( data.preselected ) ? data.preselected : "the last session used" ) );
+		if ( len( data.autologin ) ) println( "automatic login: " & data.autologin );
+		return new bxrig.util.Exit().ok();
+	}
 
-    // `session set hyprland|plasma`
-    function set( target, yes, dryRun, asJson ) {
-        var facts = { isRoot: variables.inst.isRoot(), hasSudo: variables.inst.hasCommand( "sudo" ), sessions: sessions(), stateFile: stateFile(), stateLines: stateLines(), autologin: autologin(), workDir: "" };
-        var plan = new bxrig.SetupPlan().session( facts, arguments.target );
-        return new bxrig.Setup( variables.cli, variables.inst.runner() ).execute( "session set " & arguments.target, plan, facts, yes, dryRun, asJson );
-    }
+	// `session set hyprland|plasma`
+	function set( target, yes, dryRun, asJson ) {
+		var facts = { isRoot: variables.inst.isRoot(), hasSudo: variables.inst.hasCommand( "sudo" ), sessions: sessions(), stateFile: stateFile(), stateLines: stateLines(), autologin: autologin(), workDir: "" };
+		var plan = new bxrig.SetupPlan().session( facts, arguments.target );
+		return new bxrig.Setup( variables.cli, variables.inst.runner() ).execute( "session set " & arguments.target, plan, facts, yes, dryRun, asJson );
+	}
 }

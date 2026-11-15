@@ -12,21 +12,21 @@ mb="${MATCHBOX:-}"
 [[ -z "$mb" ]] && mb="$(command -v matchbox || true)"
 logdir="$(mktemp -d)"; trap 'rm -rf "${logdir:?}"' EXIT
 run_one() { # name, command...   (runs in a subshell, writes $logdir/NAME.result)
-  local name="$1"; shift
-  if timeout 900 "$@" >"$logdir/$name.log" 2>&1; then echo ok > "$logdir/$name.result"; echo "ok    $name"
-  else echo fail > "$logdir/$name.result"; echo "FAIL  $name"; tail -5 "$logdir/$name.log" | sed 's/^/      /'; fi
+	local name="$1"; shift
+	if timeout 900 "$@" >"$logdir/$name.log" 2>&1; then echo ok > "$logdir/$name.result"; echo "ok    $name"
+	else echo fail > "$logdir/$name.result"; echo "FAIL  $name"; tail -5 "$logdir/$name.log" | sed 's/^/      /'; fi
 }
 queue=()
 for t in "$root"/tests/*-test.sh; do n="$(basename "$t")"; [[ -n "$filter" && "$n" != *"$filter"* ]] || queue+=("sh:$t"); done
 if [[ -n "$mb" ]]; then
-  for t in "$root"/tests/*_test.bxs "$root"/tests/catalog_check.bxs; do [[ -f "$t" ]] || continue; n="$(basename "$t")"; [[ -n "$filter" && "$n" != *"$filter"* ]] || queue+=("bxs:$t"); done
+	for t in "$root"/tests/*_test.bxs "$root"/tests/catalog_check.bxs; do [[ -f "$t" ]] || continue; n="$(basename "$t")"; [[ -n "$filter" && "$n" != *"$filter"* ]] || queue+=("bxs:$t"); done
 else echo "skip  .bxs tests (no matchbox)"; fi
 for item in "${queue[@]}"; do
-  while (( $(jobs -rp | wc -l) >= jobs )); do wait -n || true; done
-  t="${item#*:}"; n="$(basename "$t")"
-  if [[ "$item" == sh:* ]]; then
-    case "$n" in package-manager-test.sh|bootstrap-test.sh|web-install-test.sh|config-test.sh) run_one "$n" bash "$t" & ;; *) run_one "$n" bash "$t" "$binary" & ;; esac
-  else run_one "$n" bash -c "cd '$root/src' && '$mb' '$t'" & fi
+	while (( $(jobs -rp | wc -l) >= jobs )); do wait -n || true; done
+	t="${item#*:}"; n="$(basename "$t")"
+	if [[ "$item" == sh:* ]]; then
+		case "$n" in package-manager-test.sh|bootstrap-test.sh|web-install-test.sh|config-test.sh) run_one "$n" bash "$t" & ;; *) run_one "$n" bash "$t" "$binary" & ;; esac
+	else run_one "$n" bash -c "cd '$root/src' && '$mb' '$t'" & fi
 done
 wait
 pass=$(grep -l '^ok$' "$logdir"/*.result 2>/dev/null | wc -l)

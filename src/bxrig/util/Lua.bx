@@ -2,28 +2,28 @@
 //   binds( text )   [ { tokens, line } ]: the key names of each hl.bind( ... ) line, in order ("Super" for mainMod, then the pieces of the quoted strings
 //                   split at "+"), and the 1-based line number. Only the part before the first `, hl.` or `, function` is read.
 class Lua {
-    function binds( text ) {
-        var out = [];
-        var n = 0;
-        for ( var line in listToArray( arguments.text, chr( 10 ), true ) ) {
-            n++;
-            var t = trim( line );
-            if ( left( t, 8 ) != "hl.bind(" ) continue;
-            var cut = find( ", hl.", t );
-            var fn = find( ", function", t );
-            if ( fn > 0 && ( cut == 0 || fn < cut ) ) cut = fn;
-            var pre = cut > 0 ? left( t, cut - 1 ) : t;
-            var toks = [];
-            if ( find( "mainMod", pre ) ) toks.append( "Super" );
-            var pos = 1;
-            while ( true ) {
-                var m = reFind( '"([^"]*)"', pre, pos, true );
-                if ( m.pos[ 1 ] == 0 ) break;
-                for ( var piece in listToArray( mid( pre, m.pos[ 2 ], m.len[ 2 ] ), "+" ) ) if ( len( trim( piece ) ) ) toks.append( trim( piece ) );
-                pos = m.pos[ 1 ] + m.len[ 1 ];
-            }
-            out.append( { tokens: toks, line: n } );
-        }
-        return out;
-    }
+	function binds( text ) {
+		var out = [];
+		var n = 0;
+		for ( var line in listToArray( arguments.text, chr( 10 ), true ) ) {
+			n++;
+			var t = trim( line );
+			if ( left( t, 8 ) != "hl.bind(" ) continue;
+			var cut = find( ", hl.", t );
+			var fn = find( ", function", t );
+			if ( fn > 0 && ( cut == 0 || fn < cut ) ) cut = fn;
+			var pre = cut > 0 ? left( t, cut - 1 ) : t;
+			var toks = [];
+			if ( find( "mainMod", pre ) ) toks.append( "Super" );
+			var pos = 1;
+			while ( true ) {
+				var m = reFind( '"([^"]*)"', pre, pos, true );
+				if ( m.pos[ 1 ] == 0 ) break;
+				for ( var piece in listToArray( mid( pre, m.pos[ 2 ], m.len[ 2 ] ), "+" ) ) if ( len( trim( piece ) ) ) toks.append( trim( piece ) );
+				pos = m.pos[ 1 ] + m.len[ 1 ];
+			}
+			out.append( { tokens: toks, line: n } );
+		}
+		return out;
+	}
 }

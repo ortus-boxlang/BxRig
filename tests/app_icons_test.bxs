@@ -86,9 +86,9 @@ testkit.check( "dashboard: an app Dashboard Icons does not have stays empty (and
 
 // screenshots from a fake compressed AppStream catalog
 xml = "<components>" & chr( 10 ) & "<component type=" & chr( 34 ) & "desktop-application" & chr( 34 ) & ">" & chr( 10 ) & "<id>org.example.app</id>" & chr( 10 ) & "<screenshots>" & chr( 10 ) & "<screenshot type=" & chr( 34 ) & "default" & chr( 34 ) & ">" & chr( 10 )
-    & "<image type=" & chr( 34 ) & "source" & chr( 34 ) & " width=" & chr( 34 ) & "1920" & chr( 34 ) & ">" & base & "/huge.png</image>" & chr( 10 )
-    & "<image type=" & chr( 34 ) & "thumbnail" & chr( 34 ) & " width=" & chr( 34 ) & "752" & chr( 34 ) & ">" & base & "/good.png</image>" & chr( 10 )
-    & "</screenshot>" & chr( 10 ) & "</screenshots>" & chr( 10 ) & "</component>" & chr( 10 ) & "<component type=" & chr( 34 ) & "desktop-application" & chr( 34 ) & ">" & chr( 10 ) & "<id>org.example.other</id>" & chr( 10 ) & "<screenshots><screenshot><image type=" & chr( 34 ) & "source" & chr( 34 ) & ">" & base & "/good.gif</image></screenshot></screenshots>" & chr( 10 ) & "</component>" & chr( 10 ) & "</components>" & chr( 10 );
+	& "<image type=" & chr( 34 ) & "source" & chr( 34 ) & " width=" & chr( 34 ) & "1920" & chr( 34 ) & ">" & base & "/huge.png</image>" & chr( 10 )
+	& "<image type=" & chr( 34 ) & "thumbnail" & chr( 34 ) & " width=" & chr( 34 ) & "752" & chr( 34 ) & ">" & base & "/good.png</image>" & chr( 10 )
+	& "</screenshot>" & chr( 10 ) & "</screenshots>" & chr( 10 ) & "</component>" & chr( 10 ) & "<component type=" & chr( 34 ) & "desktop-application" & chr( 34 ) & ">" & chr( 10 ) & "<id>org.example.other</id>" & chr( 10 ) & "<screenshots><screenshot><image type=" & chr( 34 ) & "source" & chr( 34 ) & ">" & base & "/good.gif</image></screenshot></screenshots>" & chr( 10 ) & "</component>" & chr( 10 ) & "</components>" & chr( 10 );
 text( "catalog.xml", xml );
 testkit.sh( "mkdir -p " & tmp & "/share/swcatalog/xml && gzip -c " & tmp & "/catalog.xml > " & tmp & "/share/swcatalog/xml/extra.xml.gz" );
 testkit.check( "screenshots: an unknown or unsafe id gives nothing", icons.screenshotsFor( "" ).len() == 0 && icons.screenshotsFor( "a b;rm" ).len() == 0 );

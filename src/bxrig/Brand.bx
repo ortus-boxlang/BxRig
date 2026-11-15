@@ -2,85 +2,85 @@
 // The TUIs paint these with the brand gradient (cyan #00DBFF to green #00FF78); `ansi( lines )` does the same for plain terminal output.
 // docs/brand/bxrig-ascii.txt shows every size.
 class Brand {
-    function name() { return "BxRig"; }
-    function tagline() { return "Your dev rig. Beautiful by default."; }
-    function oneLiner() { return "BxRig brings an opinionated, beautiful and efficient desktop to Linux, built for developers."; }
-    function description() { return "BxRig turns a fresh Linux install into a polished developer rig: a themed desktop, the languages and tools you use, and one terminal screen to manage it all."; }
+	function name() { return "BxRig"; }
+	function tagline() { return "Your dev rig. Beautiful by default."; }
+	function oneLiner() { return "BxRig brings an opinionated, beautiful and efficient desktop to Linux, built for developers."; }
+	function description() { return "BxRig turns a fresh Linux install into a polished developer rig: a themed desktop, the languages and tools you use, and one terminal screen to manage it all."; }
 
-    // 38 columns, 6 rows: a pixel font in capitals, two columns per pixel (BXRIG; the TUIs use capitals for the terminal wordmark, the logo keeps BxRig).
-    function large() {
-        return [
-            "████    ██  ██  ████    ██████    ████",
-            "██  ██  ██  ██  ██  ██    ██    ██",
-            "████      ██    ████      ██    ██",
-            "██  ██    ██    ██  ██    ██    ██  ██",
-            "██  ██  ██  ██  ██  ██    ██    ██  ██",
-            "████    ██  ██  ██  ██  ██████    ████"
-        ];
-    }
+	// 38 columns, 6 rows: a pixel font in capitals, two columns per pixel (BXRIG; the TUIs use capitals for the terminal wordmark, the logo keeps BxRig).
+	function large() {
+		return [
+			"████    ██  ██  ████    ██████    ████",
+			"██  ██  ██  ██  ██  ██    ██    ██",
+			"████      ██    ████      ██    ██",
+			"██  ██    ██    ██  ██    ██    ██  ██",
+			"██  ██  ██  ██  ██  ██    ██    ██  ██",
+			"████    ██  ██  ██  ██  ██████    ████"
+		];
+	}
 
-    // 19 columns, 3 rows: the same letters in half blocks.
-    function small() {
-        return [
-            "█▀▄ █ █ █▀▄ ▀█▀ ▄▀▀",
-            "█▀▄  █  █▀▄  █  █ ▄",
-            "█▄▀ █ █ █ █ ▄█▄ ▀▄█"
-        ];
-    }
+	// 19 columns, 3 rows: the same letters in half blocks.
+	function small() {
+		return [
+			"█▀▄ █ █ █▀▄ ▀█▀ ▄▀▀",
+			"█▀▄  █  █▀▄  █  █ ▄",
+			"█▄▀ █ █ █ █ ▄█▄ ▀▄█"
+		];
+	}
 
-    // The laptop logo as colour pixel art: "large" (48 columns, 17 rows), "medium" (32, 11) or "small" (20, 7). See TuiKit.pixelArt.
-    function laptop( size = "large" ) {
-        var px = new bxrig.BrandPixels();
-        if ( arguments.size == "small" ) return px.small();
-        if ( arguments.size == "medium" ) return px.medium();
-        return px.large();
-    }
+	// The laptop logo as colour pixel art: "large" (48 columns, 17 rows), "medium" (32, 11) or "small" (20, 7). See TuiKit.pixelArt.
+	function laptop( size = "large" ) {
+		var px = new bxrig.BrandPixels();
+		if ( arguments.size == "small" ) return px.small();
+		if ( arguments.size == "medium" ) return px.medium();
+		return px.large();
+	}
 
-    function word() { return "▌BXRIG▐"; }
+	function word() { return "▌BXRIG▐"; }
 
-    // "large", "small" or "word".
-    function lines( size = "large" ) {
-        if ( arguments.size == "small" ) return small();
-        if ( arguments.size == "word" ) return [ word() ];
-        return large();
-    }
+	// "large", "small" or "word".
+	function lines( size = "large" ) {
+		if ( arguments.size == "small" ) return small();
+		if ( arguments.size == "word" ) return [ word() ];
+		return large();
+	}
 
-    function width( size = "large" ) {
-        var w = 0;
-        for ( var l in lines( arguments.size ) ) w = max( w, len( l ) );
-        return w;
-    }
+	function width( size = "large" ) {
+		var w = 0;
+		for ( var l in lines( arguments.size ) ) w = max( w, len( l ) );
+		return w;
+	}
 
-    // `bxrig version`: the logo and the tagline around the version on a terminal, one line otherwise, or the JSON envelope. Returns the exit code.
-    function show( cli, version, asJson, terminal ) {
-        if ( arguments.asJson ) println( arguments.cli.envelope( "version", 0, { name: name(), version: arguments.version } ) );
-        else {
-            if ( arguments.terminal ) { for ( var vl in ansi( large() ) ) println( vl ); println( "" ); }
-            println( name() & " " & arguments.version );
-            if ( arguments.terminal ) println( tagline() );
-        }
-        return new bxrig.util.Exit().ok();
-    }
+	// `bxrig version`: the logo and the tagline around the version on a terminal, one line otherwise, or the JSON envelope. Returns the exit code.
+	function show( cli, version, asJson, terminal ) {
+		if ( arguments.asJson ) println( arguments.cli.envelope( "version", 0, { name: name(), version: arguments.version } ) );
+		else {
+			if ( arguments.terminal ) { for ( var vl in ansi( large() ) ) println( vl ); println( "" ); }
+			println( name() & " " & arguments.version );
+			if ( arguments.terminal ) println( tagline() );
+		}
+		return new bxrig.util.Exit().ok();
+	}
 
-    function hex( n ) { return right( "0" & formatBaseN( int( min( 255, max( 0, arguments.n ) ) ), 16 ), 2 ); }
+	function hex( n ) { return right( "0" & formatBaseN( int( min( 255, max( 0, arguments.n ) ) ), 16 ), 2 ); }
 
-    // Lines painted left to right from cyan to green with 24-bit colour escapes. Without a colour terminal (NO_COLOR set, or `plain`) the lines come back as they are.
-    function ansi( lines, plain = false ) {
-        if ( arguments.plain || len( new bxrig.util.Env().named( "noColor", "" ) ) ) return arguments.lines;
-        var esc = chr( 27 );
-        var w = 1;
-        for ( var l in arguments.lines ) w = max( w, len( l ) );
-        var out = [];
-        for ( var line in arguments.lines ) {
-            var s = "";
-            for ( var i = 1; i <= len( line ); i++ ) {
-                var ch = mid( line, i, 1 );
-                if ( ch == " " ) { s &= ch; continue; }
-                var t = ( i - 1 ) / max( 1, w - 1 );
-                s &= esc & "[38;2;" & round( 0 + 0 * t ) & ";" & round( 219 + 36 * t ) & ";" & round( 255 - 135 * t ) & "m" & ch;
-            }
-            out.append( s & esc & "[0m" );
-        }
-        return out;
-    }
+	// Lines painted left to right from cyan to green with 24-bit colour escapes. Without a colour terminal (NO_COLOR set, or `plain`) the lines come back as they are.
+	function ansi( lines, plain = false ) {
+		if ( arguments.plain || len( new bxrig.util.Env().named( "noColor", "" ) ) ) return arguments.lines;
+		var esc = chr( 27 );
+		var w = 1;
+		for ( var l in arguments.lines ) w = max( w, len( l ) );
+		var out = [];
+		for ( var line in arguments.lines ) {
+			var s = "";
+			for ( var i = 1; i <= len( line ); i++ ) {
+				var ch = mid( line, i, 1 );
+				if ( ch == " " ) { s &= ch; continue; }
+				var t = ( i - 1 ) / max( 1, w - 1 );
+				s &= esc & "[38;2;" & round( 0 + 0 * t ) & ";" & round( 219 + 36 * t ) & ";" & round( 255 - 135 * t ) & "m" & ch;
+			}
+			out.append( s & esc & "[0m" );
+		}
+		return out;
+	}
 }

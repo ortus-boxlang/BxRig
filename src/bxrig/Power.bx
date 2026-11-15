@@ -8,154 +8,154 @@
 // Test overrides: BXRIG_POWER_DIR (default /sys/class/power_supply), BXRIG_LOGIND_DIR (default /etc/systemd/logind.conf.d), BXRIG_MEMINFO.
 // Exit: 0 ok, 2 bad usage or a plan without --yes, 4 precondition (no battery, no tool), 6 a command failed.
 class Power {
-    function init( cli, runner = "" ) {
-        variables.environ = new bxrig.util.Env();
-        variables.cli = arguments.cli;
-        variables.out = new bxrig.util.Out( variables.cli, "power" );
-        variables.proc = new bxrig.util.Proc( arguments.runner );
-        variables.pacman = new bxrig.util.Pacman( variables.proc );
-        variables.systemd = new bxrig.util.Systemd( variables.proc );
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.environ = new bxrig.util.Env();
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( variables.cli, "power" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.pacman = new bxrig.util.Pacman( variables.proc );
+		variables.systemd = new bxrig.util.Systemd( variables.proc );
+		return this;
+	}
 
-    // ---- facts ----
-    function logindDir() { return variables.environ.named( "logindDir", "/etc/systemd/logind.conf.d" ); }
-    function lidFile() { return logindDir() & "/50-bxrig-lid.conf"; }
+	// ---- facts ----
+	function logindDir() { return variables.environ.named( "logindDir", "/etc/systemd/logind.conf.d" ); }
+	function lidFile() { return logindDir() & "/50-bxrig-lid.conf"; }
 
-    // [ { name, percent, status } ] for each BAT* under the power supply directory.
-    function batteries() {
-        var out = [];
-        var dir = variables.environ.named( "powerDir", "/sys/class/power_supply" );
-        if ( !directoryExists( dir ) ) return out;
-        for ( var d in directoryList( dir, false, "name" ) ) {
-            if ( !reFind( "^BAT", d ) ) continue;
-            var b = { name: d, percent: -1, status: "" };
-            if ( fileExists( dir & "/" & d & "/capacity" ) ) b.percent = int( val( trim( fileRead( dir & "/" & d & "/capacity" ) ) ) );
-            if ( fileExists( dir & "/" & d & "/status" ) ) b.status = trim( fileRead( dir & "/" & d & "/status" ) );
-            out.append( b );
-        }
-        return out;
-    }
+	// [ { name, percent, status } ] for each BAT* under the power supply directory.
+	function batteries() {
+		var out = [];
+		var dir = variables.environ.named( "powerDir", "/sys/class/power_supply" );
+		if ( !directoryExists( dir ) ) return out;
+		for ( var d in directoryList( dir, false, "name" ) ) {
+			if ( !reFind( "^BAT", d ) ) continue;
+			var b = { name: d, percent: -1, status: "" };
+			if ( fileExists( dir & "/" & d & "/capacity" ) ) b.percent = int( val( trim( fileRead( dir & "/" & d & "/capacity" ) ) ) );
+			if ( fileExists( dir & "/" & d & "/status" ) ) b.status = trim( fileRead( dir & "/" & d & "/status" ) );
+			out.append( b );
+		}
+		return out;
+	}
 
-    function profiles() { return { performance: "performance", balanced: "balanced", saver: "power-saver" }; }
+	function profiles() { return { performance: "performance", balanced: "balanced", saver: "power-saver" }; }
 
-    function currentProfile() {
-        if ( !variables.proc.has( "powerprofilesctl" ) ) return "";
-        var r = variables.proc.exec( [ "powerprofilesctl", "get" ], 10 );
-        return r.exitCode == 0 ? trim( r.output ) : "";
-    }
+	function currentProfile() {
+		if ( !variables.proc.has( "powerprofilesctl" ) ) return "";
+		var r = variables.proc.exec( [ "powerprofilesctl", "get" ], 10 );
+		return r.exitCode == 0 ? trim( r.output ) : "";
+	}
 
-    function lidAction() {
-        if ( !fileExists( lidFile() ) ) return "default";
-        var t = fileRead( lidFile() );
-        if ( findNoCase( "HandleLidSwitch=lock", t ) ) return "lock";
-        if ( findNoCase( "HandleLidSwitch=ignore", t ) ) return "ignore";
-        if ( findNoCase( "HandleLidSwitch=suspend", t ) ) return "suspend";
-        return "custom";
-    }
+	function lidAction() {
+		if ( !fileExists( lidFile() ) ) return "default";
+		var t = fileRead( lidFile() );
+		if ( findNoCase( "HandleLidSwitch=lock", t ) ) return "lock";
+		if ( findNoCase( "HandleLidSwitch=ignore", t ) ) return "ignore";
+		if ( findNoCase( "HandleLidSwitch=suspend", t ) ) return "suspend";
+		return "custom";
+	}
 
-    function active( unit ) { return variables.systemd.active( arguments.unit ); }
+	function active( unit ) { return variables.systemd.active( arguments.unit ); }
 
-    // kB from /proc/meminfo.
-    function meminfo( key ) {
-        var f = variables.environ.named( "meminfo", "/proc/meminfo" );
-        if ( !fileExists( f ) ) return 0;
-        for ( var line in listToArray( fileRead( f ), chr( 10 ) ) ) {
-            if ( reFind( "^" & arguments.key & ":", line ) ) return int( val( trim( reReplace( listRest( line, ":" ), "[^0-9]", "", "all" ) ) ) );
-        }
-        return 0;
-    }
+	// kB from /proc/meminfo.
+	function meminfo( key ) {
+		var f = variables.environ.named( "meminfo", "/proc/meminfo" );
+		if ( !fileExists( f ) ) return 0;
+		for ( var line in listToArray( fileRead( f ), chr( 10 ) ) ) {
+			if ( reFind( "^" & arguments.key & ":", line ) ) return int( val( trim( reReplace( listRest( line, ":" ), "[^0-9]", "", "all" ) ) ) );
+		}
+		return 0;
+	}
 
-    // ---- commands ----
-    function statusCmd( asJson ) {
-        var bats = batteries();
-        var data = { battery: bats, profile: currentProfile(), lid: lidAction(), power_profiles_daemon: active( "power-profiles-daemon.service" ), upower: active( "upower.service" ) };
-        var lines = [];
-        if ( bats.len() ) for ( var b in bats ) lines.append( "battery " & b.name & ": " & b.percent & "% " & lCase( b.status ) );
-        else lines.append( "battery: none (a desktop)" );
-        lines.append( "profile: " & ( len( data.profile ) ? data.profile : "unknown (power-profiles-daemon not available)" ) );
-        lines.append( "lid: " & data.lid );
-        lines.append( "services: power-profiles-daemon " & ( data.power_profiles_daemon ? "on" : "off" ) & ", upower " & ( data.upower ? "on" : "off" ) );
-        return variables.out.say( "ok", data, arguments.asJson, lines );
-    }
+	// ---- commands ----
+	function statusCmd( asJson ) {
+		var bats = batteries();
+		var data = { battery: bats, profile: currentProfile(), lid: lidAction(), power_profiles_daemon: active( "power-profiles-daemon.service" ), upower: active( "upower.service" ) };
+		var lines = [];
+		if ( bats.len() ) for ( var b in bats ) lines.append( "battery " & b.name & ": " & b.percent & "% " & lCase( b.status ) );
+		else lines.append( "battery: none (a desktop)" );
+		lines.append( "profile: " & ( len( data.profile ) ? data.profile : "unknown (power-profiles-daemon not available)" ) );
+		lines.append( "lid: " & data.lid );
+		lines.append( "services: power-profiles-daemon " & ( data.power_profiles_daemon ? "on" : "off" ) & ", upower " & ( data.upower ? "on" : "off" ) );
+		return variables.out.say( "ok", data, arguments.asJson, lines );
+	}
 
-    function profileCmd( args, dry, asJson ) {
-        if ( !arguments.args.len() ) return variables.out.say( "ok", { profile: currentProfile() }, arguments.asJson, [ len( currentProfile() ) ? currentProfile() : "unknown" ] );
-        var want = arguments.args[ 1 ];
-        var map = profiles();
-        if ( arguments.args.len() != 1 || !structKeyExists( map, want ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "power profile" ), arguments.asJson );
-        if ( !variables.proc.has( "powerprofilesctl" ) ) return variables.out.fail( "precondition", "power-profiles-daemon is not installed (bxrig power setup)", arguments.asJson );
-        var argv = [ "powerprofilesctl", "set", map[ want ] ];
-        if ( arguments.dry ) return variables.out.say( "ok", { profile: want, command: argv.toList( " " ) }, arguments.asJson, [ "would run: " & argv.toList( " " ) ], true );
-        var r = variables.proc.exec( argv, 15 );
-        if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
-        return variables.out.say( "ok", { profile: want }, arguments.asJson, [ "profile: " & want ] );
-    }
+	function profileCmd( args, dry, asJson ) {
+		if ( !arguments.args.len() ) return variables.out.say( "ok", { profile: currentProfile() }, arguments.asJson, [ len( currentProfile() ) ? currentProfile() : "unknown" ] );
+		var want = arguments.args[ 1 ];
+		var map = profiles();
+		if ( arguments.args.len() != 1 || !structKeyExists( map, want ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "power profile" ), arguments.asJson );
+		if ( !variables.proc.has( "powerprofilesctl" ) ) return variables.out.fail( "precondition", "power-profiles-daemon is not installed (bxrig power setup)", arguments.asJson );
+		var argv = [ "powerprofilesctl", "set", map[ want ] ];
+		if ( arguments.dry ) return variables.out.say( "ok", { profile: want, command: argv.toList( " " ) }, arguments.asJson, [ "would run: " & argv.toList( " " ) ], true );
+		var r = variables.proc.exec( argv, 15 );
+		if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+		return variables.out.say( "ok", { profile: want }, arguments.asJson, [ "profile: " & want ] );
+	}
 
-    // The logind drop-in for a lid action.
-    function lidConf( action ) {
-        var a = arguments.action;
-        return "## Written by `bxrig power lid " & a & "`. Remove this file to go back to the systemd defaults." & chr( 10 )
-            & "[Login]" & chr( 10 )
-            & "HandleLidSwitch=" & a & chr( 10 ) & "HandleLidSwitchExternalPower=" & a & chr( 10 ) & "HandleLidSwitchDocked=ignore" & chr( 10 );
-    }
+	// The logind drop-in for a lid action.
+	function lidConf( action ) {
+		var a = arguments.action;
+		return "## Written by `bxrig power lid " & a & "`. Remove this file to go back to the systemd defaults." & chr( 10 )
+			& "[Login]" & chr( 10 )
+			& "HandleLidSwitch=" & a & chr( 10 ) & "HandleLidSwitchExternalPower=" & a & chr( 10 ) & "HandleLidSwitchDocked=ignore" & chr( 10 );
+	}
 
-    function lidCmd( args, yes, dry, asJson ) {
-        var want = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
-        if ( !arrayFind( [ "suspend", "lock", "ignore" ], want ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "power lid" ), arguments.asJson );
-        var tmp = new bxrig.util.SystemFile().tempPath( "lid" );
-        var cmds = [ new bxrig.util.SystemFile().installArgv( tmp, lidFile() ) ];
-        var plan = [ "  write " & lidFile(), "  sudo install ...", "  note: logind reads it on the next login or reboot (it is not restarted here, that would end your session)" ];
-        var data = { action: want, file: lidFile(), commands: cmds.map( function( c ) { return c.toList( " " ); } ) };
-        if ( !arguments.yes || arguments.dry ) return variables.out.plan( "closing the lid will " & want, data, arguments.asJson, arguments.dry, plan );
-        fileWrite( tmp, lidConf( want ) );
-        var r = variables.proc.exec( cmds[ 1 ], 30 );
-        try { fileDelete( tmp ); } catch ( any e ) {}
-        if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
-        return variables.out.say( "ok", data, arguments.asJson, [ "lid: " & want, "written: " & lidFile(), "Applies from the next login or reboot." ] );
-    }
+	function lidCmd( args, yes, dry, asJson ) {
+		var want = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
+		if ( !arrayFind( [ "suspend", "lock", "ignore" ], want ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "power lid" ), arguments.asJson );
+		var tmp = new bxrig.util.SystemFile().tempPath( "lid" );
+		var cmds = [ new bxrig.util.SystemFile().installArgv( tmp, lidFile() ) ];
+		var plan = [ "  write " & lidFile(), "  sudo install ...", "  note: logind reads it on the next login or reboot (it is not restarted here, that would end your session)" ];
+		var data = { action: want, file: lidFile(), commands: cmds.map( function( c ) { return c.toList( " " ); } ) };
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "closing the lid will " & want, data, arguments.asJson, arguments.dry, plan );
+		fileWrite( tmp, lidConf( want ) );
+		var r = variables.proc.exec( cmds[ 1 ], 30 );
+		try { fileDelete( tmp ); } catch ( any e ) {}
+		if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+		return variables.out.say( "ok", data, arguments.asJson, [ "lid: " & want, "written: " & lidFile(), "Applies from the next login or reboot." ] );
+	}
 
-    function setupCmd( yes, dry, force, asJson ) {
-        if ( !batteries().len() && !arguments.force ) return variables.out.say( "ok", { skipped: "no battery" }, arguments.asJson, [ "No battery found: this is a desktop, so there is nothing to set up. (--force installs the tools anyway.)" ] );
-        var steps = [ variables.pacman.installArgv( [ "power-profiles-daemon", "upower" ] ), variables.systemd.enableArgv( [ "power-profiles-daemon.service", "upower.service" ], false, true ) ];
-        var data = { steps: steps.map( function( s ) { return s.toList( " " ); } ) };
-        if ( !arguments.yes || arguments.dry ) return variables.out.plan( "laptop power tools", data, arguments.asJson, arguments.dry, steps.map( function( s ) { return "  " & s.toList( " " ); } ) );
-        for ( var st in steps ) {
-            var r = variables.proc.exec( st, 300 );
-            if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ), step: st.toList( " " ) }, arguments.asJson, [ "error: " & st.toList( " " ) & ": " & trim( r.output ) ] );
-        }
-        return variables.out.say( "ok", data, arguments.asJson, [ "power-profiles-daemon and upower are installed and running.", "Choose a profile: bxrig power profile balanced" ] );
-    }
+	function setupCmd( yes, dry, force, asJson ) {
+		if ( !batteries().len() && !arguments.force ) return variables.out.say( "ok", { skipped: "no battery" }, arguments.asJson, [ "No battery found: this is a desktop, so there is nothing to set up. (--force installs the tools anyway.)" ] );
+		var steps = [ variables.pacman.installArgv( [ "power-profiles-daemon", "upower" ] ), variables.systemd.enableArgv( [ "power-profiles-daemon.service", "upower.service" ], false, true ) ];
+		var data = { steps: steps.map( function( s ) { return s.toList( " " ); } ) };
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "laptop power tools", data, arguments.asJson, arguments.dry, steps.map( function( s ) { return "  " & s.toList( " " ); } ) );
+		for ( var st in steps ) {
+			var r = variables.proc.exec( st, 300 );
+			if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ), step: st.toList( " " ) }, arguments.asJson, [ "error: " & st.toList( " " ) & ": " & trim( r.output ) ] );
+		}
+		return variables.out.say( "ok", data, arguments.asJson, [ "power-profiles-daemon and upower are installed and running.", "Choose a profile: bxrig power profile balanced" ] );
+	}
 
-    function doctorCmd( asJson ) {
-        var checks = [];
-        var add = function( id, ok, note ) { checks.append( { id: id, ok: ok, note: note } ); };
-        var bats = batteries();
-        add( "battery", true, bats.len() ? bats.len() & " battery found" : "no battery (a desktop): the laptop checks are skipped" );
-        if ( bats.len() ) {
-            add( "power-profiles-daemon", variables.proc.has( "powerprofilesctl" ) && active( "power-profiles-daemon.service" ), "power profiles (bxrig power setup installs and enables it)" );
-            add( "upower", active( "upower.service" ), "battery information for the desktop (bxrig power setup)" );
-            add( "lid", lidAction() != "custom", "closing the lid: " & lidAction() & " (bxrig power lid suspend|lock|ignore)" );
-        }
-        var ram = meminfo( "MemTotal" );
-        var swap = meminfo( "SwapTotal" );
-        var zramOn = variables.proc.exec( [ "sh", "-c", "ls /dev/zram* >/dev/null 2>&1" ], 10 ).exitCode == 0;
-        add( "zram", true, zramOn ? "zram swap is on (CachyOS default)" : "no zram swap" );
-        if ( bats.len() ) add( "hibernation", swap >= ram && ram > 0, swap >= ram && ram > 0 ? "disk swap is " & round( swap / 1048576 ) & " GB, enough for " & round( ram / 1048576 ) & " GB of RAM" : "hibernation needs disk swap at least the size of RAM (RAM " & round( ram / 1048576 ) & " GB, swap " & round( swap / 1048576 ) & " GB); suspend works without it" );
-        var bad = checks.filter( function( c ) { return !c.ok; } );
-        var lines = checks.map( function( c ) { return ( c.ok ? "ok    " : "warn  " ) & c.id & ": " & c.note; } );
-        return variables.out.say( "ok", { checks: checks, problems: bad.len() }, arguments.asJson, lines );
-    }
+	function doctorCmd( asJson ) {
+		var checks = [];
+		var add = function( id, ok, note ) { checks.append( { id: id, ok: ok, note: note } ); };
+		var bats = batteries();
+		add( "battery", true, bats.len() ? bats.len() & " battery found" : "no battery (a desktop): the laptop checks are skipped" );
+		if ( bats.len() ) {
+			add( "power-profiles-daemon", variables.proc.has( "powerprofilesctl" ) && active( "power-profiles-daemon.service" ), "power profiles (bxrig power setup installs and enables it)" );
+			add( "upower", active( "upower.service" ), "battery information for the desktop (bxrig power setup)" );
+			add( "lid", lidAction() != "custom", "closing the lid: " & lidAction() & " (bxrig power lid suspend|lock|ignore)" );
+		}
+		var ram = meminfo( "MemTotal" );
+		var swap = meminfo( "SwapTotal" );
+		var zramOn = variables.proc.exec( [ "sh", "-c", "ls /dev/zram* >/dev/null 2>&1" ], 10 ).exitCode == 0;
+		add( "zram", true, zramOn ? "zram swap is on (CachyOS default)" : "no zram swap" );
+		if ( bats.len() ) add( "hibernation", swap >= ram && ram > 0, swap >= ram && ram > 0 ? "disk swap is " & round( swap / 1048576 ) & " GB, enough for " & round( ram / 1048576 ) & " GB of RAM" : "hibernation needs disk swap at least the size of RAM (RAM " & round( ram / 1048576 ) & " GB, swap " & round( swap / 1048576 ) & " GB); suspend works without it" );
+		var bad = checks.filter( function( c ) { return !c.ok; } );
+		var lines = checks.map( function( c ) { return ( c.ok ? "ok    " : "warn  " ) & c.id & ": " & c.note; } );
+		return variables.out.say( "ok", { checks: checks, problems: bad.len() }, arguments.asJson, lines );
+	}
 
-    function run( words, dry = false, yes = false, asJson = false, force = false ) {
-        var verb = arguments.words.len() ? arguments.words[ 1 ] : "";
-        var rest = [];
-        for ( var i = 2; i <= arguments.words.len(); i++ ) rest.append( arguments.words[ i ] );
-        if ( verb == "" || verb == "status" ) return statusCmd( arguments.asJson );
-        if ( verb == "profile" ) return profileCmd( rest, arguments.dry, arguments.asJson );
-        if ( verb == "lid" ) return lidCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
-        if ( verb == "setup" ) return setupCmd( arguments.yes, arguments.dry, arguments.force, arguments.asJson );
-        if ( verb == "doctor" ) return doctorCmd( arguments.asJson );
-        return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "power" ), arguments.asJson );
-    }
+	function run( words, dry = false, yes = false, asJson = false, force = false ) {
+		var verb = arguments.words.len() ? arguments.words[ 1 ] : "";
+		var rest = [];
+		for ( var i = 2; i <= arguments.words.len(); i++ ) rest.append( arguments.words[ i ] );
+		if ( verb == "" || verb == "status" ) return statusCmd( arguments.asJson );
+		if ( verb == "profile" ) return profileCmd( rest, arguments.dry, arguments.asJson );
+		if ( verb == "lid" ) return lidCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
+		if ( verb == "setup" ) return setupCmd( arguments.yes, arguments.dry, arguments.force, arguments.asJson );
+		if ( verb == "doctor" ) return doctorCmd( arguments.asJson );
+		return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "power" ), arguments.asJson );
+	}
 }

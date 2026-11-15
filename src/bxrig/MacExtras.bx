@@ -14,225 +14,225 @@
 // Not verified on a real machine: hyprexpo with the Lua config era, KWin killWindow, kwinrc NightColor Mode, UxPlay flags. Exit: 0 done,
 // 4 a tool or precondition is missing, 6 a command failed.
 class MacExtras {
-    function init( cli, runner = "" ) {
-        variables.cli = arguments.cli;
-        variables.runnerArg = arguments.runner;
-        variables.proc = new bxrig.util.Proc( arguments.runner );
-        variables.pacman = new bxrig.util.Pacman( variables.proc );
-        variables.systemd = new bxrig.util.Systemd( variables.proc );
-        variables.config = new bxrig.ConfigService().quiet( true );
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.runnerArg = arguments.runner;
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.pacman = new bxrig.util.Pacman( variables.proc );
+		variables.systemd = new bxrig.util.Systemd( variables.proc );
+		variables.config = new bxrig.ConfigService().quiet( true );
+		return this;
+	}
 
-    function plasma() {
-        var d = new bxrig.util.Desktop().name();
-        return find( "kde", d ) > 0 || find( "plasma", d ) > 0;
-    }
+	function plasma() {
+		var d = new bxrig.util.Desktop().name();
+		return find( "kde", d ) > 0 || find( "plasma", d ) > 0;
+	}
 
-    function qdbus() { for ( var q in [ "qdbus6", "qdbus" ] ) if ( variables.proc.has( q ) ) return q; return ""; }
+	function qdbus() { for ( var q in [ "qdbus6", "qdbus" ] ) if ( variables.proc.has( q ) ) return q; return ""; }
 
-    function need( command, tool, hint, asJson ) {
-        return variables.cli.say( arguments.command, "precondition", { error: arguments.tool & " was not found" }, arguments.asJson, [ "error: " & arguments.tool & " was not found. " & arguments.hint ] );
-    }
+	function need( command, tool, hint, asJson ) {
+		return variables.cli.say( arguments.command, "precondition", { error: arguments.tool & " was not found" }, arguments.asJson, [ "error: " & arguments.tool & " was not found. " & arguments.hint ] );
+	}
 
-    function run( command, argv, ok, asJson, timeout = 600 ) {
-        var r = variables.proc.exec( arguments.argv, arguments.timeout );
-        if ( r.exitCode != 0 ) return variables.cli.say( arguments.command, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & arguments.argv[ 1 ] & " failed (exit " & r.exitCode & ")" ] );
-        return variables.cli.say( arguments.command, "ok", { argv: arguments.argv }, arguments.asJson, arguments.ok == "" ? [] : [ arguments.ok ] );
-    }
+	function run( command, argv, ok, asJson, timeout = 600 ) {
+		var r = variables.proc.exec( arguments.argv, arguments.timeout );
+		if ( r.exitCode != 0 ) return variables.cli.say( arguments.command, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & arguments.argv[ 1 ] & " failed (exit " & r.exitCode & ")" ] );
+		return variables.cli.say( arguments.command, "ok", { argv: arguments.argv }, arguments.asJson, arguments.ok == "" ? [] : [ arguments.ok ] );
+	}
 
-    function emoji( asJson ) {
-        if ( !variables.proc.has( "rofimoji" ) ) return need( "emoji", "rofimoji", "Install it: bxrig install rofimoji", arguments.asJson );
-        return run( "emoji", [ "rofimoji" ], "", arguments.asJson );
-    }
+	function emoji( asJson ) {
+		if ( !variables.proc.has( "rofimoji" ) ) return need( "emoji", "rofimoji", "Install it: bxrig install rofimoji", arguments.asJson );
+		return run( "emoji", [ "rofimoji" ], "", arguments.asJson );
+	}
 
-    function forcequit( asJson ) {
-        if ( plasma() ) {
-            if ( qdbus() == "" ) return need( "forcequit", "qdbus6", "It comes with Qt 6 tools.", arguments.asJson );
-            return run( "forcequit", [ qdbus(), "org.kde.KWin", "/KWin", "org.kde.KWin.killWindow" ], "", arguments.asJson );
-        }
-        if ( !variables.proc.has( "hyprctl" ) ) return need( "forcequit", "hyprctl", "This needs Hyprland.", arguments.asJson );
-        return run( "forcequit", [ "hyprctl", "kill" ], "", arguments.asJson );
-    }
+	function forcequit( asJson ) {
+		if ( plasma() ) {
+			if ( qdbus() == "" ) return need( "forcequit", "qdbus6", "It comes with Qt 6 tools.", arguments.asJson );
+			return run( "forcequit", [ qdbus(), "org.kde.KWin", "/KWin", "org.kde.KWin.killWindow" ], "", arguments.asJson );
+		}
+		if ( !variables.proc.has( "hyprctl" ) ) return need( "forcequit", "hyprctl", "This needs Hyprland.", arguments.asJson );
+		return run( "forcequit", [ "hyprctl", "kill" ], "", arguments.asJson );
+	}
 
-    function window( action, asJson ) {
-        if ( !variables.proc.has( "hyprctl" ) ) return need( "window", "hyprctl", "This needs Hyprland.", arguments.asJson );
-        if ( arguments.action == "minimize" ) return run( "window", [ "hyprctl", "dispatch", "movetoworkspacesilent", "special:minimized" ], "", arguments.asJson );
-        if ( arguments.action == "restore" ) return run( "window", [ "hyprctl", "dispatch", "togglespecialworkspace", "minimized" ], "", arguments.asJson );
-        if ( arguments.action == "quake-send" ) return run( "window", [ "hyprctl", "dispatch", "movetoworkspacesilent", "special:" & quakeWorkspace() ], "", arguments.asJson );
-        if ( arguments.action == "quake" ) return quake( arguments.asJson );
-        return variables.cli.say( "window", "usage", {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "window" ) ] );
-    }
+	function window( action, asJson ) {
+		if ( !variables.proc.has( "hyprctl" ) ) return need( "window", "hyprctl", "This needs Hyprland.", arguments.asJson );
+		if ( arguments.action == "minimize" ) return run( "window", [ "hyprctl", "dispatch", "movetoworkspacesilent", "special:minimized" ], "", arguments.asJson );
+		if ( arguments.action == "restore" ) return run( "window", [ "hyprctl", "dispatch", "togglespecialworkspace", "minimized" ], "", arguments.asJson );
+		if ( arguments.action == "quake-send" ) return run( "window", [ "hyprctl", "dispatch", "movetoworkspacesilent", "special:" & quakeWorkspace() ], "", arguments.asJson );
+		if ( arguments.action == "quake" ) return quake( arguments.asJson );
+		return variables.cli.say( "window", "usage", {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "window" ) ] );
+	}
 
-    // ---- the quake console: the special workspace `qconsole` ----
-    function quakeWorkspace() { return "qconsole"; }
+	// ---- the quake console: the special workspace `qconsole` ----
+	function quakeWorkspace() { return "qconsole"; }
 
-    // True when a window lives on the special workspace (hyprctl workspaces -j).
-    function quakeHasWindow() {
-        var r = variables.proc.exec( [ "hyprctl", "workspaces", "-j" ], 10 );
-        if ( r.exitCode != 0 ) return false;
-        try { for ( var w in jsonDeserialize( r.output ) ) if ( compare( w.name ?: "", "special:" & quakeWorkspace() ) == 0 && ( w.windows ?: 0 ) > 0 ) return true; } catch ( any e ) {}
-        return false;
-    }
+	// True when a window lives on the special workspace (hyprctl workspaces -j).
+	function quakeHasWindow() {
+		var r = variables.proc.exec( [ "hyprctl", "workspaces", "-j" ], 10 );
+		if ( r.exitCode != 0 ) return false;
+		try { for ( var w in jsonDeserialize( r.output ) ) if ( compare( w.name ?: "", "special:" & quakeWorkspace() ) == 0 && ( w.windows ?: 0 ) > 0 ) return true; } catch ( any e ) {}
+		return false;
+	}
 
-    // Shows or hides the console; the first time (nothing on it) the default terminal starts there.
-    function quake( asJson ) {
-        var cmd = "window";
-        var steps = [];
-        if ( !quakeHasWindow() ) {
-            var term = new bxrig.Ai( variables.cli, variables.runnerArg ).terminal();
-            if ( structIsEmpty( term ) ) return variables.cli.say( cmd, "precondition", { error: "no terminal is installed" }, arguments.asJson, [ "error: no terminal is installed (bxrig install ghostty)" ] );
-            steps.append( [ "hyprctl", "dispatch", "exec", "[workspace special:" & quakeWorkspace() & "] " & term.argv[ 1 ] ] );
-        }
-        steps.append( [ "hyprctl", "dispatch", "togglespecialworkspace", quakeWorkspace() ] );
-        for ( var st in steps ) {
-            var r = variables.proc.exec( st, 10 );
-            // Hyprland's Lua mode may want the Lua form of the toggle
-            if ( r.exitCode != 0 && st[ 3 ] == "togglespecialworkspace" ) r = variables.proc.exec( [ "hyprctl", "dispatch", 'hl.dsp.workspace.toggle_special("' & quakeWorkspace() & '")' ], 10 );
-            if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & st[ 1 ] & " failed (exit " & r.exitCode & ")" ] );
-        }
-        return variables.cli.say( cmd, "ok", { argv: steps }, arguments.asJson, [] );
-    }
+	// Shows or hides the console; the first time (nothing on it) the default terminal starts there.
+	function quake( asJson ) {
+		var cmd = "window";
+		var steps = [];
+		if ( !quakeHasWindow() ) {
+			var term = new bxrig.Ai( variables.cli, variables.runnerArg ).terminal();
+			if ( structIsEmpty( term ) ) return variables.cli.say( cmd, "precondition", { error: "no terminal is installed" }, arguments.asJson, [ "error: no terminal is installed (bxrig install ghostty)" ] );
+			steps.append( [ "hyprctl", "dispatch", "exec", "[workspace special:" & quakeWorkspace() & "] " & term.argv[ 1 ] ] );
+		}
+		steps.append( [ "hyprctl", "dispatch", "togglespecialworkspace", quakeWorkspace() ] );
+		for ( var st in steps ) {
+			var r = variables.proc.exec( st, 10 );
+			// Hyprland's Lua mode may want the Lua form of the toggle
+			if ( r.exitCode != 0 && st[ 3 ] == "togglespecialworkspace" ) r = variables.proc.exec( [ "hyprctl", "dispatch", 'hl.dsp.workspace.toggle_special("' & quakeWorkspace() & '")' ], 10 );
+			if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & st[ 1 ] & " failed (exit " & r.exitCode & ")" ] );
+		}
+		return variables.cli.say( cmd, "ok", { argv: steps }, arguments.asJson, [] );
+	}
 
-    function overview( setup, asJson ) {
-        if ( plasma() ) {
-            if ( qdbus() == "" ) return need( "overview", "qdbus6", "It comes with Qt 6 tools.", arguments.asJson );
-            return run( "overview", [ qdbus(), "org.kde.kglobalaccel", "/component/kwin", "org.kde.kglobalaccel.Component.invokeShortcut", "Overview" ], "", arguments.asJson );
-        }
-        if ( !variables.proc.has( "hyprctl" ) ) return need( "overview", "hyprctl", "This needs Hyprland.", arguments.asJson );
-        if ( arguments.setup ) {
-            if ( !variables.proc.has( "hyprpm" ) ) return need( "overview", "hyprpm", "It ships with Hyprland.", arguments.asJson );
-            for ( var step in [ [ "hyprpm", "update" ], [ "hyprpm", "add", "https://github.com/hyprwm/hyprland-plugins" ], [ "hyprpm", "enable", "hyprexpo" ] ] ) {
-                var r = variables.proc.exec( step, 1800 );
-                if ( r.exitCode != 0 && step[ 2 ] != "add" ) return variables.cli.say( "overview", "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & step.toList( " " ) & " failed" ] );
-            }
-            return variables.cli.say( "overview", "ok", { plugin: "hyprexpo" }, arguments.asJson, [ "hyprexpo is enabled. Open the overview: bxrig overview" ] );
-        }
-        return run( "overview", [ "hyprctl", "dispatch", "hyprexpo:expo", "toggle" ], "", arguments.asJson );
-    }
+	function overview( setup, asJson ) {
+		if ( plasma() ) {
+			if ( qdbus() == "" ) return need( "overview", "qdbus6", "It comes with Qt 6 tools.", arguments.asJson );
+			return run( "overview", [ qdbus(), "org.kde.kglobalaccel", "/component/kwin", "org.kde.kglobalaccel.Component.invokeShortcut", "Overview" ], "", arguments.asJson );
+		}
+		if ( !variables.proc.has( "hyprctl" ) ) return need( "overview", "hyprctl", "This needs Hyprland.", arguments.asJson );
+		if ( arguments.setup ) {
+			if ( !variables.proc.has( "hyprpm" ) ) return need( "overview", "hyprpm", "It ships with Hyprland.", arguments.asJson );
+			for ( var step in [ [ "hyprpm", "update" ], [ "hyprpm", "add", "https://github.com/hyprwm/hyprland-plugins" ], [ "hyprpm", "enable", "hyprexpo" ] ] ) {
+				var r = variables.proc.exec( step, 1800 );
+				if ( r.exitCode != 0 && step[ 2 ] != "add" ) return variables.cli.say( "overview", "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & step.toList( " " ) & " failed" ] );
+			}
+			return variables.cli.say( "overview", "ok", { plugin: "hyprexpo" }, arguments.asJson, [ "hyprexpo is enabled. Open the overview: bxrig overview" ] );
+		}
+		return run( "overview", [ "hyprctl", "dispatch", "hyprexpo:expo", "toggle" ], "", arguments.asJson );
+	}
 
-    // ---- night shift ----
-    function tz() {
-        var r = variables.proc.exec( [ "timedatectl", "show", "-p", "Timezone", "--value" ], 15 );
-        var z = r.exitCode == 0 ? trim( r.output ) : "";
-        if ( !len( z ) ) { var l = variables.proc.exec( [ "readlink", "-f", "/etc/localtime" ], 10 ); z = reReplace( trim( l.output ), "^.*/zoneinfo/", "" ); }
-        return z;
-    }
+	// ---- night shift ----
+	function tz() {
+		var r = variables.proc.exec( [ "timedatectl", "show", "-p", "Timezone", "--value" ], 15 );
+		var z = r.exitCode == 0 ? trim( r.output ) : "";
+		if ( !len( z ) ) { var l = variables.proc.exec( [ "readlink", "-f", "/etc/localtime" ], 10 ); z = reReplace( trim( l.output ), "^.*/zoneinfo/", "" ); }
+		return z;
+	}
 
-    function seg( iso, m, i ) { return arguments.m.len[ arguments.i ] ? mid( arguments.iso, arguments.m.pos[ arguments.i ], arguments.m.len[ arguments.i ] ) : ""; }
+	function seg( iso, m, i ) { return arguments.m.len[ arguments.i ] ? mid( arguments.iso, arguments.m.pos[ arguments.i ], arguments.m.len[ arguments.i ] ) : ""; }
 
-    // ISO 6709 "+DDMM+DDDMM" or "+DDMMSS+DDDMMSS" to [ lat, lon ] in degrees.
-    function coords( iso ) {
-        var m = reFind( "^([+-])([0-9]{2})([0-9]{2})([0-9]{2})?([+-])([0-9]{3})([0-9]{2})([0-9]{2})?$", arguments.iso, 1, true );
-        if ( !m.pos[ 1 ] ) return [];
-        var latSign = seg( arguments.iso, m, 2 ) == "-" ? -1 : 1;
-        var lonSign = seg( arguments.iso, m, 6 ) == "-" ? -1 : 1;
-        var lat = val( seg( arguments.iso, m, 3 ) ) + val( seg( arguments.iso, m, 4 ) ) / 60 + ( len( seg( arguments.iso, m, 5 ) ) ? val( seg( arguments.iso, m, 5 ) ) / 3600 : 0 );
-        var lon = val( seg( arguments.iso, m, 7 ) ) + val( seg( arguments.iso, m, 8 ) ) / 60 + ( len( seg( arguments.iso, m, 9 ) ) ? val( seg( arguments.iso, m, 9 ) ) / 3600 : 0 );
-        return [ round( latSign * lat * 100 ) / 100, round( lonSign * lon * 100 ) / 100 ];
-    }
+	// ISO 6709 "+DDMM+DDDMM" or "+DDMMSS+DDDMMSS" to [ lat, lon ] in degrees.
+	function coords( iso ) {
+		var m = reFind( "^([+-])([0-9]{2})([0-9]{2})([0-9]{2})?([+-])([0-9]{3})([0-9]{2})([0-9]{2})?$", arguments.iso, 1, true );
+		if ( !m.pos[ 1 ] ) return [];
+		var latSign = seg( arguments.iso, m, 2 ) == "-" ? -1 : 1;
+		var lonSign = seg( arguments.iso, m, 6 ) == "-" ? -1 : 1;
+		var lat = val( seg( arguments.iso, m, 3 ) ) + val( seg( arguments.iso, m, 4 ) ) / 60 + ( len( seg( arguments.iso, m, 5 ) ) ? val( seg( arguments.iso, m, 5 ) ) / 3600 : 0 );
+		var lon = val( seg( arguments.iso, m, 7 ) ) + val( seg( arguments.iso, m, 8 ) ) / 60 + ( len( seg( arguments.iso, m, 9 ) ) ? val( seg( arguments.iso, m, 9 ) ) / 3600 : 0 );
+		return [ round( latSign * lat * 100 ) / 100, round( lonSign * lon * 100 ) / 100 ];
+	}
 
-    // The coordinates of a time zone from zone1970.tab (or zone.tab), or [].
-    function zoneCoords( zone ) {
-        var dir = new bxrig.util.Env().named( "zoneinfo", "/usr/share/zoneinfo" );
-        for ( var f in [ "zone.tab", "zone1970.tab" ] ) {
-            if ( !fileExists( dir & "/" & f ) ) continue;
-            for ( var line in listToArray( fileRead( dir & "/" & f ), chr( 10 ) ) ) {
-                if ( left( line, 1 ) == "##" ) continue;
-                var cols = listToArray( line, chr( 9 ), true );
-                if ( cols.len() >= 3 && cols[ 3 ] == arguments.zone ) return coords( cols[ 2 ] );
-            }
-        }
-        return [];
-    }
+	// The coordinates of a time zone from zone1970.tab (or zone.tab), or [].
+	function zoneCoords( zone ) {
+		var dir = new bxrig.util.Env().named( "zoneinfo", "/usr/share/zoneinfo" );
+		for ( var f in [ "zone.tab", "zone1970.tab" ] ) {
+			if ( !fileExists( dir & "/" & f ) ) continue;
+			for ( var line in listToArray( fileRead( dir & "/" & f ), chr( 10 ) ) ) {
+				if ( left( line, 1 ) == "##" ) continue;
+				var cols = listToArray( line, chr( 9 ), true );
+				if ( cols.len() >= 3 && cols[ 3 ] == arguments.zone ) return coords( cols[ 2 ] );
+			}
+		}
+		return [];
+	}
 
-    function unitFile() { return variables.config.cfgHome() & "/systemd/user/bxrig-wlsunset.service"; }
+	function unitFile() { return variables.config.cfgHome() & "/systemd/user/bxrig-wlsunset.service"; }
 
-    function nightshift( action, location, asJson ) {
-        var cmd = "nightshift";
-        if ( plasma() ) {
-            if ( !variables.proc.has( "kwriteconfig6" ) ) return need( cmd, "kwriteconfig6", "This needs KDE Plasma 6.", arguments.asJson );
-            var on = arguments.action != "off";
-            variables.proc.exec( [ "kwriteconfig6", "--file", "kwinrc", "--group", "NightColor", "--key", "Active", on ? "true" : "false" ], 20 );
-            if ( on ) variables.proc.exec( [ "kwriteconfig6", "--file", "kwinrc", "--group", "NightColor", "--key", "Mode", "Automatic" ], 20 );
-            if ( qdbus() != "" ) variables.proc.exec( [ qdbus(), "org.kde.KWin", "/KWin", "reconfigure" ], 20 );
-            return variables.cli.say( cmd, "ok", { plasma_night_light: on }, arguments.asJson, [ "Plasma Night Light " & ( on ? "on (automatic sunrise and sunset)" : "off" ) & "." ] );
-        }
-        if ( arguments.action == "status" ) {
-            var s = variables.systemd.state( "bxrig-wlsunset.service", true );
-            return variables.cli.say( cmd, "ok", { active: s == "active" }, arguments.asJson, [ "Night shift: " & s ] );
-        }
-        if ( arguments.action == "off" ) {
-            variables.systemd.disable( "bxrig-wlsunset.service", true );
-            return variables.cli.say( cmd, "ok", { active: false }, arguments.asJson, [ "Night shift is off." ] );
-        }
-        if ( arguments.action == "toggle" ) {
-            return nightshift( variables.systemd.isActive( "bxrig-wlsunset.service", true ) ? "off" : "on", arguments.location, arguments.asJson );
-        }
-        if ( !variables.proc.has( "wlsunset" ) ) return need( cmd, "wlsunset", "Install it: bxrig install wlsunset", arguments.asJson );
-        var ll = [];
-        if ( len( arguments.location ) ) {
-            var parts = listToArray( arguments.location, "," );
-            if ( parts.len() != 2 || !isNumeric( parts[ 1 ] ) || !isNumeric( parts[ 2 ] ) ) return variables.cli.say( cmd, "precondition", { error: "location must be LAT,LON" }, arguments.asJson, [ "error: --location must be LAT,LON, for example 40.7,-74.0" ] );
-            ll = [ parts[ 1 ], parts[ 2 ] ];
-        } else ll = zoneCoords( tz() );
-        if ( ll.len() != 2 ) return variables.cli.say( cmd, "precondition", { error: "no coordinates for your time zone" }, arguments.asJson, [ "error: no coordinates found for your time zone; pass --location=LAT,LON" ] );
-        var entry = { name: "wlsunset-unit", target: unitFile(), mode: "644", content: new bxrig.util.SystemdUnit().render( [ { name: "Unit", lines: [ "Description=BxRig night shift (wlsunset)", "After=graphical-session.target" ] }, { name: "Service", lines: [ "ExecStart=wlsunset -l " & ll[ 1 ] & " -L " & ll[ 2 ] & " -t 3500 -T 6500", "Restart=on-failure" ] }, { name: "Install", lines: [ "WantedBy=graphical-session.target" ] } ] ) };
-        var st = variables.config.configState( entry );
-        if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( entry, entry.content, "apply", true, false );
-        variables.systemd.reload( true );
-        var r = variables.systemd.enable( "bxrig-wlsunset.service", true );
-        if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: could not start the night shift service" ] );
-        return variables.cli.say( cmd, "ok", { active: true, latitude: ll[ 1 ], longitude: ll[ 2 ] }, arguments.asJson, [ "Night shift on: warm at sunset, cool at sunrise (" & ll[ 1 ] & ", " & ll[ 2 ] & ")." ] );
-    }
+	function nightshift( action, location, asJson ) {
+		var cmd = "nightshift";
+		if ( plasma() ) {
+			if ( !variables.proc.has( "kwriteconfig6" ) ) return need( cmd, "kwriteconfig6", "This needs KDE Plasma 6.", arguments.asJson );
+			var on = arguments.action != "off";
+			variables.proc.exec( [ "kwriteconfig6", "--file", "kwinrc", "--group", "NightColor", "--key", "Active", on ? "true" : "false" ], 20 );
+			if ( on ) variables.proc.exec( [ "kwriteconfig6", "--file", "kwinrc", "--group", "NightColor", "--key", "Mode", "Automatic" ], 20 );
+			if ( qdbus() != "" ) variables.proc.exec( [ qdbus(), "org.kde.KWin", "/KWin", "reconfigure" ], 20 );
+			return variables.cli.say( cmd, "ok", { plasma_night_light: on }, arguments.asJson, [ "Plasma Night Light " & ( on ? "on (automatic sunrise and sunset)" : "off" ) & "." ] );
+		}
+		if ( arguments.action == "status" ) {
+			var s = variables.systemd.state( "bxrig-wlsunset.service", true );
+			return variables.cli.say( cmd, "ok", { active: s == "active" }, arguments.asJson, [ "Night shift: " & s ] );
+		}
+		if ( arguments.action == "off" ) {
+			variables.systemd.disable( "bxrig-wlsunset.service", true );
+			return variables.cli.say( cmd, "ok", { active: false }, arguments.asJson, [ "Night shift is off." ] );
+		}
+		if ( arguments.action == "toggle" ) {
+			return nightshift( variables.systemd.isActive( "bxrig-wlsunset.service", true ) ? "off" : "on", arguments.location, arguments.asJson );
+		}
+		if ( !variables.proc.has( "wlsunset" ) ) return need( cmd, "wlsunset", "Install it: bxrig install wlsunset", arguments.asJson );
+		var ll = [];
+		if ( len( arguments.location ) ) {
+			var parts = listToArray( arguments.location, "," );
+			if ( parts.len() != 2 || !isNumeric( parts[ 1 ] ) || !isNumeric( parts[ 2 ] ) ) return variables.cli.say( cmd, "precondition", { error: "location must be LAT,LON" }, arguments.asJson, [ "error: --location must be LAT,LON, for example 40.7,-74.0" ] );
+			ll = [ parts[ 1 ], parts[ 2 ] ];
+		} else ll = zoneCoords( tz() );
+		if ( ll.len() != 2 ) return variables.cli.say( cmd, "precondition", { error: "no coordinates for your time zone" }, arguments.asJson, [ "error: no coordinates found for your time zone; pass --location=LAT,LON" ] );
+		var entry = { name: "wlsunset-unit", target: unitFile(), mode: "644", content: new bxrig.util.SystemdUnit().render( [ { name: "Unit", lines: [ "Description=BxRig night shift (wlsunset)", "After=graphical-session.target" ] }, { name: "Service", lines: [ "ExecStart=wlsunset -l " & ll[ 1 ] & " -L " & ll[ 2 ] & " -t 3500 -T 6500", "Restart=on-failure" ] }, { name: "Install", lines: [ "WantedBy=graphical-session.target" ] } ] ) };
+		var st = variables.config.configState( entry );
+		if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( entry, entry.content, "apply", true, false );
+		variables.systemd.reload( true );
+		var r = variables.systemd.enable( "bxrig-wlsunset.service", true );
+		if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: could not start the night shift service" ] );
+		return variables.cli.say( cmd, "ok", { active: true, latitude: ll[ 1 ], longitude: ll[ 2 ] }, arguments.asJson, [ "Night shift on: warm at sunset, cool at sunrise (" & ll[ 1 ] & ", " & ll[ 2 ] & ")." ] );
+	}
 
-    // ---- GPU ----
-    function gpu( asJson ) {
-        var cmd = "gpu doctor";
-        var out = variables.proc.has( "lspci" ) ? variables.proc.exec( [ "lspci", "-nn" ], 20 ).output : "";
-        var cards = [];
-        for ( var l in listToArray( out, chr( 10 ) ) ) if ( reFindNoCase( "VGA compatible|3D controller|Display controller", l ) ) cards.append( trim( reReplace( l, "^[^ ]+ ", "" ) ) );
-        var vendors = [];
-        for ( var c in cards ) {
-            if ( reFindNoCase( "nvidia", c ) && !arrayFind( vendors, "nvidia" ) ) vendors.append( "nvidia" );
-            else if ( reFindNoCase( "(^|[^A-Za-z])(AMD|ATI)([^A-Za-z]|$)|Radeon", c ) && !arrayFind( vendors, "amd" ) ) vendors.append( "amd" );
-            else if ( reFindNoCase( "Intel", c ) && !arrayFind( vendors, "intel" ) ) vendors.append( "intel" );
-        }
-        var have = variables.pacman.installed();
-        var want = { nvidia: [ "nvidia-utils", "libva-nvidia-driver" ], amd: [ "mesa", "vulkan-radeon", "libva-mesa-driver" ], intel: [ "mesa", "vulkan-intel", "intel-media-driver" ] };
-        var rows = []; var missing = [];
-        for ( var v in vendors ) for ( var pkg in want[ v ] ) {
-            var ok = structKeyExists( have, pkg );
-            rows.append( { vendor: v, package: pkg, installed: ok } );
-            if ( !ok && !arrayFind( missing, pkg ) ) missing.append( pkg );
-        }
-        var lines = cards.len() ? cards.map( function( c ) { return "GPU: " & c; } ) : [ "No GPU found by lspci." ];
-        for ( var r in rows ) lines.append( ( r.installed ? "ok    " : "FIX   " ) & r.vendor & ": " & r.package );
-        if ( arrayFind( vendors, "nvidia" ) ) lines.append( "note: for local AI install ollama-cuda; CachyOS normally installs the NVIDIA driver itself (chwd)." );
-        if ( arrayFind( vendors, "amd" ) ) lines.append( "note: for local AI install ollama-rocm." );
-        if ( missing.len() ) lines.append( "Install: " & variables.pacman.installLine( missing ) );
-        return variables.cli.say( cmd, missing.len() ? "precondition" : "ok", { gpus: cards, vendors: vendors, packages: rows, missing: missing }, arguments.asJson, lines );
-    }
+	// ---- GPU ----
+	function gpu( asJson ) {
+		var cmd = "gpu doctor";
+		var out = variables.proc.has( "lspci" ) ? variables.proc.exec( [ "lspci", "-nn" ], 20 ).output : "";
+		var cards = [];
+		for ( var l in listToArray( out, chr( 10 ) ) ) if ( reFindNoCase( "VGA compatible|3D controller|Display controller", l ) ) cards.append( trim( reReplace( l, "^[^ ]+ ", "" ) ) );
+		var vendors = [];
+		for ( var c in cards ) {
+			if ( reFindNoCase( "nvidia", c ) && !arrayFind( vendors, "nvidia" ) ) vendors.append( "nvidia" );
+			else if ( reFindNoCase( "(^|[^A-Za-z])(AMD|ATI)([^A-Za-z]|$)|Radeon", c ) && !arrayFind( vendors, "amd" ) ) vendors.append( "amd" );
+			else if ( reFindNoCase( "Intel", c ) && !arrayFind( vendors, "intel" ) ) vendors.append( "intel" );
+		}
+		var have = variables.pacman.installed();
+		var want = { nvidia: [ "nvidia-utils", "libva-nvidia-driver" ], amd: [ "mesa", "vulkan-radeon", "libva-mesa-driver" ], intel: [ "mesa", "vulkan-intel", "intel-media-driver" ] };
+		var rows = []; var missing = [];
+		for ( var v in vendors ) for ( var pkg in want[ v ] ) {
+			var ok = structKeyExists( have, pkg );
+			rows.append( { vendor: v, package: pkg, installed: ok } );
+			if ( !ok && !arrayFind( missing, pkg ) ) missing.append( pkg );
+		}
+		var lines = cards.len() ? cards.map( function( c ) { return "GPU: " & c; } ) : [ "No GPU found by lspci." ];
+		for ( var r in rows ) lines.append( ( r.installed ? "ok    " : "FIX   " ) & r.vendor & ": " & r.package );
+		if ( arrayFind( vendors, "nvidia" ) ) lines.append( "note: for local AI install ollama-cuda; CachyOS normally installs the NVIDIA driver itself (chwd)." );
+		if ( arrayFind( vendors, "amd" ) ) lines.append( "note: for local AI install ollama-rocm." );
+		if ( missing.len() ) lines.append( "Install: " & variables.pacman.installLine( missing ) );
+		return variables.cli.say( cmd, missing.len() ? "precondition" : "ok", { gpus: cards, vendors: vendors, packages: rows, missing: missing }, arguments.asJson, lines );
+	}
 
-    // ---- input devices and gestures ----
-    function inputDoctor( asJson ) {
-        var mods = variables.proc.exec( [ "sh", "-c", "lsmod 2>/dev/null | grep -c hid_magicmouse" ], 10 ).output;
-        var bt = variables.systemd.state( "bluetooth" );
-        var groups = variables.proc.exec( [ "id", "-nG" ], 10 ).output;
-        var d = { magicmouse_driver: val( trim( mods ) ) > 0, bluetooth: trim( bt ) == "active", libinput_gestures: variables.proc.has( "libinput-gestures" ), in_input_group: find( "input", groups ) > 0 };
-        var lines = [
-            ( d.magicmouse_driver ? "ok    " : "info  " ) & "kernel driver hid_magicmouse (loads when a Magic Mouse or Trackpad connects)" & ( d.magicmouse_driver ? "" : ": not loaded now" ),
-            ( d.bluetooth ? "ok    " : "FIX   " ) & "bluetooth service" & ( d.bluetooth ? "" : ": sudo systemctl enable --now bluetooth (bluez and bluez-utils)" ),
-            ( d.libinput_gestures ? "ok    " : "FIX   " ) & "libinput-gestures" & ( d.libinput_gestures ? "" : ": bxrig install libinput-gestures" ),
-            ( d.in_input_group ? "ok    " : "FIX   " ) & "you are in the input group" & ( d.in_input_group ? "" : ": sudo gpasswd -a $USER input, then log out and in" )
-        ];
-        return variables.cli.say( "input doctor", "ok", d, arguments.asJson, lines );
-    }
+	// ---- input devices and gestures ----
+	function inputDoctor( asJson ) {
+		var mods = variables.proc.exec( [ "sh", "-c", "lsmod 2>/dev/null | grep -c hid_magicmouse" ], 10 ).output;
+		var bt = variables.systemd.state( "bluetooth" );
+		var groups = variables.proc.exec( [ "id", "-nG" ], 10 ).output;
+		var d = { magicmouse_driver: val( trim( mods ) ) > 0, bluetooth: trim( bt ) == "active", libinput_gestures: variables.proc.has( "libinput-gestures" ), in_input_group: find( "input", groups ) > 0 };
+		var lines = [
+			( d.magicmouse_driver ? "ok    " : "info  " ) & "kernel driver hid_magicmouse (loads when a Magic Mouse or Trackpad connects)" & ( d.magicmouse_driver ? "" : ": not loaded now" ),
+			( d.bluetooth ? "ok    " : "FIX   " ) & "bluetooth service" & ( d.bluetooth ? "" : ": sudo systemctl enable --now bluetooth (bluez and bluez-utils)" ),
+			( d.libinput_gestures ? "ok    " : "FIX   " ) & "libinput-gestures" & ( d.libinput_gestures ? "" : ": bxrig install libinput-gestures" ),
+			( d.in_input_group ? "ok    " : "FIX   " ) & "you are in the input group" & ( d.in_input_group ? "" : ": sudo gpasswd -a $USER input, then log out and in" )
+		];
+		return variables.cli.say( "input doctor", "ok", d, arguments.asJson, lines );
+	}
 
-    function gesturesFile() { return variables.config.cfgHome() & "/libinput-gestures.conf"; }
+	function gesturesFile() { return variables.config.cfgHome() & "/libinput-gestures.conf"; }
 
-    function gesturesText() {
-        return "# Written by bxrig. Three-finger swipes switch workspaces and open the overview; edit it freely (it is kept)." & chr( 10 )
+	function gesturesText() {
+		return "# Written by bxrig. Three-finger swipes switch workspaces and open the overview; edit it freely (it is kept)." & chr( 10 )
             & "gesture swipe left 3 hyprctl dispatch workspace e+1" & chr( 10 )
             & "gesture swipe right 3 hyprctl dispatch workspace e-1" & chr( 10 )
             & "gesture swipe up 3 bxrig overview" & chr( 10 )

@@ -26,10 +26,10 @@ mkrepo empty README.md
 
 # ---- detection ----
 fresh; for pair in links:links chezmoi:chezmoi yadm:yadm stow:stow; do
-  name="${pair%%:*}"; want="${pair##*:}"; rm -rf "$tmp/data"
-  [[ "$(df plan "$tmp/repos/$name" --json | jq -r .data.detected)" == "$want" ]] || fail "$name should be detected as $want"
+	name="${pair%%:*}"; want="${pair##*:}"; rm -rf "$tmp/data"
+	[[ "$(df plan "$tmp/repos/$name" --json | jq -r .data.detected)" == "$want" ]] || fail "$name should be detected as $want"
 done
-rm -rf "$tmp/data"; [[ "$(df plan "$tmp/repos/chezmoi" --method=links --json | jq -r .data.method)" == links ]] || fail '--method overrides the detection' 
+rm -rf "$tmp/data"; [[ "$(df plan "$tmp/repos/chezmoi" --method=links --json | jq -r .data.method)" == links ]] || fail '--method overrides the detection'
 rm -rf "$tmp/data"
 [[ "$(code "$binary" dotfiles plan "$tmp/repos/links" --method=nope)" == 4 ]] || fail 'an unknown method exits 4'
 rm -rf "$tmp/data"; [[ "$(code "$binary" dotfiles plan "$tmp/repos/empty")" == 4 ]] || fail 'a repo with nothing to apply exits 4'

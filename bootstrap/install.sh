@@ -9,47 +9,47 @@ MIN_FREE_GB=5
 BOXLANG_LATEST_URL="https://downloads.ortussolutions.com/ortussolutions/boxlang/version-latest.properties"
 
 usage() {
-  cat >&2 <<'USAGE'
+	cat >&2 <<'USAGE'
 Usage: install.sh [--yes] [--dry-run]     install everything: packages, toolchains, the bxrig binary, the core apps
        install.sh check                   read-only report of what is installed
        install.sh packages|toolchains|binary|core --yes [--binary PATH --force]   re-run one stage
        install.sh wizard                  the setup wizard (bxrig init); the full install ends with it at a terminal
 USAGE
-  exit 2
+	exit 2
 }
 # Public words: no word = the whole install. Stage words re-run one stage. Internally the stages keep their old mode names.
 mode=full; yes=0; dry=0; force=0; binary_arg=""
 case "${1:-}" in
-  check) mode=--check; shift ;;
-  packages) mode=--install; shift ;;
-  toolchains) mode=--install-toolchains; shift ;;
-  binary) mode=--install-binary; shift ;;
-  core) mode=--core; shift ;;
-  wizard) mode=--wizard; shift ;;
+	check) mode=--check; shift ;;
+	packages) mode=--install; shift ;;
+	toolchains) mode=--install-toolchains; shift ;;
+	binary) mode=--install-binary; shift ;;
+	core) mode=--core; shift ;;
+	wizard) mode=--wizard; shift ;;
 esac
 case "$mode" in
-  --check|--wizard) [[ $# -eq 0 ]] || usage ;;
-  full)
-    for arg in "$@"; do
-      case "$arg" in --yes) yes=1 ;; --dry-run) dry=1 ;; *) usage ;; esac
-    done ;;
-  --install|--install-toolchains|--core)
-    [[ $# -eq 1 && "$1" == --yes ]] || usage; yes=1 ;;
-  --install-binary)
-    while [[ $# -gt 0 ]]; do
-      case "$1" in
-        --yes) yes=1; shift ;;
-        --force) force=1; shift ;;
-        --binary) [[ $# -ge 2 ]] || usage; binary_arg="$2"; shift 2 ;;
-        *) usage ;;
-      esac
-    done
-    [[ $yes -eq 1 ]] || usage ;;
+	--check|--wizard) [[ $# -eq 0 ]] || usage ;;
+	full)
+		for arg in "$@"; do
+			case "$arg" in --yes) yes=1 ;; --dry-run) dry=1 ;; *) usage ;; esac
+		done ;;
+	--install|--install-toolchains|--core)
+		[[ $# -eq 1 && "$1" == --yes ]] || usage; yes=1 ;;
+	--install-binary)
+		while [[ $# -gt 0 ]]; do
+			case "$1" in
+				--yes) yes=1; shift ;;
+				--force) force=1; shift ;;
+				--binary) [[ $# -ge 2 ]] || usage; binary_arg="$2"; shift 2 ;;
+				*) usage ;;
+			esac
+		done
+		[[ $yes -eq 1 ]] || usage ;;
 esac
 
 command -v pacman >/dev/null 2>&1 || {
-  echo "BxRig requires Arch Linux/CachyOS (pacman)" >&2
-  exit 1
+	echo "BxRig requires Arch Linux/CachyOS (pacman)" >&2
+	exit 1
 }
 packages=(git curl unzip rustup base-devel jq)   # the Java package is added from box.json
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd || true)"
@@ -58,35 +58,35 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd || true)"
 MANIFEST="${BXRIG_MANIFEST:-$root/box.json}"
 manifest_error=""
 load_manifest() {
-  manifest_error=""
-  command -v jq >/dev/null 2>&1 || { manifest_error="jq is required to read box.json"; return 1; }
-  [[ -f "$MANIFEST" ]] || { manifest_error="box.json not found at $MANIFEST (run this script from a BxRig checkout)"; return 1; }
-  jq -e . "$MANIFEST" >/dev/null 2>&1 || { manifest_error="box.json is not valid JSON: $MANIFEST"; return 1; }
-  local key
-  for key in .toolchain.java.version .toolchain.java.package .toolchain.boxlang.version .toolchain.bvm.installer \
-             .toolchain.mvm.installer .toolchain.matchbox.version .toolchain.rust.channel; do
-    jq -e "$key" "$MANIFEST" >/dev/null 2>&1 || { manifest_error="box.json is missing ${key#.}"; return 1; }
-  done
-  JAVA_MAJOR="$(jq -r .toolchain.java.version "$MANIFEST")"
-  JAVA_PKG="$(jq -r .toolchain.java.package "$MANIFEST")"
-  MATCHBOX_VERSION="$(jq -r .toolchain.matchbox.version "$MANIFEST")"
-  # With "downloads" set, MatchBox is not installed by mvm: it is the build of the MatchBox `bxcachy` branch
-  # that CI publishes to S3 (see .github/workflows/matchbox.yml), checked against its sha256 and kept in
-  # $MATCHBOX_HOME so it never replaces the `matchbox` that mvm manages.
-  MATCHBOX_DOWNLOADS="$(jq -r '.toolchain.matchbox.downloads // empty' "$MANIFEST")"
-  MATCHBOX_HOME="${BXRIG_HOME:-$HOME/.local/share/bxrig}/matchbox"
-  BVM_URL="$(jq -r .toolchain.bvm.installer "$MANIFEST")"
-  MVM_URL="$(jq -r .toolchain.mvm.installer "$MANIFEST")"
-  RUST_CHANNEL="$(jq -r .toolchain.rust.channel "$MANIFEST")"
-  BOXLANG_VERSION="${BXRIG_BOXLANG_VERSION:-$(jq -r .toolchain.boxlang.version "$MANIFEST")}"
-  packages=("$JAVA_PKG" git curl unzip rustup base-devel jq)
+	manifest_error=""
+	command -v jq >/dev/null 2>&1 || { manifest_error="jq is required to read box.json"; return 1; }
+	[[ -f "$MANIFEST" ]] || { manifest_error="box.json not found at $MANIFEST (run this script from a BxRig checkout)"; return 1; }
+	jq -e . "$MANIFEST" >/dev/null 2>&1 || { manifest_error="box.json is not valid JSON: $MANIFEST"; return 1; }
+	local key
+	for key in .toolchain.java.version .toolchain.java.package .toolchain.boxlang.version .toolchain.bvm.installer \
+						 .toolchain.mvm.installer .toolchain.matchbox.version .toolchain.rust.channel; do
+		jq -e "$key" "$MANIFEST" >/dev/null 2>&1 || { manifest_error="box.json is missing ${key#.}"; return 1; }
+	done
+	JAVA_MAJOR="$(jq -r .toolchain.java.version "$MANIFEST")"
+	JAVA_PKG="$(jq -r .toolchain.java.package "$MANIFEST")"
+	MATCHBOX_VERSION="$(jq -r .toolchain.matchbox.version "$MANIFEST")"
+	# With "downloads" set, MatchBox is not installed by mvm: it is the build of the MatchBox `bxrig` branch
+	# that CI publishes to S3 (see .github/workflows/matchbox.yml), checked against its sha256 and kept in
+	# $MATCHBOX_HOME so it never replaces the `matchbox` that mvm manages.
+	MATCHBOX_DOWNLOADS="$(jq -r '.toolchain.matchbox.downloads // empty' "$MANIFEST")"
+	MATCHBOX_HOME="${BXRIG_HOME:-$HOME/.local/share/bxrig}/matchbox"
+	BVM_URL="$(jq -r .toolchain.bvm.installer "$MANIFEST")"
+	MVM_URL="$(jq -r .toolchain.mvm.installer "$MANIFEST")"
+	RUST_CHANNEL="$(jq -r .toolchain.rust.channel "$MANIFEST")"
+	BOXLANG_VERSION="${BXRIG_BOXLANG_VERSION:-$(jq -r .toolchain.boxlang.version "$MANIFEST")}"
+	packages=("$JAVA_PKG" git curl unzip rustup base-devel jq)
 }
 if load_manifest; then manifest_ok=1; else manifest_ok=0; fi
 need_manifest() {  # for modes that cannot work without it
-  (( manifest_ok )) && return 0
-  echo "$manifest_error" >&2
-  [[ "$manifest_error" == jq* ]] && echo "Run install.sh packages --yes first: it installs jq, then reads box.json." >&2
-  exit 1
+	(( manifest_ok )) && return 0
+	echo "$manifest_error" >&2
+	[[ "$manifest_error" == jq* ]] && echo "Run install.sh packages --yes first: it installs jq, then reads box.json." >&2
+	exit 1
 }
 
 # ---- Read-only inspection (used by --check and --plan; never changes the system) ----
@@ -99,89 +99,89 @@ probe_path="$BVM_HOME/bin:$BVM_HOME/current/bin:$MVM_HOME/bin:$HOME/.cargo/bin:$
 tool_path() { PATH="$probe_path" command -v "$1" 2>/dev/null; }
 first_version() { grep -m1 -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' || true; }
 tool_version() {  # NAME [ARG]: first x.y[.z] printed by the tool, empty if unknown
-  local bin; bin="$(tool_path "$1")" || return 0
-  PATH="$probe_path" "$bin" "${2:---version}" 2>&1 | first_version || true
+	local bin; bin="$(tool_path "$1")" || return 0
+	PATH="$probe_path" "$bin" "${2:---version}" 2>&1 | first_version || true
 }
 is_interactive() { [[ "${BXRIG_INTERACTIVE:-0}" == 1 || ( -t 0 && -t 1 ) ]]; }
 # Refuse early, with a reason, when the machine cannot be provisioned. Needs inspect() to have run.
 preflight_common() {
-  [[ "$os_ok" == 1 ]] || { echo "Unsupported OS: $os_name (BxRig supports CachyOS and Arch Linux)" >&2; exit 1; }
-  [[ "$cpu" == x86_64 ]] || { echo "Unsupported CPU: $cpu (x86_64 only)" >&2; exit 1; }
-  (( free_gb >= MIN_FREE_GB )) || { echo "Not enough free disk space: ${free_gb} GB free in $HOME, need at least $MIN_FREE_GB GB" >&2; exit 1; }
+	[[ "$os_ok" == 1 ]] || { echo "Unsupported OS: $os_name (BxRig supports CachyOS and Arch Linux)" >&2; exit 1; }
+	[[ "$cpu" == x86_64 ]] || { echo "Unsupported CPU: $cpu (x86_64 only)" >&2; exit 1; }
+	(( free_gb >= MIN_FREE_GB )) || { echo "Not enough free disk space: ${free_gb} GB free in $HOME, need at least $MIN_FREE_GB GB" >&2; exit 1; }
 }
 step_run() { local what="$1"; shift; "$@" || { echo "Failed: $what" >&2; exit 1; }; }
 # Like step_run, but tries up to three times (0s, 10s, 30s apart): GitHub answers 403 to anonymous API calls
 # when a shared address is rate limited, and that is usually brief.
 step_retry() {
-  local what="$1" wait; shift
-  for wait in ${BXRIG_RETRY_WAITS:-0 10 30}; do
-    (( wait )) && { echo "Retrying in ${wait}s: $what" >&2; sleep "$wait"; }
-    "$@" && return 0
-  done
-  echo "Failed after 3 attempts: $what (if GitHub reports HTTP 403, wait a while and rerun; this is a rate limit)" >&2; exit 1
+	local what="$1" wait; shift
+	for wait in ${BXRIG_RETRY_WAITS:-0 10 30}; do
+		(( wait )) && { echo "Retrying in ${wait}s: $what" >&2; sleep "$wait"; }
+		"$@" && return 0
+	done
+	echo "Failed after 3 attempts: $what (if GitHub reports HTTP 403, wait a while and rerun; this is a rate limit)" >&2; exit 1
 }
-# MatchBox from the published bxcachy-branch build: download, verify the sha256, replace atomically.
+# MatchBox from the published bxrig-branch build: download, verify the sha256, replace atomically.
 # BXRIG_MATCHBOX_FILE=PATH installs a local build instead (CI builds it from source before it is published).
 # The evergreen file can be served stale by the CDN, so the build is taken from its immutable folder
 # (<version>-<commit>/) named in version-latest.properties; without that file the evergreen folder is used.
 matchbox_download_base() {
-  local props v c
-  props="$(curl -fsSL -m 30 "$MATCHBOX_DOWNLOADS/version-latest.properties" 2>/dev/null)" || { echo "$MATCHBOX_DOWNLOADS"; return; }
-  v="$(sed -n 's/^version=//p' <<<"$props" | head -n1)"; c="$(sed -n 's/^commit=//p' <<<"$props" | head -n1)"
-  if [[ -n "$v" && -n "$c" ]]; then echo "$MATCHBOX_DOWNLOADS/$v-$c"; else echo "$MATCHBOX_DOWNLOADS"; fi
+	local props v c
+	props="$(curl -fsSL -m 30 "$MATCHBOX_DOWNLOADS/version-latest.properties" 2>/dev/null)" || { echo "$MATCHBOX_DOWNLOADS"; return; }
+	v="$(sed -n 's/^version=//p' <<<"$props" | head -n1)"; c="$(sed -n 's/^commit=//p' <<<"$props" | head -n1)"
+	if [[ -n "$v" && -n "$c" ]]; then echo "$MATCHBOX_DOWNLOADS/$v-$c"; else echo "$MATCHBOX_DOWNLOADS"; fi
 }
 install_matchbox_download() {
-  local arch=linux-x86_64 tmp expected actual dl
-  tmp="$(mktemp -d)"
-  if [[ -n "${BXRIG_MATCHBOX_FILE:-}" ]]; then
-    [[ -f "$BXRIG_MATCHBOX_FILE" && -x "$BXRIG_MATCHBOX_FILE" && ! -L "$BXRIG_MATCHBOX_FILE" ]] || { echo "BXRIG_MATCHBOX_FILE must be an executable regular file: $BXRIG_MATCHBOX_FILE" >&2; rm -rf "$tmp"; exit 1; }
-    cp "$BXRIG_MATCHBOX_FILE" "$tmp/matchbox"
-  else
-    dl="$(matchbox_download_base)"
-    step_retry "download MatchBox" curl -fsSL -m 300 -o "$tmp/matchbox" "$dl/matchbox-$arch"
-    step_retry "download the MatchBox checksum" curl -fsSL -m 30 -o "$tmp/matchbox.sha256" "$dl/matchbox-$arch.sha256"
-    expected="$(awk '{print $1; exit}' "$tmp/matchbox.sha256")"
-    actual="$(sha256sum "$tmp/matchbox" | awk '{print $1}')"
-    [[ -n "$expected" && "$expected" == "$actual" ]] || { echo "MatchBox checksum mismatch (expected ${expected:-none}, got $actual); nothing was installed" >&2; rm -rf "$tmp"; exit 1; }
-  fi
-  chmod 755 "$tmp/matchbox"
-  # run it once before it replaces anything
-  "$tmp/matchbox" --version >/dev/null 2>&1 || { echo "The downloaded MatchBox does not run; nothing was installed" >&2; rm -rf "$tmp"; exit 1; }
-  mkdir -p "$MATCHBOX_HOME/bin"
-  mv -f "$tmp/matchbox" "$MATCHBOX_HOME/bin/.matchbox.new" && mv -f "$MATCHBOX_HOME/bin/.matchbox.new" "$MATCHBOX_HOME/bin/matchbox"
-  rm -rf "$tmp"
+	local arch=linux-x86_64 tmp expected actual dl
+	tmp="$(mktemp -d)"
+	if [[ -n "${BXRIG_MATCHBOX_FILE:-}" ]]; then
+		[[ -f "$BXRIG_MATCHBOX_FILE" && -x "$BXRIG_MATCHBOX_FILE" && ! -L "$BXRIG_MATCHBOX_FILE" ]] || { echo "BXRIG_MATCHBOX_FILE must be an executable regular file: $BXRIG_MATCHBOX_FILE" >&2; rm -rf "$tmp"; exit 1; }
+		cp "$BXRIG_MATCHBOX_FILE" "$tmp/matchbox"
+	else
+		dl="$(matchbox_download_base)"
+		step_retry "download MatchBox" curl -fsSL -m 300 -o "$tmp/matchbox" "$dl/matchbox-$arch"
+		step_retry "download the MatchBox checksum" curl -fsSL -m 30 -o "$tmp/matchbox.sha256" "$dl/matchbox-$arch.sha256"
+		expected="$(awk '{print $1; exit}' "$tmp/matchbox.sha256")"
+		actual="$(sha256sum "$tmp/matchbox" | awk '{print $1}')"
+		[[ -n "$expected" && "$expected" == "$actual" ]] || { echo "MatchBox checksum mismatch (expected ${expected:-none}, got $actual); nothing was installed" >&2; rm -rf "$tmp"; exit 1; }
+	fi
+	chmod 755 "$tmp/matchbox"
+	# run it once before it replaces anything
+	"$tmp/matchbox" --version >/dev/null 2>&1 || { echo "The downloaded MatchBox does not run; nothing was installed" >&2; rm -rf "$tmp"; exit 1; }
+	mkdir -p "$MATCHBOX_HOME/bin"
+	mv -f "$tmp/matchbox" "$MATCHBOX_HOME/bin/.matchbox.new" && mv -f "$MATCHBOX_HOME/bin/.matchbox.new" "$MATCHBOX_HOME/bin/matchbox"
+	rm -rf "$tmp"
 }
 # BoxLang's active version, read from BVM's `current` symlink. Running `boxlang --version` starts the whole
 # runtime, which rewrites its logs under ~/.boxlang on every call, so routine probes avoid it. Falls back to
 # running boxlang only when BVM is not managing it. Install steps still run the real binary to verify.
 bl_version() {
-  local t
-  if [[ -L "$BVM_HOME/current" ]] && t="$(basename "$(readlink "$BVM_HOME/current")")" && [[ "$t" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    printf '%s\n' "$t"
-  else
-    tool_version boxlang
-  fi
+	local t
+	if [[ -L "$BVM_HOME/current" ]] && t="$(basename "$(readlink "$BVM_HOME/current")")" && [[ "$t" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+		printf '%s\n' "$t"
+	else
+		tool_version boxlang
+	fi
 }
 # What "want" means for BoxLang: the pinned version, or the newest stable (empty when it cannot be looked up).
 boxlang_want() {
-  if [[ "$BOXLANG_VERSION" != latest ]]; then printf '%s\n' "$BOXLANG_VERSION"; return 0; fi
-  command -v curl >/dev/null 2>&1 || return 0
-  curl -fsS -m 8 "$BOXLANG_LATEST_URL" 2>/dev/null | sed -n 's/^version=\([0-9][0-9.]*\).*/\1/p' | head -n 1 || true
+	if [[ "$BOXLANG_VERSION" != latest ]]; then printf '%s\n' "$BOXLANG_VERSION"; return 0; fi
+	command -v curl >/dev/null 2>&1 || return 0
+	curl -fsS -m 8 "$BOXLANG_LATEST_URL" 2>/dev/null | sed -n 's/^version=\([0-9][0-9.]*\).*/\1/p' | head -n 1 || true
 }
 os_id() { ( . "${BXRIG_OS_RELEASE:-/etc/os-release}" 2>/dev/null; echo "${ID:-unknown}|${ID_LIKE:-}" ) || echo "unknown|"; }
 
 inspect() {
-  missing_pkgs=()
-  for pkg in "${packages[@]}"; do pacman -Qq "$pkg" >/dev/null 2>&1 || missing_pkgs+=("$pkg"); done
-  IFS='|' read -r os_name os_like <<<"$(os_id)"
-  if [[ "$os_name" == cachyos || "$os_name" == arch || " $os_like " == *" arch "* ]]; then os_ok=1; else os_ok=0; fi
-  cpu="$(uname -m)"
-  if [[ "$(id -u)" == 0 ]]; then is_root=1; else is_root=0; fi
-  have_sudo=0; command -v sudo >/dev/null 2>&1 && have_sudo=1
-  free_gb="$(df -Pk "$HOME" 2>/dev/null | awk 'NR==2{printf "%d", $4/1048576}')"; free_gb="${free_gb:-0}"
-  if [[ "${BXRIG_SKIP_NETWORK:-0}" == 1 ]]; then net="skipped"
-  elif curl -fsSI -m 6 -o /dev/null https://downloads.ortussolutions.com/ >/dev/null 2>&1; then net="ok"; else net="unreachable"; fi
-  java_ver=""; if jb="$(tool_path java)"; then java_ver="$(PATH="$probe_path" "$jb" -version 2>&1 | grep -m1 -oE 'version "[0-9][0-9.]*' | grep -oE '[0-9][0-9.]*' || true)"; fi
+	missing_pkgs=()
+	for pkg in "${packages[@]}"; do pacman -Qq "$pkg" >/dev/null 2>&1 || missing_pkgs+=("$pkg"); done
+	IFS='|' read -r os_name os_like <<<"$(os_id)"
+	if [[ "$os_name" == cachyos || "$os_name" == arch || " $os_like " == *" arch "* ]]; then os_ok=1; else os_ok=0; fi
+	cpu="$(uname -m)"
+	if [[ "$(id -u)" == 0 ]]; then is_root=1; else is_root=0; fi
+	have_sudo=0; command -v sudo >/dev/null 2>&1 && have_sudo=1
+	free_gb="$(df -Pk "$HOME" 2>/dev/null | awk 'NR==2{printf "%d", $4/1048576}')"; free_gb="${free_gb:-0}"
+	if [[ "${BXRIG_SKIP_NETWORK:-0}" == 1 ]]; then net="skipped"
+	elif curl -fsSI -m 6 -o /dev/null https://downloads.ortussolutions.com/ >/dev/null 2>&1; then net="ok"; else net="unreachable"; fi
+	java_ver=""; if jb="$(tool_path java)"; then java_ver="$(PATH="$probe_path" "$jb" -version 2>&1 | grep -m1 -oE 'version "[0-9][0-9.]*' | grep -oE '[0-9][0-9.]*' || true)"; fi
   java_major="${java_ver%%.*}"
   have_yay=0; tool_path yay >/dev/null && have_yay=1
   mvm_ver="$(tool_version mvm)"; have_mvm=0; tool_path mvm >/dev/null && have_mvm=1
@@ -207,7 +207,7 @@ build_steps() {
   fi
   if [[ "$mb_ver" != "$MATCHBOX_VERSION" ]]; then
     if [[ -n "$MATCHBOX_DOWNLOADS" ]]; then
-      steps+=("matchbox|download $MATCHBOX_DOWNLOADS/matchbox-linux-x86_64 and check its sha256|MatchBox $MATCHBOX_VERSION from the bxcachy branch, installed under $MATCHBOX_HOME")
+      steps+=("matchbox|download $MATCHBOX_DOWNLOADS/matchbox-linux-x86_64 and check its sha256|MatchBox $MATCHBOX_VERSION from the bxrig branch, installed under $MATCHBOX_HOME")
     else
       steps+=("matchbox|mvm install $MATCHBOX_VERSION && mvm use $MATCHBOX_VERSION|pinned MatchBox compiler")
     fi
@@ -393,32 +393,32 @@ if [[ "$mode" == --install-binary ]]; then
   need_manifest
   work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
   # The theme wallpapers travel in this bundle (not in the binary): copied for bxrig to pick up (it checks each one's SHA-256).
-  copy_wallpapers() {
-    local src="$root/assets/wallpapers" dest="${XDG_DATA_HOME:-$HOME/.local/share}/bxrig/wallpapers"
-    compgen -G "$src/*.jpg" >/dev/null || return 0
-    mkdir -p "$dest" && cp -f "$src"/*.jpg "$dest"/ && echo "Theme wallpapers ready in $dest"
-  }
-  installed="$BIN_DIR/bxrig"
-  check_binary() {  # PATH -> prints its version line; fails unless it identifies itself as BxRig
-    local out; out="$("$1" version 2>&1 | head -n 1)" || true
-    [[ "$out" == BxRig\ * ]] || { echo "Not a working bxrig binary: $1 (version printed: ${out:-nothing})" >&2; return 1; }
-    printf '%s\n' "$out"
-  }
-  if [[ -n "$binary_arg" ]]; then
-    [[ -f "$binary_arg" && -x "$binary_arg" && ! -L "$binary_arg" ]] || { echo "--binary must be an executable regular file (not a symlink): $binary_arg" >&2; exit 1; }
-    candidate="$binary_arg"
-    new_version="$(check_binary "$candidate")" || exit 1
-    if [[ -f "$installed" ]] && cmp -s "$candidate" "$installed" && (( ! force )); then echo "Nothing to do: $installed is identical ($new_version)."; copy_wallpapers; exit 0; fi
-  else
-    src="$root/src/Main.bx"
-    [[ -n "$root" && -f "$src" ]] || { echo "Source not found ($src). Run this script from a BxRig checkout, or pass --binary PATH." >&2; exit 1; }
-    # the version is generated from box.json into src/bxrig/util/Version.bx; bxrig prints it as "BxRig VERSION"
-    want="$(sed -n 's/.*return "\([^"]*\)".*/BxRig \1/p' "$root/src/bxrig/util/Version.bx" 2>/dev/null | head -n 1 || true)"
+	copy_wallpapers() {
+		local src="$root/assets/wallpapers" dest="${XDG_DATA_HOME:-$HOME/.local/share}/bxrig/wallpapers"
+		compgen -G "$src/*.jpg" >/dev/null || return 0
+		mkdir -p "$dest" && cp -f "$src"/*.jpg "$dest"/ && echo "Theme wallpapers ready in $dest"
+	}
+	installed="$BIN_DIR/bxrig"
+	check_binary() {  # PATH -> prints its version line; fails unless it identifies itself as BxRig
+		local out; out="$("$1" version 2>&1 | head -n 1)" || true
+		[[ "$out" == BxRig\ * ]] || { echo "Not a working bxrig binary: $1 (version printed: ${out:-nothing})" >&2; return 1; }
+		printf '%s\n' "$out"
+	}
+	if [[ -n "$binary_arg" ]]; then
+		[[ -f "$binary_arg" && -x "$binary_arg" && ! -L "$binary_arg" ]] || { echo "--binary must be an executable regular file (not a symlink): $binary_arg" >&2; exit 1; }
+		candidate="$binary_arg"
+		new_version="$(check_binary "$candidate")" || exit 1
+		if [[ -f "$installed" ]] && cmp -s "$candidate" "$installed" && (( ! force )); then echo "Nothing to do: $installed is identical ($new_version)."; copy_wallpapers; exit 0; fi
+	else
+		src="$root/src/Main.bx"
+		[[ -n "$root" && -f "$src" ]] || { echo "Source not found ($src). Run this script from a BxRig checkout, or pass --binary PATH." >&2; exit 1; }
+		# the version is generated from box.json into src/bxrig/util/Version.bx; bxrig prints it as "BxRig VERSION"
+		want="$(sed -n 's/.*return "\([^"]*\)".*/BxRig \1/p' "$root/src/bxrig/util/Version.bx" 2>/dev/null | head -n 1 || true)"
     if (( ! force )) && [[ -x "$installed" && -n "$want" ]] && [[ "$(check_binary "$installed" 2>/dev/null || true)" == "$want" ]]; then
       echo "Nothing to do: $installed is already $want (use --force to rebuild)."; copy_wallpapers; exit 0
     fi
     [[ "$(tool_version matchbox)" == "$MATCHBOX_VERSION" ]] || { echo "MatchBox $MATCHBOX_VERSION is required (found: $(tool_version matchbox || true)). Run install.sh toolchains --yes first." >&2; exit 1; }
-    cp -r "$root/src" "$work/src"; chmod -R u+rwX,go+rX "$work/src"
+    cp -rL "$root/src" "$work/src"; chmod -R u+rwX,go+rX "$work/src"   # -L: src/resources links to the data folders
     echo "Building bxrig with MatchBox $MATCHBOX_VERSION"
     if ! ( cd "$work" && PATH="$probe_path" matchbox --target native --output "$work/bxrig" src/Main.bx ) > "$work/build.log" 2>&1; then
       echo "Build failed; the installed copy was not touched. Last lines of the build log:" >&2; tail -n 20 "$work/build.log" >&2; exit 1

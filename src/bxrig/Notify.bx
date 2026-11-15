@@ -8,112 +8,112 @@
 // Noctalia has no command that opens its history panel, so there is none here: open the control center. Exit: 0 done, 4 precondition
 // (no noctalia, no systemd-run for snooze, bad duration), 6 the command failed.
 class Notify {
-    function init( cli, runner = "" ) {
-        variables.cli = arguments.cli;
-        variables.out = new bxrig.util.Out( variables.cli, "notify" );
-        variables.proc = new bxrig.util.Proc( arguments.runner );
-        variables.systemd = new bxrig.util.Systemd( variables.proc );
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( variables.cli, "notify" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.systemd = new bxrig.util.Systemd( variables.proc );
+		return this;
+	}
 
-    function msg( words ) {
-        var argv = [ "noctalia", "msg" ];
-        for ( var w in arguments.words ) argv.append( w );
-        return variables.proc.exec( argv, 30 );
-    }
+	function msg( words ) {
+		var argv = [ "noctalia", "msg" ];
+		for ( var w in arguments.words ) argv.append( w );
+		return variables.proc.exec( argv, 30 );
+	}
 
-    // "30m", "2h", "90s" or "45" (minutes) to seconds; 0 when it is not a duration.
-    function seconds( text ) {
-        var t = lCase( trim( arguments.text ) );
-        if ( !len( t ) ) return 1800;
-        var m = reFind( "^([0-9]+)([smh]?)$", t, 1, true );
-        if ( !m.pos[ 1 ] ) return 0;
-        var n = val( mid( t, m.pos[ 2 ], m.len[ 2 ] ) );
-        var unit = m.len[ 3 ] ? mid( t, m.pos[ 3 ], m.len[ 3 ] ) : "m";
-        return n * ( unit == "h" ? 3600 : ( unit == "s" ? 1 : 60 ) );
-    }
+	// "30m", "2h", "90s" or "45" (minutes) to seconds; 0 when it is not a duration.
+	function seconds( text ) {
+		var t = lCase( trim( arguments.text ) );
+		if ( !len( t ) ) return 1800;
+		var m = reFind( "^([0-9]+)([smh]?)$", t, 1, true );
+		if ( !m.pos[ 1 ] ) return 0;
+		var n = val( mid( t, m.pos[ 2 ], m.len[ 2 ] ) );
+		var unit = m.len[ 3 ] ? mid( t, m.pos[ 3 ], m.len[ 3 ] ) : "m";
+		return n * ( unit == "h" ? 3600 : ( unit == "s" ? 1 : 60 ) );
+	}
 
-    function dnd( action, asJson ) {
-        if ( !variables.proc.has( "noctalia" ) ) return variables.out.say( "precondition", { error: "noctalia was not found" }, arguments.asJson, [ "error: noctalia was not found (this needs the Hyprland + Noctalia desktop)" ] );
-        var words = arguments.action == "status" ? [ "notification-dnd-status" ] : ( arguments.action == "toggle" ? [ "notification-dnd-toggle" ] : [ "notification-dnd-set", arguments.action ] );
-        var r = msg( words );
-        if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
-        var out = trim( r.output );
-        return variables.out.say( "ok", { action: arguments.action, output: out }, arguments.asJson, [ arguments.action == "status" ? "Do Not Disturb: " & out : "Do Not Disturb: " & arguments.action ] );
-    }
+	function dnd( action, asJson ) {
+		if ( !variables.proc.has( "noctalia" ) ) return variables.out.say( "precondition", { error: "noctalia was not found" }, arguments.asJson, [ "error: noctalia was not found (this needs the Hyprland + Noctalia desktop)" ] );
+		var words = arguments.action == "status" ? [ "notification-dnd-status" ] : ( arguments.action == "toggle" ? [ "notification-dnd-toggle" ] : [ "notification-dnd-set", arguments.action ] );
+		var r = msg( words );
+		if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+		var out = trim( r.output );
+		return variables.out.say( "ok", { action: arguments.action, output: out }, arguments.asJson, [ arguments.action == "status" ? "Do Not Disturb: " & out : "Do Not Disturb: " & arguments.action ] );
+	}
 
-    function snooze( duration, asJson ) {
-        if ( !variables.proc.has( "noctalia" ) ) return variables.out.say( "precondition", { error: "noctalia was not found" }, arguments.asJson, [ "error: noctalia was not found" ] );
-        if ( lCase( arguments.duration ) == "off" ) {
-            variables.systemd.stop( "bxrig-snooze.timer", true );
-            return dnd( "off", arguments.asJson );
-        }
-        var secs = seconds( arguments.duration );
-        if ( secs < 1 ) return variables.out.say( "precondition", { error: "bad duration " & arguments.duration }, arguments.asJson, [ "error: bad duration " & arguments.duration & " (use 30m, 2h, 90s or minutes)" ] );
-        if ( !variables.proc.has( "systemd-run" ) ) return variables.out.say( "precondition", { error: "systemd-run was not found" }, arguments.asJson, [ "error: systemd-run was not found (snooze needs a systemd user session)" ] );
-        variables.systemd.stop( "bxrig-snooze.timer", true );
-        var on = msg( [ "notification-dnd-set", "on" ] );
-        if ( on.exitCode != 0 ) return variables.out.say( "failed", { error: trim( on.output ) }, arguments.asJson, [ "error: " & trim( on.output ) ] );
-        var t = variables.proc.exec( [ "systemd-run", "--user", "--quiet", "--unit=bxrig-snooze", "--on-active=" & secs & "s", "noctalia", "msg", "notification-dnd-set", "off" ], 30 );
-        if ( t.exitCode != 0 ) return variables.out.say( "failed", { error: "could not start the timer: " & trim( t.output ) }, arguments.asJson, [ "error: could not start the timer: " & trim( t.output ) ] );
-        return variables.out.say( "ok", { snooze_seconds: secs }, arguments.asJson, [ "Do Not Disturb for " & secs & " seconds. Cancel: bxrig notify snooze off" ] );
-    }
+	function snooze( duration, asJson ) {
+		if ( !variables.proc.has( "noctalia" ) ) return variables.out.say( "precondition", { error: "noctalia was not found" }, arguments.asJson, [ "error: noctalia was not found" ] );
+		if ( lCase( arguments.duration ) == "off" ) {
+			variables.systemd.stop( "bxrig-snooze.timer", true );
+			return dnd( "off", arguments.asJson );
+		}
+		var secs = seconds( arguments.duration );
+		if ( secs < 1 ) return variables.out.say( "precondition", { error: "bad duration " & arguments.duration }, arguments.asJson, [ "error: bad duration " & arguments.duration & " (use 30m, 2h, 90s or minutes)" ] );
+		if ( !variables.proc.has( "systemd-run" ) ) return variables.out.say( "precondition", { error: "systemd-run was not found" }, arguments.asJson, [ "error: systemd-run was not found (snooze needs a systemd user session)" ] );
+		variables.systemd.stop( "bxrig-snooze.timer", true );
+		var on = msg( [ "notification-dnd-set", "on" ] );
+		if ( on.exitCode != 0 ) return variables.out.say( "failed", { error: trim( on.output ) }, arguments.asJson, [ "error: " & trim( on.output ) ] );
+		var t = variables.proc.exec( [ "systemd-run", "--user", "--quiet", "--unit=bxrig-snooze", "--on-active=" & secs & "s", "noctalia", "msg", "notification-dnd-set", "off" ], 30 );
+		if ( t.exitCode != 0 ) return variables.out.say( "failed", { error: "could not start the timer: " & trim( t.output ) }, arguments.asJson, [ "error: could not start the timer: " & trim( t.output ) ] );
+		return variables.out.say( "ok", { snooze_seconds: secs }, arguments.asJson, [ "Do Not Disturb for " & secs & " seconds. Cancel: bxrig notify snooze off" ] );
+	}
 
-    function clear( history, asJson ) {
-        if ( !variables.proc.has( "noctalia" ) ) return variables.out.say( "precondition", { error: "noctalia was not found" }, arguments.asJson, [ "error: noctalia was not found" ] );
-        var r = msg( [ "notification-clear-active" ] );
-        if ( r.exitCode == 0 && arguments.history ) r = msg( [ "notification-clear-history" ] );
-        if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
-        return variables.out.say( "ok", { cleared: arguments.history ? "active and history" : "active" }, arguments.asJson, [ "Cleared " & ( arguments.history ? "the visible notifications and the history." : "the visible notifications." ) ] );
-    }
+	function clear( history, asJson ) {
+		if ( !variables.proc.has( "noctalia" ) ) return variables.out.say( "precondition", { error: "noctalia was not found" }, arguments.asJson, [ "error: noctalia was not found" ] );
+		var r = msg( [ "notification-clear-active" ] );
+		if ( r.exitCode == 0 && arguments.history ) r = msg( [ "notification-clear-history" ] );
+		if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+		return variables.out.say( "ok", { cleared: arguments.history ? "active and history" : "active" }, arguments.asJson, [ "Cleared " & ( arguments.history ? "the visible notifications and the history." : "the visible notifications." ) ] );
+	}
 
-    // ---- notices ----
-    // [ { name, percent, state } ] for each battery under dir (default /sys/class/power_supply).
-    function batteries( dir = "/sys/class/power_supply" ) {
-        var out = [];
-        if ( !directoryExists( arguments.dir ) ) return out;
-        for ( var n in directoryList( arguments.dir, false, "name" ) ) {
-            if ( left( n, 3 ) != "BAT" ) continue;
-            var cap = arguments.dir & "/" & n & "/capacity";
-            if ( !fileExists( cap ) ) continue;
-            var st = arguments.dir & "/" & n & "/status";
-            out.append( { name: n, percent: int( val( trim( fileRead( cap ) ) ) ), state: fileExists( st ) ? trim( fileRead( st ) ) : "Unknown" } );
-        }
-        return out;
-    }
+	// ---- notices ----
+	// [ { name, percent, state } ] for each battery under dir (default /sys/class/power_supply).
+	function batteries( dir = "/sys/class/power_supply" ) {
+		var out = [];
+		if ( !directoryExists( arguments.dir ) ) return out;
+		for ( var n in directoryList( arguments.dir, false, "name" ) ) {
+			if ( left( n, 3 ) != "BAT" ) continue;
+			var cap = arguments.dir & "/" & n & "/capacity";
+			if ( !fileExists( cap ) ) continue;
+			var st = arguments.dir & "/" & n & "/status";
+			out.append( { name: n, percent: int( val( trim( fileRead( cap ) ) ) ), state: fileExists( st ) ? trim( fileRead( st ) ) : "Unknown" } );
+		}
+		return out;
+	}
 
-    // The text of the battery notice, or "" when there is no battery.
-    function batteryText( dir = "/sys/class/power_supply" ) {
-        var rows = batteries( arguments.dir ).map( function( b ) { return b.percent & "% (" & lCase( b.state ) & ")"; } );
-        return rows.toList( ", " );
-    }
+	// The text of the battery notice, or "" when there is no battery.
+	function batteryText( dir = "/sys/class/power_supply" ) {
+		var rows = batteries( arguments.dir ).map( function( b ) { return b.percent & "% (" & lCase( b.state ) & ")"; } );
+		return rows.toList( ", " );
+	}
 
-    function notice( title, body ) {
-        return variables.proc.exec( [ "notify-send", "--app-name=bxrig", arguments.title, arguments.body ], 15 );
-    }
+	function notice( title, body ) {
+		return variables.proc.exec( [ "notify-send", "--app-name=bxrig", arguments.title, arguments.body ], 15 );
+	}
 
-    // `notify time|battery|weather`
-    function show( what, asJson ) {
-        var cmd = "notify " & arguments.what;
-        if ( !variables.proc.has( "notify-send" ) ) return variables.out.sub( cmd ).say( "precondition", { error: "notify-send was not found" }, arguments.asJson, [ "error: notify-send was not found (install libnotify)" ] );
-        var title = "";
-        var body = "";
-        if ( arguments.what == "time" ) {
-            var t = variables.proc.exec( [ "date", "+%A %d %B%n%H:%M" ], 10 );
-            title = "Time";
-            body = trim( t.output );
-        } else if ( arguments.what == "battery" ) {
-            body = batteryText();
-            if ( !len( body ) ) return variables.out.sub( cmd ).say( "precondition", { error: "no battery found" }, arguments.asJson, [ "error: no battery found (this is not a laptop)" ] );
-            title = "Battery";
-        } else if ( arguments.what == "weather" ) {
-            var w = new bxrig.util.Http( variables.proc ).get( "https://wttr.in/?format=3", 15 );
-            if ( !w.ok || !len( trim( w.output ) ) ) return variables.out.sub( cmd ).say( "failed", { error: "could not read the weather" }, arguments.asJson, [ "error: could not read the weather (no network?)" ] );
-            title = "Weather";
-            body = trim( w.output );
-        } else return variables.out.sub( cmd ).say( "usage", { error: "unknown notice" }, arguments.asJson, [ "error: notify time|battery|weather" ] );
-        var r = notice( title, body );
-        if ( r.exitCode != 0 ) return variables.out.sub( cmd ).say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
-        return variables.out.sub( cmd ).say( "ok", { title: title, text: body }, arguments.asJson, [ title & ": " & body ] );
-    }
+	// `notify time|battery|weather`
+	function show( what, asJson ) {
+		var cmd = "notify " & arguments.what;
+		if ( !variables.proc.has( "notify-send" ) ) return variables.out.sub( cmd ).say( "precondition", { error: "notify-send was not found" }, arguments.asJson, [ "error: notify-send was not found (install libnotify)" ] );
+		var title = "";
+		var body = "";
+		if ( arguments.what == "time" ) {
+			var t = variables.proc.exec( [ "date", "+%A %d %B%n%H:%M" ], 10 );
+			title = "Time";
+			body = trim( t.output );
+		} else if ( arguments.what == "battery" ) {
+			body = batteryText();
+			if ( !len( body ) ) return variables.out.sub( cmd ).say( "precondition", { error: "no battery found" }, arguments.asJson, [ "error: no battery found (this is not a laptop)" ] );
+			title = "Battery";
+		} else if ( arguments.what == "weather" ) {
+			var w = new bxrig.util.Http( variables.proc ).get( "https://wttr.in/?format=3", 15 );
+			if ( !w.ok || !len( trim( w.output ) ) ) return variables.out.sub( cmd ).say( "failed", { error: "could not read the weather" }, arguments.asJson, [ "error: could not read the weather (no network?)" ] );
+			title = "Weather";
+			body = trim( w.output );
+		} else return variables.out.sub( cmd ).say( "usage", { error: "unknown notice" }, arguments.asJson, [ "error: notify time|battery|weather" ] );
+		var r = notice( title, body );
+		if ( r.exitCode != 0 ) return variables.out.sub( cmd ).say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+		return variables.out.sub( cmd ).say( "ok", { title: title, text: body }, arguments.asJson, [ title & ": " & body ] );
+	}
 }

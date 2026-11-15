@@ -7,59 +7,59 @@
 //   status   recording or not
 // Exit: 0 done, 2 an unknown --audio value, 4 precondition (wf-recorder, slurp or pactl missing), 6 could not start or stop.
 class Record {
-    function init( cli, runner = "" ) {
-        variables.text = new bxrig.util.Text();
-        variables.cli = arguments.cli;
-        variables.proc = new bxrig.util.Proc( arguments.runner );
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.text = new bxrig.util.Text();
+		variables.cli = arguments.cli;
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		return this;
+	}
 
-    function recording() { return variables.proc.exec( [ "pgrep", "-x", "wf-recorder" ], 10 ).exitCode == 0; }
-    function folder() { return new bxrig.util.Env().named( "videos", new bxrig.util.Env().named( "home", "" ) & "/Videos" ); }
+	function recording() { return variables.proc.exec( [ "pgrep", "-x", "wf-recorder" ], 10 ).exitCode == 0; }
+	function folder() { return new bxrig.util.Env().named( "videos", new bxrig.util.Env().named( "home", "" ) & "/Videos" ); }
 
-    function audioKinds() { return [ "desktop", "mic" ]; }
+	function audioKinds() { return [ "desktop", "mic" ]; }
 
-    // The wf-recorder audio device for --audio: the monitor of the default sink (desktop) or the default source (mic); "" when pactl cannot say.
-    function audioSource( audio ) {
-        if ( !variables.proc.has( "pactl" ) ) return "";
-        var r = variables.proc.exec( [ "pactl", arguments.audio == "desktop" ? "get-default-sink" : "get-default-source" ], 10 );
-        var name = r.exitCode == 0 ? trim( r.output ) : "";
-        return len( name ) && arguments.audio == "desktop" ? name & ".monitor" : name;
-    }
+	// The wf-recorder audio device for --audio: the monitor of the default sink (desktop) or the default source (mic); "" when pactl cannot say.
+	function audioSource( audio ) {
+		if ( !variables.proc.has( "pactl" ) ) return "";
+		var r = variables.proc.exec( [ "pactl", arguments.audio == "desktop" ? "get-default-sink" : "get-default-source" ], 10 );
+		var name = r.exitCode == 0 ? trim( r.output ) : "";
+		return len( name ) && arguments.audio == "desktop" ? name & ".monitor" : name;
+	}
 
-    function start( region, dryRun, asJson, audio = "" ) {
-        var cmd = "record start";
-        if ( len( arguments.audio ) && !arrayFind( audioKinds(), arguments.audio ) ) return variables.cli.say( cmd, "usage", { error: "unknown audio " & arguments.audio }, arguments.asJson, [ "error: --audio is desktop or mic, not " & arguments.audio ] );
-        if ( len( arguments.audio ) && !variables.proc.has( "pactl" ) ) return variables.cli.say( cmd, "precondition", { error: "pactl is not installed" }, arguments.asJson, [ "error: pactl is not installed (it comes with PipeWire's pulse support: bxrig install pipewire-pulse)" ] );
-        if ( !variables.proc.has( "wf-recorder" ) ) return variables.cli.say( cmd, "precondition", { error: "wf-recorder is not installed" }, arguments.asJson, [ "error: wf-recorder is not installed. Install: bxrig install wf-recorder" ] );
-        if ( arguments.region && !variables.proc.has( "slurp" ) ) return variables.cli.say( cmd, "precondition", { error: "slurp is not installed" }, arguments.asJson, [ "error: slurp is not installed (it comes with the Hyprland setup)" ] );
-        if ( recording() ) return variables.cli.say( cmd, "ok", { recording: true, started: false }, arguments.asJson, [ "A recording is already running. Stop it: bxrig record stop" ] );
-        var stamp = trim( variables.proc.exec( [ "date", "+%Y%m%d-%H%M%S" ], 10 ).output );
-        var file = folder() & "/bxrig-" & stamp & ".mp4";
-        var wf = len( arguments.audio ) ? 'exec wf-recorder -a"$3"' : "exec wf-recorder";
-        var script = 'mkdir -p "$1" && ' & wf & ( arguments.region ? ' -g "$(slurp)"' : "" ) & ' -f "$2"';
-        var argv = [ "sh", "-c", script, "_", folder(), file ];
-        if ( len( arguments.audio ) ) argv.append( audioSource( arguments.audio ) );
-        var data = { file: file, region: arguments.region, audio: arguments.audio, command: argv };
-        if ( arguments.dryRun ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Dry run: " & argv.toList( " " ) ] );
-        variables.proc.detach( argv );
-        return variables.cli.say( cmd, "ok", variables.text.merge( data, { started: true } ), arguments.asJson, [ "Recording to " & file & ( len( arguments.audio ) ? " with " & arguments.audio & " audio" : "" ) & ". Stop: bxrig record stop" ] );
-    }
+	function start( region, dryRun, asJson, audio = "" ) {
+		var cmd = "record start";
+		if ( len( arguments.audio ) && !arrayFind( audioKinds(), arguments.audio ) ) return variables.cli.say( cmd, "usage", { error: "unknown audio " & arguments.audio }, arguments.asJson, [ "error: --audio is desktop or mic, not " & arguments.audio ] );
+		if ( len( arguments.audio ) && !variables.proc.has( "pactl" ) ) return variables.cli.say( cmd, "precondition", { error: "pactl is not installed" }, arguments.asJson, [ "error: pactl is not installed (it comes with PipeWire's pulse support: bxrig install pipewire-pulse)" ] );
+		if ( !variables.proc.has( "wf-recorder" ) ) return variables.cli.say( cmd, "precondition", { error: "wf-recorder is not installed" }, arguments.asJson, [ "error: wf-recorder is not installed. Install: bxrig install wf-recorder" ] );
+		if ( arguments.region && !variables.proc.has( "slurp" ) ) return variables.cli.say( cmd, "precondition", { error: "slurp is not installed" }, arguments.asJson, [ "error: slurp is not installed (it comes with the Hyprland setup)" ] );
+		if ( recording() ) return variables.cli.say( cmd, "ok", { recording: true, started: false }, arguments.asJson, [ "A recording is already running. Stop it: bxrig record stop" ] );
+		var stamp = trim( variables.proc.exec( [ "date", "+%Y%m%d-%H%M%S" ], 10 ).output );
+		var file = folder() & "/bxrig-" & stamp & ".mp4";
+		var wf = len( arguments.audio ) ? 'exec wf-recorder -a"$3"' : "exec wf-recorder";
+		var script = 'mkdir -p "$1" && ' & wf & ( arguments.region ? ' -g "$(slurp)"' : "" ) & ' -f "$2"';
+		var argv = [ "sh", "-c", script, "_", folder(), file ];
+		if ( len( arguments.audio ) ) argv.append( audioSource( arguments.audio ) );
+		var data = { file: file, region: arguments.region, audio: arguments.audio, command: argv };
+		if ( arguments.dryRun ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Dry run: " & argv.toList( " " ) ] );
+		variables.proc.detach( argv );
+		return variables.cli.say( cmd, "ok", variables.text.merge( data, { started: true } ), arguments.asJson, [ "Recording to " & file & ( len( arguments.audio ) ? " with " & arguments.audio & " audio" : "" ) & ". Stop: bxrig record stop" ] );
+	}
 
-    function stop( asJson ) {
-        var cmd = "record stop";
-        if ( !recording() ) return variables.cli.say( cmd, "ok", { recording: false }, arguments.asJson, [ "Nothing is recording." ] );
-        var r = variables.proc.exec( [ "pkill", "-INT", "-x", "wf-recorder" ], 10 );
-        if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: "could not stop the recording" }, arguments.asJson, [ "error: could not stop the recording" ] );
-        return variables.cli.say( cmd, "ok", { recording: false, stopped: true }, arguments.asJson, [ "The recording was stopped and saved in " & folder() & "." ] );
-    }
+	function stop( asJson ) {
+		var cmd = "record stop";
+		if ( !recording() ) return variables.cli.say( cmd, "ok", { recording: false }, arguments.asJson, [ "Nothing is recording." ] );
+		var r = variables.proc.exec( [ "pkill", "-INT", "-x", "wf-recorder" ], 10 );
+		if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: "could not stop the recording" }, arguments.asJson, [ "error: could not stop the recording" ] );
+		return variables.cli.say( cmd, "ok", { recording: false, stopped: true }, arguments.asJson, [ "The recording was stopped and saved in " & folder() & "." ] );
+	}
 
-    function toggle( region, dryRun, asJson, audio = "" ) {
-        return recording() ? stop( arguments.asJson ) : start( arguments.region, arguments.dryRun, arguments.asJson, arguments.audio );
-    }
+	function toggle( region, dryRun, asJson, audio = "" ) {
+		return recording() ? stop( arguments.asJson ) : start( arguments.region, arguments.dryRun, arguments.asJson, arguments.audio );
+	}
 
-    function status( asJson ) {
-        var on = recording();
-        return variables.cli.say( "record status", "ok", { recording: on }, arguments.asJson, [ on ? "Recording." : "Not recording." ] );
-    }
+	function status( asJson ) {
+		var on = recording();
+		return variables.cli.say( "record status", "ok", { recording: on }, arguments.asJson, [ on ? "Recording." : "Not recording." ] );
+	}
 }

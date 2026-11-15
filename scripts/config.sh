@@ -16,9 +16,9 @@ trap 'rm -f -- "$temp"' EXIT
 cat -- "$source" > "$temp"
 chmod --reference="$source" "$temp"
 if [[ -f "$destination" ]]; then
-  backup="$destination.bxrig.$(date -u +%Y%m%dT%H%M%SZ).$$.bak"
-  cp -p -- "$destination" "$backup"
-  echo "backup: $backup"
+	backup="$destination.bxrig.$(date -u +%Y%m%dT%H%M%SZ).$$.bak"
+	cp -p -- "$destination" "$backup"
+	echo "backup: $backup"
 fi
 mv -f -- "$temp" "$destination"
 trap - EXIT

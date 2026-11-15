@@ -1,34 +1,34 @@
 // Command output bound to one command name (`variables.out = variables.cli.scoped( "time" )`). Every method returns the exit code.
 // Name the exit by intent (usage 2, precondition 4, failed 6) instead of writing the number; the table is in COMMAND-CONTRACT.md section 3.
 class Out {
-    function init( cli, command ) {
-        variables.cli = arguments.cli;
-        variables.command = arguments.command;
-        return this;
-    }
+	function init( cli, command ) {
+		variables.cli = arguments.cli;
+		variables.command = arguments.command;
+		return this;
+	}
 
-    function say( code, data, asJson, lines = [], dry = false ) {
-        return variables.cli.say( variables.command, arguments.code, arguments.data, arguments.asJson, arguments.lines, arguments.dry );
-    }
+	function say( code, data, asJson, lines = [], dry = false ) {
+		return variables.cli.say( variables.command, arguments.code, arguments.data, arguments.asJson, arguments.lines, arguments.dry );
+	}
 
-    function fail( code, msg, asJson ) {
-        return variables.cli.fail( variables.command, arguments.code, arguments.msg, arguments.asJson );
-    }
+	function fail( code, msg, asJson ) {
+		return variables.cli.fail( variables.command, arguments.code, arguments.msg, arguments.asJson );
+	}
 
-    // Exit 2: bad usage.
-    function usage( msg, asJson ) { return fail( "usage", arguments.msg, arguments.asJson ); }
-    // Exit 4: a precondition is not met (missing tool, wrong user, unknown name).
-    function precondition( msg, asJson ) { return fail( "precondition", arguments.msg, arguments.asJson ); }
-    // Exit 6: a write or a step failed.
-    function failed( msg, asJson ) { return fail( "failed", arguments.msg, arguments.asJson ); }
+	// Exit 2: bad usage.
+	function usage( msg, asJson ) { return fail( "usage", arguments.msg, arguments.asJson ); }
+	// Exit 4: a precondition is not met (missing tool, wrong user, unknown name).
+	function precondition( msg, asJson ) { return fail( "precondition", arguments.msg, arguments.asJson ); }
+	// Exit 6: a write or a step failed.
+	function failed( msg, asJson ) { return fail( "failed", arguments.msg, arguments.asJson ); }
 
-    // A mutating command's plan (exit 2) or dry run (exit 0): see Mutation.show.
-    function plan( title, data, asJson, dry = false, extra = [], hint = "Add --yes to apply." ) {
-        return new bxrig.util.Mutation( this ).show( arguments.title, arguments.data, arguments.asJson, arguments.dry, arguments.extra, arguments.hint );
-    }
+	// A mutating command's plan (exit 2) or dry run (exit 0): see Mutation.show.
+	function plan( title, data, asJson, dry = false, extra = [], hint = "Add --yes to apply." ) {
+		return new bxrig.util.Mutation( this ).show( arguments.title, arguments.data, arguments.asJson, arguments.dry, arguments.extra, arguments.hint );
+	}
 
-    // The same output for another command string (`keys set` and `keys reset` in one class).
-    function sub( command ) {
-        return variables.cli.scoped( arguments.command );
-    }
+	// The same output for another command string (`keys set` and `keys reset` in one class).
+	function sub( command ) {
+		return variables.cli.scoped( arguments.command );
+	}
 }

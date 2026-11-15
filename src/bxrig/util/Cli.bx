@@ -1,44 +1,44 @@
 // Shared output helpers: the --json envelope (docs/architecture/COMMAND-CONTRACT.md section 4).
 class Cli {
-    function init( version ) {
-        variables.version = arguments.version;
-        variables.exit = new bxrig.util.Exit();
-        return this;
-    }
+	function init( version ) {
+		variables.version = arguments.version;
+		variables.exit = new bxrig.util.Exit();
+		return this;
+	}
 
-    // The running version (from box.json, through the generated Version class).
-    function version() { return variables.version; }
+	// The running version (from box.json, through the generated Version class).
+	function version() { return variables.version; }
 
-    // One JSON object on stdout, nothing else.
-    function envelope( command, exitCode, data, dryRun = false ) {
-        return jsonSerialize( { schema: 1, command: command, version: variables.version, ok: exitCode == 0, exit: exitCode, dry_run: dryRun, data: data, warnings: [] } );
-    }
+	// One JSON object on stdout, nothing else.
+	function envelope( command, exitCode, data, dryRun = false ) {
+		return jsonSerialize( { schema: 1, command: command, version: variables.version, ok: exitCode == 0, exit: exitCode, dry_run: dryRun, data: data, warnings: [] } );
+	}
 
-    // Prints one command result: the JSON envelope with --json, else the human lines. Returns the exit code (so a command ends with `return cli.say( ... )`).
-    // `code` is a number or a name from Exit ("ok", "usage", "precondition", ...).
-    function say( command, code, data, asJson, lines = [], dry = false ) {
-        var n = variables.exit.code( arguments.code );
-        if ( arguments.asJson ) println( envelope( arguments.command, n, arguments.data, arguments.dry ) );
-        else for ( var l in arguments.lines ) println( l );
-        return n;
-    }
+	// Prints one command result: the JSON envelope with --json, else the human lines. Returns the exit code (so a command ends with `return cli.say( ... )`).
+	// `code` is a number or a name from Exit ("ok", "usage", "precondition", ...).
+	function say( command, code, data, asJson, lines = [], dry = false ) {
+		var n = variables.exit.code( arguments.code );
+		if ( arguments.asJson ) println( envelope( arguments.command, n, arguments.data, arguments.dry ) );
+		else for ( var l in arguments.lines ) println( l );
+		return n;
+	}
 
-    // An error result: { error: msg } in JSON, "error: msg" for people. Returns the exit code.
-    function fail( command, code, msg, asJson ) {
-        return say( arguments.command, arguments.code, { error: arguments.msg }, arguments.asJson, [ "error: " & arguments.msg ] );
-    }
+	// An error result: { error: msg } in JSON, "error: msg" for people. Returns the exit code.
+	function fail( command, code, msg, asJson ) {
+		return say( arguments.command, arguments.code, { error: arguments.msg }, arguments.asJson, [ "error: " & arguments.msg ] );
+	}
 
-    // The same helpers bound to one command name: `variables.out = variables.cli.scoped( "time" )`.
-    function scoped( command ) {
-        return new bxrig.util.Out( this, arguments.command );
-    }
+	// The same helpers bound to one command name: `variables.out = variables.cli.scoped( "time" )`.
+	function scoped( command ) {
+		return new bxrig.util.Out( this, arguments.command );
+	}
 
-    // Prints a key/value listing as lines, or as the JSON envelope with --json.
-    function emitMap( command, asJson, map, suffix ) {
-        if ( asJson ) {
-            println( envelope( command, 0, map ) );
-            return;
-        }
-        for ( key in map ) println( key & ": " & map[key] & suffix );
-    }
+	// Prints a key/value listing as lines, or as the JSON envelope with --json.
+	function emitMap( command, asJson, map, suffix ) {
+		if ( asJson ) {
+			println( envelope( command, 0, map ) );
+			return;
+		}
+		for ( key in map ) println( key & ": " & map[key] & suffix );
+	}
 }

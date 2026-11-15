@@ -1,88 +1,84 @@
-// The brand images (logo, icon, wallpapers) embedded in the binary (AssetData) and written to the user's disk.
-// MatchBox's fileWrite writes text (a binary value is turned into a string), so each image is written as base64 text and decoded with coreutils `base64 -d` into the target file.
+// The brand images (logo, icons, boot splash) packed with BxRig (AssetData, resources) and written to the user's disk byte for byte; the wallpapers come from bxrig.Wallpapers.
 //
-// Exit codes: list 0; install 0 done, 2 without --yes, 4 precondition (root, no base64).
+// Exit codes: list 0; install 0 done, 2 without --yes, 4 precondition (root).
 class Assets {
-    function init( cli, runner = "" ) {
-        variables.environ = new bxrig.util.Env();
-        variables.cli = arguments.cli;
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.data = new bxrig.AssetData();
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.environ = new bxrig.util.Env();
+		variables.cli = arguments.cli;
+		variables.inst = new bxrig.Installer( arguments.runner );
+		variables.data = new bxrig.AssetData();
+		return this;
+	}
 
-    // Where each image goes: wallpapers in ~/Pictures/BxRig, the app icon in the user's icon theme (hicolor/SIZExSIZE/apps/bxrig.png and
-    // hicolor/scalable/apps/bxrig.svg, under XDG_DATA_HOME), the logo in ~/.local/share/bxrig.
-    function target( name ) {
-        var home = variables.environ.home();
-        if ( left( name, 11 ) == "wallpapers/" ) return home & "/Pictures/BxRig/" & mid( name, 12, len( name ) );
-        if ( left( name, 6 ) == "icons/" ) {
-            var data = variables.environ.xdgData();
-            if ( name == "icons/bxrig.svg" ) return data & "/icons/hicolor/scalable/apps/bxrig.svg";
-            var px = listFirst( mid( name, 7, len( name ) ), "." );
-            return data & "/icons/hicolor/" & px & "x" & px & "/apps/bxrig.png";
-        }
-        return home & "/.local/share/bxrig/" & name;
-    }
+	// Where each image goes: wallpapers in ~/Pictures/BxRig, the app icon in the user's icon theme (hicolor/SIZExSIZE/apps/bxrig.png and
+	// hicolor/scalable/apps/bxrig.svg, under XDG_DATA_HOME), the logo in ~/.local/share/bxrig.
+	function target( name ) {
+		var home = variables.environ.home();
+		if ( left( name, 11 ) == "wallpapers/" ) return home & "/Pictures/BxRig/" & mid( name, 12, len( name ) );
+		if ( left( name, 6 ) == "icons/" ) {
+			var data = variables.environ.xdgData();
+			if ( name == "icons/bxrig.svg" ) return data & "/icons/hicolor/scalable/apps/bxrig.svg";
+			var px = listFirst( mid( name, 7, len( name ) ), "." );
+			return data & "/icons/hicolor/" & px & "x" & px & "/apps/bxrig.png";
+		}
+		return home & "/.local/share/bxrig/" & name;
+	}
 
-    // The images `assets install` writes: all but the boot splash's (those go to /usr/share/plymouth, by `setup boot`).
-    function userNames() { return variables.data.names().filter( function( n ) { return left( n, 9 ) != "plymouth/"; } ); }
+	// The images `assets install` writes: all but the boot splash's (those go to /usr/share/plymouth, by `setup boot`).
+	function userNames() { return variables.data.names().filter( function( n ) { return left( n, 9 ) != "plymouth/"; } ); }
 
-    // The app icon files (every size and the scalable SVG), as embedded names.
-    function iconNames() { return variables.data.names().filter( function( n ) { return left( n, 6 ) == "icons/"; } ); }
+	// The app icon files (every size and the scalable SVG), as embedded names.
+	function iconNames() { return variables.data.names().filter( function( n ) { return left( n, 6 ) == "icons/"; } ); }
 
-    // Writes one embedded image to a path (via a .b64 text file and `base64 -d`).
-    function decode( name, dest ) {
-        directoryCreate( getDirectoryFromPath( dest ), true, true );
-        fileWrite( dest & ".b64", variables.data.base64( name ) );
-        var r = variables.inst.proc().exec( [ "sh", "-c", 'base64 -d "$1" > "$2"', "sh", dest & ".b64", dest ], 60 );
-        fileDelete( dest & ".b64" );
-        if ( r.exitCode != 0 ) throw( type = "Assets.decode", message = "base64 -d failed for " & name );
-    }
+	// Writes one packed image to a path, byte for byte.
+	function decode( name, dest ) {
+		directoryCreate( getDirectoryFromPath( dest ), true, true );
+		fileWrite( dest, variables.data.binary( name ) );
+	}
 
-    // Writes the images that are missing (never overwrites) and returns { written, present }. No output.
-    function writeMissing() {
-        var missing = userNames().filter( function( n ) { return !fileExists( target( n ) ); } );
-        var kept = userNames().filter( function( n ) { return fileExists( target( n ) ); } );
-        for ( var n in missing ) decode( n, target( n ) );
-        // the theme wallpapers are not embedded: fetched from the install bundle's copy or the release downloads, each checked
-        var w = new bxrig.Wallpapers( variables.inst.runner() ).ensureAll();
-        for ( var x in w.written ) missing.append( "wallpapers/" & x & ".jpg" );
-        for ( var x in w.present ) kept.append( "wallpapers/" & x & ".jpg" );
-        return { written: missing, present: kept, failed: w.failed };
-    }
+	// Writes the images that are missing (never overwrites) and returns { written, present }. No output.
+	function writeMissing() {
+		var missing = userNames().filter( function( n ) { return !fileExists( target( n ) ); } );
+		var kept = userNames().filter( function( n ) { return fileExists( target( n ) ); } );
+		for ( var n in missing ) decode( n, target( n ) );
+		// the theme wallpapers are not embedded: fetched from the install bundle's copy or the release downloads, each checked
+		var w = new bxrig.Wallpapers( variables.inst.runner() ).ensureAll();
+		for ( var x in w.written ) missing.append( "wallpapers/" & x & ".jpg" );
+		for ( var x in w.present ) kept.append( "wallpapers/" & x & ".jpg" );
+		return { written: missing, present: kept, failed: w.failed };
+	}
 
-    // `assets list`
-    function list( asJson ) {
-        var rows = userNames().map( function( n ) { return { name: n, target: target( n ), present: fileExists( target( n ) ) }; } );
-        if ( asJson ) { println( variables.cli.envelope( "assets list", 0, { assets: rows } ) ); return new bxrig.util.Exit().ok(); }
-        for ( var r in rows ) println( r.name & " -> " & r.target & ( r.present ? " (present)" : "" ) );
-        return new bxrig.util.Exit().ok();
-    }
+	// `assets list`
+	function list( asJson ) {
+		var rows = userNames().map( function( n ) { return { name: n, target: target( n ), present: fileExists( target( n ) ) }; } );
+		if ( asJson ) { println( variables.cli.envelope( "assets list", 0, { assets: rows } ) ); return new bxrig.util.Exit().ok(); }
+		for ( var r in rows ) println( r.name & " -> " & r.target & ( r.present ? " (present)" : "" ) );
+		return new bxrig.util.Exit().ok();
+	}
 
-    // `assets install [--yes] [--dry-run]`: writes the images that are missing; never overwrites a file the user changed.
-    function install( yes, dryRun, asJson ) {
-        if ( variables.inst.isRoot() || !variables.inst.hasCommand( "base64" ) ) {
-            var msg = variables.inst.isRoot() ? "Run as a regular user" : "base64 (coreutils) was not found";
-            if ( asJson ) println( variables.cli.envelope( "assets install", 4, { errors: [ msg ] } ) ); else println( "error: " & msg );
-            return new bxrig.util.Exit().precondition();
-        }
-        var plan = userNames().filter( function( n ) { return !fileExists( target( n ) ); } );
-        var kept = userNames().filter( function( n ) { return fileExists( target( n ) ); } );
-        if ( !yes || dryRun ) {
-            var code = dryRun ? 0 : 2;
-            if ( asJson ) { println( variables.cli.envelope( "assets install", code, { write: plan, present: kept }, dryRun ) ); return code; }
-            for ( var n in plan ) println( "write " & target( n ) );
-            for ( var k in kept ) println( "keep  " & target( k ) & " (already there)" );
-            println( dryRun ? "Dry run, nothing changed." : "Nothing changed. Pass --yes to proceed." );
-            return code;
-        }
-        var r = writeMissing();
-        if ( asJson ) println( variables.cli.envelope( "assets install", 0, { written: r.written, present: r.present, failed: r.failed } ) );
-        else {
-            println( "Wrote " & r.written.len() & " images, kept " & r.present.len() & "." );
-            if ( r.failed.len() ) println( "note: " & r.failed.len() & " theme wallpapers could not be fetched (offline?); `bxrig theme set` fetches each when it is used." );
-        }
-        return new bxrig.util.Exit().ok();
-    }
+	// `assets install [--yes] [--dry-run]`: writes the images that are missing; never overwrites a file the user changed.
+	function install( yes, dryRun, asJson ) {
+		if ( variables.inst.isRoot() ) {
+			var msg = "Run as a regular user";
+			if ( asJson ) println( variables.cli.envelope( "assets install", 4, { errors: [ msg ] } ) ); else println( "error: " & msg );
+			return new bxrig.util.Exit().precondition();
+		}
+		var plan = userNames().filter( function( n ) { return !fileExists( target( n ) ); } );
+		var kept = userNames().filter( function( n ) { return fileExists( target( n ) ); } );
+		if ( !yes || dryRun ) {
+			var code = dryRun ? 0 : 2;
+			if ( asJson ) { println( variables.cli.envelope( "assets install", code, { write: plan, present: kept }, dryRun ) ); return code; }
+			for ( var n in plan ) println( "write " & target( n ) );
+			for ( var k in kept ) println( "keep  " & target( k ) & " (already there)" );
+			println( dryRun ? "Dry run, nothing changed." : "Nothing changed. Pass --yes to proceed." );
+			return code;
+		}
+		var r = writeMissing();
+		if ( asJson ) println( variables.cli.envelope( "assets install", 0, { written: r.written, present: r.present, failed: r.failed } ) );
+		else {
+			println( "Wrote " & r.written.len() & " images, kept " & r.present.len() & "." );
+			if ( r.failed.len() ) println( "note: " & r.failed.len() & " theme wallpapers could not be fetched (offline?); `bxrig theme set` fetches each when it is used." );
+		}
+		return new bxrig.util.Exit().ok();
+	}
 }

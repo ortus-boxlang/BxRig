@@ -9,102 +9,102 @@
 // the mount is up. Exit: 0 done, 2 plan without --yes, 4 precondition, 6 a command failed. Package facts checked on archlinux.org
 // 2026-11-12: rclone (extra) ships /usr/bin/rclone and lists fuse3 as its optional dependency "for rclone mount"; fuse3 ships fusermount3.
 class Cloud {
-    function init( cli, runner = "" ) {
-        variables.text = new bxrig.util.Text();
-        variables.cli = arguments.cli;
-        variables.proc = new bxrig.util.Proc( arguments.runner );
-        variables.systemd = new bxrig.util.Systemd( variables.proc );
-        variables.config = new bxrig.ConfigService().quiet( true );
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.text = new bxrig.util.Text();
+		variables.cli = arguments.cli;
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.systemd = new bxrig.util.Systemd( variables.proc );
+		variables.config = new bxrig.ConfigService().quiet( true );
+		return this;
+	}
 
-    function unitName( name ) { return "bxrig-cloud-" & arguments.name & ".service"; }
-    function unitDir() { return variables.config.cfgHome() & "/systemd/user"; }
-    function defaultDir( name ) { return new bxrig.util.Env().named( "home", "" ) & "/Cloud/" & arguments.name; }
+	function unitName( name ) { return "bxrig-cloud-" & arguments.name & ".service"; }
+	function unitDir() { return variables.config.cfgHome() & "/systemd/user"; }
+	function defaultDir( name ) { return new bxrig.util.Env().named( "home", "" ) & "/Cloud/" & arguments.name; }
 
-    function remotes() {
-        var r = variables.proc.exec( [ "rclone", "listremotes" ], 20 );
-        if ( r.exitCode != 0 ) return [];
-        return listToArray( r.output, chr( 10 ) ).map( function( l ) { return reReplace( trim( l ), ":$", "" ); } ).filter( function( l ) { return len( l ) > 0; } );
-    }
+	function remotes() {
+		var r = variables.proc.exec( [ "rclone", "listremotes" ], 20 );
+		if ( r.exitCode != 0 ) return [];
+		return listToArray( r.output, chr( 10 ) ).map( function( l ) { return reReplace( trim( l ), ":$", "" ); } ).filter( function( l ) { return len( l ) > 0; } );
+	}
 
-    function needRclone( cmd, asJson ) {
-        if ( variables.proc.has( "rclone" ) ) return new bxrig.util.Exit().ok();
-        return variables.cli.say( arguments.cmd, "precondition", { error: "rclone is not installed" }, arguments.asJson, [ "error: rclone is not installed. Install: bxrig install rclone fuse3" ] );
-    }
+	function needRclone( cmd, asJson ) {
+		if ( variables.proc.has( "rclone" ) ) return new bxrig.util.Exit().ok();
+		return variables.cli.say( arguments.cmd, "precondition", { error: "rclone is not installed" }, arguments.asJson, [ "error: rclone is not installed. Install: bxrig install rclone fuse3" ] );
+	}
 
-    function listRemotes( asJson ) {
-        var cmd = "cloud remotes";
-        var n = needRclone( cmd, arguments.asJson );
-        if ( n != 0 ) return n;
-        var rows = remotes();
-        return variables.cli.say( cmd, "ok", { remotes: rows }, arguments.asJson, rows.len() ? rows : [ "No remotes yet. Add one: bxrig cloud configure" ] );
-    }
+	function listRemotes( asJson ) {
+		var cmd = "cloud remotes";
+		var n = needRclone( cmd, arguments.asJson );
+		if ( n != 0 ) return n;
+		var rows = remotes();
+		return variables.cli.say( cmd, "ok", { remotes: rows }, arguments.asJson, rows.len() ? rows : [ "No remotes yet. Add one: bxrig cloud configure" ] );
+	}
 
-    function configure() {
-        if ( !variables.proc.has( "rclone" ) ) { println( "error: rclone is not installed. Install: bxrig install rclone fuse3" ); return new bxrig.util.Exit().precondition(); }
-        var r = systemExecute( "rclone", [ "config" ], 0, false, ".", "", "", true, {}, true );
-        return r.exitCode;
-    }
+	function configure() {
+		if ( !variables.proc.has( "rclone" ) ) { println( "error: rclone is not installed. Install: bxrig install rclone fuse3" ); return new bxrig.util.Exit().precondition(); }
+		var r = systemExecute( "rclone", [ "config" ], 0, false, ".", "", "", true, {}, true );
+		return r.exitCode;
+	}
 
-    function unitText( name, dir ) {
-        var nl = chr( 10 );
-        return new bxrig.util.SystemdUnit().render( [
-            { name: "Unit", lines: [ "Description=rclone mount of " & arguments.name & " (bxrig)", "After=network-online.target", "Wants=network-online.target" ] },
-            { name: "Service", lines: [ "Type=notify", "ExecStartPre=/usr/bin/mkdir -p " & arguments.dir, "ExecStart=/usr/bin/rclone mount " & arguments.name & ": " & arguments.dir & " --vfs-cache-mode writes",
-                "ExecStop=/usr/bin/fusermount3 -u " & arguments.dir, "Restart=on-failure", "RestartSec=10" ] },
-            { name: "Install", lines: [ "WantedBy=default.target" ] }
-        ], "Written by bxrig (cloud mount). Edit it freely: BxRig will not overwrite a changed file." );
-    }
+	function unitText( name, dir ) {
+		var nl = chr( 10 );
+		return new bxrig.util.SystemdUnit().render( [
+			{ name: "Unit", lines: [ "Description=rclone mount of " & arguments.name & " (bxrig)", "After=network-online.target", "Wants=network-online.target" ] },
+			{ name: "Service", lines: [ "Type=notify", "ExecStartPre=/usr/bin/mkdir -p " & arguments.dir, "ExecStart=/usr/bin/rclone mount " & arguments.name & ": " & arguments.dir & " --vfs-cache-mode writes",
+				"ExecStop=/usr/bin/fusermount3 -u " & arguments.dir, "Restart=on-failure", "RestartSec=10" ] },
+			{ name: "Install", lines: [ "WantedBy=default.target" ] }
+		], "Written by bxrig (cloud mount). Edit it freely: BxRig will not overwrite a changed file." );
+	}
 
-    // `cloud mount NAME [--path=DIR] [--yes]`
-    function mount( name, path, yes, asJson ) {
-        var cmd = "cloud mount";
-        if ( !new bxrig.util.Names().valid( "label", arguments.name ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: a remote name is letters, digits, - and _" ] );
-        var n = needRclone( cmd, arguments.asJson );
-        if ( n != 0 ) return n;
-        if ( !variables.proc.has( "fusermount3" ) ) return variables.cli.say( cmd, "precondition", { error: "fuse3 is not installed" }, arguments.asJson, [ "error: fuse3 is not installed (rclone mount needs it). Install: bxrig install fuse3" ] );
-        if ( !arrayFind( remotes(), arguments.name ) ) return variables.cli.say( cmd, "precondition", { error: "Unknown remote" }, arguments.asJson, [ "error: rclone has no remote called " & arguments.name & ". Add it: bxrig cloud configure" ] );
-        var dir = len( arguments.path ) ? arguments.path : defaultDir( arguments.name );
-        if ( find( " ", dir ) || find( chr( 34 ), dir ) || find( chr( 39 ), dir ) || left( dir, 1 ) != "/" ) return variables.cli.say( cmd, "precondition", { error: "Bad path" }, arguments.asJson, [ "error: the folder must be an absolute path without spaces or quotes" ] );
-        var entry = { name: "cloud-" & arguments.name, target: unitDir() & "/" & unitName( arguments.name ), mode: "644", content: unitText( arguments.name, dir ) };
-        var state = variables.config.configState( entry );
-        var data = { remote: arguments.name, folder: dir, unit: entry.target };
-        if ( state == "drifted" || state == "blocked" ) return variables.cli.say( cmd, "precondition", data, arguments.asJson, [ "error: " & entry.target & " was changed by you, so it was kept. Unmount it first (bxrig cloud unmount " & arguments.name & " --yes) and delete the file to start over." ] );
-        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "mount " & arguments.name & ": at " & dir & " through the user service " & unitName( arguments.name ) & " (starts at every login).", data, arguments.asJson );
-        if ( variables.config.configWrite( entry, entry.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, "failed", data, arguments.asJson, [ "error: could not write " & entry.target ] );
-        variables.systemd.reload( true );
-        var r = variables.systemd.enable( unitName( arguments.name ), true );
-        if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", variables.text.merge( data, { error: trim( r.output ) } ), arguments.asJson, [ "error: could not start the mount: " & trim( r.output ), "See: journalctl --user -u " & unitName( arguments.name ) ] );
-        return variables.cli.say( cmd, "ok", data, arguments.asJson, [ arguments.name & " is mounted at " & dir & " and will be again at every login." ] );
-    }
+	// `cloud mount NAME [--path=DIR] [--yes]`
+	function mount( name, path, yes, asJson ) {
+		var cmd = "cloud mount";
+		if ( !new bxrig.util.Names().valid( "label", arguments.name ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: a remote name is letters, digits, - and _" ] );
+		var n = needRclone( cmd, arguments.asJson );
+		if ( n != 0 ) return n;
+		if ( !variables.proc.has( "fusermount3" ) ) return variables.cli.say( cmd, "precondition", { error: "fuse3 is not installed" }, arguments.asJson, [ "error: fuse3 is not installed (rclone mount needs it). Install: bxrig install fuse3" ] );
+		if ( !arrayFind( remotes(), arguments.name ) ) return variables.cli.say( cmd, "precondition", { error: "Unknown remote" }, arguments.asJson, [ "error: rclone has no remote called " & arguments.name & ". Add it: bxrig cloud configure" ] );
+		var dir = len( arguments.path ) ? arguments.path : defaultDir( arguments.name );
+		if ( find( " ", dir ) || find( chr( 34 ), dir ) || find( chr( 39 ), dir ) || left( dir, 1 ) != "/" ) return variables.cli.say( cmd, "precondition", { error: "Bad path" }, arguments.asJson, [ "error: the folder must be an absolute path without spaces or quotes" ] );
+		var entry = { name: "cloud-" & arguments.name, target: unitDir() & "/" & unitName( arguments.name ), mode: "644", content: unitText( arguments.name, dir ) };
+		var state = variables.config.configState( entry );
+		var data = { remote: arguments.name, folder: dir, unit: entry.target };
+		if ( state == "drifted" || state == "blocked" ) return variables.cli.say( cmd, "precondition", data, arguments.asJson, [ "error: " & entry.target & " was changed by you, so it was kept. Unmount it first (bxrig cloud unmount " & arguments.name & " --yes) and delete the file to start over." ] );
+		if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "mount " & arguments.name & ": at " & dir & " through the user service " & unitName( arguments.name ) & " (starts at every login).", data, arguments.asJson );
+		if ( variables.config.configWrite( entry, entry.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, "failed", data, arguments.asJson, [ "error: could not write " & entry.target ] );
+		variables.systemd.reload( true );
+		var r = variables.systemd.enable( unitName( arguments.name ), true );
+		if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", variables.text.merge( data, { error: trim( r.output ) } ), arguments.asJson, [ "error: could not start the mount: " & trim( r.output ), "See: journalctl --user -u " & unitName( arguments.name ) ] );
+		return variables.cli.say( cmd, "ok", data, arguments.asJson, [ arguments.name & " is mounted at " & dir & " and will be again at every login." ] );
+	}
 
-    // `cloud unmount NAME [--yes]`
-    function unmount( name, yes, asJson ) {
-        var cmd = "cloud unmount";
-        if ( !new bxrig.util.Names().valid( "label", arguments.name ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: bad name" ] );
-        var unit = unitDir() & "/" & unitName( arguments.name );
-        if ( !fileExists( unit ) ) return variables.cli.say( cmd, "precondition", { error: "No such mount" }, arguments.asJson, [ "error: BxRig has no mount for " & arguments.name ] );
-        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "stop and disable " & unitName( arguments.name ) & ".", { remote: arguments.name }, arguments.asJson );
-        var r = variables.systemd.disable( unitName( arguments.name ), true, 60 );
-        if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
-        var m = reFind( "--vfs-cache-mode writes", fileRead( unit ) );
-        var dirLine = "";
-        for ( var line in listToArray( fileRead( unit ), chr( 10 ) ) ) if ( left( line, 10 ) == "ExecStart=" ) dirLine = line;
-        var folder = len( dirLine ) ? listLast( replace( dirLine, " --vfs-cache-mode writes", "" ), " " ) : "";
-        var clean = len( folder ) && fileRead( unit ) == unitText( arguments.name, folder );
-        if ( clean ) { fileDelete( unit ); variables.systemd.reload( true ); }
-        return variables.cli.say( cmd, "ok", { remote: arguments.name, unit_removed: clean }, arguments.asJson, [ arguments.name & " was unmounted." & ( clean ? "" : " The unit file was kept because you changed it." ) ] );
-    }
+	// `cloud unmount NAME [--yes]`
+	function unmount( name, yes, asJson ) {
+		var cmd = "cloud unmount";
+		if ( !new bxrig.util.Names().valid( "label", arguments.name ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: bad name" ] );
+		var unit = unitDir() & "/" & unitName( arguments.name );
+		if ( !fileExists( unit ) ) return variables.cli.say( cmd, "precondition", { error: "No such mount" }, arguments.asJson, [ "error: BxRig has no mount for " & arguments.name ] );
+		if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "stop and disable " & unitName( arguments.name ) & ".", { remote: arguments.name }, arguments.asJson );
+		var r = variables.systemd.disable( unitName( arguments.name ), true, 60 );
+		if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+		var m = reFind( "--vfs-cache-mode writes", fileRead( unit ) );
+		var dirLine = "";
+		for ( var line in listToArray( fileRead( unit ), chr( 10 ) ) ) if ( left( line, 10 ) == "ExecStart=" ) dirLine = line;
+		var folder = len( dirLine ) ? listLast( replace( dirLine, " --vfs-cache-mode writes", "" ), " " ) : "";
+		var clean = len( folder ) && fileRead( unit ) == unitText( arguments.name, folder );
+		if ( clean ) { fileDelete( unit ); variables.systemd.reload( true ); }
+		return variables.cli.say( cmd, "ok", { remote: arguments.name, unit_removed: clean }, arguments.asJson, [ arguments.name & " was unmounted." & ( clean ? "" : " The unit file was kept because you changed it." ) ] );
+	}
 
-    // `cloud status`
-    function status( asJson ) {
-        var rows = [];
-        if ( directoryExists( unitDir() ) ) for ( var f in directoryList( unitDir(), false, "name" ) ) {
-            if ( left( f, 12 ) != "bxrig-cloud-" || right( f, 8 ) != ".service" ) continue;
-            var n = mid( f, 13, len( f ) - 20 );
-            rows.append( { remote: n, active: variables.systemd.isActive( f, true ) } );
-        }
-        return variables.cli.say( "cloud status", "ok", { mounts: rows }, arguments.asJson, rows.len() ? rows.map( function( r ) { return r.remote & "  " & ( r.active ? "mounted" : "not running" ); } ) : [ "No cloud mounts. Add one: bxrig cloud mount NAME" ] );
-    }
+	// `cloud status`
+	function status( asJson ) {
+		var rows = [];
+		if ( directoryExists( unitDir() ) ) for ( var f in directoryList( unitDir(), false, "name" ) ) {
+			if ( left( f, 12 ) != "bxrig-cloud-" || right( f, 8 ) != ".service" ) continue;
+			var n = mid( f, 13, len( f ) - 20 );
+			rows.append( { remote: n, active: variables.systemd.isActive( f, true ) } );
+		}
+		return variables.cli.say( "cloud status", "ok", { mounts: rows }, arguments.asJson, rows.len() ? rows.map( function( r ) { return r.remote & "  " & ( r.active ? "mounted" : "not running" ); } ) : [ "No cloud mounts. Add one: bxrig cloud mount NAME" ] );
+	}
 }

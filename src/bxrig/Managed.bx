@@ -1,50 +1,50 @@
 // The files BxRig manages by name for `bxrig config list|diff|apply|restore|history`: the settings file, the shortcut files and the starter configs.
 // One place that knows which classes own them, so Main.bx does not. Each entry is { name, target, mode, content }.
 class Managed {
-    function entries( cfgHome ) {
-        var nl = chr( 10 );
-        var out = { bxrig: { name: "bxrig", target: arguments.cfgHome & "/bxrig/bxrig.json", mode: "600", content: '{' & nl & '  "schema_version": 1,' & nl & '  "desktop": "auto"' & nl & '}' & nl } };
-        for ( var se in new bxrig.Shortcuts().entries( arguments.cfgHome ) ) out[ se.name ] = se;
-        for ( var ne in new bxrig.Starter().entries() ) out[ ne.name ] = ne;
-        return out;
-    }
+	function entries( cfgHome ) {
+		var nl = chr( 10 );
+		var out = { bxrig: { name: "bxrig", target: arguments.cfgHome & "/bxrig/bxrig.json", mode: "600", content: '{' & nl & '  "schema_version": 1,' & nl & '  "desktop": "auto"' & nl & '}' & nl } };
+		for ( var se in new bxrig.Shortcuts().entries( arguments.cfgHome ) ) out[ se.name ] = se;
+		for ( var ne in new bxrig.Starter().entries() ) out[ ne.name ] = ne;
+		return out;
+	}
 
-    // The refresh components and what each owns (`refresh list`): the one grouping of managed files by component.
-    function components() {
-        return [
-            { id: "hyprland", owns: "hypr/bxrig.lua (shortcuts), theme/look.lua, theme/monitors.lua; with --starter also hypr/hyprland.lua" },
-            { id: "noctalia", owns: "the theme palette and your saved appearance settings; with --starter also noctalia/config.toml" },
-            { id: "terminals", owns: "the starter configs of the terminals you have, and the theme includes" },
-            { id: "shell", owns: "starship.toml, the shell init and its line in .zshrc or .bashrc" },
-            { id: "nvim", owns: "the BxRig layer of the Neovim config" },
-            { id: "theme", owns: "the current theme, applied again everywhere" }
-        ];
-    }
+	// The refresh components and what each owns (`refresh list`): the one grouping of managed files by component.
+	function components() {
+		return [
+			{ id: "hyprland", owns: "hypr/bxrig.lua (shortcuts), theme/look.lua, theme/monitors.lua; with --starter also hypr/hyprland.lua" },
+			{ id: "noctalia", owns: "the theme palette and your saved appearance settings; with --starter also noctalia/config.toml" },
+			{ id: "terminals", owns: "the starter configs of the terminals you have, and the theme includes" },
+			{ id: "shell", owns: "starship.toml, the shell init and its line in .zshrc or .bashrc" },
+			{ id: "nvim", owns: "the BxRig layer of the Neovim config" },
+			{ id: "theme", owns: "the current theme, applied again everywhere" }
+		];
+	}
 
-    // The file entries a component owns, from the classes that write them: hyprland and noctalia own the starter configs (only with --starter),
-    // terminals the starters of the terminals installed here, shell the Starship config and the init line for the login shell.
-    function entriesFor( component, opts = {} ) {
-        var c = arguments.component;
-        var env = new bxrig.util.Env();
-        var cfgHome = new bxrig.ConfigService().cfgHome();
-        var out = [];
-        if ( c == "hyprland" || c == "noctalia" ) {
-            if ( !structKeyExists( arguments.opts, "starter" ) ) return out;
-            for ( var e in new bxrig.Starter( true ).entries() ) if ( ( c == "hyprland" ) == ( e.name == "hyprland" ) ) out.append( e );
-        } else if ( c == "terminals" ) {
-            var tc = new bxrig.TerminalConfig( true );
-            var proc = new bxrig.util.Proc();
-            var ids = [];
-            for ( var t in tc.terminals() ) if ( proc.has( t.cmd ) ) ids.append( t.id );
-            for ( var te in tc.entries( ids, cfgHome ) ) out.append( te );
-        } else if ( c == "shell" ) {
-            var sc = new bxrig.ShellConfig( true );
-            var sh = listLast( env.named( "shell", "/usr/bin/zsh" ), "/" );
-            if ( !arrayFind( sc.shells(), sh ) ) sh = sc.defaultShell();
-            var rcFile = env.home() & "/" & ( sh == "zsh" ? ".zshrc" : ".bashrc" );
-            var rcText = ( sh != "fish" && fileExists( rcFile ) ) ? fileRead( rcFile ) : "";
-            for ( var se in sc.entries( sh, cfgHome, env.home(), rcText ) ) out.append( se );
-        }
-        return out;
-    }
+	// The file entries a component owns, from the classes that write them: hyprland and noctalia own the starter configs (only with --starter),
+	// terminals the starters of the terminals installed here, shell the Starship config and the init line for the login shell.
+	function entriesFor( component, opts = {} ) {
+		var c = arguments.component;
+		var env = new bxrig.util.Env();
+		var cfgHome = new bxrig.ConfigService().cfgHome();
+		var out = [];
+		if ( c == "hyprland" || c == "noctalia" ) {
+			if ( !structKeyExists( arguments.opts, "starter" ) ) return out;
+			for ( var e in new bxrig.Starter( true ).entries() ) if ( ( c == "hyprland" ) == ( e.name == "hyprland" ) ) out.append( e );
+		} else if ( c == "terminals" ) {
+			var tc = new bxrig.TerminalConfig( true );
+			var proc = new bxrig.util.Proc();
+			var ids = [];
+			for ( var t in tc.terminals() ) if ( proc.has( t.cmd ) ) ids.append( t.id );
+			for ( var te in tc.entries( ids, cfgHome ) ) out.append( te );
+		} else if ( c == "shell" ) {
+			var sc = new bxrig.ShellConfig( true );
+			var sh = listLast( env.named( "shell", "/usr/bin/zsh" ), "/" );
+			if ( !arrayFind( sc.shells(), sh ) ) sh = sc.defaultShell();
+			var rcFile = env.home() & "/" & ( sh == "zsh" ? ".zshrc" : ".bashrc" );
+			var rcText = ( sh != "fish" && fileExists( rcFile ) ) ? fileRead( rcFile ) : "";
+			for ( var se in sc.entries( sh, cfgHome, env.home(), rcText ) ) out.append( se );
+		}
+		return out;
+	}
 }

@@ -9,81 +9,81 @@
 // Everything that changes something shows the plan first (the same command with --dry-run), and only a y runs it.
 // Exit: 0 after leaving, 2 for an unknown page or usage, 4 when there is no terminal.
 class ControlCenter {
-    function init( cli, runner = "" ) {
-        variables.proc = new bxrig.util.Proc();
-        variables.environ = new bxrig.util.Env();
-        variables.cli = arguments.cli;
-        variables.runner = arguments.runner;
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.proc = new bxrig.util.Proc();
+		variables.environ = new bxrig.util.Env();
+		variables.cli = arguments.cli;
+		variables.runner = arguments.runner;
+		return this;
+	}
 
-    function pageIds() { return new bxrig.ControlCenterPages().ids(); }
+	function pageIds() { return new bxrig.ControlCenterPages().ids(); }
 
-    // `tui list`
-    function listPages( asJson ) {
-        var rows = new bxrig.ControlCenterPages().list();
-        if ( arguments.asJson ) println( variables.cli.envelope( "tui list", 0, { pages: rows } ) );
-        else for ( var r in rows ) println( r.id & "  " & r.title );
-        return new bxrig.util.Exit().ok();
-    }
+	// `tui list`
+	function listPages( asJson ) {
+		var rows = new bxrig.ControlCenterPages().list();
+		if ( arguments.asJson ) println( variables.cli.envelope( "tui list", 0, { pages: rows } ) );
+		else for ( var r in rows ) println( r.id & "  " & r.title );
+		return new bxrig.util.Exit().ok();
+	}
 
-    function provider( demo ) {
-        var dd = new bxrig.DashboardData( variables.cli, variables.runner );
-        return arguments.demo ? new bxrig.DashboardDemo( dd ) : dd;
-    }
+	function provider( demo ) {
+		var dd = new bxrig.DashboardData( variables.cli, variables.runner );
+		return arguments.demo ? new bxrig.DashboardDemo( dd ) : dd;
+	}
 
-    function buildPages( demo ) {
-        var registry = new bxrig.ControlCenterPages();
-        var factory = new bxrig.PageFactory();
-        var out = [];
-        for ( var id in registry.ids() ) out.append( factory.make( id, arguments.demo, provider( arguments.demo ) ) );
-        return out;
-    }
+	function buildPages( demo ) {
+		var registry = new bxrig.ControlCenterPages();
+		var factory = new bxrig.PageFactory();
+		var out = [];
+		for ( var id in registry.ids() ) out.append( factory.make( id, arguments.demo, provider( arguments.demo ) ) );
+		return out;
+	}
 
-    // Prints the data of a page without a terminal.
-    function dump( pageId, demo, asJson ) {
-        var pages = buildPages( arguments.demo );
-        for ( var p in pages ) if ( p.id() == arguments.pageId ) {
-            p.load();
-            var st = p.state();
-            if ( arguments.asJson ) println( variables.cli.envelope( "tui " & p.id(), 0, st ) );
-            else println( p.title() & ": " & ( structKeyExists( st, "attention" ) ? st.attention.len() & " things to look at" : ( isArray( st.rows ) ? st.rows.len() : st.rows ) & " rows" ) );
-            return new bxrig.util.Exit().ok();
-        }
-        println( "Unknown page " & arguments.pageId & ". Pages: " & pageIds().toList( ", " ) );
-        return new bxrig.util.Exit().usage();
-    }
+	// Prints the data of a page without a terminal.
+	function dump( pageId, demo, asJson ) {
+		var pages = buildPages( arguments.demo );
+		for ( var p in pages ) if ( p.id() == arguments.pageId ) {
+			p.load();
+			var st = p.state();
+			if ( arguments.asJson ) println( variables.cli.envelope( "tui " & p.id(), 0, st ) );
+			else println( p.title() & ": " & ( structKeyExists( st, "attention" ) ? st.attention.len() & " things to look at" : ( isArray( st.rows ) ? st.rows.len() : st.rows ) & " rows" ) );
+			return new bxrig.util.Exit().ok();
+		}
+		println( "Unknown page " & arguments.pageId & ". Pages: " & pageIds().toList( ", " ) );
+		return new bxrig.util.Exit().usage();
+	}
 
-    // Icons are Nerd Font glyphs. "on" and "off" are explicit; "" follows BXRIG_ICONS, then looks for a Nerd Font on the machine.
-    function iconsEnabled( opt = "" ) {
-        var o = len( arguments.opt ) ? arguments.opt : new bxrig.util.Env().named( "icons", "" );
-        if ( o == "on" ) return true;
-        if ( o == "off" ) return false;
-        try { return systemExecute( "sh", [ "-c", "fc-list 2>/dev/null | grep -qi 'nerd'" ], 5, true ).exitCode == 0; } catch ( any e ) { return false; }
-    }
+	// Icons are Nerd Font glyphs. "on" and "off" are explicit; "" follows BXRIG_ICONS, then looks for a Nerd Font on the machine.
+	function iconsEnabled( opt = "" ) {
+		var o = len( arguments.opt ) ? arguments.opt : new bxrig.util.Env().named( "icons", "" );
+		if ( o == "on" ) return true;
+		if ( o == "off" ) return false;
+		try { return systemExecute( "sh", [ "-c", "fc-list 2>/dev/null | grep -qi 'nerd'" ], 5, true ).exitCode == 0; } catch ( any e ) { return false; }
+	}
 
-    // sidebar: "" (open, collapsed when the terminal is narrow), "on" or "off".
-    function run( pageId = "dashboard", demo = false, icons = "", sidebar = "" ) {
-        var start = arguments.pageId;
-        var intents = new bxrig.IntentRunner();
-        var iconsOn = iconsEnabled( arguments.icons );
-        var sb = arguments.sidebar;
-        while ( true ) {
-            var app = new bxrig.ControlCenterApp( buildPages( arguments.demo ), start, sb );
-            new bxrig.TuiRunner().run(
-                app,
-                function( tui ) { return new bxrig.ControlCenterView( tui ).setIcons( iconsOn ); },
-                function( intent ) { intents.handle( app, intent ); }
-            );
-            start = app.page().id();
-            sb = app.sidebarOpen() ? "on" : "off";
-            var out = app.outcome();
-            if ( left( out, 7 ) != "launch:" ) break;
-            var target = mid( out, 8, 40 );
-            if ( target == "timemachine" ) new bxrig.TimeMachine( variables.cli, variables.runner ).run( arguments.demo ? { demo: true } : { local: true } );
-            else if ( target == "wizard" ) new bxrig.Init( variables.cli ).wizard( false, false );
-            else break;
-        }
-        return new bxrig.util.Exit().ok();
-    }
+	// sidebar: "" (open, collapsed when the terminal is narrow), "on" or "off".
+	function run( pageId = "dashboard", demo = false, icons = "", sidebar = "" ) {
+		var start = arguments.pageId;
+		var intents = new bxrig.IntentRunner();
+		var iconsOn = iconsEnabled( arguments.icons );
+		var sb = arguments.sidebar;
+		while ( true ) {
+			var app = new bxrig.ControlCenterApp( buildPages( arguments.demo ), start, sb );
+			new bxrig.TuiRunner().run(
+				app,
+				function( tui ) { return new bxrig.ControlCenterView( tui ).setIcons( iconsOn ); },
+				function( intent ) { intents.handle( app, intent ); }
+			);
+			start = app.page().id();
+			sb = app.sidebarOpen() ? "on" : "off";
+			var out = app.outcome();
+			if ( left( out, 7 ) != "launch:" ) break;
+			var target = mid( out, 8, 40 );
+			if ( target == "timemachine" ) new bxrig.TimeMachine( variables.cli, variables.runner ).run( arguments.demo ? { demo: true } : { local: true } );
+			else if ( target == "wizard" ) new bxrig.Init( variables.cli ).wizard( false, false );
+			else break;
+		}
+		return new bxrig.util.Exit().ok();
+	}
 }

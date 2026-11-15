@@ -12,40 +12,40 @@
 //   internal 9     internal error
 //   update 10      `update check`: an update is available
 class Exit {
-    function init() {
-        variables.table = { ok: 0, negative: 1, usage: 2, plan: 2, timeout: 3, precondition: 4, official: 5, failed: 6, partial: 7, conflict: 8, internal: 9, update: 10 };
-        return this;
-    }
+	function init() {
+		variables.table = { ok: 0, negative: 1, usage: 2, plan: 2, timeout: 3, precondition: 4, official: 5, failed: 6, partial: 7, conflict: 8, internal: 9, update: 10 };
+		return this;
+	}
 
-    // The number for a name (or the number itself).
-    function code( c ) {
-        if ( isNumeric( arguments.c ) ) return arguments.c;
-        if ( !structKeyExists( variables.table, arguments.c ) ) throw( type = "Exit.name", message = "Unknown exit code name: " & arguments.c );
-        return variables.table[ arguments.c ];
-    }
+	// The number for a name (or the number itself).
+	function code( c ) {
+		if ( isNumeric( arguments.c ) ) return arguments.c;
+		if ( !structKeyExists( variables.table, arguments.c ) ) throw( type = "Exit.name", message = "Unknown exit code name: " & arguments.c );
+		return variables.table[ arguments.c ];
+	}
 
-    // One method per name, for `return new bxrig.util.Exit().usage();` where there is no Out to ask.
-    function ok() { return 0; }
-    function negative() { return 1; }
-    function usage() { return 2; }
-    function plan() { return 2; }
-    function timeout() { return 3; }
-    function precondition() { return 4; }
-    function official() { return 5; }
-    function failed() { return 6; }
-    function partial() { return 7; }
-    function conflict() { return 8; }
-    function internal() { return 9; }
-    function update() { return 10; }
+	// One method per name, for `return new bxrig.util.Exit().usage();` where there is no Out to ask.
+	function ok() { return 0; }
+	function negative() { return 1; }
+	function usage() { return 2; }
+	function plan() { return 2; }
+	function timeout() { return 3; }
+	function precondition() { return 4; }
+	function official() { return 5; }
+	function failed() { return 6; }
+	function partial() { return 7; }
+	function conflict() { return 8; }
+	function internal() { return 9; }
+	function update() { return 10; }
 
-    // The names (in contract order).
-    function names() {
-        return [ "ok", "negative", "usage", "plan", "timeout", "precondition", "official", "failed", "partial", "conflict", "internal", "update" ];
-    }
+	// The names (in contract order).
+	function names() {
+		return [ "ok", "negative", "usage", "plan", "timeout", "precondition", "official", "failed", "partial", "conflict", "internal", "update" ];
+	}
 
-    // The first name of a number: 2 is "usage".
-    function name( n ) {
-        for ( var k in names() ) if ( variables.table[ k ] == arguments.n ) return k;
-        return "";
-    }
+	// The first name of a number: 2 is "usage".
+	function name( n ) {
+		for ( var k in names() ) if ( variables.table[ k ] == arguments.n ) return k;
+		return "";
+	}
 }

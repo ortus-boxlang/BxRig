@@ -9,77 +9,77 @@
 // a named app that is `unresolved` is reported in `failed`. `errors` is non-empty on a usage problem
 // (unknown id or profile, ids together with a profile); nothing is selected then.
 class Resolver {
-    // The shells a request may name; "all" and "" turn the shell filter off.
-    function shells() {
-     return [ "hyprland", "plasma", "all" ];
-    }
+	// The shells a request may name; "all" and "" turn the shell filter off.
+	function shells() {
+	 return [ "hyprland", "plasma", "all" ];
+	}
 
-    // Web apps run in the catalog app `brave`. When a selected app is a web app and brave is neither selected nor
-    // installed, brave is put first in the selection, so a plan and an install always include it.
-    function withBrowser( out, byId, isInstalled ) {
-     var needsBrowser = false; var hasBrowser = false;
-     for ( var a in out.selected ) {
-      if ( a.source == "web" ) needsBrowser = true;
-      if ( a.id == "brave" ) hasBrowser = true;
-     }
-     if ( !needsBrowser || hasBrowser || !structKeyExists( byId, "brave" ) || isInstalled( byId["brave"] ) ) return out;
-     var withIt = [ byId["brave"] ];
-     for ( var a in out.selected ) withIt.append( a );
-     out.selected = withIt;
-     return out;
-    }
+	// Web apps run in the catalog app `brave`. When a selected app is a web app and brave is neither selected nor
+	// installed, brave is put first in the selection, so a plan and an install always include it.
+	function withBrowser( out, byId, isInstalled ) {
+	 var needsBrowser = false; var hasBrowser = false;
+	 for ( var a in out.selected ) {
+	  if ( a.source == "web" ) needsBrowser = true;
+	  if ( a.id == "brave" ) hasBrowser = true;
+	 }
+	 if ( !needsBrowser || hasBrowser || !structKeyExists( byId, "brave" ) || isInstalled( byId["brave"] ) ) return out;
+	 var withIt = [ byId["brave"] ];
+	 for ( var a in out.selected ) withIt.append( a );
+	 out.selected = withIt;
+	 return out;
+	}
 
-    function resolve( cat, req ) {
-     var ids = req.ids ?: [];
-     var profile = req.profile ?: "";
-     var wantOptional = req.optional ?: false;
-     var shell = req.shell ?: "";
-     var rootFs = req.rootFs ?: "";
-     var out = { mode: "default", errors: [], selected: [], failed: [], skipped: [] };
-     if ( shell != "" && !arrayFind( shells(), shell ) ) out.errors.append( "unknown shell " & shell );
-     if ( ids.len() && len( profile ) ) out.errors.append( "name apps or a profile, not both" );
-     var byId = {};
-     for ( var a in cat.apps ) byId[a.id] = a;
-     if ( ids.len() ) {
-      out.mode = "ids";
-      for ( var id in ids ) if ( !structKeyExists( byId, id ) ) out.errors.append( "unknown app " & id );
-     } else if ( len( profile ) ) {
-      out.mode = "profile";
-      var known = cat.profiles.filter( function( p ) { return p.id == profile; } );
-      if ( !known.len() ) out.errors.append( "unknown profile " & profile );
-     }
-     if ( out.errors.len() ) return out;
+	function resolve( cat, req ) {
+	 var ids = req.ids ?: [];
+	 var profile = req.profile ?: "";
+	 var wantOptional = req.optional ?: false;
+	 var shell = req.shell ?: "";
+	 var rootFs = req.rootFs ?: "";
+	 var out = { mode: "default", errors: [], selected: [], failed: [], skipped: [] };
+	 if ( shell != "" && !arrayFind( shells(), shell ) ) out.errors.append( "unknown shell " & shell );
+	 if ( ids.len() && len( profile ) ) out.errors.append( "name apps or a profile, not both" );
+	 var byId = {};
+	 for ( var a in cat.apps ) byId[a.id] = a;
+	 if ( ids.len() ) {
+	  out.mode = "ids";
+	  for ( var id in ids ) if ( !structKeyExists( byId, id ) ) out.errors.append( "unknown app " & id );
+	 } else if ( len( profile ) ) {
+	  out.mode = "profile";
+	  var known = cat.profiles.filter( function( p ) { return p.id == profile; } );
+	  if ( !known.len() ) out.errors.append( "unknown profile " & profile );
+	 }
+	 if ( out.errors.len() ) return out;
 
-     var isInstalled = req.installed ?: function( app ) { return false; };
-     var seen = {};
-     if ( out.mode == "ids" ) {
-      for ( var id in ids ) {
-       if ( structKeyExists( seen, id ) ) continue;
-       seen[id] = true;
-       var app = byId[id];
-       if ( app.source == "unresolved" ) out.failed.append( { id: id, error: "no installable source in the catalog yet" } );
-       else if ( isInstalled( app ) ) out.skipped.append( { id: id, reason: "installed" } );
-       else out.selected.append( app );
-      }
-      return withBrowser( out, byId, isInstalled );
-     }
+	 var isInstalled = req.installed ?: function( app ) { return false; };
+	 var seen = {};
+	 if ( out.mode == "ids" ) {
+	  for ( var id in ids ) {
+	   if ( structKeyExists( seen, id ) ) continue;
+	   seen[id] = true;
+	   var app = byId[id];
+	   if ( app.source == "unresolved" ) out.failed.append( { id: id, error: "no installable source in the catalog yet" } );
+	   else if ( isInstalled( app ) ) out.skipped.append( { id: id, reason: "installed" } );
+	   else out.selected.append( app );
+	  }
+	  return withBrowser( out, byId, isInstalled );
+	 }
 
-     for ( var app in cat.apps ) {
-      // Which tier decides: the profile's own tier for a profile, the app's tier for the default set.
-      var tier = app.tier;
-      if ( out.mode == "profile" ) {
-       if ( !structKeyExists( app, "profiles" ) || !structKeyExists( app.profiles, profile ) ) continue;
-       tier = app.profiles[profile];
-      }
-      // The shell is checked first so a Hyprland-only app is always reported as wrong_shell on Plasma.
-      if ( structKeyExists( app, "shells" ) && shell != "" && shell != "all" && !arrayFind( app.shells, shell ) ) { out.skipped.append( { id: app.id, reason: "wrong_shell" } ); continue; }
-      // an app that only makes sense on some filesystems (Btrfs Assistant) is left out of the default sets elsewhere; naming it still installs it
-      if ( structKeyExists( app, "filesystems" ) && !arrayFind( app.filesystems, rootFs ) ) { out.skipped.append( { id: app.id, reason: "wrong_filesystem" } ); continue; }
-      if ( tier == "optional" && !wantOptional ) { out.skipped.append( { id: app.id, reason: "optional" } ); continue; }
-      if ( app.source == "unresolved" ) { out.skipped.append( { id: app.id, reason: "unresolved" } ); continue; }
-      if ( isInstalled( app ) ) { out.skipped.append( { id: app.id, reason: "installed" } ); continue; }
-      out.selected.append( app );
-     }
-     return withBrowser( out, byId, isInstalled );
-    }
+	 for ( var app in cat.apps ) {
+	  // Which tier decides: the profile's own tier for a profile, the app's tier for the default set.
+	  var tier = app.tier;
+	  if ( out.mode == "profile" ) {
+	   if ( !structKeyExists( app, "profiles" ) || !structKeyExists( app.profiles, profile ) ) continue;
+	   tier = app.profiles[profile];
+	  }
+	  // The shell is checked first so a Hyprland-only app is always reported as wrong_shell on Plasma.
+	  if ( structKeyExists( app, "shells" ) && shell != "" && shell != "all" && !arrayFind( app.shells, shell ) ) { out.skipped.append( { id: app.id, reason: "wrong_shell" } ); continue; }
+	  // an app that only makes sense on some filesystems (Btrfs Assistant) is left out of the default sets elsewhere; naming it still installs it
+	  if ( structKeyExists( app, "filesystems" ) && !arrayFind( app.filesystems, rootFs ) ) { out.skipped.append( { id: app.id, reason: "wrong_filesystem" } ); continue; }
+	  if ( tier == "optional" && !wantOptional ) { out.skipped.append( { id: app.id, reason: "optional" } ); continue; }
+	  if ( app.source == "unresolved" ) { out.skipped.append( { id: app.id, reason: "unresolved" } ); continue; }
+	  if ( isInstalled( app ) ) { out.skipped.append( { id: app.id, reason: "installed" } ); continue; }
+	  out.selected.append( app );
+	 }
+	 return withBrowser( out, byId, isInstalled );
+	}
 }

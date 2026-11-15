@@ -8,214 +8,214 @@
 //            POST /api/install {owner,repo,skill} (returns the SKILL.md and its audit; a skill that failed its audit is refused with 403).
 // Exit: 0 done, 2 plan without --yes, 4 precondition, 5 the hub did not answer or refused, 6 a write failed.
 class Skills {
-    function init( cli, runner = "" ) {
-        variables.environ = new bxrig.util.Env();
-        variables.cli = arguments.cli;
-        variables.out = new bxrig.util.Out( variables.cli, "skills" );
-        variables.proc = new bxrig.util.Proc( arguments.runner );
-        variables.http = new bxrig.util.Http( variables.proc );
-        variables.config = new bxrig.ConfigService().quiet( true );
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.environ = new bxrig.util.Env();
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( variables.cli, "skills" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.http = new bxrig.util.Http( variables.proc );
+		variables.config = new bxrig.ConfigService().quiet( true );
+		return this;
+	}
 
-    function store() { return new bxrig.util.Env().named( "skillsDir", variables.environ.home() & "/.agents/skills" ); }
-    function hub() { return new bxrig.util.Env().named( "skillsUrl", new bxrig.util.Urls().skillsHub() ); }
-    function manifestFile() { return variables.config.cfgHome() & "/bxrig/skills.json"; }
+	function store() { return new bxrig.util.Env().named( "skillsDir", variables.environ.home() & "/.agents/skills" ); }
+	function hub() { return new bxrig.util.Env().named( "skillsUrl", new bxrig.util.Urls().skillsHub() ); }
+	function manifestFile() { return variables.config.cfgHome() & "/bxrig/skills.json"; }
 
-    function aliases() {
-        return {
-            boxlang: "ortus-boxlang/skills/boxlang-developer~language-fundamentals",
-            matchbox: "ortus-boxlang/skills/boxlang-developer~runtime-matchbox"
-        };
-    }
+	function aliases() {
+		return {
+			boxlang: "ortus-boxlang/skills/boxlang-developer~language-fundamentals",
+			matchbox: "ortus-boxlang/skills/boxlang-developer~runtime-matchbox"
+		};
+	}
 
-    function agents() {
-        return [
-            { id: "claude-code", cmd: "claude", dir: variables.environ.home() & "/.claude/skills" },
-            { id: "codex-cli", cmd: "codex", dir: variables.environ.home() & "/.codex/skills" },
-            { id: "gemini-cli", cmd: "gemini", dir: variables.environ.home() & "/.gemini/skills" },
-            { id: "opencode-cli", cmd: "opencode", dir: variables.environ.xdgConfig( "opencode/skills" ) }
-        ];
-    }
+	function agents() {
+		return [
+			{ id: "claude-code", cmd: "claude", dir: variables.environ.home() & "/.claude/skills" },
+			{ id: "codex-cli", cmd: "codex", dir: variables.environ.home() & "/.codex/skills" },
+			{ id: "gemini-cli", cmd: "gemini", dir: variables.environ.home() & "/.gemini/skills" },
+			{ id: "opencode-cli", cmd: "opencode", dir: variables.environ.xdgConfig( "opencode/skills" ) }
+		];
+	}
 
-    function loadManifest() {
-        return new bxrig.util.JsonStore().read( manifestFile(), { skills: {} } );
-    }
+	function loadManifest() {
+		return new bxrig.util.JsonStore().read( manifestFile(), { skills: {} } );
+	}
 
-    function saveManifest( m ) {
-        new bxrig.util.JsonStore().write( "skills-manifest", manifestFile(), arguments.m );
-    }
+	function saveManifest( m ) {
+		new bxrig.util.JsonStore().write( "skills-manifest", manifestFile(), arguments.m );
+	}
 
-    // ---- the hub ----
-    function get( path ) {
-        var r = variables.http.get( hub() & arguments.path, 30 );
-        if ( !r.ok ) return { ok: false, error: "the skills hub did not answer" };
-        try { return { ok: true, data: jsonDeserialize( r.output ) }; } catch ( any e ) { return { ok: false, error: "unexpected answer from the skills hub" }; }
-    }
+	// ---- the hub ----
+	function get( path ) {
+		var r = variables.http.get( hub() & arguments.path, 30 );
+		if ( !r.ok ) return { ok: false, error: "the skills hub did not answer" };
+		try { return { ok: true, data: jsonDeserialize( r.output ) }; } catch ( any e ) { return { ok: false, error: "unexpected answer from the skills hub" }; }
+	}
 
-    function listHub( text, tag ) {
-        var q = "/api/skills?perPage=100&sort=newest" & ( len( arguments.text ) ? "&search=" & urlEncodedFormat( arguments.text ) : "" ) & ( len( arguments.tag ) ? "&tag=" & urlEncodedFormat( arguments.tag ) : "" );
-        var g = get( q );
-        if ( !g.ok ) return g;
-        var rows = [];
-        for ( var s in g.data.data.data ) rows.append( { ref: s.owner & "/" & s.repo & "/" & s.skill_slug, name: s.skill_name, category: s.category ?: "", description: left( s.description ?: "", 110 ), audit: s.audit_status ?: "" } );
-        return { ok: true, rows: rows, total: g.data.data.total ?: rows.len() };
-    }
+	function listHub( text, tag ) {
+		var q = "/api/skills?perPage=100&sort=newest" & ( len( arguments.text ) ? "&search=" & urlEncodedFormat( arguments.text ) : "" ) & ( len( arguments.tag ) ? "&tag=" & urlEncodedFormat( arguments.tag ) : "" );
+		var g = get( q );
+		if ( !g.ok ) return g;
+		var rows = [];
+		for ( var s in g.data.data.data ) rows.append( { ref: s.owner & "/" & s.repo & "/" & s.skill_slug, name: s.skill_name, category: s.category ?: "", description: left( s.description ?: "", 110 ), audit: s.audit_status ?: "" } );
+		return { ok: true, rows: rows, total: g.data.data.total ?: rows.len() };
+	}
 
-    function search( text, tag, asJson ) {
-        var r = listHub( arguments.text, arguments.tag );
-        if ( !r.ok ) return variables.out.say( "official", { error: r.error }, arguments.asJson, [ "error: " & r.error ] );
-        var lines = r.rows.map( function( s ) { return s.ref & "  [" & s.audit & "]  " & s.description; } );
-        if ( !r.rows.len() ) lines = [ "No skills found." ];
-        return variables.out.say( "ok", { skills: r.rows, total: r.total }, arguments.asJson, lines );
-    }
+	function search( text, tag, asJson ) {
+		var r = listHub( arguments.text, arguments.tag );
+		if ( !r.ok ) return variables.out.say( "official", { error: r.error }, arguments.asJson, [ "error: " & r.error ] );
+		var lines = r.rows.map( function( s ) { return s.ref & "  [" & s.audit & "]  " & s.description; } );
+		if ( !r.rows.len() ) lines = [ "No skills found." ];
+		return variables.out.say( "ok", { skills: r.rows, total: r.total }, arguments.asJson, lines );
+	}
 
-    // OWNER/REPO/SLUG, OWNER/REPO/CATEGORY/NAME or an alias to { owner, repo, slug } (an empty struct when it is not one)
-    function parseRef( ref ) {
-        var r = structKeyExists( aliases(), arguments.ref ) ? aliases()[ arguments.ref ] : arguments.ref;
-        var parts = listToArray( r, "/" );
-        if ( parts.len() == 4 ) parts = [ parts[ 1 ], parts[ 2 ], parts[ 3 ] & "~" & parts[ 4 ] ];
-        if ( parts.len() != 3 ) return {};
-        for ( var p in parts ) if ( !reFind( "^[A-Za-z0-9._~-]{1,100}$", p ) ) return {};
-        return { owner: parts[ 1 ], repo: parts[ 2 ], slug: parts[ 3 ] };
-    }
+	// OWNER/REPO/SLUG, OWNER/REPO/CATEGORY/NAME or an alias to { owner, repo, slug } (an empty struct when it is not one)
+	function parseRef( ref ) {
+		var r = structKeyExists( aliases(), arguments.ref ) ? aliases()[ arguments.ref ] : arguments.ref;
+		var parts = listToArray( r, "/" );
+		if ( parts.len() == 4 ) parts = [ parts[ 1 ], parts[ 2 ], parts[ 3 ] & "~" & parts[ 4 ] ];
+		if ( parts.len() != 3 ) return {};
+		for ( var p in parts ) if ( !reFind( "^[A-Za-z0-9._~-]{1,100}$", p ) ) return {};
+		return { owner: parts[ 1 ], repo: parts[ 2 ], slug: parts[ 3 ] };
+	}
 
-    function show( ref, asJson ) {
-        var p = parseRef( arguments.ref );
-        if ( structIsEmpty( p ) ) return variables.out.say( "precondition", { error: "bad reference" }, arguments.asJson, [ "error: use OWNER/REPO/SLUG (for example ortus-boxlang/skills/boxlang-developer~language-fundamentals)" ] );
-        var g = get( "/api/skills/" & p.owner & "/" & p.repo & "/" & p.slug );
-        if ( !g.ok || g.data.error ?: false ) return variables.out.say( "official", { error: "not found" }, arguments.asJson, [ "error: " & ( g.ok ? "that skill was not found" : g.error ) ] );
-        var s = g.data.data;
-        return variables.out.say( "ok", { skill: s }, arguments.asJson, [ p.owner & "/" & p.repo & "/" & p.slug, ( s.description ?: "" ), "audit: " & ( s.audit_status ?: "" ), "install: bxrig skills install " & arguments.ref & " --yes" ] );
-    }
+	function show( ref, asJson ) {
+		var p = parseRef( arguments.ref );
+		if ( structIsEmpty( p ) ) return variables.out.say( "precondition", { error: "bad reference" }, arguments.asJson, [ "error: use OWNER/REPO/SLUG (for example ortus-boxlang/skills/boxlang-developer~language-fundamentals)" ] );
+		var g = get( "/api/skills/" & p.owner & "/" & p.repo & "/" & p.slug );
+		if ( !g.ok || g.data.error ?: false ) return variables.out.say( "official", { error: "not found" }, arguments.asJson, [ "error: " & ( g.ok ? "that skill was not found" : g.error ) ] );
+		var s = g.data.data;
+		return variables.out.say( "ok", { skill: s }, arguments.asJson, [ p.owner & "/" & p.repo & "/" & p.slug, ( s.description ?: "" ), "audit: " & ( s.audit_status ?: "" ), "install: bxrig skills install " & arguments.ref & " --yes" ] );
+	}
 
-    // ---- the store ----
-    function frontName( text ) {
-        for ( var l in listToArray( arguments.text, chr( 10 ) ) ) {
-            if ( left( l, 5 ) != "name:" ) continue;
-            var v = trim( mid( l, 6, len( l ) ) );
-            v = reReplace( v, "^[""']|[""']$", "", "all" );
-            return reFind( "^[A-Za-z0-9._-]+$", v ) ? v : "";
-        }
-        return "";
-    }
+	// ---- the store ----
+	function frontName( text ) {
+		for ( var l in listToArray( arguments.text, chr( 10 ) ) ) {
+			if ( left( l, 5 ) != "name:" ) continue;
+			var v = trim( mid( l, 6, len( l ) ) );
+			v = reReplace( v, "^[""']|[""']$", "", "all" );
+			return reFind( "^[A-Za-z0-9._-]+$", v ) ? v : "";
+		}
+		return "";
+	}
 
-    function writeSkill( name, text ) {
-        var dir = store() & "/" & arguments.name;
-        if ( !directoryExists( dir ) ) directoryCreate( dir, true );
-        var tmp = dir & "/SKILL.md.tmp" & left( createUUID(), 8 );
-        fileWrite( tmp, arguments.text );
-        fileMove( tmp, dir & "/SKILL.md" );
-    }
+	function writeSkill( name, text ) {
+		var dir = store() & "/" & arguments.name;
+		if ( !directoryExists( dir ) ) directoryCreate( dir, true );
+		var tmp = dir & "/SKILL.md.tmp" & left( createUUID(), 8 );
+		fileWrite( tmp, arguments.text );
+		fileMove( tmp, dir & "/SKILL.md" );
+	}
 
-    function sha( text ) { return lCase( hash( arguments.text, "SHA-256" ) ); }
+	function sha( text ) { return lCase( hash( arguments.text, "SHA-256" ) ); }
 
-    // Install one name or reference: { ok, names: [...], error }
-    function installOne( what, m ) {
-        if ( arguments.what == "bxrig" ) {
-            var sd = new bxrig.SkillData();
-            for ( var n in sd.names() ) {
-                var t = sd.text( n );
-                writeSkill( n, t );
-                arguments.m.skills[ n ] = { source: "embedded", sha256: sha( t ) };
-            }
-            return { ok: true, names: sd.names() };
-        }
-        var p = parseRef( arguments.what );
-        if ( structIsEmpty( p ) ) return { ok: false, error: "unknown skill or bad reference: " & arguments.what };
-        var rr = variables.http.request( "POST", hub() & "/api/install", serializeJSON( { owner: p.owner, repo: p.repo, skill: p.slug } ), 30 );
-        if ( rr.status == 0 ) return { ok: false, error: "the skills hub did not answer" };
-        var body = rr.body;
-        var code = rr.status;
-        if ( code == 403 ) return { ok: false, error: arguments.what & " failed the hub's security audit and cannot be installed" };
-        if ( code == 404 ) return { ok: false, error: arguments.what & " was not found on the hub" };
-        try {
-            var j = jsonDeserialize( body );
-            var d = j.data;
-            if ( ( d.audit.status ?: "" ) == "block" ) return { ok: false, error: arguments.what & " failed the hub's security audit and cannot be installed" };
-            var name = frontName( d.content );
-            if ( !len( name ) ) return { ok: false, error: arguments.what & " has no name in its SKILL.md" };
-            writeSkill( name, d.content );
-            arguments.m.skills[ name ] = { source: "hub", ref: p.owner & "/" & p.repo & "/" & p.slug, sha256: sha( d.content ), audit: d.audit.status ?: "" };
-            return { ok: true, names: [ name ] };
-        } catch ( any e ) { return { ok: false, error: "unexpected answer from the skills hub for " & arguments.what }; }
-    }
+	// Install one name or reference: { ok, names: [...], error }
+	function installOne( what, m ) {
+		if ( arguments.what == "bxrig" ) {
+			var sd = new bxrig.SkillData();
+			for ( var n in sd.names() ) {
+				var t = sd.text( n );
+				writeSkill( n, t );
+				arguments.m.skills[ n ] = { source: "embedded", sha256: sha( t ) };
+			}
+			return { ok: true, names: sd.names() };
+		}
+		var p = parseRef( arguments.what );
+		if ( structIsEmpty( p ) ) return { ok: false, error: "unknown skill or bad reference: " & arguments.what };
+		var rr = variables.http.request( "POST", hub() & "/api/install", serializeJSON( { owner: p.owner, repo: p.repo, skill: p.slug } ), 30 );
+		if ( rr.status == 0 ) return { ok: false, error: "the skills hub did not answer" };
+		var body = rr.body;
+		var code = rr.status;
+		if ( code == 403 ) return { ok: false, error: arguments.what & " failed the hub's security audit and cannot be installed" };
+		if ( code == 404 ) return { ok: false, error: arguments.what & " was not found on the hub" };
+		try {
+			var j = jsonDeserialize( body );
+			var d = j.data;
+			if ( ( d.audit.status ?: "" ) == "block" ) return { ok: false, error: arguments.what & " failed the hub's security audit and cannot be installed" };
+			var name = frontName( d.content );
+			if ( !len( name ) ) return { ok: false, error: arguments.what & " has no name in its SKILL.md" };
+			writeSkill( name, d.content );
+			arguments.m.skills[ name ] = { source: "hub", ref: p.owner & "/" & p.repo & "/" & p.slug, sha256: sha( d.content ), audit: d.audit.status ?: "" };
+			return { ok: true, names: [ name ] };
+		} catch ( any e ) { return { ok: false, error: "unexpected answer from the skills hub for " & arguments.what }; }
+	}
 
-    function link( asJson ) {
-        var m = loadManifest();
-        var made = []; var kept = []; var used = [];
-        for ( var a in agents() ) {
-            if ( !variables.proc.has( a.cmd ) && !directoryExists( a.dir ) ) continue;
-            used.append( a.id );
-            if ( !directoryExists( a.dir ) ) directoryCreate( a.dir, true );
-            for ( var name in structKeyArray( m.skills ) ) {
-                var target = a.dir & "/" & name;
-                var src = store() & "/" & name;
-                if ( !directoryExists( src ) ) continue;
-                if ( variables.proc.exec( [ "test", "-L", target ], 10 ).exitCode == 0 ) { kept.append( a.id & ":" & name ); continue; }
-                if ( directoryExists( target ) || fileExists( target ) ) { kept.append( a.id & ":" & name & " (yours, left alone)" ); continue; }
-                if ( variables.proc.exec( [ "ln", "-s", src, target ], 10 ).exitCode == 0 ) made.append( a.id & ":" & name );
-            }
-        }
-        return variables.out.say( "ok", { agents: used, linked: made, kept: kept }, arguments.asJson, [ "Linked " & made.len() & " skills into " & ( used.len() ? used.toList( ", " ) : "no agent (none found)" ) & "." ] );
-    }
+	function link( asJson ) {
+		var m = loadManifest();
+		var made = []; var kept = []; var used = [];
+		for ( var a in agents() ) {
+			if ( !variables.proc.has( a.cmd ) && !directoryExists( a.dir ) ) continue;
+			used.append( a.id );
+			if ( !directoryExists( a.dir ) ) directoryCreate( a.dir, true );
+			for ( var name in structKeyArray( m.skills ) ) {
+				var target = a.dir & "/" & name;
+				var src = store() & "/" & name;
+				if ( !directoryExists( src ) ) continue;
+				if ( variables.proc.exec( [ "test", "-L", target ], 10 ).exitCode == 0 ) { kept.append( a.id & ":" & name ); continue; }
+				if ( directoryExists( target ) || fileExists( target ) ) { kept.append( a.id & ":" & name & " (yours, left alone)" ); continue; }
+				if ( variables.proc.exec( [ "ln", "-s", src, target ], 10 ).exitCode == 0 ) made.append( a.id & ":" & name );
+			}
+		}
+		return variables.out.say( "ok", { agents: used, linked: made, kept: kept }, arguments.asJson, [ "Linked " & made.len() & " skills into " & ( used.len() ? used.toList( ", " ) : "no agent (none found)" ) & "." ] );
+	}
 
-    function install( what, yes, dryRun, asJson ) {
-        var list = arguments.what.len() ? arguments.what : [ "bxrig" ];
-        for ( var w in list ) if ( w != "bxrig" && structIsEmpty( parseRef( w ) ) ) return variables.out.say( "precondition", { error: "bad reference " & w }, arguments.asJson, [ "error: unknown skill or bad reference: " & w ] );
-        var data = { install: list, store: store() };
-        if ( !arguments.yes || arguments.dryRun ) return variables.out.plan( "install " & list.toList( ", " ) & " into " & store() & " and link them into your agents' skills folders", data, arguments.asJson, arguments.dryRun );
-        var m = loadManifest();
-        var done = [];
-        for ( var w2 in list ) {
-            var r = installOne( w2, m );
-            if ( !r.ok ) { saveManifest( m ); return variables.out.say( "official", { error: r.error, installed: done }, arguments.asJson, [ "error: " & r.error ] ); }
-            for ( var n in r.names ) done.append( n );
-        }
-        saveManifest( m );
-        link( false );
-        return variables.out.say( "ok", { installed: done }, arguments.asJson, [ "Installed skills: " & done.toList( ", " ) ] );
-    }
+	function install( what, yes, dryRun, asJson ) {
+		var list = arguments.what.len() ? arguments.what : [ "bxrig" ];
+		for ( var w in list ) if ( w != "bxrig" && structIsEmpty( parseRef( w ) ) ) return variables.out.say( "precondition", { error: "bad reference " & w }, arguments.asJson, [ "error: unknown skill or bad reference: " & w ] );
+		var data = { install: list, store: store() };
+		if ( !arguments.yes || arguments.dryRun ) return variables.out.plan( "install " & list.toList( ", " ) & " into " & store() & " and link them into your agents' skills folders", data, arguments.asJson, arguments.dryRun );
+		var m = loadManifest();
+		var done = [];
+		for ( var w2 in list ) {
+			var r = installOne( w2, m );
+			if ( !r.ok ) { saveManifest( m ); return variables.out.say( "official", { error: r.error, installed: done }, arguments.asJson, [ "error: " & r.error ] ); }
+			for ( var n in r.names ) done.append( n );
+		}
+		saveManifest( m );
+		link( false );
+		return variables.out.say( "ok", { installed: done }, arguments.asJson, [ "Installed skills: " & done.toList( ", " ) ] );
+	}
 
-    function installed( asJson ) {
-        var m = loadManifest();
-        var rows = structKeyArray( m.skills ).sort( "text" ).map( function( n ) { return { name: n, source: m.skills[ n ].source, ref: m.skills[ n ].ref ?: "" }; } );
-        return variables.out.say( "ok", { skills: rows, store: store() }, arguments.asJson, rows.len() ? rows.map( function( r ) { return r.name & "  (" & r.source & ( len( r.ref ) ? ": " & r.ref : "" ) & ")"; } ) : [ "No skills installed. Try: bxrig skills install bxrig --yes" ] );
-    }
+	function installed( asJson ) {
+		var m = loadManifest();
+		var rows = structKeyArray( m.skills ).sort( "text" ).map( function( n ) { return { name: n, source: m.skills[ n ].source, ref: m.skills[ n ].ref ?: "" }; } );
+		return variables.out.say( "ok", { skills: rows, store: store() }, arguments.asJson, rows.len() ? rows.map( function( r ) { return r.name & "  (" & r.source & ( len( r.ref ) ? ": " & r.ref : "" ) & ")"; } ) : [ "No skills installed. Try: bxrig skills install bxrig --yes" ] );
+	}
 
-    // `update`: re-install everything BxRig installed (the embedded skills come with this program, the hub ones are fetched again)
-    function update( yes, asJson ) {
-        var m = loadManifest();
-        var refs = [];
-        var embedded = false;
-        for ( var n in structKeyArray( m.skills ) ) {
-            if ( m.skills[ n ].source == "embedded" ) embedded = true;
-            else if ( structKeyExists( m.skills[ n ], "ref" ) ) refs.append( m.skills[ n ].ref );
-        }
-        if ( embedded ) refs.prepend( "bxrig" );
-        if ( !refs.len() ) return variables.out.say( "ok", { installed: [] }, arguments.asJson, [ "Nothing to update." ] );
-        return install( refs, arguments.yes, false, arguments.asJson );
-    }
+	// `update`: re-install everything BxRig installed (the embedded skills come with this program, the hub ones are fetched again)
+	function update( yes, asJson ) {
+		var m = loadManifest();
+		var refs = [];
+		var embedded = false;
+		for ( var n in structKeyArray( m.skills ) ) {
+			if ( m.skills[ n ].source == "embedded" ) embedded = true;
+			else if ( structKeyExists( m.skills[ n ], "ref" ) ) refs.append( m.skills[ n ].ref );
+		}
+		if ( embedded ) refs.prepend( "bxrig" );
+		if ( !refs.len() ) return variables.out.say( "ok", { installed: [] }, arguments.asJson, [ "Nothing to update." ] );
+		return install( refs, arguments.yes, false, arguments.asJson );
+	}
 
-    function remove( name, yes, asJson ) {
-        var m = loadManifest();
-        if ( !structKeyExists( m.skills, arguments.name ) ) return variables.out.say( "precondition", { error: "not installed" }, arguments.asJson, [ "error: " & arguments.name & " was not installed by BxRig" ] );
-        if ( !arguments.yes ) return variables.out.plan( "remove the skill " & arguments.name & " and its links", { remove: arguments.name }, arguments.asJson );
-        for ( var a in agents() ) {
-            var t = a.dir & "/" & arguments.name;
-            if ( variables.proc.exec( [ "test", "-L", t ], 10 ).exitCode == 0 ) variables.proc.exec( [ "rm", "-f", t ], 10 );
-        }
-        if ( directoryExists( store() & "/" & arguments.name ) ) directoryDelete( store() & "/" & arguments.name, true );
-        structDelete( m.skills, arguments.name );
-        saveManifest( m );
-        return variables.out.say( "ok", { removed: arguments.name }, arguments.asJson, [ "Removed " & arguments.name ] );
-    }
+	function remove( name, yes, asJson ) {
+		var m = loadManifest();
+		if ( !structKeyExists( m.skills, arguments.name ) ) return variables.out.say( "precondition", { error: "not installed" }, arguments.asJson, [ "error: " & arguments.name & " was not installed by BxRig" ] );
+		if ( !arguments.yes ) return variables.out.plan( "remove the skill " & arguments.name & " and its links", { remove: arguments.name }, arguments.asJson );
+		for ( var a in agents() ) {
+			var t = a.dir & "/" & arguments.name;
+			if ( variables.proc.exec( [ "test", "-L", t ], 10 ).exitCode == 0 ) variables.proc.exec( [ "rm", "-f", t ], 10 );
+		}
+		if ( directoryExists( store() & "/" & arguments.name ) ) directoryDelete( store() & "/" & arguments.name, true );
+		structDelete( m.skills, arguments.name );
+		saveManifest( m );
+		return variables.out.say( "ok", { removed: arguments.name }, arguments.asJson, [ "Removed " & arguments.name ] );
+	}
 
-    function status( asJson ) {
-        var m = loadManifest();
-        var rows = agents().map( function( a ) { return { agent: a.id, folder: a.dir, present: variables.proc.has( a.cmd ) || directoryExists( a.dir ) }; } );
-        var lines = [ "Store: " & store() & " (" & structCount( m.skills ) & " skills)" ];
-        for ( var r in rows ) lines.append( ( r.present ? "ok    " : "none  " ) & r.agent & ": " & r.folder );
-        return variables.out.say( "ok", { store: store(), skills: structCount( m.skills ), agents: rows }, arguments.asJson, lines );
-    }
+	function status( asJson ) {
+		var m = loadManifest();
+		var rows = agents().map( function( a ) { return { agent: a.id, folder: a.dir, present: variables.proc.has( a.cmd ) || directoryExists( a.dir ) }; } );
+		var lines = [ "Store: " & store() & " (" & structCount( m.skills ) & " skills)" ];
+		for ( var r in rows ) lines.append( ( r.present ? "ok    " : "none  " ) & r.agent & ": " & r.folder );
+		return variables.out.say( "ok", { store: store(), skills: structCount( m.skills ), agents: rows }, arguments.asJson, lines );
+	}
 }

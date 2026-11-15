@@ -1,49 +1,49 @@
 // key=value text (a .properties file, `timedatectl show`, a keys file): the one parser. The first = splits; keys and values are trimmed;
 // blank lines, lines starting with # and lines without a key are skipped. A key with no value gives "" (listFirst and listRest could not).
 class Props {
-    // Ordered pairs: [ { key, value } ]. Keeps duplicates.
-    function pairs( text ) {
-        var out = [];
-        for ( var raw in listToArray( replace( arguments.text ?: "", chr( 13 ), "", "all" ), chr( 10 ) ) ) {
-            var line = trim( raw );
-            if ( !len( line ) || left( line, 1 ) == "##" ) continue;
-            var at = find( "=", line );
-            if ( at < 2 ) continue;
-            var key = trim( left( line, at - 1 ) );
-            if ( !len( key ) ) continue;
-            out.append( { key: key, value: trim( mid( line, at + 1, len( line ) ) ) } );
-        }
-        return out;
-    }
+	// Ordered pairs: [ { key, value } ]. Keeps duplicates.
+	function pairs( text ) {
+		var out = [];
+		for ( var raw in listToArray( replace( arguments.text ?: "", chr( 13 ), "", "all" ), chr( 10 ) ) ) {
+			var line = trim( raw );
+			if ( !len( line ) || left( line, 1 ) == "##" ) continue;
+			var at = find( "=", line );
+			if ( at < 2 ) continue;
+			var key = trim( left( line, at - 1 ) );
+			if ( !len( key ) ) continue;
+			out.append( { key: key, value: trim( mid( line, at + 1, len( line ) ) ) } );
+		}
+		return out;
+	}
 
-    // The same as one struct (the last value of a repeated key wins; keys are case-insensitive, as every struct is on MatchBox).
-    function parse( text ) {
-        var out = {};
-        for ( var p in pairs( arguments.text ) ) out[ p.key ] = p.value;
-        return out;
-    }
+	// The same as one struct (the last value of a repeated key wins; keys are case-insensitive, as every struct is on MatchBox).
+	function parse( text ) {
+		var out = {};
+		for ( var p in pairs( arguments.text ) ) out[ p.key ] = p.value;
+		return out;
+	}
 
-    // Shell-style export text or a .env file: [ { name, value } ] in file order. `export ` before a name is dropped; a value in single quotes
-    // is read as the shell does ('\'' is one quote), one in double quotes loses its quotes. Empty values are skipped. Names are not checked
-    // (the caller knows which names it accepts).
-    function exports( text ) {
-        var q = chr( 39 );
-        var out = [];
-        for ( var p in pairs( arguments.text ) ) {
-            var n = p.key;
-            if ( left( n, 7 ) == "export " ) n = trim( mid( n, 8, len( n ) ) );
-            var v = p.value;
-            if ( len( v ) >= 2 && left( v, 1 ) == q && right( v, 1 ) == q ) v = replace( mid( v, 2, len( v ) - 2 ), q & chr( 92 ) & q & q, q, "all" );
-            else if ( len( v ) >= 2 && left( v, 1 ) == '"' && right( v, 1 ) == '"' ) v = mid( v, 2, len( v ) - 2 );
-            if ( len( v ) ) out.append( { name: n, value: v } );
-        }
-        return out;
-    }
+	// Shell-style export text or a .env file: [ { name, value } ] in file order. `export ` before a name is dropped; a value in single quotes
+	// is read as the shell does ('\'' is one quote), one in double quotes loses its quotes. Empty values are skipped. Names are not checked
+	// (the caller knows which names it accepts).
+	function exports( text ) {
+		var q = chr( 39 );
+		var out = [];
+		for ( var p in pairs( arguments.text ) ) {
+			var n = p.key;
+			if ( left( n, 7 ) == "export " ) n = trim( mid( n, 8, len( n ) ) );
+			var v = p.value;
+			if ( len( v ) >= 2 && left( v, 1 ) == q && right( v, 1 ) == q ) v = replace( mid( v, 2, len( v ) - 2 ), q & chr( 92 ) & q & q, q, "all" );
+			else if ( len( v ) >= 2 && left( v, 1 ) == '"' && right( v, 1 ) == '"' ) v = mid( v, 2, len( v ) - 2 );
+			if ( len( v ) ) out.append( { name: n, value: v } );
+		}
+		return out;
+	}
 
-    // A value without one pair of surrounding double or single quotes.
-    function unquote( value ) {
-        var v = trim( arguments.value );
-        if ( len( v ) >= 2 && ( ( left( v, 1 ) == '"' && right( v, 1 ) == '"' ) || ( left( v, 1 ) == "'" && right( v, 1 ) == "'" ) ) ) return mid( v, 2, len( v ) - 2 );
-        return v;
-    }
+	// A value without one pair of surrounding double or single quotes.
+	function unquote( value ) {
+		var v = trim( arguments.value );
+		if ( len( v ) >= 2 && ( ( left( v, 1 ) == '"' && right( v, 1 ) == '"' ) || ( left( v, 1 ) == "'" && right( v, 1 ) == "'" ) ) ) return mid( v, 2, len( v ) - 2 );
+		return v;
+	}
 }
