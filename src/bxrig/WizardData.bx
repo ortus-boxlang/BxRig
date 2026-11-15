@@ -2010,7 +2010,7 @@ class WizardData {
             "cliphist",
             "wf-recorder"
           ],
-          "help": "Small tools with BxRig shortcuts on Hyprland: clipboard history (Super+Shift+V) and screen recording (Super+Shift+R).",
+          "help": "Small tools with BxRig shortcuts on Hyprland: clipboard history (Super+Ctrl+V) and screen recording (Super+Shift+R).",
           "when": {
             "id": "desktops",
             "in": [
@@ -2022,12 +2022,12 @@ class WizardData {
             {
               "value": "cliphist",
               "label": "Clipboard history",
-              "description": "cliphist: pick earlier copies with Super+Shift+V."
+              "description": "cliphist: pick earlier copies with Super+Ctrl+V."
             },
             {
               "value": "wf-recorder",
               "label": "Screen recording",
-              "description": "wf-recorder: Super+Shift+R starts and stops, with Alt a region."
+              "description": "wf-recorder: Super+Shift+R starts and stops, Super+Alt+Shift+R records a region, Alt+Print adds desktop audio."
             },
             {
               "value": "pavucontrol",
