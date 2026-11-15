@@ -1,0 +1,105 @@
+// `bxrig browser private [URL]` and `bxrig files here [DIR]`: two small launchers that follow your defaults.
+//   browser private   the default web browser (`xdg-settings get default-web-browser`, which `default browser` and the wizard set), started in its
+//                     private window: Firefox --private-window, Chromium, Brave and Chrome --incognito, Edge --inprivate. Another browser exits 4.
+//   files here        the default file manager (`xdg-open`, which follows `default filemanager`) in a folder: DIR, else the working directory of the
+//                     focused window (the newest child process of its pid, read from /proc), else your home folder.
+// Both act at once and change no file, so they take no --yes. --dry-run prints the argv and starts nothing.
+// Exit: 0 done, 4 precondition (no default browser or an unknown one, a tool missing, the folder is not there), 6 the program did not start.
+class Programs {
+    function init( cli, runner = "" ) {
+        variables.cli = arguments.cli;
+        variables.proc = new bxrig.util.Proc( arguments.runner );
+        return this;
+    }
+
+    // Desktop entry of the browser -> [ program, private flag ]. The names are the vendors' (not all verified on a real machine).
+    function privateFlags() {
+        return {
+            "firefox.desktop": [ "firefox", "--private-window" ],
+            "chromium.desktop": [ "chromium", "--incognito" ],
+            "brave-browser.desktop": [ "brave", "--incognito" ],
+            "google-chrome.desktop": [ "google-chrome-stable", "--incognito" ],
+            "microsoft-edge.desktop": [ "microsoft-edge-stable", "--inprivate" ]
+        };
+    }
+
+    // The argv that opens a private window of a browser (and the URL, when given); [] for a browser that is not known.
+    function privateArgv( desktopId, url = "" ) {
+        var m = privateFlags();
+        if ( !structKeyExists( m, arguments.desktopId ) ) return [];
+        var argv = [];
+        for ( var w in m[ arguments.desktopId ] ) argv.append( w );
+        if ( len( arguments.url ) ) argv.append( arguments.url );
+        return argv;
+    }
+
+    function defaultBrowser() {
+        if ( !variables.proc.has( "xdg-settings" ) ) return "";
+        var r = variables.proc.exec( [ "xdg-settings", "get", "default-web-browser" ], 20 );
+        return r.exitCode == 0 ? trim( r.output ) : "";
+    }
+
+    // `browser private [URL]`
+    function browserPrivate( url, dryRun, asJson ) {
+        var cmd = "browser private";
+        var id = defaultBrowser();
+        if ( !len( id ) ) return variables.cli.say( cmd, "precondition", { error: "no default browser" }, arguments.asJson, [ "error: no default browser is set. Set one: bxrig default browser brave --yes" ] );
+        var argv = privateArgv( id, arguments.url );
+        if ( !argv.len() ) return variables.cli.say( cmd, "precondition", { error: "unknown browser " & id, known: structKeyArray( privateFlags() ) }, arguments.asJson, [ "error: no private window flag is known for " & id & ". Known: " & structKeyArray( privateFlags() ).toList( ", " ) ] );
+        var data = { browser: id, command: argv };
+        if ( arguments.dryRun ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Dry run: " & argv.toList( " " ), "Nothing was started." ], true );
+        if ( !variables.proc.has( argv[ 1 ] ) ) return variables.cli.say( cmd, "precondition", { error: argv[ 1 ] & " is not installed" }, arguments.asJson, [ "error: " & argv[ 1 ] & " is not installed (the default browser is " & id & ")" ] );
+        var r = variables.proc.detach( argv );
+        if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: could not start " & argv[ 1 ] ] );
+        return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Opened a private window in " & argv[ 1 ] & "." ] );
+    }
+
+    // ---- the folder of the focused window ----
+    function activePid() {
+        var r = variables.proc.exec( [ "hyprctl", "activewindow", "-j" ], 10 );
+        if ( r.exitCode != 0 ) return 0;
+        try { var j = jsonDeserialize( r.output ); return isStruct( j ) && structKeyExists( j, "pid" ) && isNumeric( j.pid ) ? j.pid : 0; } catch ( any e ) { return 0; }
+    }
+
+    // Follows the newest child of a pid down the process tree (the shell in the terminal, the program in the shell); at most 8 steps.
+    function leaf( pid ) {
+        var cur = arguments.pid;
+        for ( var i = 1; i <= 8; i++ ) {
+            var r = variables.proc.exec( [ "pgrep", "-P", cur ], 10 );
+            var kids = r.exitCode == 0 ? listToArray( trim( r.output ), chr( 10 ) ) : [];
+            if ( !kids.len() ) break;
+            cur = trim( kids[ kids.len() ] );
+        }
+        return cur;
+    }
+
+    function cwdOf( pid ) {
+        var r = variables.proc.exec( [ "readlink", "/proc/" & arguments.pid & "/cwd" ], 10 );
+        return r.exitCode == 0 ? trim( r.output ) : "";
+    }
+
+    // The folder to open: the focused window's, or the home folder.
+    function focusedFolder() {
+        var pid = activePid();
+        if ( pid > 0 ) {
+            var dir = cwdOf( leaf( pid ) );
+            if ( len( dir ) ) return dir;
+        }
+        return new bxrig.util.Env().named( "home", "" );
+    }
+
+    // `files here [DIR]`
+    function filesHere( dir, dryRun, asJson ) {
+        var cmd = "files here";
+        var where = len( arguments.dir ) ? arguments.dir : focusedFolder();
+        if ( !len( where ) ) return variables.cli.say( cmd, "precondition", { error: "no folder" }, arguments.asJson, [ "error: no folder to open" ] );
+        if ( len( arguments.dir ) && !directoryExists( where ) ) return variables.cli.say( cmd, "precondition", { error: "not a folder: " & where }, arguments.asJson, [ "error: " & where & " is not a folder" ] );
+        var argv = [ "xdg-open", where ];
+        var data = { folder: where, command: argv };
+        if ( arguments.dryRun ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Dry run: " & argv.toList( " " ), "Nothing was started." ], true );
+        if ( !variables.proc.has( "xdg-open" ) ) return variables.cli.say( cmd, "precondition", { error: "xdg-open was not found" }, arguments.asJson, [ "error: xdg-open was not found (install xdg-utils)" ] );
+        var r = variables.proc.detach( argv );
+        if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: could not start xdg-open" ] );
+        return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Opened " & where & " in your file manager." ] );
+    }
+}

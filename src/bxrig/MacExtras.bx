@@ -1,8 +1,9 @@
-// Mac-style helpers: `emoji`, `forcequit`, `window minimize|restore`, `overview [setup]`, `nightshift ...`, `gpu doctor`, `input doctor|gestures`,
+// Mac-style helpers: `emoji`, `forcequit`, `window minimize|restore|quake [send]`, `overview [setup]`, `nightshift ...`, `gpu doctor`, `input doctor|gestures`,
 // `airplay on|off|status`. Each is a thin wrapper over a tool whose command is documented:
 //   emoji        `rofimoji` (picks an emoji and types or copies it; Omarchy uses Walker's symbols mode on Super+Ctrl+E)
 //   forcequit    Hyprland `hyprctl kill` (click the window to kill); Plasma `org.kde.KWin /KWin killWindow` over D-Bus
-//   window       Hyprland `hyprctl dispatch movetoworkspacesilent special:minimized` / `togglespecialworkspace minimized`
+//   window       Hyprland `hyprctl dispatch movetoworkspacesilent special:minimized` / `togglespecialworkspace minimized`;
+//                quake: `togglespecialworkspace qconsole` (the default terminal starts there the first time), quake send: `movetoworkspacesilent special:qconsole`
 //   overview     Hyprland `hyprctl dispatch hyprexpo:expo toggle` (the hyprexpo plugin, installed by `overview setup` with hyprpm);
 //                Plasma KWin Overview through `org.kde.kglobalaccel invokeShortcut Overview`
 //   nightshift   Hyprland: a user service running `wlsunset -l LAT -L LON` (sunrise and sunset computed from your time zone's
@@ -15,6 +16,7 @@
 class MacExtras {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
+        variables.runnerArg = arguments.runner;
         variables.proc = new bxrig.util.Proc( arguments.runner );
         variables.pacman = new bxrig.util.Pacman( variables.proc );
         variables.systemd = new bxrig.util.Systemd( variables.proc );
@@ -57,7 +59,39 @@ class MacExtras {
         if ( !variables.proc.has( "hyprctl" ) ) return need( "window", "hyprctl", "This needs Hyprland.", arguments.asJson );
         if ( arguments.action == "minimize" ) return run( "window", [ "hyprctl", "dispatch", "movetoworkspacesilent", "special:minimized" ], "", arguments.asJson );
         if ( arguments.action == "restore" ) return run( "window", [ "hyprctl", "dispatch", "togglespecialworkspace", "minimized" ], "", arguments.asJson );
+        if ( arguments.action == "quake-send" ) return run( "window", [ "hyprctl", "dispatch", "movetoworkspacesilent", "special:" & quakeWorkspace() ], "", arguments.asJson );
+        if ( arguments.action == "quake" ) return quake( arguments.asJson );
         return variables.cli.say( "window", "usage", {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "window" ) ] );
+    }
+
+    // ---- the quake console: the special workspace `qconsole` ----
+    function quakeWorkspace() { return "qconsole"; }
+
+    // True when a window lives on the special workspace (hyprctl workspaces -j).
+    function quakeHasWindow() {
+        var r = variables.proc.exec( [ "hyprctl", "workspaces", "-j" ], 10 );
+        if ( r.exitCode != 0 ) return false;
+        try { for ( var w in jsonDeserialize( r.output ) ) if ( compare( w.name ?: "", "special:" & quakeWorkspace() ) == 0 && ( w.windows ?: 0 ) > 0 ) return true; } catch ( any e ) {}
+        return false;
+    }
+
+    // Shows or hides the console; the first time (nothing on it) the default terminal starts there.
+    function quake( asJson ) {
+        var cmd = "window";
+        var steps = [];
+        if ( !quakeHasWindow() ) {
+            var term = new bxrig.Ai( variables.cli, variables.runnerArg ).terminal();
+            if ( structIsEmpty( term ) ) return variables.cli.say( cmd, "precondition", { error: "no terminal is installed" }, arguments.asJson, [ "error: no terminal is installed (bxrig install ghostty)" ] );
+            steps.append( [ "hyprctl", "dispatch", "exec", "[workspace special:" & quakeWorkspace() & "] " & term.argv[ 1 ] ] );
+        }
+        steps.append( [ "hyprctl", "dispatch", "togglespecialworkspace", quakeWorkspace() ] );
+        for ( var st in steps ) {
+            var r = variables.proc.exec( st, 10 );
+            // Hyprland's Lua mode may want the Lua form of the toggle
+            if ( r.exitCode != 0 && st[ 3 ] == "togglespecialworkspace" ) r = variables.proc.exec( [ "hyprctl", "dispatch", 'hl.dsp.workspace.toggle_special("' & quakeWorkspace() & '")' ], 10 );
+            if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & st[ 1 ] & " failed (exit " & r.exitCode & ")" ] );
+        }
+        return variables.cli.say( cmd, "ok", { argv: steps }, arguments.asJson, [] );
     }
 
     function overview( setup, asJson ) {

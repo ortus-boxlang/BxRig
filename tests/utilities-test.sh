@@ -49,5 +49,9 @@ run "$binary" record | grep -q 'stopped and saved' || fail 'toggle stops'
 grep -q 'pkill -INT -x wf-recorder' "$LOG" || fail 'stopped with SIGINT'
 run "$binary" record stop | grep -q 'Nothing is recording' || fail 'stop when idle'
 run "$binary" record start --region --dry-run --json | jq -e '.data.region == true and (.data.command[2] | contains("slurp"))' >/dev/null || fail 'region uses slurp'
+printf '#!/usr/bin/env bash\ncase "$1" in get-default-sink) echo spk ;; get-default-source) echo mic ;; esac\n' > "$tmp/bin/pactl"; chmod +x "$tmp/bin/pactl"
+run "$binary" record start --audio=desktop --dry-run --json | jq -e '.data.audio == "desktop" and (.data.command | last) == "spk.monitor" and (.data.command[2] | contains("wf-recorder -a"))' >/dev/null || fail 'audio desktop uses the sink monitor'
+run "$binary" record start --audio=mic --region --dry-run --json | jq -e '(.data.command | last) == "mic" and (.data.command[2] | contains("slurp"))' >/dev/null || fail 'audio mic with a region'
+[[ "$(code "$binary" record start --audio=loud --dry-run)" == 2 ]] || fail 'an unknown audio value exits 2'
 rm "$tmp/bin/wf-recorder"; [[ "$(code "$binary" record start)" == 4 ]] || fail 'no wf-recorder exits 4'
 echo "utilities-test: ok"
