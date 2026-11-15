@@ -4,44 +4,44 @@
 // Acts at once and changes no file (no --yes). --dry-run prints the argv and starts nothing.
 // Exit: 0 done, 4 precondition (mpv missing, no /dev/video0), 6 the preview did not start or stop.
 class Webcam {
-    function init( cli, runner = "", device = "/dev/video0" ) {
-        variables.cli = arguments.cli;
-        variables.proc = new bxrig.util.Proc( arguments.runner );
-        variables.device = arguments.device;
-        return this;
-    }
+	function init( cli, runner = "", device = "/dev/video0" ) {
+		variables.cli = arguments.cli;
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.device = arguments.device;
+		return this;
+	}
 
-    function windowClass() { return "bxrig-webcam"; }
+	function windowClass() { return "bxrig-webcam"; }
 
-    // The preview command (an argv array).
-    function argv() {
-        return [ "mpv", "--wayland-app-id=" & windowClass(), "--title=" & windowClass(), "--profile=low-latency", "--untimed", "--no-audio", "--no-osc", "av://v4l2:" & variables.device ];
-    }
+	// The preview command (an argv array).
+	function argv() {
+		return [ "mpv", "--wayland-app-id=" & windowClass(), "--title=" & windowClass(), "--profile=low-latency", "--untimed", "--no-audio", "--no-osc", "av://v4l2:" & variables.device ];
+	}
 
-    // The pattern pgrep and pkill match against the command line.
-    function pattern() { return "mpv .*--title=" & windowClass(); }
+	// The pattern pgrep and pkill match against the command line.
+	function pattern() { return "mpv .*--title=" & windowClass(); }
 
-    function running() { return variables.proc.exec( [ "pgrep", "-f", "--", pattern() ], 10 ).exitCode == 0; }
+	function running() { return variables.proc.exec( [ "pgrep", "-f", "--", pattern() ], 10 ).exitCode == 0; }
 
-    function toggle( dryRun, asJson ) {
-        var cmd = "webcam toggle";
-        if ( running() ) {
-            if ( arguments.dryRun ) return variables.cli.say( cmd, "ok", { running: true, command: [ "pkill", "-f", "--", pattern() ] }, arguments.asJson, [ "Dry run: the preview would be ended.", "Nothing was stopped." ], true );
-            var k = variables.proc.exec( [ "pkill", "-f", "--", pattern() ], 10 );
-            if ( k.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: "could not end the preview" }, arguments.asJson, [ "error: could not end the webcam preview" ] );
-            return variables.cli.say( cmd, "ok", { running: false, stopped: true }, arguments.asJson, [ "The webcam preview was ended." ] );
-        }
-        if ( !variables.proc.has( "mpv" ) ) return variables.cli.say( cmd, "precondition", { error: "mpv is not installed" }, arguments.asJson, [ "error: mpv is not installed. Install: bxrig install mpv" ] );
-        if ( !fileExists( variables.device ) ) return variables.cli.say( cmd, "precondition", { error: "no webcam at " & variables.device }, arguments.asJson, [ "error: no webcam found at " & variables.device ] );
-        var data = { running: true, command: argv() };
-        if ( arguments.dryRun ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Dry run: " & argv().toList( " " ), "Nothing was started." ], true );
-        var r = variables.proc.detach( argv() );
-        if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: could not start the webcam preview" ] );
-        return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "The webcam preview is on. Press the key again to end it." ] );
-    }
+	function toggle( dryRun, asJson ) {
+		var cmd = "webcam toggle";
+		if ( running() ) {
+			if ( arguments.dryRun ) return variables.cli.say( cmd, "ok", { running: true, command: [ "pkill", "-f", "--", pattern() ] }, arguments.asJson, [ "Dry run: the preview would be ended.", "Nothing was stopped." ], true );
+			var k = variables.proc.exec( [ "pkill", "-f", "--", pattern() ], 10 );
+			if ( k.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: "could not end the preview" }, arguments.asJson, [ "error: could not end the webcam preview" ] );
+			return variables.cli.say( cmd, "ok", { running: false, stopped: true }, arguments.asJson, [ "The webcam preview was ended." ] );
+		}
+		if ( !variables.proc.has( "mpv" ) ) return variables.cli.say( cmd, "precondition", { error: "mpv is not installed" }, arguments.asJson, [ "error: mpv is not installed. Install: bxrig install mpv" ] );
+		if ( !fileExists( variables.device ) ) return variables.cli.say( cmd, "precondition", { error: "no webcam at " & variables.device }, arguments.asJson, [ "error: no webcam found at " & variables.device ] );
+		var data = { running: true, command: argv() };
+		if ( arguments.dryRun ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Dry run: " & argv().toList( " " ), "Nothing was started." ], true );
+		var r = variables.proc.detach( argv() );
+		if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: could not start the webcam preview" ] );
+		return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "The webcam preview is on. Press the key again to end it." ] );
+	}
 
-    function status( asJson ) {
-        var on = running();
-        return variables.cli.say( "webcam status", "ok", { running: on }, arguments.asJson, [ on ? "The webcam preview is on." : "The webcam preview is off." ] );
-    }
+	function status( asJson ) {
+		var on = running();
+		return variables.cli.say( "webcam status", "ok", { running: on }, arguments.asJson, [ on ? "The webcam preview is on." : "The webcam preview is off." ] );
+	}
 }

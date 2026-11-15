@@ -1,4 +1,4 @@
 // The app catalog (catalog/apps.json, packed with BxRig as a resource).
 class CatalogData {
-    function json() { return new bxrig.util.Res().trimmed( "catalog/apps.json" ); }
+	function json() { return new bxrig.util.Res().trimmed( "catalog/apps.json" ); }
 }

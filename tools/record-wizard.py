@@ -20,24 +20,24 @@ args = ap.parse_args()
 KEYS = {'enter': '\r', 'down': '\x1b[B', 'up': '\x1b[A', 'left': '\x1b[D', 'right': '\x1b[C', 'space': ' ', 'tab': '\t', 'esc': '\x1b', 'backtab': '\x1b[Z'}
 # scenario: (seconds to wait after, action). action is a key name, or "text:..." typed char by char
 SCENARIO = [
-    (2.4, 'wait'),
-    (0.5, 'enter'),
-    (1.2, 'down'), (0.8, 'down'), (0.9, 'up'),          # desktop: browse the options
-    (0.8, 'space'), (0.8, 'enter'),
-    (0.8, 'down'), (0.8, 'space'), (0.9, 'enter'),      # window style
-    (0.7, 'right'), (0.6, 'right'), (0.6, 'left'), (0.8, 'enter'),   # workspaces
-    (1.2, 'enter'),                                      # look: theme
-    (0.8, 'down'), (0.8, 'down'), (0.8, 'space'), (0.9, 'enter'),    # wallpaper
-    (1.2, 'down'), (0.6, 'down'), (0.6, 'space'), (0.7, 'down'), (0.6, 'down'), (0.6, 'space'), (0.9, 'enter'),  # layouts
-    (0.8, 'space'), (0.8, 'down'), (0.7, 'space'), (1.0, 'tab'),   # input toggles
-    (0.9, 'text:Luis Majano'), (0.6, 'enter'), (0.2, 'text:luis@example.com'), (0.7, 'enter'),   # developer
-    (0.8, 'down'), (0.8, 'space'), (0.8, 'enter'), (0.8, 'space'), (1.0, 'tab'),
-    (1.1, 'down'), (0.7, 'down'), (0.7, 'space'), (0.9, 'tab'),     # toolchains
-    (1.2, 'down'), (0.9, 'space'), (1.0, 'down'), (0.6, 'down'), (0.6, 'space'), (0.9, 'tab'),   # containers: podman vs docker, databases
-    (1.0, 'tab'), (1.0, 'tab'),                          # apps, extras
-    (1.2, 'down'), (0.8, 'space'), (0.9, 'tab'),
-    (3.0, 'wait'),                                       # review
-    (0.8, 'enter'),
+	(2.4, 'wait'),
+	(0.5, 'enter'),
+	(1.2, 'down'), (0.8, 'down'), (0.9, 'up'),          # desktop: browse the options
+	(0.8, 'space'), (0.8, 'enter'),
+	(0.8, 'down'), (0.8, 'space'), (0.9, 'enter'),      # window style
+	(0.7, 'right'), (0.6, 'right'), (0.6, 'left'), (0.8, 'enter'),   # workspaces
+	(1.2, 'enter'),                                      # look: theme
+	(0.8, 'down'), (0.8, 'down'), (0.8, 'space'), (0.9, 'enter'),    # wallpaper
+	(1.2, 'down'), (0.6, 'down'), (0.6, 'space'), (0.7, 'down'), (0.6, 'down'), (0.6, 'space'), (0.9, 'enter'),  # layouts
+	(0.8, 'space'), (0.8, 'down'), (0.7, 'space'), (1.0, 'tab'),   # input toggles
+	(0.9, 'text:Luis Majano'), (0.6, 'enter'), (0.2, 'text:luis@example.com'), (0.7, 'enter'),   # developer
+	(0.8, 'down'), (0.8, 'space'), (0.8, 'enter'), (0.8, 'space'), (1.0, 'tab'),
+	(1.1, 'down'), (0.7, 'down'), (0.7, 'space'), (0.9, 'tab'),     # toolchains
+	(1.2, 'down'), (0.9, 'space'), (1.0, 'down'), (0.6, 'down'), (0.6, 'space'), (0.9, 'tab'),   # containers: podman vs docker, databases
+	(1.0, 'tab'), (1.0, 'tab'),                          # apps, extras
+	(1.2, 'down'), (0.8, 'space'), (0.9, 'tab'),
+	(3.0, 'wait'),                                       # review
+	(0.8, 'enter'),
 ]
 
 cols, rows = args.cols, args.rows
@@ -48,29 +48,29 @@ shutil.rmtree(frames_dir, ignore_errors=True); os.makedirs(frames_dir)
 # --- run the wizard in a pty and capture timestamped output ---
 pid, fd = pty.fork()
 if pid == 0:
-    env = dict(os.environ, TERM='xterm-256color', COLORTERM='truecolor')
-    cmd = [args.bin, 'wizard', '--pages=' + args.pages, '--out=/dev/null'] if args.pages else [args.bin, 'wizard', '--demo']
-    os.execvpe(cmd[0], cmd, env)
+	env = dict(os.environ, TERM='xterm-256color', COLORTERM='truecolor')
+	cmd = [args.bin, 'wizard', '--pages=' + args.pages, '--out=/dev/null'] if args.pages else [args.bin, 'wizard', '--demo']
+	os.execvpe(cmd[0], cmd, env)
 fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack('HHHH', rows, cols, 0, 0))
 t0 = time.time(); chunks = []
 def pump(until):
-    while time.time() < until:
-        r, _, _ = select.select([fd], [], [], 0.02)
-        if r:
-            try: data = os.read(fd, 65536)
-            except OSError: return False
-            if not data: return False
-            chunks.append((time.time() - t0, data))
-    return True
+	while time.time() < until:
+		r, _, _ = select.select([fd], [], [], 0.02)
+		if r:
+			try: data = os.read(fd, 65536)
+			except OSError: return False
+			if not data: return False
+			chunks.append((time.time() - t0, data))
+	return True
 alive = pump(t0 + 0.8)
 for delay, action in SCENARIO:
-    if not alive: break
-    if action.startswith('text:'):
-        for ch in action[5:]:
-            os.write(fd, ch.encode()); alive = pump(time.time() + 0.07)
-    elif action != 'wait':
-        os.write(fd, KEYS[action].encode())
-    alive = pump(time.time() + delay)
+	if not alive: break
+	if action.startswith('text:'):
+		for ch in action[5:]:
+			os.write(fd, ch.encode()); alive = pump(time.time() + 0.07)
+	elif action != 'wait':
+		os.write(fd, KEYS[action].encode())
+	alive = pump(time.time() + delay)
 pump(time.time() + 0.5)
 total = chunks[-1][0] if chunks else 1
 try: os.waitpid(pid, os.WNOHANG)
@@ -80,7 +80,7 @@ print(f'captured {len(chunks)} chunks over {total:.1f}s')
 # --- render frames ---
 FS = 18
 def font(path, size=FS):
-    return ImageFont.truetype(path, size)
+	return ImageFont.truetype(path, size)
 JB = '/usr/share/fonts/truetype/jetbrains-mono/'
 f_reg = font(JB + 'JetBrainsMono-Regular.ttf'); f_bold = font(JB + 'JetBrainsMono-Bold.ttf')
 f_fb = font('/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf'); f_fbb = font('/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf')
@@ -88,53 +88,53 @@ bbox = f_reg.getbbox('M'); cw = int(round(f_reg.getlength('M'))); ch_h = int(FS 
 W, H = cols * cw, rows * ch_h
 cache = {}
 def has_glyph(f, c):
-    key = (id(f), c)
-    if key not in cache:
-        try:
-            m = f.getmask(c); cache[key] = m.getbbox() is not None or c == ' '
-        except Exception: cache[key] = False
-    return cache[key]
+	key = (id(f), c)
+	if key not in cache:
+		try:
+			m = f.getmask(c); cache[key] = m.getbbox() is not None or c == ' '
+		except Exception: cache[key] = False
+	return cache[key]
 NAMED = {'black':(0,0,0),'red':(205,49,49),'green':(13,188,121),'brown':(229,229,16),'blue':(36,114,200),'magenta':(188,63,188),'cyan':(17,168,205),'white':(229,229,229),
-         'brightblack':(102,102,102),'brightred':(241,76,76),'brightgreen':(35,209,139),'brightbrown':(245,245,67),'brightblue':(59,142,234),'brightmagenta':(214,112,214),'brightcyan':(41,184,219),'brightwhite':(255,255,255)}
+		 'brightblack':(102,102,102),'brightred':(241,76,76),'brightgreen':(35,209,139),'brightbrown':(245,245,67),'brightblue':(59,142,234),'brightmagenta':(214,112,214),'brightcyan':(41,184,219),'brightwhite':(255,255,255)}
 DEF_FG, DEF_BG = (0xc6,0xd0,0xf5), (0x30,0x34,0x46)
 def color(c, default):
-    if c == 'default': return default
-    if c in NAMED: return NAMED[c]
-    if len(c) == 6:
-        try: return (int(c[0:2],16), int(c[2:4],16), int(c[4:6],16))
-        except ValueError: pass
-    return default
+	if c == 'default': return default
+	if c in NAMED: return NAMED[c]
+	if len(c) == 6:
+		try: return (int(c[0:2],16), int(c[2:4],16), int(c[4:6],16))
+		except ValueError: pass
+	return default
 
 screen = pyte.Screen(cols, rows); stream = pyte.Stream(screen)
 decoder = codecs.getincrementaldecoder('utf-8')('replace')
 def draw_frame(path):
-    img = Image.new('RGB', (W, H), DEF_BG); d = ImageDraw.Draw(img)
-    for y in range(rows):
-        line = screen.buffer[y]
-        for x in range(cols):
-            c = line[x]
-            bg = color(c.bg, DEF_BG); fgc = color(c.fg, DEF_FG)
-            if c.reverse: bg, fgc = fgc, bg
-            if bg != DEF_BG: d.rectangle([x*cw, y*ch_h, (x+1)*cw, (y+1)*ch_h], fill=bg)
-            if c.data in ('▀', '▄', '█'):
-                x0, y0, x1, y1 = x*cw, y*ch_h, (x+1)*cw, (y+1)*ch_h
-                ym = (y0 + y1) // 2
-                box = (x0, y0, x1, y1) if c.data == '█' else (x0, y0, x1, ym) if c.data == '▀' else (x0, ym, x1, y1)
-                d.rectangle([box[0], box[1], box[2] - 1, box[3] - 1], fill=fgc)
-                continue
-            if c.data != ' ':
-                f = f_bold if c.bold else f_reg
-                if not has_glyph(f, c.data): f = f_fbb if c.bold else f_fb
-                d.text((x*cw, y*ch_h + 1), c.data, font=f, fill=fgc)
-    img.save(path)
+	img = Image.new('RGB', (W, H), DEF_BG); d = ImageDraw.Draw(img)
+	for y in range(rows):
+		line = screen.buffer[y]
+		for x in range(cols):
+			c = line[x]
+			bg = color(c.bg, DEF_BG); fgc = color(c.fg, DEF_FG)
+			if c.reverse: bg, fgc = fgc, bg
+			if bg != DEF_BG: d.rectangle([x*cw, y*ch_h, (x+1)*cw, (y+1)*ch_h], fill=bg)
+			if c.data in ('▀', '▄', '█'):
+				x0, y0, x1, y1 = x*cw, y*ch_h, (x+1)*cw, (y+1)*ch_h
+				ym = (y0 + y1) // 2
+				box = (x0, y0, x1, y1) if c.data == '█' else (x0, y0, x1, ym) if c.data == '▀' else (x0, ym, x1, y1)
+				d.rectangle([box[0], box[1], box[2] - 1, box[3] - 1], fill=fgc)
+				continue
+			if c.data != ' ':
+				f = f_bold if c.bold else f_reg
+				if not has_glyph(f, c.data): f = f_fbb if c.bold else f_fb
+				d.text((x*cw, y*ch_h + 1), c.data, font=f, fill=fgc)
+	img.save(path)
 
 n = int(total * args.fps) + 1
 idx = 0
 for i in range(n):
-    t = i / args.fps
-    while idx < len(chunks) and chunks[idx][0] <= t:
-        stream.feed(decoder.decode(chunks[idx][1])); idx += 1
-    draw_frame(os.path.join(frames_dir, f'f{i:05d}.png'))
+	t = i / args.fps
+	while idx < len(chunks) and chunks[idx][0] <= t:
+		stream.feed(decoder.decode(chunks[idx][1])); idx += 1
+	draw_frame(os.path.join(frames_dir, f'f{i:05d}.png'))
 print('frames', n, 'size', W, 'x', H)
 
 # --- encode ---

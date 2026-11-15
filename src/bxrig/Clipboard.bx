@@ -6,64 +6,64 @@
 // Text entries only: image entries are listed by cliphist but are not offered here. Exit: 0 done or cancelled, 2 plan without --yes,
 // 4 precondition (a tool is missing, no menu program), 6 a command failed.
 class Clipboard {
-    function init( cli, runner = "" ) {
-        variables.cli = arguments.cli;
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.proc = variables.inst.proc();
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.inst = new bxrig.Installer( arguments.runner );
+		variables.proc = variables.inst.proc();
+		return this;
+	}
 
-    function entries() {
-        var r = variables.proc.exec( [ "cliphist", "list" ], 30 );
-        if ( r.exitCode != 0 ) return [];
-        return listToArray( r.output, chr( 10 ) ).filter( function( l ) { return len( trim( l ) ) > 0 && find( "binary data", l ) == 0; } );
-    }
+	function entries() {
+		var r = variables.proc.exec( [ "cliphist", "list" ], 30 );
+		if ( r.exitCode != 0 ) return [];
+		return listToArray( r.output, chr( 10 ) ).filter( function( l ) { return len( trim( l ) ) > 0 && find( "binary data", l ) == 0; } );
+	}
 
-    function missing( cmd, asJson ) {
-        var lacking = [];
-        for ( var t in [ "cliphist", "wl-copy" ] ) if ( !variables.proc.has( t ) ) lacking.append( t == "wl-copy" ? "wl-clipboard" : t );
-        if ( !lacking.len() ) return new bxrig.util.Exit().ok();
-        return variables.cli.say( arguments.cmd, "precondition", { error: "missing " & lacking.toList( ", " ) }, arguments.asJson, [ "error: missing " & lacking.toList( ", " ) & ". Install: bxrig install " & lacking.toList( " " ) ] );
-    }
+	function missing( cmd, asJson ) {
+		var lacking = [];
+		for ( var t in [ "cliphist", "wl-copy" ] ) if ( !variables.proc.has( t ) ) lacking.append( t == "wl-copy" ? "wl-clipboard" : t );
+		if ( !lacking.len() ) return new bxrig.util.Exit().ok();
+		return variables.cli.say( arguments.cmd, "precondition", { error: "missing " & lacking.toList( ", " ) }, arguments.asJson, [ "error: missing " & lacking.toList( ", " ) & ". Install: bxrig install " & lacking.toList( " " ) ] );
+	}
 
-    // `clipboard pick`
-    function pick( asJson ) {
-        var cmd = "clipboard pick";
-        var m = missing( cmd, arguments.asJson );
-        if ( m != 0 ) return m;
-        var all = entries();
-        if ( !all.len() ) return variables.cli.say( cmd, "ok", { copied: false }, arguments.asJson, [ "The clipboard history is empty." ] );
-        try {
-            var runner = new bxrig.Runner( variables.cli, variables.inst.runner() );
-            // each line is "ID<TAB>text"; the menu shows the text only
-            var labels = all.map( function( l ) { var t = find( chr( 9 ), l ); return t > 0 ? left( mid( l, t + 1, len( l ) ), 100 ) : l; } );
-            var chosen = runner.select( "Clipboard", labels );
-        } catch ( any err ) {
-            return variables.cli.say( cmd, "precondition", { error: err.message }, arguments.asJson, [ "error: " & err.message ] );
-        }
-        if ( chosen == 0 ) return variables.cli.say( cmd, "ok", { copied: false }, arguments.asJson, [ "Cancelled." ] );
-        var dec = systemExecute( "cliphist", [ "decode" ], 30, true, ".", "", "", true, {}, false, all[ chosen ] );
-        if ( dec.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: "cliphist decode failed" }, arguments.asJson, [ "error: cliphist decode failed" ] );
-        var cp = systemExecute( "wl-copy", [], 30, true, ".", "", "", true, {}, false, dec.output );
-        if ( cp.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: "wl-copy failed" }, arguments.asJson, [ "error: wl-copy failed" ] );
-        return variables.cli.say( cmd, "ok", { copied: true }, arguments.asJson, [ "Copied." ] );
-    }
+	// `clipboard pick`
+	function pick( asJson ) {
+		var cmd = "clipboard pick";
+		var m = missing( cmd, arguments.asJson );
+		if ( m != 0 ) return m;
+		var all = entries();
+		if ( !all.len() ) return variables.cli.say( cmd, "ok", { copied: false }, arguments.asJson, [ "The clipboard history is empty." ] );
+		try {
+			var runner = new bxrig.Runner( variables.cli, variables.inst.runner() );
+			// each line is "ID<TAB>text"; the menu shows the text only
+			var labels = all.map( function( l ) { var t = find( chr( 9 ), l ); return t > 0 ? left( mid( l, t + 1, len( l ) ), 100 ) : l; } );
+			var chosen = runner.select( "Clipboard", labels );
+		} catch ( any err ) {
+			return variables.cli.say( cmd, "precondition", { error: err.message }, arguments.asJson, [ "error: " & err.message ] );
+		}
+		if ( chosen == 0 ) return variables.cli.say( cmd, "ok", { copied: false }, arguments.asJson, [ "Cancelled." ] );
+		var dec = systemExecute( "cliphist", [ "decode" ], 30, true, ".", "", "", true, {}, false, all[ chosen ] );
+		if ( dec.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: "cliphist decode failed" }, arguments.asJson, [ "error: cliphist decode failed" ] );
+		var cp = systemExecute( "wl-copy", [], 30, true, ".", "", "", true, {}, false, dec.output );
+		if ( cp.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: "wl-copy failed" }, arguments.asJson, [ "error: wl-copy failed" ] );
+		return variables.cli.say( cmd, "ok", { copied: true }, arguments.asJson, [ "Copied." ] );
+	}
 
-    // `clipboard clear [--yes]`
-    function clear( yes, asJson ) {
-        var cmd = "clipboard clear";
-        if ( !variables.proc.has( "cliphist" ) ) return variables.cli.say( cmd, "precondition", { error: "cliphist is not installed" }, arguments.asJson, [ "error: cliphist is not installed. Install: bxrig install cliphist" ] );
-        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "wipe the whole clipboard history (cliphist wipe).", {}, arguments.asJson );
-        var r = variables.proc.exec( [ "cliphist", "wipe" ], 30 );
-        if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
-        return variables.cli.say( cmd, "ok", {}, arguments.asJson, [ "The clipboard history was wiped." ] );
-    }
+	// `clipboard clear [--yes]`
+	function clear( yes, asJson ) {
+		var cmd = "clipboard clear";
+		if ( !variables.proc.has( "cliphist" ) ) return variables.cli.say( cmd, "precondition", { error: "cliphist is not installed" }, arguments.asJson, [ "error: cliphist is not installed. Install: bxrig install cliphist" ] );
+		if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "wipe the whole clipboard history (cliphist wipe).", {}, arguments.asJson );
+		var r = variables.proc.exec( [ "cliphist", "wipe" ], 30 );
+		if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+		return variables.cli.say( cmd, "ok", {}, arguments.asJson, [ "The clipboard history was wiped." ] );
+	}
 
-    // `clipboard status`
-    function status( asJson ) {
-        var ch = variables.proc.has( "cliphist" );
-        var wl = variables.proc.has( "wl-copy" );
-        var n = ch ? entries().len() : 0;
-        return variables.cli.say( "clipboard status", "ok", { cliphist: ch, wl_clipboard: wl, entries: n }, arguments.asJson, [ "cliphist: " & ( ch ? "installed" : "not installed" ), "wl-clipboard: " & ( wl ? "installed" : "not installed" ), "Entries: " & n ] );
-    }
+	// `clipboard status`
+	function status( asJson ) {
+		var ch = variables.proc.has( "cliphist" );
+		var wl = variables.proc.has( "wl-copy" );
+		var n = ch ? entries().len() : 0;
+		return variables.cli.say( "clipboard status", "ok", { cliphist: ch, wl_clipboard: wl, entries: n }, arguments.asJson, [ "cliphist: " & ( ch ? "installed" : "not installed" ), "wl-clipboard: " & ( wl ? "installed" : "not installed" ), "Entries: " & n ] );
+	}
 }

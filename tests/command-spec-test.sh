@@ -8,11 +8,11 @@ cmds="$(python3 -c "import json;print(' '.join(c['name'] for g in json.load(open
 [[ -n "$cmds" ]] || fail "no commands read from cli.json"
 n=0
 for c in $cmds; do
-  rc=0; out="$(run "$binary" "$c" --zz-bogus-flag 2>&1)" || rc=$?
-  [[ $rc == 2 ]] || fail "$c --zz-bogus-flag exited $rc, want 2: $out"
-  grep -q "Unknown option: --zz-bogus-flag" <<<"$out" || fail "$c: no 'Unknown option' message: $out"
-  grep -q "^Usage: bxrig " <<<"$out" || fail "$c: no usage line: $out"
-  n=$((n+1))
+	rc=0; out="$(run "$binary" "$c" --zz-bogus-flag 2>&1)" || rc=$?
+	[[ $rc == 2 ]] || fail "$c --zz-bogus-flag exited $rc, want 2: $out"
+	grep -q "Unknown option: --zz-bogus-flag" <<<"$out" || fail "$c: no 'Unknown option' message: $out"
+	grep -q "^Usage: bxrig " <<<"$out" || fail "$c: no usage line: $out"
+	n=$((n+1))
 done
 # global flags are never rejected as unknown
 for g in --json --quiet; do out="$(run "$binary" version $g 2>&1 || true)"; ! grep -q "Unknown option" <<<"$out" || fail "version $g was rejected"; done

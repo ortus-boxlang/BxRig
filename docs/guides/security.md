@@ -32,4 +32,3 @@ bxrig security passwordless-sudo on --yes
 - **sudoers** is checked with `visudo -cf` before the file is installed, so a mistake cannot lock sudo out.
 - **Passwordless sudo** means any program running as you gets root without a password. Use it only on a machine where you accept that.
 - Keep a root terminal open the first time you try PAM changes. They have not been tried on a real reader or key yet.
-

@@ -2,24 +2,24 @@
 // JSON file (--pages) or the built-in ones (--demo), optionally starting from earlier answers, and writes the answers as JSON to --out.
 // It changes nothing on the machine. Exit: 0 answers written, 130 cancelled, 2 usage, 4 bad file.
 class WizardCmd {
-    function run( p, options ) {
-        var exit = new bxrig.util.Exit();
-        if ( p.len() != 1 || ( !structKeyExists( options, "demo" ) && !structKeyExists( options, "pages" ) ) ) {
-            println( new bxrig.CommandSpec().usage( "wizard" ) );
-            return exit.usage();
-        }
-        var spec = {};
-        var preset = {};
-        try {
-            spec = jsonDeserialize( structKeyExists( options, "demo" ) ? new bxrig.WizardData().demoPages() : fileRead( options.pages ) );
-            preset = structKeyExists( options, "answers" ) ? jsonDeserialize( fileRead( options.answers ) ) : {};
-        } catch ( any e ) {
-            println( "bxrig wizard: cannot read the pages or answers: " & e.message );
-            return exit.precondition();
-        }
-        var result = new bxrig.Wizard( spec, preset ).run();
-        if ( result.outcome != "done" ) return 130;
-        if ( structKeyExists( options, "out" ) ) fileWrite( options.out, jsonSerialize( result.answers ) & chr( 10 ) );
-        return exit.ok();
-    }
+	function run( p, options ) {
+		var exit = new bxrig.util.Exit();
+		if ( p.len() != 1 || ( !structKeyExists( options, "demo" ) && !structKeyExists( options, "pages" ) ) ) {
+			println( new bxrig.CommandSpec().usage( "wizard" ) );
+			return exit.usage();
+		}
+		var spec = {};
+		var preset = {};
+		try {
+			spec = jsonDeserialize( structKeyExists( options, "demo" ) ? new bxrig.WizardData().demoPages() : fileRead( options.pages ) );
+			preset = structKeyExists( options, "answers" ) ? jsonDeserialize( fileRead( options.answers ) ) : {};
+		} catch ( any e ) {
+			println( "bxrig wizard: cannot read the pages or answers: " & e.message );
+			return exit.precondition();
+		}
+		var result = new bxrig.Wizard( spec, preset ).run();
+		if ( result.outcome != "done" ) return 130;
+		if ( structKeyExists( options, "out" ) ) fileWrite( options.out, jsonSerialize( result.answers ) & chr( 10 ) );
+		return exit.ok();
+	}
 }

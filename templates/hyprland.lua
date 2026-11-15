@@ -6,10 +6,10 @@
 ---- MONITORS ----
 ------------------
 hl.monitor({
-  output   = "",
-  mode     = "preferred",
-  position = "auto",
-  scale    = "auto",
+	output   = "",
+	mode     = "preferred",
+	position = "auto",
+	scale    = "auto",
 })
 
 ---------------------
@@ -23,8 +23,8 @@ local fileManager = "dolphin"
 ---- AUTOSTART ----
 -------------------
 hl.on("hyprland.start", function()
-  hl.exec_cmd("systemctl --user start hyprpolkitagent")
-  hl.exec_cmd("hypridle")
+	hl.exec_cmd("systemctl --user start hyprpolkitagent")
+	hl.exec_cmd("hypridle")
 end)
 
 -------------------------------
@@ -38,43 +38,43 @@ hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
 ---- LOOK AND FEEL ----
 -----------------------
 hl.config({
-  general = {
-    gaps_in     = 5,
-    gaps_out    = 12,
-    border_size = 2,
-    col = {
-      -- BoxLang green to cyan on the focused window
-      active_border   = { colors = {"rgba(00ff78ee)", "rgba(00dbffee)"}, angle = 45 },
-      inactive_border = "rgba(626880aa)",
-    },
-    resize_on_border = true,
-    allow_tearing    = false,
-    layout           = "dwindle",
-  },
+	general = {
+		gaps_in     = 5,
+		gaps_out    = 12,
+		border_size = 2,
+		col = {
+			-- BoxLang green to cyan on the focused window
+			active_border   = { colors = {"rgba(00ff78ee)", "rgba(00dbffee)"}, angle = 45 },
+			inactive_border = "rgba(626880aa)",
+		},
+		resize_on_border = true,
+		allow_tearing    = false,
+		layout           = "dwindle",
+	},
 
-  decoration = {
-    rounding       = 14,
-    rounding_power = 2,
-    active_opacity   = 1.0,
-    inactive_opacity = 1.0,
-    shadow = {
-      enabled      = true,
-      range        = 4,
-      render_power = 3,
-      color        = 0xee1a1a1a,
-    },
-    blur = {
-      enabled  = true,
-      xray     = true,
-      size     = 3,
-      passes   = 2,
-      vibrancy = 0.1696,
-    },
-  },
+	decoration = {
+		rounding       = 14,
+		rounding_power = 2,
+		active_opacity   = 1.0,
+		inactive_opacity = 1.0,
+		shadow = {
+			enabled      = true,
+			range        = 4,
+			render_power = 3,
+			color        = 0xee1a1a1a,
+		},
+		blur = {
+			enabled  = true,
+			xray     = true,
+			size     = 3,
+			passes   = 2,
+			vibrancy = 0.1696,
+		},
+	},
 
-  animations = {
-    enabled = true,
-  },
+	animations = {
+		enabled = true,
+	},
 })
 
 -- Animations from the Hyprland defaults
@@ -110,37 +110,37 @@ hl.config({ master    = { new_status = "master" } })
 hl.config({ scrolling = { fullscreen_on_one_column = true } })
 
 hl.config({
-  misc = {
-    force_default_wallpaper = 0,    -- Noctalia draws the wallpaper
-    disable_hyprland_logo   = true,
-  },
+	misc = {
+		force_default_wallpaper = 0,    -- Noctalia draws the wallpaper
+		disable_hyprland_logo   = true,
+	},
 })
 
 hl.config({
-  layers = {
-    allow_new_top_layers_over_existing_fullscreen = true,
-  },
+	layers = {
+		allow_new_top_layers_over_existing_fullscreen = true,
+	},
 })
 
 ---------------
 ---- INPUT ----
 ---------------
 hl.config({
-  input = {
-    kb_layout    = "us",
-    follow_mouse = 1,
-    sensitivity  = 0,
-    touchpad = {
-      natural_scroll = false,   -- true gives the macOS direction
-      tap_to_click   = true,
-    },
-  },
+	input = {
+		kb_layout    = "us",
+		follow_mouse = 1,
+		sensitivity  = 0,
+		touchpad = {
+			natural_scroll = false,   -- true gives the macOS direction
+			tap_to_click   = true,
+		},
+	},
 })
 
 hl.gesture({
-  fingers   = 3,
-  direction = "horizontal",
-  action    = "workspace",
+	fingers   = 3,
+	direction = "horizontal",
+	action    = "workspace",
 })
 
 ---------------------
@@ -155,15 +155,15 @@ hl.gesture({
 --------------------------------
 -- BXRIG-FLOATING-RULE
 hl.window_rule({
-  name  = "suppress-maximize-events",
-  match = { class = ".*" },
-  suppress_event = "maximize",
+	name  = "suppress-maximize-events",
+	match = { class = ".*" },
+	suppress_event = "maximize",
 })
 
 hl.window_rule({
-  name  = "fix-xwayland-drags",
-  match = { class = "^$", title = "^$", xwayland = true, float = true, fullscreen = false, pin = false },
-  no_focus = true,
+	name  = "fix-xwayland-drags",
+	match = { class = "^$", title = "^$", xwayland = true, float = true, fullscreen = false, pin = false },
+	no_focus = true,
 })
 
 ------------------------

@@ -10,184 +10,184 @@
 //   ai panel remove ID... [--yes]     hide it even when it is installed
 //   ai panel reset [--yes]            back to the installed ones only
 class AiPanel {
-    function init( cli, runner = "" ) {
-        variables.cli = arguments.cli;
-        variables.environ = new bxrig.util.Env();
-        variables.proc = new bxrig.util.Proc( arguments.runner );
-        variables.out = new bxrig.util.Out( variables.cli, "ai panel" );
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.environ = new bxrig.util.Env();
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.out = new bxrig.util.Out( variables.cli, "ai panel" );
+		return this;
+	}
 
-    function installed( command ) { return variables.proc.has( arguments.command ); }
+	function installed( command ) { return variables.proc.has( arguments.command ); }
 
-    // ---- which agents the panel shows ----
-    function choiceFile() { return variables.environ.config( "agents-panel.json" ); }
-    function choices() {
-        var c = { added: [], removed: [] };
-        var j = readJson( choiceFile() );
-        for ( var k in [ "added", "removed" ] ) if ( structKeyExists( j, k ) && isArray( j[ k ] ) ) c[ k ] = j[ k ];
-        return c;
-    }
-    function shown( id, isInstalled, c ) {
-        if ( arrayFindNoCase( arguments.c.added, arguments.id ) ) return true;
-        return arguments.isInstalled && !arrayFindNoCase( arguments.c.removed, arguments.id );
-    }
-    function listCmd( asJson ) {
-        var c = choices();
-        var rows = [];
-        var lines = [];
-        for ( var a in new bxrig.AiAgents().all() ) {
-            var r = { id: a.id, name: a.name, installed: installed( a.command ), added: arrayFindNoCase( c.added, a.id ) > 0, removed: arrayFindNoCase( c.removed, a.id ) > 0 };
-            r.shown = shown( a.id, r.installed, c );
-            rows.append( r );
-            lines.append( left( a.id & repeatString( " ", 16 ), 16 ) & ( r.shown ? "shown " : "hidden" ) & "  " & ( r.installed ? "installed" : "not installed" ) & ( r.added ? ", added" : "" ) & ( r.removed ? ", removed" : "" ) );
-        }
-        return variables.out.say( "ok", { agents: rows, file: choiceFile() }, arguments.asJson, lines );
-    }
-    // add | remove | reset
-    function changeCmd( verb, ids, yes, dry, asJson ) {
-        var known = new bxrig.AiAgents().ids();
-        if ( arguments.verb != "reset" && !arguments.ids.len() ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "ai" ), arguments.asJson );
-        for ( var id in arguments.ids ) if ( !arrayFindNoCase( known, id ) ) return variables.out.fail( "usage", "Unknown agent: " & id & " (use " & known.toList( ", " ) & ")", arguments.asJson );
-        var c = choices();
-        if ( arguments.verb == "reset" ) c = { added: [], removed: [] };
-        for ( var id in arguments.ids ) {
-            var keep = arguments.verb == "add" ? "added" : "removed";
-            var drop = arguments.verb == "add" ? "removed" : "added";
-            var i = arrayFindNoCase( c[ drop ], id );
-            if ( i ) c[ drop ].deleteAt( i );
-            if ( !arrayFindNoCase( c[ keep ], id ) ) c[ keep ].append( lCase( id ) );
-        }
-        var title = "agents panel " & ( arguments.verb == "reset" ? "back to the installed agents" : arguments.verb & " " & arguments.ids.toList( " " ) );
-        var data = { added: c.added, removed: c.removed, file: choiceFile() };
-        if ( arguments.dry || !arguments.yes ) return new bxrig.util.Mutation( variables.out ).show( title, data, arguments.asJson, arguments.dry );
-        directoryCreate( getDirectoryFromPath( choiceFile() ), true, true );
-        fileWrite( choiceFile(), jsonSerialize( c ) & chr( 10 ) );
-        return variables.out.say( "ok", data, arguments.asJson, [ title, "added: " & ( c.added.len() ? c.added.toList( ", " ) : "none" ) & "  removed: " & ( c.removed.len() ? c.removed.toList( ", " ) : "none" ) ] );
-    }
-    function readJson( file ) {
-        var j = new bxrig.util.Json().read( arguments.file );
-        return isStruct( j ) ? j : {};
-    }
+	// ---- which agents the panel shows ----
+	function choiceFile() { return variables.environ.config( "agents-panel.json" ); }
+	function choices() {
+		var c = { added: [], removed: [] };
+		var j = readJson( choiceFile() );
+		for ( var k in [ "added", "removed" ] ) if ( structKeyExists( j, k ) && isArray( j[ k ] ) ) c[ k ] = j[ k ];
+		return c;
+	}
+	function shown( id, isInstalled, c ) {
+		if ( arrayFindNoCase( arguments.c.added, arguments.id ) ) return true;
+		return arguments.isInstalled && !arrayFindNoCase( arguments.c.removed, arguments.id );
+	}
+	function listCmd( asJson ) {
+		var c = choices();
+		var rows = [];
+		var lines = [];
+		for ( var a in new bxrig.AiAgents().all() ) {
+			var r = { id: a.id, name: a.name, installed: installed( a.command ), added: arrayFindNoCase( c.added, a.id ) > 0, removed: arrayFindNoCase( c.removed, a.id ) > 0 };
+			r.shown = shown( a.id, r.installed, c );
+			rows.append( r );
+			lines.append( left( a.id & repeatString( " ", 16 ), 16 ) & ( r.shown ? "shown " : "hidden" ) & "  " & ( r.installed ? "installed" : "not installed" ) & ( r.added ? ", added" : "" ) & ( r.removed ? ", removed" : "" ) );
+		}
+		return variables.out.say( "ok", { agents: rows, file: choiceFile() }, arguments.asJson, lines );
+	}
+	// add | remove | reset
+	function changeCmd( verb, ids, yes, dry, asJson ) {
+		var known = new bxrig.AiAgents().ids();
+		if ( arguments.verb != "reset" && !arguments.ids.len() ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "ai" ), arguments.asJson );
+		for ( var id in arguments.ids ) if ( !arrayFindNoCase( known, id ) ) return variables.out.fail( "usage", "Unknown agent: " & id & " (use " & known.toList( ", " ) & ")", arguments.asJson );
+		var c = choices();
+		if ( arguments.verb == "reset" ) c = { added: [], removed: [] };
+		for ( var id in arguments.ids ) {
+			var keep = arguments.verb == "add" ? "added" : "removed";
+			var drop = arguments.verb == "add" ? "removed" : "added";
+			var i = arrayFindNoCase( c[ drop ], id );
+			if ( i ) c[ drop ].deleteAt( i );
+			if ( !arrayFindNoCase( c[ keep ], id ) ) c[ keep ].append( lCase( id ) );
+		}
+		var title = "agents panel " & ( arguments.verb == "reset" ? "back to the installed agents" : arguments.verb & " " & arguments.ids.toList( " " ) );
+		var data = { added: c.added, removed: c.removed, file: choiceFile() };
+		if ( arguments.dry || !arguments.yes ) return new bxrig.util.Mutation( variables.out ).show( title, data, arguments.asJson, arguments.dry );
+		directoryCreate( getDirectoryFromPath( choiceFile() ), true, true );
+		fileWrite( choiceFile(), jsonSerialize( c ) & chr( 10 ) );
+		return variables.out.say( "ok", data, arguments.asJson, [ title, "added: " & ( c.added.len() ? c.added.toList( ", " ) : "none" ) & "  removed: " & ( c.removed.len() ? c.removed.toList( ", " ) : "none" ) ] );
+	}
+	function readJson( file ) {
+		var j = new bxrig.util.Json().read( arguments.file );
+		return isStruct( j ) ? j : {};
+	}
 
-    // "3d 4h", "5h 12m", "40m"
-    function resetText( seconds ) {
-        var s = int( arguments.seconds );
-        if ( s <= 0 ) return "now";
-        var d = int( s / 86400 ); var h = int( ( s - d * 86400 ) / 3600 ); var m = int( ( s - d * 86400 - h * 3600 ) / 60 );
-        if ( d ) return d & "d " & h & "h";
-        if ( h ) return h & "h " & m & "m";
-        return m & "m";
-    }
-    // a window length in minutes as a label: 300 -> "5-hour", 10080 -> "Weekly", 1440 -> "Daily"
-    function windowLabel( minutes ) {
-        var m = int( arguments.minutes );
-        if ( m == 10080 ) return "Weekly";
-        if ( m == 1440 ) return "Daily";
-        if ( m >= 43200 ) return "Monthly";
-        if ( m > 0 && m < 1440 && m % 60 == 0 ) return ( m / 60 ) & "-hour";
-        return m > 0 ? m & " min" : "Limit";
-    }
+	// "3d 4h", "5h 12m", "40m"
+	function resetText( seconds ) {
+		var s = int( arguments.seconds );
+		if ( s <= 0 ) return "now";
+		var d = int( s / 86400 ); var h = int( ( s - d * 86400 ) / 3600 ); var m = int( ( s - d * 86400 - h * 3600 ) / 60 );
+		if ( d ) return d & "d " & h & "h";
+		if ( h ) return h & "h " & m & "m";
+		return m & "m";
+	}
+	// a window length in minutes as a label: 300 -> "5-hour", 10080 -> "Weekly", 1440 -> "Daily"
+	function windowLabel( minutes ) {
+		var m = int( arguments.minutes );
+		if ( m == 10080 ) return "Weekly";
+		if ( m == 1440 ) return "Daily";
+		if ( m >= 43200 ) return "Monthly";
+		if ( m > 0 && m < 1440 && m % 60 == 0 ) return ( m / 60 ) & "-hour";
+		return m > 0 ? m & " min" : "Limit";
+	}
 
-    // Claude Code: tokens used today (input + output + cache) and the signed-in account.
-    function claude() {
-        var out = { accounts: [], tokens: 0 };
-        var cfg = readJson( variables.environ.home() & "/.claude.json" );
-        var acct = { name: "Default", plan: "", active: true, meters: [] };
-        if ( structKeyExists( cfg, "oauthAccount" ) && isStruct( cfg.oauthAccount ) ) {
-            var o = cfg.oauthAccount;
-            acct.name = len( o.organizationName ?: "" ) ? o.organizationName : ( o.emailAddress ?: "Default" );
-        }
-        out.accounts.append( acct );
-        var dir = variables.environ.home() & "/.claude/projects";
-        if ( !directoryExists( dir ) ) return out;
-        var today = dateFormat( now(), "yyyy-MM-dd" );
-        // only today's files, and only their usage lines
-        var r = variables.proc.exec( [ "sh", "-c", 'find "$1" -name "*.jsonl" -newermt "today 00:00" -print0 2>/dev/null | xargs -0 -r grep -h "\"usage\"" 2>/dev/null', "_", dir ], 30 );
-        for ( var line in listToArray( r.output, chr( 10 ) ) ) {
-            if ( !find( today, line ) ) continue;
-            try {
-                var j = jsonDeserialize( line );
-                var u = j.message.usage;
-                out.tokens += ( u.input_tokens ?: 0 ) + ( u.output_tokens ?: 0 ) + ( u.cache_creation_input_tokens ?: 0 ) + ( u.cache_read_input_tokens ?: 0 );
-            } catch ( any e ) {}
-        }
-        return out;
-    }
+	// Claude Code: tokens used today (input + output + cache) and the signed-in account.
+	function claude() {
+		var out = { accounts: [], tokens: 0 };
+		var cfg = readJson( variables.environ.home() & "/.claude.json" );
+		var acct = { name: "Default", plan: "", active: true, meters: [] };
+		if ( structKeyExists( cfg, "oauthAccount" ) && isStruct( cfg.oauthAccount ) ) {
+			var o = cfg.oauthAccount;
+			acct.name = len( o.organizationName ?: "" ) ? o.organizationName : ( o.emailAddress ?: "Default" );
+		}
+		out.accounts.append( acct );
+		var dir = variables.environ.home() & "/.claude/projects";
+		if ( !directoryExists( dir ) ) return out;
+		var today = dateFormat( now(), "yyyy-MM-dd" );
+		// only today's files, and only their usage lines
+		var r = variables.proc.exec( [ "sh", "-c", 'find "$1" -name "*.jsonl" -newermt "today 00:00" -print0 2>/dev/null | xargs -0 -r grep -h "\"usage\"" 2>/dev/null', "_", dir ], 30 );
+		for ( var line in listToArray( r.output, chr( 10 ) ) ) {
+			if ( !find( today, line ) ) continue;
+			try {
+				var j = jsonDeserialize( line );
+				var u = j.message.usage;
+				out.tokens += ( u.input_tokens ?: 0 ) + ( u.output_tokens ?: 0 ) + ( u.cache_creation_input_tokens ?: 0 ) + ( u.cache_read_input_tokens ?: 0 );
+			} catch ( any e ) {}
+		}
+		return out;
+	}
 
-    // Codex: the newest rate_limits event of the newest session file, as meters.
-    function codex() {
-        var acct = { name: "Default", plan: "", active: true, meters: [] };
-        var auth = readJson( variables.environ.home() & "/.codex/auth.json" );
-        if ( structKeyExists( auth, "tokens" ) && isStruct( auth.tokens ) && len( auth.tokens.account_id ?: "" ) ) acct.name = "ChatGPT";
-        var dir = variables.environ.home() & "/.codex/sessions";
-        if ( !directoryExists( dir ) ) return [ acct ];
-        var r = variables.proc.exec( [ "sh", "-c", 'f=$(find "$1" -name "*.jsonl" -printf "%T@ %p\n" 2>/dev/null | sort -n | tail -1 | cut -d" " -f2-); [ -n "$f" ] && grep -h "rate_limits" "$f" | tail -1', "_", dir ], 30 );
-        if ( r.exitCode != 0 || !len( trim( r.output ) ) ) return [ acct ];
-        try {
-            var j = jsonDeserialize( trim( r.output ) );
-            var rl = structKeyExists( j, "payload" ) && structKeyExists( j.payload, "rate_limits" ) ? j.payload.rate_limits : ( j.rate_limits ?: {} );
-            for ( var k in [ "primary", "secondary" ] ) {
-                if ( !structKeyExists( rl, k ) || !isStruct( rl[ k ] ) ) continue;
-                var w = rl[ k ];
-                acct.meters.append( { label: windowLabel( w.window_minutes ?: 0 ), used_fraction: round( ( w.used_percent ?: 0 ) * 10 ) / 1000, resets_in: resetText( w.resets_in_seconds ?: 0 ) } );
-            }
-            if ( structKeyExists( rl, "plan_type" ) ) acct.plan = rl.plan_type;
-        } catch ( any e ) {}
-        return [ acct ];
-    }
+	// Codex: the newest rate_limits event of the newest session file, as meters.
+	function codex() {
+		var acct = { name: "Default", plan: "", active: true, meters: [] };
+		var auth = readJson( variables.environ.home() & "/.codex/auth.json" );
+		if ( structKeyExists( auth, "tokens" ) && isStruct( auth.tokens ) && len( auth.tokens.account_id ?: "" ) ) acct.name = "ChatGPT";
+		var dir = variables.environ.home() & "/.codex/sessions";
+		if ( !directoryExists( dir ) ) return [ acct ];
+		var r = variables.proc.exec( [ "sh", "-c", 'f=$(find "$1" -name "*.jsonl" -printf "%T@ %p\n" 2>/dev/null | sort -n | tail -1 | cut -d" " -f2-); [ -n "$f" ] && grep -h "rate_limits" "$f" | tail -1', "_", dir ], 30 );
+		if ( r.exitCode != 0 || !len( trim( r.output ) ) ) return [ acct ];
+		try {
+			var j = jsonDeserialize( trim( r.output ) );
+			var rl = structKeyExists( j, "payload" ) && structKeyExists( j.payload, "rate_limits" ) ? j.payload.rate_limits : ( j.rate_limits ?: {} );
+			for ( var k in [ "primary", "secondary" ] ) {
+				if ( !structKeyExists( rl, k ) || !isStruct( rl[ k ] ) ) continue;
+				var w = rl[ k ];
+				acct.meters.append( { label: windowLabel( w.window_minutes ?: 0 ), used_fraction: round( ( w.used_percent ?: 0 ) * 10 ) / 1000, resets_in: resetText( w.resets_in_seconds ?: 0 ) } );
+			}
+			if ( structKeyExists( rl, "plan_type" ) ) acct.plan = rl.plan_type;
+		} catch ( any e ) {}
+		return [ acct ];
+	}
 
-    // OpenCode: one account per signed-in provider; the OpenCode Go plan by name.
-    function opencode() {
-        var auth = readJson( variables.environ.xdgData( "opencode/auth.json" ) );
-        var out = [];
-        for ( var k in auth ) {
-            var go = findNoCase( "opencode-go", k ) || k == "go";
-            out.append( { name: go ? "OpenCode Go" : k, plan: go ? "Go" : "", active: out.len() == 0, meters: [] } );
-        }
-        if ( !out.len() ) out.append( { name: "Default", plan: "", active: true, meters: [] } );
-        return out;
-    }
+	// OpenCode: one account per signed-in provider; the OpenCode Go plan by name.
+	function opencode() {
+		var auth = readJson( variables.environ.xdgData( "opencode/auth.json" ) );
+		var out = [];
+		for ( var k in auth ) {
+			var go = findNoCase( "opencode-go", k ) || k == "go";
+			out.append( { name: go ? "OpenCode Go" : k, plan: go ? "Go" : "", active: out.len() == 0, meters: [] } );
+		}
+		if ( !out.len() ) out.append( { name: "Default", plan: "", active: true, meters: [] } );
+		return out;
+	}
 
-    function data() {
-        var agents = [];
-        var tokens = 0;
-        var picked = choices();
-        for ( var a in new bxrig.AiAgents().all() ) {
-            var row = { id: a.id, name: a.name, installed: installed( a.command ), accounts: [] };
-            if ( !shown( a.id, row.installed, picked ) ) continue;
-            // an agent that is installed has at least its default account; one that is not shows only its name
-            if ( row.installed ) row.accounts = [ { name: "Default", plan: "", active: true, meters: [] } ];
-            if ( row.installed ) {
-                if ( a.id == "claude-code" ) { var c = claude(); row.accounts = c.accounts; if ( c.tokens > 0 ) tokens = c.tokens; }
-                else if ( a.id == "codex-cli" ) row.accounts = codex();
-                else if ( a.id == "opencode-cli" ) row.accounts = opencode();
-            }
-            agents.append( row );
-        }
-        // installed agents first (an agent you added that is not installed comes last)
-        var sorted = agents.filter( function( x ) { return x.installed; } );
-        for ( var x in agents ) if ( !x.installed ) sorted.append( x );
-        var d = { agents: sorted };
-        // tokens_today only when an agent reports it (the panel hides the line otherwise)
-        if ( tokens > 0 ) d[ "tokens_today" ] = tokens;
-        return d;
-    }
+	function data() {
+		var agents = [];
+		var tokens = 0;
+		var picked = choices();
+		for ( var a in new bxrig.AiAgents().all() ) {
+			var row = { id: a.id, name: a.name, installed: installed( a.command ), accounts: [] };
+			if ( !shown( a.id, row.installed, picked ) ) continue;
+			// an agent that is installed has at least its default account; one that is not shows only its name
+			if ( row.installed ) row.accounts = [ { name: "Default", plan: "", active: true, meters: [] } ];
+			if ( row.installed ) {
+				if ( a.id == "claude-code" ) { var c = claude(); row.accounts = c.accounts; if ( c.tokens > 0 ) tokens = c.tokens; }
+				else if ( a.id == "codex-cli" ) row.accounts = codex();
+				else if ( a.id == "opencode-cli" ) row.accounts = opencode();
+			}
+			agents.append( row );
+		}
+		// installed agents first (an agent you added that is not installed comes last)
+		var sorted = agents.filter( function( x ) { return x.installed; } );
+		for ( var x in agents ) if ( !x.installed ) sorted.append( x );
+		var d = { agents: sorted };
+		// tokens_today only when an agent reports it (the panel hides the line otherwise)
+		if ( tokens > 0 ) d[ "tokens_today" ] = tokens;
+		return d;
+	}
 
-    function run( asJson ) {
-        var d = data();
-        var lines = [];
-        if ( !d.agents.len() ) lines.append( "No coding agents installed (add one to the panel: bxrig ai panel add ID; see bxrig ai panel list)" );
-        if ( structKeyExists( d, "tokens_today" ) ) lines.append( "Tokens today: " & d.tokens_today );
-        for ( var a in d.agents ) {
-            lines.append( a.name & ( a.installed ? "" : " (not installed)" ) );
-            if ( !a.installed ) continue;
-            for ( var acc in a.accounts ) {
-                lines.append( "  " & acc.name & ( len( acc.plan ) ? " · " & acc.plan : "" ) & ( acc.active ? "  ACTIVE" : "" ) );
-                if ( !acc.meters.len() ) lines.append( "    no usage data" );
-                for ( var m in acc.meters ) lines.append( "    " & m.label & "  " & round( m.used_fraction * 100 ) & "% used, resets in " & m.resets_in );
-            }
-        }
-        return variables.out.say( "ok", d, arguments.asJson, lines );
-    }
+	function run( asJson ) {
+		var d = data();
+		var lines = [];
+		if ( !d.agents.len() ) lines.append( "No coding agents installed (add one to the panel: bxrig ai panel add ID; see bxrig ai panel list)" );
+		if ( structKeyExists( d, "tokens_today" ) ) lines.append( "Tokens today: " & d.tokens_today );
+		for ( var a in d.agents ) {
+			lines.append( a.name & ( a.installed ? "" : " (not installed)" ) );
+			if ( !a.installed ) continue;
+			for ( var acc in a.accounts ) {
+				lines.append( "  " & acc.name & ( len( acc.plan ) ? " · " & acc.plan : "" ) & ( acc.active ? "  ACTIVE" : "" ) );
+				if ( !acc.meters.len() ) lines.append( "    no usage data" );
+				for ( var m in acc.meters ) lines.append( "    " & m.label & "  " & round( m.used_fraction * 100 ) & "% used, resets in " & m.resets_in );
+			}
+		}
+		return variables.out.say( "ok", d, arguments.asJson, lines );
+	}
 }

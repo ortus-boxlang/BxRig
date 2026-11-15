@@ -12,122 +12,122 @@
 // Test overrides: BXRIG_ROOT_FS (the filesystem type of /), BXRIG_BOOTLOADER (grub or anything else).
 // Exit: 0 ok, 2 bad usage or a plan without --yes, 4 precondition (no tool, not set up), 6 a command failed.
 class BackupSnapshots {
-    function init( cli, runner = "" ) {
-        variables.cli = arguments.cli;
-        variables.out = new bxrig.util.Out( variables.cli, "backup" );
-        variables.proc = new bxrig.util.Proc( arguments.runner );
-        variables.pacman = new bxrig.util.Pacman( variables.proc );
-        variables.systemd = new bxrig.util.Systemd( variables.proc );
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( variables.cli, "backup" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.pacman = new bxrig.util.Pacman( variables.proc );
+		variables.systemd = new bxrig.util.Systemd( variables.proc );
+		return this;
+	}
 
-    function fsType() {
-        var f = new bxrig.util.Env().named( "rootFs", "" );
-        if ( len( f ) ) return f;
-        return trim( variables.proc.exec( [ "findmnt", "-no", "FSTYPE", "/" ], 10 ).output );
-    }
+	function fsType() {
+		var f = new bxrig.util.Env().named( "rootFs", "" );
+		if ( len( f ) ) return f;
+		return trim( variables.proc.exec( [ "findmnt", "-no", "FSTYPE", "/" ], 10 ).output );
+	}
 
-    function tool() {
-        if ( fsType() == "btrfs" && variables.proc.has( "snapper" ) ) return "snapper";
-        if ( variables.proc.has( "timeshift" ) && fsType() != "btrfs" ) return "timeshift";
-        if ( variables.proc.has( "snapper" ) ) return "snapper";
-        return "";
-    }
+	function tool() {
+		if ( fsType() == "btrfs" && variables.proc.has( "snapper" ) ) return "snapper";
+		if ( variables.proc.has( "timeshift" ) && fsType() != "btrfs" ) return "timeshift";
+		if ( variables.proc.has( "snapper" ) ) return "snapper";
+		return "";
+	}
 
-    function configs() {
-        if ( !variables.proc.has( "snapper" ) ) return [];
-        var r = variables.proc.exec( [ "snapper", "--csvout", "--no-headers", "list-configs", "--columns", "config" ], 15 );
-        var out = [];
-        if ( r.exitCode == 0 ) for ( var l in listToArray( trim( r.output ), chr( 10 ) ) ) if ( len( trim( l ) ) ) out.append( trim( l ) );
-        return out;
-    }
+	function configs() {
+		if ( !variables.proc.has( "snapper" ) ) return [];
+		var r = variables.proc.exec( [ "snapper", "--csvout", "--no-headers", "list-configs", "--columns", "config" ], 15 );
+		var out = [];
+		if ( r.exitCode == 0 ) for ( var l in listToArray( trim( r.output ), chr( 10 ) ) ) if ( len( trim( l ) ) ) out.append( trim( l ) );
+		return out;
+	}
 
-    function active( unit ) { return variables.systemd.active( arguments.unit ); }
+	function active( unit ) { return variables.systemd.active( arguments.unit ); }
 
-    function pending( title, cmds, yes, dry, asJson, data = {} ) {
-        var d = arguments.data;
-        d.commands = arguments.cmds.map( function( c ) { return c.toList( " " ); } );
-        if ( !arguments.yes || arguments.dry ) {
-            var lines = [ new bxrig.util.Mutation().banner( arguments.dry ) & arguments.title ];
-            for ( var c in arguments.cmds ) lines.append( "  " & c.toList( " " ) );
-            if ( structKeyExists( d, "notes" ) ) for ( var nt in d.notes ) lines.append( "  note: " & nt );
-            lines.append( new bxrig.util.Mutation().footer( arguments.dry ) );
-            return variables.out.say( arguments.dry ? "ok" : "plan", d, arguments.asJson, lines, arguments.dry );
-        }
-        for ( var x in arguments.cmds ) {
-            var r = variables.proc.exec( x, 1800 );
-            if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ), step: x.toList( " " ) }, arguments.asJson, [ "error: " & x.toList( " " ) & ": " & trim( r.output ) ] );
-        }
-        return variables.out.say( "ok", d, arguments.asJson, [ arguments.title & ": done" ] );
-    }
+	function pending( title, cmds, yes, dry, asJson, data = {} ) {
+		var d = arguments.data;
+		d.commands = arguments.cmds.map( function( c ) { return c.toList( " " ); } );
+		if ( !arguments.yes || arguments.dry ) {
+			var lines = [ new bxrig.util.Mutation().banner( arguments.dry ) & arguments.title ];
+			for ( var c in arguments.cmds ) lines.append( "  " & c.toList( " " ) );
+			if ( structKeyExists( d, "notes" ) ) for ( var nt in d.notes ) lines.append( "  note: " & nt );
+			lines.append( new bxrig.util.Mutation().footer( arguments.dry ) );
+			return variables.out.say( arguments.dry ? "ok" : "plan", d, arguments.asJson, lines, arguments.dry );
+		}
+		for ( var x in arguments.cmds ) {
+			var r = variables.proc.exec( x, 1800 );
+			if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ), step: x.toList( " " ) }, arguments.asJson, [ "error: " & x.toList( " " ) & ": " & trim( r.output ) ] );
+		}
+		return variables.out.say( "ok", d, arguments.asJson, [ arguments.title & ": done" ] );
+	}
 
-    // The snapshots of one snapper config, as [ { number, type, date, description } ] (number 0 is "now" and is left out).
-    function snapperList( config ) {
-        var r = variables.proc.exec( [ "snapper", "--jsonout", "-c", arguments.config, "list" ], 30 );
-        var out = [];
-        if ( r.exitCode != 0 ) return out;
-        try {
-            var j = jsonDeserialize( r.output );
-            var rows = [];
-            if ( isArray( j ) ) rows = j;
-            else if ( isStruct( j ) ) for ( var k in j ) if ( isArray( j[ k ] ) ) { rows = j[ k ]; break; }
-            for ( var s in rows ) {
-                var n = int( val( s.number ?: 0 ) );
-                if ( n == 0 ) continue;
-                out.append( { number: n, type: s.type ?: "", date: s.date ?: "", description: s.description ?: "", cleanup: s.cleanup ?: "", config: arguments.config } );
-            }
-        } catch ( any e ) {}
-        return out;
-    }
+	// The snapshots of one snapper config, as [ { number, type, date, description } ] (number 0 is "now" and is left out).
+	function snapperList( config ) {
+		var r = variables.proc.exec( [ "snapper", "--jsonout", "-c", arguments.config, "list" ], 30 );
+		var out = [];
+		if ( r.exitCode != 0 ) return out;
+		try {
+			var j = jsonDeserialize( r.output );
+			var rows = [];
+			if ( isArray( j ) ) rows = j;
+			else if ( isStruct( j ) ) for ( var k in j ) if ( isArray( j[ k ] ) ) { rows = j[ k ]; break; }
+			for ( var s in rows ) {
+				var n = int( val( s.number ?: 0 ) );
+				if ( n == 0 ) continue;
+				out.append( { number: n, type: s.type ?: "", date: s.date ?: "", description: s.description ?: "", cleanup: s.cleanup ?: "", config: arguments.config } );
+			}
+		} catch ( any e ) {}
+		return out;
+	}
 
-    function allSnapshots() {
-        var out = [];
-        if ( tool() == "snapper" ) for ( var c in configs() ) for ( var s in snapperList( c ) ) out.append( s );
-        arraySort( out, function( a, b ) { return compare( b.date & "", a.date & "" ); } );
-        return out;
-    }
+	function allSnapshots() {
+		var out = [];
+		if ( tool() == "snapper" ) for ( var c in configs() ) for ( var s in snapperList( c ) ) out.append( s );
+		arraySort( out, function( a, b ) { return compare( b.date & "", a.date & "" ); } );
+		return out;
+	}
 
-    function statusCmd( asJson ) {
-        var t = tool();
-        var cfgs = configs();
-        var d = { filesystem: fsType(), tool: t, configs: cfgs, snap_pac: fileExists( "/usr/share/libalpm/hooks/05-snap-pac-pre.hook" ), grub_btrfs: fileExists( "/usr/lib/systemd/system/grub-btrfsd.service" ), timeline: active( "snapper-timeline.timer" ), cleanup: active( "snapper-cleanup.timer" ), snapshots: t == "snapper" ? allSnapshots().len() : 0 };
-        var lines = [ "filesystem: " & ( len( d.filesystem ) ? d.filesystem : "unknown" ), "tool: " & ( len( t ) ? t : "none (bxrig backup snapshots setup)" ) ];
-        if ( t == "snapper" ) { lines.append( "configs: " & ( cfgs.len() ? cfgs.toList( ", " ) : "none yet (bxrig backup snapshots setup --yes)" ) ); lines.append( "timeline: " & ( d.timeline ? "on" : "off" ) & ", cleanup: " & ( d.cleanup ? "on" : "off" ) & ", before and after pacman: " & ( d.snap_pac ? "on" : "off" ) & ", boot entries: " & ( d.grub_btrfs ? "on" : "off" ) ); lines.append( d.snapshots & " snapshots" ); }
-        if ( t == "timeshift" ) lines.append( "Timeshift keeps its own schedule: open it once to pick the disk and the schedule." );
-        return variables.out.say( "ok", d, arguments.asJson, lines );
-    }
+	function statusCmd( asJson ) {
+		var t = tool();
+		var cfgs = configs();
+		var d = { filesystem: fsType(), tool: t, configs: cfgs, snap_pac: fileExists( "/usr/share/libalpm/hooks/05-snap-pac-pre.hook" ), grub_btrfs: fileExists( "/usr/lib/systemd/system/grub-btrfsd.service" ), timeline: active( "snapper-timeline.timer" ), cleanup: active( "snapper-cleanup.timer" ), snapshots: t == "snapper" ? allSnapshots().len() : 0 };
+		var lines = [ "filesystem: " & ( len( d.filesystem ) ? d.filesystem : "unknown" ), "tool: " & ( len( t ) ? t : "none (bxrig backup snapshots setup)" ) ];
+		if ( t == "snapper" ) { lines.append( "configs: " & ( cfgs.len() ? cfgs.toList( ", " ) : "none yet (bxrig backup snapshots setup --yes)" ) ); lines.append( "timeline: " & ( d.timeline ? "on" : "off" ) & ", cleanup: " & ( d.cleanup ? "on" : "off" ) & ", before and after pacman: " & ( d.snap_pac ? "on" : "off" ) & ", boot entries: " & ( d.grub_btrfs ? "on" : "off" ) ); lines.append( d.snapshots & " snapshots" ); }
+		if ( t == "timeshift" ) lines.append( "Timeshift keeps its own schedule: open it once to pick the disk and the schedule." );
+		return variables.out.say( "ok", d, arguments.asJson, lines );
+	}
 
-    function setupCmd( opts, yes, dry, asJson ) {
-        var fs = fsType();
-        var cmds = [];
-        var notes = [];
-        if ( fs == "btrfs" ) {
-            var pk = [ "snapper", "snap-pac" ];
-            var bl = new bxrig.util.Env().named( "bootloader", "" );
-            if ( bl == "grub" || ( !len( bl ) && ( directoryExists( "/boot/grub" ) || variables.proc.has( "grub-install" ) ) ) ) pk.append( "grub-btrfs" ); else notes.append( "grub-btrfs (boot entries for snapshots) is skipped: it works with GRUB, and this machine does not use it" );
-            cmds.append( variables.pacman.installArgv( pk ) );
-            var cfgs = variables.proc.has( "snapper" ) ? configs() : [];
-            var want = [ { name: "root", path: "/" } ];
-            if ( structKeyExists( arguments.opts, "home" ) ) want.append( { name: "home", path: "/home" } );
-            for ( var w in want ) {
-                if ( !arrayFind( cfgs, w.name ) ) cmds.append( [ "sudo", "snapper", "-c", w.name, "create-config", w.path ] );
-                cmds.append( [ "sudo", "snapper", "-c", w.name, "set-config", "TIMELINE_CREATE=yes", "TIMELINE_CLEANUP=yes", "TIMELINE_LIMIT_HOURLY=5", "TIMELINE_LIMIT_DAILY=7", "TIMELINE_LIMIT_WEEKLY=2", "TIMELINE_LIMIT_MONTHLY=1", "TIMELINE_LIMIT_YEARLY=0" ] );
-            }
-            cmds.append( variables.systemd.enableArgv( [ "snapper-timeline.timer", "snapper-cleanup.timer" ], false, true ) );
-            if ( arrayFind( pk, "grub-btrfs" ) ) cmds.append( variables.systemd.enableArgv( "grub-btrfsd.service", false, true ) );
-        } else {
-            cmds.append( variables.pacman.installArgv( [ "timeshift" ] ) );
-            notes.append( "your root is " & ( len( fs ) ? fs : "not Btrfs" ) & ", which has no snapshots of its own: Timeshift (rsync mode) takes full copies. Open Timeshift once to pick the disk and the schedule." );
-        }
-        var shown = notes;
-        return pending( fs == "btrfs" ? "set up snapshots with snapper (5 hourly, 7 daily, 2 weekly, 1 monthly kept; one before and after every pacman transaction)" : "install Timeshift", cmds, arguments.yes, arguments.dry, arguments.asJson, { filesystem: fs, notes: notes } );
-    }
+	function setupCmd( opts, yes, dry, asJson ) {
+		var fs = fsType();
+		var cmds = [];
+		var notes = [];
+		if ( fs == "btrfs" ) {
+			var pk = [ "snapper", "snap-pac" ];
+			var bl = new bxrig.util.Env().named( "bootloader", "" );
+			if ( bl == "grub" || ( !len( bl ) && ( directoryExists( "/boot/grub" ) || variables.proc.has( "grub-install" ) ) ) ) pk.append( "grub-btrfs" ); else notes.append( "grub-btrfs (boot entries for snapshots) is skipped: it works with GRUB, and this machine does not use it" );
+			cmds.append( variables.pacman.installArgv( pk ) );
+			var cfgs = variables.proc.has( "snapper" ) ? configs() : [];
+			var want = [ { name: "root", path: "/" } ];
+			if ( structKeyExists( arguments.opts, "home" ) ) want.append( { name: "home", path: "/home" } );
+			for ( var w in want ) {
+				if ( !arrayFind( cfgs, w.name ) ) cmds.append( [ "sudo", "snapper", "-c", w.name, "create-config", w.path ] );
+				cmds.append( [ "sudo", "snapper", "-c", w.name, "set-config", "TIMELINE_CREATE=yes", "TIMELINE_CLEANUP=yes", "TIMELINE_LIMIT_HOURLY=5", "TIMELINE_LIMIT_DAILY=7", "TIMELINE_LIMIT_WEEKLY=2", "TIMELINE_LIMIT_MONTHLY=1", "TIMELINE_LIMIT_YEARLY=0" ] );
+			}
+			cmds.append( variables.systemd.enableArgv( [ "snapper-timeline.timer", "snapper-cleanup.timer" ], false, true ) );
+			if ( arrayFind( pk, "grub-btrfs" ) ) cmds.append( variables.systemd.enableArgv( "grub-btrfsd.service", false, true ) );
+		} else {
+			cmds.append( variables.pacman.installArgv( [ "timeshift" ] ) );
+			notes.append( "your root is " & ( len( fs ) ? fs : "not Btrfs" ) & ", which has no snapshots of its own: Timeshift (rsync mode) takes full copies. Open Timeshift once to pick the disk and the schedule." );
+		}
+		var shown = notes;
+		return pending( fs == "btrfs" ? "set up snapshots with snapper (5 hourly, 7 daily, 2 weekly, 1 monthly kept; one before and after every pacman transaction)" : "install Timeshift", cmds, arguments.yes, arguments.dry, arguments.asJson, { filesystem: fs, notes: notes } );
+	}
 
-    function listCmd( asJson ) {
-        var t = tool();
-        if ( t == "snapper" ) {
-            var all = allSnapshots();
-            return variables.out.say( "ok", { tool: t, snapshots: all }, arguments.asJson, all.len() ? all.map( function( s ) { return s.config & " #" & s.number & "   " & s.date & "   " & s.type & "   " & s.description; } ) : [ "No snapshots yet." ] );
+	function listCmd( asJson ) {
+		var t = tool();
+		if ( t == "snapper" ) {
+			var all = allSnapshots();
+			return variables.out.say( "ok", { tool: t, snapshots: all }, arguments.asJson, all.len() ? all.map( function( s ) { return s.config & " #" & s.number & "   " & s.date & "   " & s.type & "   " & s.description; } ) : [ "No snapshots yet." ] );
         }
         if ( t == "timeshift" ) {
             var r = variables.proc.exec( [ "sudo", "timeshift", "--list" ], 60 );

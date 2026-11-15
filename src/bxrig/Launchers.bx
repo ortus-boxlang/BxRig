@@ -12,228 +12,228 @@
 // No StartupWMClass is written: it has to equal the window class the terminal gives, and not every terminal can set one (konsole has no flag).
 // Exit: 0 done, 2 plan without --yes, 4 precondition (no terminal, root, base64 missing), 6 write failed.
 class Launchers {
-    function init( cli, runner = "" ) {
-        variables.environ = new bxrig.util.Env();
-        variables.cli = arguments.cli;
-        variables.runner = arguments.runner;
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.config = new bxrig.ConfigService().quiet( true );
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.environ = new bxrig.util.Env();
+		variables.cli = arguments.cli;
+		variables.runner = arguments.runner;
+		variables.inst = new bxrig.Installer( arguments.runner );
+		variables.config = new bxrig.ConfigService().quiet( true );
+		return this;
+	}
 
-    function appsDir() { return variables.environ.xdgData() & "/applications"; }
-    // The app icon files: [ { name: embedded name, file: where it goes } ] (every size and the scalable SVG).
-    function iconSet() {
-        var assets = new bxrig.Assets( variables.cli, variables.runner );
-        return assets.iconNames().map( function( n ) { return { name: n, file: assets.target( n ) }; } );
-    }
-    function directoryFile() { return variables.environ.xdgData() & "/desktop-directories/bxrig.directory"; }
-    function menuFile() { return variables.environ.xdgConfig( "menus/applications-merged/bxrig.menu" ); }
-    function fileFor( id ) { return appsDir() & "/bxrig-tui-" & arguments.id & ".desktop"; }
-    function extraFile( id ) { return appsDir() & "/bxrig-" & arguments.id & ".desktop"; }
-    function directoryDir() { return variables.environ.xdgData() & "/desktop-directories"; }
+	function appsDir() { return variables.environ.xdgData() & "/applications"; }
+	// The app icon files: [ { name: embedded name, file: where it goes } ] (every size and the scalable SVG).
+	function iconSet() {
+		var assets = new bxrig.Assets( variables.cli, variables.runner );
+		return assets.iconNames().map( function( n ) { return { name: n, file: assets.target( n ) }; } );
+	}
+	function directoryFile() { return variables.environ.xdgData() & "/desktop-directories/bxrig.directory"; }
+	function menuFile() { return variables.environ.xdgConfig( "menus/applications-merged/bxrig.menu" ); }
+	function fileFor( id ) { return appsDir() & "/bxrig-tui-" & arguments.id & ".desktop"; }
+	function extraFile( id ) { return appsDir() & "/bxrig-" & arguments.id & ".desktop"; }
+	function directoryDir() { return variables.environ.xdgData() & "/desktop-directories"; }
 
-    // The folders of the submenu: id, title, comment, icon (a freedesktop theme name), the pages in it. Anything not listed is at the top.
-    function folders() {
-        return [
-            { id: "develop", title: "Develop", comment: "BoxLang, Java, Maven, Gradle, versions, databases, mail and ports", icon: "applications-development", pages: [ "boxlang", "java", "maven", "gradle", "versions", "databases", "mail", "ports" ] },
-            { id: "system", title: "System", comment: "Machines, storage, secrets, logs, packages and shortcuts", icon: "applications-system", pages: [ "machines", "storage", "secrets", "logs", "packages", "shortcuts" ] },
-            { id: "look", title: "Look", comment: "Themes", icon: "preferences-desktop-theme", pages: [ "themes" ] }
-        ];
-    }
+	// The folders of the submenu: id, title, comment, icon (a freedesktop theme name), the pages in it. Anything not listed is at the top.
+	function folders() {
+		return [
+			{ id: "develop", title: "Develop", comment: "BoxLang, Java, Maven, Gradle, versions, databases, mail and ports", icon: "applications-development", pages: [ "boxlang", "java", "maven", "gradle", "versions", "databases", "mail", "ports" ] },
+			{ id: "system", title: "System", comment: "Machines, storage, secrets, logs, packages and shortcuts", icon: "applications-system", pages: [ "machines", "storage", "secrets", "logs", "packages", "shortcuts" ] },
+			{ id: "look", title: "Look", comment: "Themes", icon: "preferences-desktop-theme", pages: [ "themes" ] }
+		];
+	}
 
-    // The category of a page: X-BxRig at the top, X-BxRig-Develop and so on inside a folder.
-    function categoryFor( pageId ) {
-        for ( var f in folders() ) if ( arrayFind( f.pages, arguments.pageId ) ) return "X-BxRig-" & f.title;
-        return "X-BxRig";
-    }
+	// The category of a page: X-BxRig at the top, X-BxRig-Develop and so on inside a folder.
+	function categoryFor( pageId ) {
+		for ( var f in folders() ) if ( arrayFind( f.pages, arguments.pageId ) ) return "X-BxRig-" & f.title;
+		return "X-BxRig";
+	}
 
-    // Everything that gets an entry: the wizard, the runner menu and the Control Center first, then one per page.
-    // { id, title, comment, argv (after the terminal, or the whole command when term is false), term, icon, category, file }
-    function items() {
-        var out = [
-            { id: "wizard", title: "Setup Wizard", comment: "BxRig Setup Wizard: change any answer again, review, then apply (bxrig init)", argv: [ "init" ], term: true, icon: "system-run", category: "X-BxRig", file: extraFile( "wizard" ) },
-            { id: "runner", title: "Runner Menu", comment: "The BxRig menu on your launcher", argv: [ "menu" ], term: false, icon: "system-search", category: "X-BxRig", file: extraFile( "runner" ) },
-            { id: "controlcenter", title: "Control Center", comment: "BxRig Control Center, every page", argv: [ "tui" ], term: true, icon: "bxrig", category: "X-BxRig", file: extraFile( "controlcenter" ) }
-        ];
-        for ( var p in new bxrig.ControlCenterPages().list() ) {
-            out.append( { id: p.id, title: p.title, comment: "BxRig " & p.title & " in a terminal", argv: [ "tui", p.id ], term: true, icon: "bxrig", category: categoryFor( p.id ), file: fileFor( p.id ) } );
-        }
-        return out;
-    }
+	// Everything that gets an entry: the wizard, the runner menu and the Control Center first, then one per page.
+	// { id, title, comment, argv (after the terminal, or the whole command when term is false), term, icon, category, file }
+	function items() {
+		var out = [
+			{ id: "wizard", title: "Setup Wizard", comment: "BxRig Setup Wizard: change any answer again, review, then apply (bxrig init)", argv: [ "init" ], term: true, icon: "system-run", category: "X-BxRig", file: extraFile( "wizard" ) },
+			{ id: "runner", title: "Runner Menu", comment: "The BxRig menu on your launcher", argv: [ "menu" ], term: false, icon: "system-search", category: "X-BxRig", file: extraFile( "runner" ) },
+			{ id: "controlcenter", title: "Control Center", comment: "BxRig Control Center, every page", argv: [ "tui" ], term: true, icon: "bxrig", category: "X-BxRig", file: extraFile( "controlcenter" ) }
+		];
+		for ( var p in new bxrig.ControlCenterPages().list() ) {
+			out.append( { id: p.id, title: p.title, comment: "BxRig " & p.title & " in a terminal", argv: [ "tui", p.id ], term: true, icon: "bxrig", category: categoryFor( p.id ), file: fileFor( p.id ) } );
+		}
+		return out;
+	}
 
-    // A desktop Exec word: quoted when it holds a space or a quote.
-    function word( w ) {
-        if ( !reFind( "[ ""'\\]", arguments.w ) ) return arguments.w;
-        return """" & replace( replace( arguments.w, chr( 92 ), chr( 92 ) & chr( 92 ), "all" ), """", chr( 92 ) & """", "all" ) & """";
-    }
+	// A desktop Exec word: quoted when it holds a space or a quote.
+	function word( w ) {
+		if ( !reFind( "[ ""'\\]", arguments.w ) ) return arguments.w;
+		return """" & replace( replace( arguments.w, chr( 92 ), chr( 92 ) & chr( 92 ), "all" ), """", chr( 92 ) & """", "all" ) & """";
+	}
 
-    // The entry text for one item and a terminal argv.
-    function entryText( item, termArgv ) {
-        var words = [];
-        if ( arguments.item.term ) for ( var t in arguments.termArgv ) words.append( word( t ) );
-        words.append( word( variables.environ.self() ) );
-        for ( var a in arguments.item.argv ) words.append( word( a ) );
-        return new bxrig.util.DesktopEntry().render( [ "Type=Application", "Name=BxRig " & arguments.item.title, "Comment=" & arguments.item.comment,
-            "Exec=" & words.toList( " " ), "Icon=" & arguments.item.icon, "Terminal=false", "Categories=" & arguments.item.category & ";", "X-BxRig-Launcher=tui" ] );
-    }
+	// The entry text for one item and a terminal argv.
+	function entryText( item, termArgv ) {
+		var words = [];
+		if ( arguments.item.term ) for ( var t in arguments.termArgv ) words.append( word( t ) );
+		words.append( word( variables.environ.self() ) );
+		for ( var a in arguments.item.argv ) words.append( word( a ) );
+		return new bxrig.util.DesktopEntry().render( [ "Type=Application", "Name=BxRig " & arguments.item.title, "Comment=" & arguments.item.comment,
+			"Exec=" & words.toList( " " ), "Icon=" & arguments.item.icon, "Terminal=false", "Categories=" & arguments.item.category & ";", "X-BxRig-Launcher=tui" ] );
+	}
 
-    // The files that make the "BxRig" submenu: one folder file per folder (name and icon) and the menu merge with the nested <Menu>.
-    function extras() {
-        var nl = chr( 10 );
-        var dirText = function( title, comment, icon ) {
-            return new bxrig.util.DesktopEntry().render( [ "Type=Directory", "Name=" & title, "Comment=" & comment, "Icon=" & icon, "X-BxRig-Launcher=tui" ] );
-        };
-        var out = [ { name: "bxrig-directory", target: directoryDir() & "/bxrig.directory", mode: "644", content: dirText( "BxRig", "Your dev rig", "bxrig" ) } ];
-        var inner = "";
-        for ( var f in folders() ) {
-            out.append( { name: "bxrig-directory-" & f.id, target: directoryDir() & "/bxrig-" & f.id & ".directory", mode: "644", content: dirText( f.title, f.comment, f.icon ) } );
-            inner &= "    <Menu>" & nl & "      <Name>BxRig " & f.title & "</Name>" & nl & "      <Directory>bxrig-" & f.id & ".directory</Directory>" & nl
-                & "      <Include><Category>X-BxRig-" & f.title & "</Category></Include>" & nl & "    </Menu>" & nl;
-        }
-        var menu = "<!DOCTYPE Menu PUBLIC ""-//freedesktop//DTD Menu 1.0//EN"" ""http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd"">" & nl
-            & "<!-- X-BxRig-Launcher=tui -->" & nl & "<Menu>" & nl & "  <Name>Applications</Name>" & nl & "  <Menu>" & nl & "    <Name>BxRig</Name>" & nl
-            & "    <Directory>bxrig.directory</Directory>" & nl & "    <Include><Category>X-BxRig</Category></Include>" & nl & inner & "  </Menu>" & nl & "</Menu>" & nl;
-        out.append( { name: "bxrig-menu", target: menuFile(), mode: "644", content: menu } );
-        return out;
-    }
+	// The files that make the "BxRig" submenu: one folder file per folder (name and icon) and the menu merge with the nested <Menu>.
+	function extras() {
+		var nl = chr( 10 );
+		var dirText = function( title, comment, icon ) {
+			return new bxrig.util.DesktopEntry().render( [ "Type=Directory", "Name=" & title, "Comment=" & comment, "Icon=" & icon, "X-BxRig-Launcher=tui" ] );
+		};
+		var out = [ { name: "bxrig-directory", target: directoryDir() & "/bxrig.directory", mode: "644", content: dirText( "BxRig", "Your dev rig", "bxrig" ) } ];
+		var inner = "";
+		for ( var f in folders() ) {
+			out.append( { name: "bxrig-directory-" & f.id, target: directoryDir() & "/bxrig-" & f.id & ".directory", mode: "644", content: dirText( f.title, f.comment, f.icon ) } );
+			inner &= "    <Menu>" & nl & "      <Name>BxRig " & f.title & "</Name>" & nl & "      <Directory>bxrig-" & f.id & ".directory</Directory>" & nl
+				& "      <Include><Category>X-BxRig-" & f.title & "</Category></Include>" & nl & "    </Menu>" & nl;
+		}
+		var menu = "<!DOCTYPE Menu PUBLIC ""-//freedesktop//DTD Menu 1.0//EN"" ""http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd"">" & nl
+			& "<!-- X-BxRig-Launcher=tui -->" & nl & "<Menu>" & nl & "  <Name>Applications</Name>" & nl & "  <Menu>" & nl & "    <Name>BxRig</Name>" & nl
+			& "    <Directory>bxrig.directory</Directory>" & nl & "    <Include><Category>X-BxRig</Category></Include>" & nl & inner & "  </Menu>" & nl & "</Menu>" & nl;
+		out.append( { name: "bxrig-menu", target: menuFile(), mode: "644", content: menu } );
+		return out;
+	}
 
-    // [ { id, title, file, state } ] for the terminal argv (state: missing, clean, outdated, drifted, blocked).
-    function rows( termArgv ) {
-        var out = [];
-        for ( var p in items() ) {
-            var entry = { name: "tui-" & p.id, target: p.file, mode: "644", content: len( arguments.termArgv ) ? entryText( p, arguments.termArgv ) : "" };
-            var st = fileExists( entry.target ) || directoryExists( entry.target ) ? ( len( arguments.termArgv ) ? variables.config.configState( entry ) : "present" ) : "missing";
-            out.append( { id: p.id, title: p.title, file: entry.target, state: st, entry: entry } );
-        }
-        return out;
-    }
+	// [ { id, title, file, state } ] for the terminal argv (state: missing, clean, outdated, drifted, blocked).
+	function rows( termArgv ) {
+		var out = [];
+		for ( var p in items() ) {
+			var entry = { name: "tui-" & p.id, target: p.file, mode: "644", content: len( arguments.termArgv ) ? entryText( p, arguments.termArgv ) : "" };
+			var st = fileExists( entry.target ) || directoryExists( entry.target ) ? ( len( arguments.termArgv ) ? variables.config.configState( entry ) : "present" ) : "missing";
+			out.append( { id: p.id, title: p.title, file: entry.target, state: st, entry: entry } );
+		}
+		return out;
+	}
 
-    function publicRows( rows ) {
-        return arguments.rows.map( function( r ) { return { id: r.id, title: r.title, file: r.file, state: r.state }; } );
-    }
+	function publicRows( rows ) {
+		return arguments.rows.map( function( r ) { return { id: r.id, title: r.title, file: r.file, state: r.state }; } );
+	}
 
-    function mine( file ) {
-        if ( !fileExists( arguments.file ) ) return false;
-        return find( "X-BxRig-Launcher=tui", fileRead( arguments.file ) ) > 0;
-    }
+	function mine( file ) {
+		if ( !fileExists( arguments.file ) ) return false;
+		return find( "X-BxRig-Launcher=tui", fileRead( arguments.file ) ) > 0;
+	}
 
-    // SHA-256 of a file (a PNG is not text, so fileRead cannot hash it).
-    function sha( path ) {
-        var r = variables.inst.proc().exec( [ "sha256sum", arguments.path ], 30 );
-        if ( r.exitCode != 0 ) throw( type = "Launchers.sha", message = "sha256sum failed" );
-        return listFirst( trim( r.output ), " " );
-    }
+	// SHA-256 of a file (a PNG is not text, so fileRead cannot hash it).
+	function sha( path ) {
+		var r = variables.inst.proc().exec( [ "sha256sum", arguments.path ], 30 );
+		if ( r.exitCode != 0 ) throw( type = "Launchers.sha", message = "sha256sum failed" );
+		return listFirst( trim( r.output ), " " );
+	}
 
-    // The hash of one embedded icon, written to a scratch file first.
-    function embeddedIconHash( name ) {
-        var tmp = variables.config.stateDir() & "/launcher-icon.tmp";
-        new bxrig.Assets( variables.cli, variables.runner ).decode( arguments.name, tmp );
-        var h = sha( tmp );
-        fileDelete( tmp );
-        return h;
-    }
+	// The hash of one embedded icon, written to a scratch file first.
+	function embeddedIconHash( name ) {
+		var tmp = variables.config.stateDir() & "/launcher-icon.tmp";
+		new bxrig.Assets( variables.cli, variables.runner ).decode( arguments.name, tmp );
+		var h = sha( tmp );
+		fileDelete( tmp );
+		return h;
+	}
 
-    // `launchers status`
-    function status( asJson ) {
-        var term = new bxrig.Ai( variables.cli, variables.runner ).terminal();
-        var rs = rows( structKeyExists( term, "argv" ) ? term.argv : [] );
-        var present = rs.filter( function( r ) { return r.state != "missing"; } ).len();
-        var iconsAll = iconSet();
-        var iconsHave = iconsAll.filter( function( i ) { return fileExists( i.file ); } ).len();
-        var data = { enabled: present > 0, present: present, total: rs.len(), icon: iconsHave == iconsAll.len(), icons: iconsHave, terminal: structKeyExists( term, "id" ) ? term.id : "", launchers: publicRows( rs ) };
-        var lines = [ present & " of " & rs.len() & " launchers in the application menu" & ( structKeyExists( term, "id" ) ? " (terminal: " & term.id & ")" : " (no terminal found)" ) ];
-        for ( var r in rs ) lines.append( ( r.state == "missing" ? "  -  " : "  +  " ) & "BxRig " & r.title & ( r.state == "drifted" ? "   (edited by you)" : "" ) );
-        var sub = extras().filter( function( e ) { return fileExists( e.target ); } ).len();
-        data.submenu = sub == extras().len();
-        lines.append( "Submenu BxRig: " & ( sub == extras().len() ? "yes" : "no" ) );
-        if ( !present ) lines.append( "Turn them on: bxrig launchers on --yes" );
-        return variables.cli.say( "launchers status", "ok", data, arguments.asJson, lines );
-    }
+	// `launchers status`
+	function status( asJson ) {
+		var term = new bxrig.Ai( variables.cli, variables.runner ).terminal();
+		var rs = rows( structKeyExists( term, "argv" ) ? term.argv : [] );
+		var present = rs.filter( function( r ) { return r.state != "missing"; } ).len();
+		var iconsAll = iconSet();
+		var iconsHave = iconsAll.filter( function( i ) { return fileExists( i.file ); } ).len();
+		var data = { enabled: present > 0, present: present, total: rs.len(), icon: iconsHave == iconsAll.len(), icons: iconsHave, terminal: structKeyExists( term, "id" ) ? term.id : "", launchers: publicRows( rs ) };
+		var lines = [ present & " of " & rs.len() & " launchers in the application menu" & ( structKeyExists( term, "id" ) ? " (terminal: " & term.id & ")" : " (no terminal found)" ) ];
+		for ( var r in rs ) lines.append( ( r.state == "missing" ? "  -  " : "  +  " ) & "BxRig " & r.title & ( r.state == "drifted" ? "   (edited by you)" : "" ) );
+		var sub = extras().filter( function( e ) { return fileExists( e.target ); } ).len();
+		data.submenu = sub == extras().len();
+		lines.append( "Submenu BxRig: " & ( sub == extras().len() ? "yes" : "no" ) );
+		if ( !present ) lines.append( "Turn them on: bxrig launchers on --yes" );
+		return variables.cli.say( "launchers status", "ok", data, arguments.asJson, lines );
+	}
 
-    // `launchers on [--yes] [--dry-run]`
-    function on( yes, dryRun, asJson ) {
-        var cmd = "launchers on";
-        if ( variables.inst.isRoot() ) return variables.cli.say( cmd, "precondition", { error: "Run as a regular user" }, arguments.asJson, [ "error: run as a regular user" ] );
-        if ( !variables.inst.hasCommand( "base64" ) ) return variables.cli.say( cmd, "precondition", { error: "base64 not found" }, arguments.asJson, [ "error: base64 (coreutils) was not found" ] );
-        var term = new bxrig.Ai( variables.cli, variables.runner ).terminal();
-        if ( !structKeyExists( term, "argv" ) ) return variables.cli.say( cmd, "precondition", { error: "No terminal" }, arguments.asJson, [ "error: no terminal program found (ghostty, kitty, foot, alacritty or konsole)" ] );
-        var rs = rows( term.argv );
-        var plan = [];
-        var kept = [];
-        for ( var r in rs ) { if ( r.state == "drifted" || r.state == "blocked" ) kept.append( r ); else if ( r.state != "clean" ) plan.append( r ); }
-        var iconPlan = iconSet().filter( function( i ) { return !fileExists( i.file ); } );
-        var iconWrite = iconPlan.len() > 0;
-        var extraPlan = extras().filter( function( e ) { return !fileExists( e.target ) || mine( e.target ); } );
-        var data = { submenu: extraPlan.map( function( e ) { return e.target; } ), terminal: term.id, write: plan.map( function( r ) { return r.file; } ), keep: kept.map( function( r ) { return r.file; } ), icon_write: iconPlan.map( function( i ) { return i.file; } ) };
-        if ( !arguments.yes || arguments.dryRun ) {
-            var lines = [ new bxrig.util.Mutation().banner( arguments.dryRun ) & plan.len() & " launchers for the application menu, opening in " & term.id ];
-            for ( var p in plan ) lines.append( "  write " & p.file );
-            for ( var k in kept ) lines.append( "  keep  " & k.file & " (edited by you)" );
-            for ( var x in extraPlan ) lines.append( "  write " & x.target & " (the BxRig submenu)" );
-            for ( var ip in iconPlan ) lines.append( "  write " & ip.file );
-            if ( !iconWrite ) lines.append( "  keep  the BxRig icons (already there)" );
-            lines.append( new bxrig.util.Mutation().footer( arguments.dryRun ) );
-            return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", data, arguments.asJson, lines );
-        }
-        for ( var r in plan ) {
-            if ( variables.config.configWrite( r.entry, r.entry.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, "failed", { error: "Could not write " & r.file }, arguments.asJson, [ "error: could not write " & r.file ] );
-        }
-        for ( var x in extraPlan ) {
-            if ( variables.config.configWrite( x, x.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, "failed", { error: "Could not write " & x.target }, arguments.asJson, [ "error: could not write " & x.target ] );
-        }
-        for ( var ic in iconPlan ) {
-            try { new bxrig.Assets( variables.cli, variables.runner ).decode( ic.name, ic.file ); }
-            catch ( any e ) { return variables.cli.say( cmd, "failed", { error: "Could not write the icon" }, arguments.asJson, [ "error: could not write " & ic.file ] ); }
-        }
-        return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Added " & plan.len() & " launchers to the application menu." & ( kept.len() ? " Kept " & kept.len() & " you edited." : "" ) ] );
-    }
+	// `launchers on [--yes] [--dry-run]`
+	function on( yes, dryRun, asJson ) {
+		var cmd = "launchers on";
+		if ( variables.inst.isRoot() ) return variables.cli.say( cmd, "precondition", { error: "Run as a regular user" }, arguments.asJson, [ "error: run as a regular user" ] );
+		if ( !variables.inst.hasCommand( "base64" ) ) return variables.cli.say( cmd, "precondition", { error: "base64 not found" }, arguments.asJson, [ "error: base64 (coreutils) was not found" ] );
+		var term = new bxrig.Ai( variables.cli, variables.runner ).terminal();
+		if ( !structKeyExists( term, "argv" ) ) return variables.cli.say( cmd, "precondition", { error: "No terminal" }, arguments.asJson, [ "error: no terminal program found (ghostty, kitty, foot, alacritty or konsole)" ] );
+		var rs = rows( term.argv );
+		var plan = [];
+		var kept = [];
+		for ( var r in rs ) { if ( r.state == "drifted" || r.state == "blocked" ) kept.append( r ); else if ( r.state != "clean" ) plan.append( r ); }
+		var iconPlan = iconSet().filter( function( i ) { return !fileExists( i.file ); } );
+		var iconWrite = iconPlan.len() > 0;
+		var extraPlan = extras().filter( function( e ) { return !fileExists( e.target ) || mine( e.target ); } );
+		var data = { submenu: extraPlan.map( function( e ) { return e.target; } ), terminal: term.id, write: plan.map( function( r ) { return r.file; } ), keep: kept.map( function( r ) { return r.file; } ), icon_write: iconPlan.map( function( i ) { return i.file; } ) };
+		if ( !arguments.yes || arguments.dryRun ) {
+			var lines = [ new bxrig.util.Mutation().banner( arguments.dryRun ) & plan.len() & " launchers for the application menu, opening in " & term.id ];
+			for ( var p in plan ) lines.append( "  write " & p.file );
+			for ( var k in kept ) lines.append( "  keep  " & k.file & " (edited by you)" );
+			for ( var x in extraPlan ) lines.append( "  write " & x.target & " (the BxRig submenu)" );
+			for ( var ip in iconPlan ) lines.append( "  write " & ip.file );
+			if ( !iconWrite ) lines.append( "  keep  the BxRig icons (already there)" );
+			lines.append( new bxrig.util.Mutation().footer( arguments.dryRun ) );
+			return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", data, arguments.asJson, lines );
+		}
+		for ( var r in plan ) {
+			if ( variables.config.configWrite( r.entry, r.entry.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, "failed", { error: "Could not write " & r.file }, arguments.asJson, [ "error: could not write " & r.file ] );
+		}
+		for ( var x in extraPlan ) {
+			if ( variables.config.configWrite( x, x.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, "failed", { error: "Could not write " & x.target }, arguments.asJson, [ "error: could not write " & x.target ] );
+		}
+		for ( var ic in iconPlan ) {
+			try { new bxrig.Assets( variables.cli, variables.runner ).decode( ic.name, ic.file ); }
+			catch ( any e ) { return variables.cli.say( cmd, "failed", { error: "Could not write the icon" }, arguments.asJson, [ "error: could not write " & ic.file ] ); }
+		}
+		return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Added " & plan.len() & " launchers to the application menu." & ( kept.len() ? " Kept " & kept.len() & " you edited." : "" ) ] );
+	}
 
-    // `launchers off [--yes] [--dry-run]`: only entries BxRig wrote (marked) and still unedited go; the icon goes when it is still BxRig's.
-    function off( yes, dryRun, asJson ) {
-        var cmd = "launchers off";
-        var term = new bxrig.Ai( variables.cli, variables.runner ).terminal();
-        var rs = rows( structKeyExists( term, "argv" ) ? term.argv : [] );
-        var gone = [];
-        var kept = [];
-        for ( var r in rs ) {
-            if ( r.state == "missing" ) continue;
-            // with a terminal known the state says whether it is still exactly what BxRig wrote; without one, the marker has to do
-            if ( ( r.state == "clean" || r.state == "outdated" || ( r.state == "present" && mine( r.file ) ) ) ) gone.append( r ); else kept.append( r );
-        }
-        var iconGone = [];
-        if ( gone.len() ) {
-            for ( var ic in iconSet() ) {
-                if ( !fileExists( ic.file ) ) continue;
-                try { if ( sha( ic.file ) == embeddedIconHash( ic.name ) ) iconGone.append( ic ); } catch ( any e ) {}
-            }
-        }
-        var extraGone = !kept.len() ? extras().filter( function( e ) { return mine( e.target ); } ) : [];
-        var data = { submenu: extraGone.map( function( e ) { return e.target; } ), remove: gone.map( function( r ) { return r.file; } ), keep: kept.map( function( r ) { return r.file; } ), icon_remove: iconGone.map( function( i ) { return i.file; } ) };
-        if ( !gone.len() && !kept.len() && !extraGone.len() ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "No launchers are in the application menu." ] );
-        if ( !arguments.yes || arguments.dryRun ) {
-            var lines = [ new bxrig.util.Mutation().banner( arguments.dryRun ) & "remove " & gone.len() & " launchers from the application menu" ];
-            for ( var g in gone ) lines.append( "  delete " & g.file );
-            for ( var k in kept ) lines.append( "  keep   " & k.file & " (edited by you)" );
-            for ( var x in extraGone ) lines.append( "  delete " & x.target );
-            for ( var ig in iconGone ) lines.append( "  delete " & ig.file );
-            lines.append( new bxrig.util.Mutation().footer( arguments.dryRun ) );
-            return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", data, arguments.asJson, lines );
-        }
-        for ( var g in gone ) fileDelete( g.file );
-        for ( var x in extraGone ) fileDelete( x.target );
-        for ( var ig in iconGone ) fileDelete( ig.file );
-        return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Removed " & gone.len() & " launchers." & ( kept.len() ? " Kept " & kept.len() & " you edited." : "" ) ] );
-    }
+	// `launchers off [--yes] [--dry-run]`: only entries BxRig wrote (marked) and still unedited go; the icon goes when it is still BxRig's.
+	function off( yes, dryRun, asJson ) {
+		var cmd = "launchers off";
+		var term = new bxrig.Ai( variables.cli, variables.runner ).terminal();
+		var rs = rows( structKeyExists( term, "argv" ) ? term.argv : [] );
+		var gone = [];
+		var kept = [];
+		for ( var r in rs ) {
+			if ( r.state == "missing" ) continue;
+			// with a terminal known the state says whether it is still exactly what BxRig wrote; without one, the marker has to do
+			if ( ( r.state == "clean" || r.state == "outdated" || ( r.state == "present" && mine( r.file ) ) ) ) gone.append( r ); else kept.append( r );
+		}
+		var iconGone = [];
+		if ( gone.len() ) {
+			for ( var ic in iconSet() ) {
+				if ( !fileExists( ic.file ) ) continue;
+				try { if ( sha( ic.file ) == embeddedIconHash( ic.name ) ) iconGone.append( ic ); } catch ( any e ) {}
+			}
+		}
+		var extraGone = !kept.len() ? extras().filter( function( e ) { return mine( e.target ); } ) : [];
+		var data = { submenu: extraGone.map( function( e ) { return e.target; } ), remove: gone.map( function( r ) { return r.file; } ), keep: kept.map( function( r ) { return r.file; } ), icon_remove: iconGone.map( function( i ) { return i.file; } ) };
+		if ( !gone.len() && !kept.len() && !extraGone.len() ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "No launchers are in the application menu." ] );
+		if ( !arguments.yes || arguments.dryRun ) {
+			var lines = [ new bxrig.util.Mutation().banner( arguments.dryRun ) & "remove " & gone.len() & " launchers from the application menu" ];
+			for ( var g in gone ) lines.append( "  delete " & g.file );
+			for ( var k in kept ) lines.append( "  keep   " & k.file & " (edited by you)" );
+			for ( var x in extraGone ) lines.append( "  delete " & x.target );
+			for ( var ig in iconGone ) lines.append( "  delete " & ig.file );
+			lines.append( new bxrig.util.Mutation().footer( arguments.dryRun ) );
+			return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", data, arguments.asJson, lines );
+		}
+		for ( var g in gone ) fileDelete( g.file );
+		for ( var x in extraGone ) fileDelete( x.target );
+		for ( var ig in iconGone ) fileDelete( ig.file );
+		return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Removed " & gone.len() & " launchers." & ( kept.len() ? " Kept " & kept.len() & " you edited." : "" ) ] );
+	}
 
-    // `launchers on|off|status`
-    function run( words, yes, dryRun, asJson ) {
-        var sub = arguments.words.len() ? arguments.words[ 1 ] : "status";
-        if ( arguments.words.len() > 1 ) sub = "?";
-        if ( sub == "on" ) return on( arguments.yes, arguments.dryRun, arguments.asJson );
-        if ( sub == "off" ) return off( arguments.yes, arguments.dryRun, arguments.asJson );
-        if ( sub == "status" ) return status( arguments.asJson );
-        println( new bxrig.CommandSpec().usage( "launchers" ) );
-        return new bxrig.util.Exit().usage();
-    }
+	// `launchers on|off|status`
+	function run( words, yes, dryRun, asJson ) {
+		var sub = arguments.words.len() ? arguments.words[ 1 ] : "status";
+		if ( arguments.words.len() > 1 ) sub = "?";
+		if ( sub == "on" ) return on( arguments.yes, arguments.dryRun, arguments.asJson );
+		if ( sub == "off" ) return off( arguments.yes, arguments.dryRun, arguments.asJson );
+		if ( sub == "status" ) return status( arguments.asJson );
+		println( new bxrig.CommandSpec().usage( "launchers" ) );
+		return new bxrig.util.Exit().usage();
+	}
 }

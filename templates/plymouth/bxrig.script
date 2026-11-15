@@ -25,48 +25,48 @@ tag.sprite.SetOpacity(0);
 
 dot.image = Image("dot.png");
 for (i = 0; i < 5; i++) {
-  dots[i] = Sprite(dot.image);
-  dots[i].SetPosition(cx - 2 * 26 + i * 26 - dot.image.GetWidth() / 2, cy + logo.image.GetHeight() / 2 + 90, 10);
-  dots[i].SetOpacity(0.15);
+	dots[i] = Sprite(dot.image);
+	dots[i].SetPosition(cx - 2 * 26 + i * 26 - dot.image.GetWidth() / 2, cy + logo.image.GetHeight() / 2 + 90, 10);
+	dots[i].SetOpacity(0.15);
 }
 
 t = 0;
 fun refresh() {
-  t++;
-  fade = Math.Min(t / 45, 1);
-  logo.sprite.SetOpacity(fade);
-  tag.sprite.SetOpacity(Math.Min(Math.Max((t - 30) / 40, 0), 1) * 0.85);
-  glow.sprite.SetOpacity(fade * (0.55 + 0.35 * Math.Sin(t / 22)));
-  // a wave runs along the dots
-  for (i = 0; i < 5; i++) {
-    p = Math.Sin(t / 9 - i * 0.9);
-    dots[i].SetOpacity(fade * (0.25 + 0.75 * Math.Max(p, 0)));
-  }
+	t++;
+	fade = Math.Min(t / 45, 1);
+	logo.sprite.SetOpacity(fade);
+	tag.sprite.SetOpacity(Math.Min(Math.Max((t - 30) / 40, 0), 1) * 0.85);
+	glow.sprite.SetOpacity(fade * (0.55 + 0.35 * Math.Sin(t / 22)));
+	// a wave runs along the dots
+	for (i = 0; i < 5; i++) {
+		p = Math.Sin(t / 9 - i * 0.9);
+		dots[i].SetOpacity(fade * (0.25 + 0.75 * Math.Max(p, 0)));
+	}
 }
 Plymouth.SetRefreshFunction(refresh);
 
 // ---- password prompt ----
 fun show_password(prompt, bullets) {
-  box.image = Image.Text("  " + prompt + "  ", 0.78, 0.82, 0.96, 1, "Sans 12");
-  box.sprite = Sprite(box.image);
-  box.sprite.SetPosition(cx - box.image.GetWidth() / 2, cy + logo.image.GetHeight() / 2 + 130, 20);
-  stars = "";
-  for (i = 0; i < bullets && i < 32; i++) stars = stars + "• ";
-  field.image = Image.Text(stars, 0, 1, 0.47, 1, "Sans 14");
-  field.sprite = Sprite(field.image);
-  field.sprite.SetPosition(cx - field.image.GetWidth() / 2, cy + logo.image.GetHeight() / 2 + 160, 20);
+	box.image = Image.Text("  " + prompt + "  ", 0.78, 0.82, 0.96, 1, "Sans 12");
+	box.sprite = Sprite(box.image);
+	box.sprite.SetPosition(cx - box.image.GetWidth() / 2, cy + logo.image.GetHeight() / 2 + 130, 20);
+	stars = "";
+	for (i = 0; i < bullets && i < 32; i++) stars = stars + "• ";
+	field.image = Image.Text(stars, 0, 1, 0.47, 1, "Sans 14");
+	field.sprite = Sprite(field.image);
+	field.sprite.SetPosition(cx - field.image.GetWidth() / 2, cy + logo.image.GetHeight() / 2 + 160, 20);
 }
 fun hide_password() {
-  box.sprite.SetOpacity(0);
-  field.sprite.SetOpacity(0);
+	box.sprite.SetOpacity(0);
+	field.sprite.SetOpacity(0);
 }
 Plymouth.SetDisplayPasswordFunction(show_password);
 Plymouth.SetDisplayNormalFunction(hide_password);
 
 // ---- messages (e.g. "checking the disk") ----
 fun show_message(text) {
-  msg.image = Image.Text(text, 0.65, 0.68, 0.80, 1, "Sans 11");
-  msg.sprite = Sprite(msg.image);
-  msg.sprite.SetPosition(cx - msg.image.GetWidth() / 2, Window.GetY() + Window.GetHeight() - 60, 20);
+	msg.image = Image.Text(text, 0.65, 0.68, 0.80, 1, "Sans 11");
+	msg.sprite = Sprite(msg.image);
+	msg.sprite.SetPosition(cx - msg.image.GetWidth() / 2, Window.GetY() + Window.GetHeight() - 60, 20);
 }
 Plymouth.SetMessageFunction(show_message);

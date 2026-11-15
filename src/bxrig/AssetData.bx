@@ -1,9 +1,9 @@
 // The brand images packed with BxRig (assets/logo.png, assets/icons/, assets/plymouth/), as resources.
 // The wallpapers are not packed (about 6 MB): bxrig.Wallpapers finds or downloads them and checks WallpaperData's SHA-256.
 class AssetData {
-    function names() {
-        return [ "logo.png", "icons/16.png", "icons/24.png", "icons/32.png", "icons/48.png", "icons/64.png", "icons/128.png", "icons/256.png", "icons/bxrig.svg",
-            "plymouth/logo.png", "plymouth/glow.png", "plymouth/dot.png" ];
-    }
-    function binary( name ) { return new bxrig.util.Res().binary( "assets/" & arguments.name ); }
+	function names() {
+		return [ "logo.png", "icons/16.png", "icons/24.png", "icons/32.png", "icons/48.png", "icons/64.png", "icons/128.png", "icons/256.png", "icons/bxrig.svg",
+			"plymouth/logo.png", "plymouth/glow.png", "plymouth/dot.png" ];
+	}
+	function binary( name ) { return new bxrig.util.Res().binary( "assets/" & arguments.name ); }
 }

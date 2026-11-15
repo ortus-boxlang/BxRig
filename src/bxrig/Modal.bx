@@ -10,61 +10,61 @@
 //              Escape                answer "cancel"; other keys edit the text
 //     any other key                  answer ""
 class Modal {
-    function init() {
-        close();
-        return this;
-    }
+	function init() {
+		close();
+		return this;
+	}
 
-    function confirm( title, body, intent ) { variables.st = { kind: "confirm", title: arguments.title, body: arguments.body, intent: arguments.intent, prompt: "", make: "", input: "" }; return this; }
-    function result( title, body ) { variables.st = { kind: "result", title: arguments.title, body: arguments.body, intent: {}, prompt: "", make: "", input: "" }; return this; }
-    function ask( title, prompt, make ) { variables.st = { kind: "ask", title: arguments.title, body: [], intent: {}, prompt: arguments.prompt, make: arguments.make, input: "" }; return this; }
-    function close() { variables.st = { kind: "", title: "", body: [], intent: {}, prompt: "", make: "", input: "" }; return this; }
+	function confirm( title, body, intent ) { variables.st = { kind: "confirm", title: arguments.title, body: arguments.body, intent: arguments.intent, prompt: "", make: "", input: "" }; return this; }
+	function result( title, body ) { variables.st = { kind: "result", title: arguments.title, body: arguments.body, intent: {}, prompt: "", make: "", input: "" }; return this; }
+	function ask( title, prompt, make ) { variables.st = { kind: "ask", title: arguments.title, body: [], intent: {}, prompt: arguments.prompt, make: arguments.make, input: "" }; return this; }
+	function close() { variables.st = { kind: "", title: "", body: [], intent: {}, prompt: "", make: "", input: "" }; return this; }
 
-    function kind() { return variables.st.kind; }
-    function open() { return len( variables.st.kind ) > 0; }
-    function intent() { return variables.st.intent; }
+	function kind() { return variables.st.kind; }
+	function open() { return len( variables.st.kind ) > 0; }
+	function intent() { return variables.st.intent; }
 
-    // What the screens draw for a confirm or a result: { title, lines, intent }.
-    function box() { return { title: variables.st.title, lines: variables.st.body, intent: variables.st.intent }; }
-    // What the screen draws for a text box: { title, prompt, input }.
-    function field() { return { title: variables.st.title, prompt: variables.st.prompt, input: variables.st.input }; }
+	// What the screens draw for a confirm or a result: { title, lines, intent }.
+	function box() { return { title: variables.st.title, lines: variables.st.body, intent: variables.st.intent }; }
+	// What the screen draws for a text box: { title, prompt, input }.
+	function field() { return { title: variables.st.title, prompt: variables.st.prompt, input: variables.st.input }; }
 
-    function key( key ) {
-        var k = arguments.key;
-        var res = { answer: "", intent: {}, value: "", make: "" };
-        if ( variables.st.kind == "result" ) { res.answer = "ok"; return res; }
-        if ( variables.st.kind == "confirm" ) {
-            var a = answer( k );
-            res.answer = a;
-            res.intent = variables.st.intent;
-            if ( a == "yes" ) res.intent.confirmed = true;
-            return res;
-        }
-        if ( variables.st.kind == "ask" ) {
-            if ( k == "Escape" ) { res.answer = "cancel"; return res; }
-            if ( k == "Enter" ) { res.answer = "submit"; res.value = trim( variables.st.input ); res.make = variables.st.make; return res; }
-            variables.st.input = typed( variables.st.input, k );
-        }
-        return res;
-    }
+	function key( key ) {
+		var k = arguments.key;
+		var res = { answer: "", intent: {}, value: "", make: "" };
+		if ( variables.st.kind == "result" ) { res.answer = "ok"; return res; }
+		if ( variables.st.kind == "confirm" ) {
+			var a = answer( k );
+			res.answer = a;
+			res.intent = variables.st.intent;
+			if ( a == "yes" ) res.intent.confirmed = true;
+			return res;
+		}
+		if ( variables.st.kind == "ask" ) {
+			if ( k == "Escape" ) { res.answer = "cancel"; return res; }
+			if ( k == "Enter" ) { res.answer = "submit"; res.value = trim( variables.st.input ); res.make = variables.st.make; return res; }
+			variables.st.input = typed( variables.st.input, k );
+		}
+		return res;
+	}
 
-    // "yes" for y, Y and Enter; "no" for n, N, Escape and q; "" for any other key.
-    function answer( key ) {
-        var k = arguments.key;
-        if ( k == "y" || k == "Y" || k == "Enter" ) return "yes";
-        if ( k == "n" || k == "N" || k == "Escape" || k == "q" ) return "no";
-        return "";
-    }
+	// "yes" for y, Y and Enter; "no" for n, N, Escape and q; "" for any other key.
+	function answer( key ) {
+		var k = arguments.key;
+		if ( k == "y" || k == "Y" || k == "Enter" ) return "yes";
+		if ( k == "n" || k == "N" || k == "Escape" || k == "q" ) return "no";
+		return "";
+	}
 
-    // The text after one key typed into an input: Backspace removes the last character, Space adds a blank, one character is added, any other key changes nothing.
-    function typed( text, key ) {
-        var k = arguments.key;
-        if ( k == "Backspace" ) return len( arguments.text ) > 1 ? left( arguments.text, len( arguments.text ) - 1 ) : "";
-        if ( k == "Space" ) return arguments.text & " ";
-        if ( len( k ) == 1 ) return arguments.text & k;
-        return arguments.text;
-    }
+	// The text after one key typed into an input: Backspace removes the last character, Space adds a blank, one character is added, any other key changes nothing.
+	function typed( text, key ) {
+		var k = arguments.key;
+		if ( k == "Backspace" ) return len( arguments.text ) > 1 ? left( arguments.text, len( arguments.text ) - 1 ) : "";
+		if ( k == "Space" ) return arguments.text & " ";
+		if ( len( k ) == 1 ) return arguments.text & k;
+		return arguments.text;
+	}
 
-    // The lines of a text for a box (split on newlines, empty lines kept).
-    function split( text ) { return listToArray( arguments.text, chr( 10 ), true ); }
+	// The lines of a text for a box (split on newlines, empty lines kept).
+	function split( text ) { return listToArray( arguments.text, chr( 10 ), true ); }
 }

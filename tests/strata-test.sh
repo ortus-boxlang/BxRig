@@ -11,8 +11,8 @@ run "$binary" strata integrations --dry-run --json | jq -e '.dry_run and (.data.
 [[ ! -d "$tmp/cfg/strata" ]] || fail 'dry run wrote something'
 run "$binary" strata integrations | grep -q 'installed: kdeconnect, localsend' || fail 'install'
 for id in kdeconnect localsend; do
-  for f in provider.py messages.json LICENSE provider.json; do [[ -f "$tmp/cfg/strata/providers/$id/$f" ]] || fail "$id/$f missing"; done
-  jq -e --arg id "$id" '.version == 1 and .id == $id and (.command[0] | startswith("/")) and (.command[1] | endswith("/provider.py"))' "$tmp/cfg/strata/providers/$id/provider.json" >/dev/null || fail "$id provider.json"
+	for f in provider.py messages.json LICENSE provider.json; do [[ -f "$tmp/cfg/strata/providers/$id/$f" ]] || fail "$id/$f missing"; done
+	jq -e --arg id "$id" '.version == 1 and .id == $id and (.command[0] | startswith("/")) and (.command[1] | endswith("/provider.py"))' "$tmp/cfg/strata/providers/$id/provider.json" >/dev/null || fail "$id provider.json"
 done
 grep -q 'lgse/strata/5f17c9fdc8967e1b4ba8aaf8de113b46d824b0dd/integrations/kdeconnect/provider.py' "$LOG" || fail 'download is pinned to the commit'
 # again: nothing replaced

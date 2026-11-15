@@ -13,23 +13,23 @@
 // Test overrides: BXRIG_PAM_DIR (default /etc/pam.d), BXRIG_SUDOERS_DIR (default /etc/sudoers.d), BXRIG_U2F_FILE.
 // Exit: 0 ok, 2 bad usage or a plan without --yes, 4 precondition, 5 6 7 from installs and commands.
 class Security {
-    function init( cli, runner = "" ) {
-        variables.environ = new bxrig.util.Env();
-        variables.cli = arguments.cli;
-        variables.out = new bxrig.util.Out( variables.cli, "security" );
-        variables.proc = new bxrig.util.Proc( arguments.runner );
-        variables.pacman = new bxrig.util.Pacman( variables.proc );
-        variables.systemd = new bxrig.util.Systemd( variables.proc );
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.environ = new bxrig.util.Env();
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( variables.cli, "security" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.pacman = new bxrig.util.Pacman( variables.proc );
+		variables.systemd = new bxrig.util.Systemd( variables.proc );
+		return this;
+	}
 
-    function pamFile() { return variables.environ.named( "pamDir", "/etc/pam.d" ) & "/sudo"; }
-    function sudoersFile() { return variables.environ.named( "sudoersDir", "/etc/sudoers.d" ) & "/50-bxrig-nopasswd"; }
-    function u2fFile() { return variables.environ.named( "u2fFile", variables.environ.xdgConfig( "Yubico/u2f_keys" ) ); }
-    function user() { return new bxrig.util.Env().named( "user", "" ); }
+	function pamFile() { return variables.environ.named( "pamDir", "/etc/pam.d" ) & "/sudo"; }
+	function sudoersFile() { return variables.environ.named( "sudoersDir", "/etc/sudoers.d" ) & "/50-bxrig-nopasswd"; }
+	function u2fFile() { return variables.environ.named( "u2fFile", variables.environ.xdgConfig( "Yubico/u2f_keys" ) ); }
+	function user() { return new bxrig.util.Env().named( "user", "" ); }
 
-    function pamLine( kind ) { return arguments.kind == "fingerprint" ? "auth sufficient pam_fprintd.so" : "auth sufficient pam_u2f.so cue"; }
-    function pamMarker( kind ) { return " # bxrig " & arguments.kind; }
+	function pamLine( kind ) { return arguments.kind == "fingerprint" ? "auth sufficient pam_fprintd.so" : "auth sufficient pam_u2f.so cue"; }
+	function pamMarker( kind ) { return " # bxrig " & arguments.kind; }
 
     // ---- PAM text (pure, so it is tested without touching /etc) ----
     function pamHas( text, kind ) { return find( pamMarker( arguments.kind ), arguments.text ) > 0; }

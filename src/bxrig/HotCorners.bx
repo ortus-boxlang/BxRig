@@ -10,167 +10,167 @@
 //             have no Plasma edge action and are reported as not available there
 // Exit: 0 ok, 2 bad usage or a plan without --yes, 4 precondition (no desktop to apply to is not an error: the choice is saved).
 class HotCorners {
-    function init( cli, runner = "" ) {
-        variables.environ = new bxrig.util.Env();
-        variables.cli = arguments.cli;
-        variables.out = new bxrig.util.Out( variables.cli, "hotcorners" );
-        variables.proc = new bxrig.util.Proc( arguments.runner );
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.environ = new bxrig.util.Env();
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( variables.cli, "hotcorners" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		return this;
+	}
 
-    function corners() { return [ "top-left", "top-right", "bottom-left", "bottom-right" ]; }
-    function actions() { return [ "none", "overview", "notifications", "desktop", "lock", "launcher", "agents", "themes" ]; }
-    // Mac-like defaults (owner decision 2026-11-15)
-    function defaults() { return { "top-left": "overview", "top-right": "notifications", "bottom-left": "desktop", "bottom-right": "lock" }; }
+	function corners() { return [ "top-left", "top-right", "bottom-left", "bottom-right" ]; }
+	function actions() { return [ "none", "overview", "notifications", "desktop", "lock", "launcher", "agents", "themes" ]; }
+	// Mac-like defaults (owner decision 2026-11-15)
+	function defaults() { return { "top-left": "overview", "top-right": "notifications", "bottom-left": "desktop", "bottom-right": "lock" }; }
 
-    function file() { return variables.environ.config( "hotcorners.json" ); }
-    function read() {
-        var c = defaults();
-        if ( fileExists( file() ) ) {
-            var j = new bxrig.util.Json().read( file() );
-            if ( isStruct( j ) ) for ( var k in corners() ) if ( structKeyExists( j, k ) && arrayFind( actions(), j[ k ] ) ) c[ k ] = j[ k ];
-        }
-        return c;
-    }
-    function write( c ) {
-        directoryCreate( getDirectoryFromPath( file() ), true, true );
-        var o = {};
-        for ( var k in corners() ) o[ k ] = arguments.c[ k ];
-        fileWrite( file(), jsonSerialize( o ) & chr( 10 ) );
-    }
+	function file() { return variables.environ.config( "hotcorners.json" ); }
+	function read() {
+		var c = defaults();
+		if ( fileExists( file() ) ) {
+			var j = new bxrig.util.Json().read( file() );
+			if ( isStruct( j ) ) for ( var k in corners() ) if ( structKeyExists( j, k ) && arrayFind( actions(), j[ k ] ) ) c[ k ] = j[ k ];
+		}
+		return c;
+	}
+	function write( c ) {
+		directoryCreate( getDirectoryFromPath( file() ), true, true );
+		var o = {};
+		for ( var k in corners() ) o[ k ] = arguments.c[ k ];
+		fileWrite( file(), jsonSerialize( o ) & chr( 10 ) );
+	}
 
-    // ---- Hyprland (Noctalia) ----
-    // The command a corner runs under Noctalia, "" for none.
-    function noctaliaCommand( action ) {
-        var m = {
-            overview: "noctalia msg window-switcher",
-            notifications: "noctalia msg panel-toggle control-center notifications",
-            desktop: "hyprctl dispatch workspace empty",
-            lock: "noctalia msg session lock",
-            launcher: "noctalia msg panel-toggle launcher",
-            agents: "noctalia msg panel-toggle bxrig/agents:panel",
-            themes: "noctalia msg panel-toggle bxrig/themes:panel"
-        };
-        return structKeyExists( m, arguments.action ) ? m[ arguments.action ] : "";
-    }
-    // [ [ path, TOML value ] ] for `noctalia msg config-set`.
-    function noctaliaSettings( c ) {
-        var out = [ [ "hot_corners.enabled", "true" ], [ "hot_corners.delay_ms", "150" ] ];
-        for ( var k in corners() ) {
-            var key = "hot_corners." & replace( k, "-", "_", "all" );
-            var cmd = noctaliaCommand( arguments.c[ k ] );
-            if ( len( cmd ) ) { out.append( [ key & ".action", "'command'" ] ); out.append( [ key & ".command", "'" & cmd & "'" ] ); }
-            else out.append( [ key & ".action", "'none'" ] );
-        }
-        return out;
-    }
+	// ---- Hyprland (Noctalia) ----
+	// The command a corner runs under Noctalia, "" for none.
+	function noctaliaCommand( action ) {
+		var m = {
+			overview: "noctalia msg window-switcher",
+			notifications: "noctalia msg panel-toggle control-center notifications",
+			desktop: "hyprctl dispatch workspace empty",
+			lock: "noctalia msg session lock",
+			launcher: "noctalia msg panel-toggle launcher",
+			agents: "noctalia msg panel-toggle bxrig/agents:panel",
+			themes: "noctalia msg panel-toggle bxrig/themes:panel"
+		};
+		return structKeyExists( m, arguments.action ) ? m[ arguments.action ] : "";
+	}
+	// [ [ path, TOML value ] ] for `noctalia msg config-set`.
+	function noctaliaSettings( c ) {
+		var out = [ [ "hot_corners.enabled", "true" ], [ "hot_corners.delay_ms", "150" ] ];
+		for ( var k in corners() ) {
+			var key = "hot_corners." & replace( k, "-", "_", "all" );
+			var cmd = noctaliaCommand( arguments.c[ k ] );
+			if ( len( cmd ) ) { out.append( [ key & ".action", "'command'" ] ); out.append( [ key & ".command", "'" & cmd & "'" ] ); }
+			else out.append( [ key & ".action", "'none'" ] );
+		}
+		return out;
+	}
 
-    // The [hot_corners] section of Noctalia's config.toml for the saved corners (the starter config carries it).
-    function noctaliaToml() {
-        var c = read();
-        var out = [ "[hot_corners]", "enabled = true", "delay_ms = 150" ];
-        for ( var k in corners() ) {
-            var cmd = noctaliaCommand( c[ k ] );
-            out.append( "" );
-            out.append( "[hot_corners." & replace( k, "-", "_", "all" ) & "]" );
-            if ( len( cmd ) ) { out.append( 'action = "command"' ); out.append( 'command = "' & cmd & '"' ); }
-            else out.append( 'action = "none"' );
-        }
-        return out;
-    }
+	// The [hot_corners] section of Noctalia's config.toml for the saved corners (the starter config carries it).
+	function noctaliaToml() {
+		var c = read();
+		var out = [ "[hot_corners]", "enabled = true", "delay_ms = 150" ];
+		for ( var k in corners() ) {
+			var cmd = noctaliaCommand( c[ k ] );
+			out.append( "" );
+			out.append( "[hot_corners." & replace( k, "-", "_", "all" ) & "]" );
+			if ( len( cmd ) ) { out.append( 'action = "command"' ); out.append( 'command = "' & cmd & '"' ); }
+			else out.append( 'action = "none"' );
+		}
+		return out;
+	}
 
-    // ---- Plasma (KWin screen edges) ----
-    // KWin's ElectricBorder numbers, used by the effects' BorderActivate lists.
-    function kwinEdge( corner ) { return { "top-left": 7, "top-right": 1, "bottom-right": 3, "bottom-left": 5 }[ arguments.corner ]; }
-    function kwinKey( corner ) { return { "top-left": "TopLeft", "top-right": "TopRight", "bottom-right": "BottomRight", "bottom-left": "BottomLeft" }[ arguments.corner ]; }
-    // The ElectricBorders value for an action; "" when Plasma has none for it (overview is an effect, handled apart).
-    function kwinAction( action ) {
-        var m = { none: "None", desktop: "ShowDesktop", lock: "LockScreen", launcher: "ApplicationLauncher", overview: "None" };
-        return structKeyExists( m, arguments.action ) ? m[ arguments.action ] : "";
-    }
-    // { commands: [ argv ], unsupported: [ corner ] }
-    function plasmaPlan( c ) {
-        var out = { commands: [], unsupported: [] };
-        var overviewEdges = [];
-        for ( var k in corners() ) {
-            var a = arguments.c[ k ];
-            var v = kwinAction( a );
-            if ( !len( v ) ) { out.unsupported.append( k & " (" & a & ")" ); v = "None"; }
-            out.commands.append( [ "kwriteconfig6", "--file", "kwinrc", "--group", "ElectricBorders", "--key", kwinKey( k ), v ] );
-            if ( a == "overview" ) overviewEdges.append( kwinEdge( k ) );
-        }
-        out.commands.append( [ "kwriteconfig6", "--file", "kwinrc", "--group", "Effect-overview", "--key", "BorderActivate", overviewEdges.len() ? overviewEdges.toList( "," ) : "9" ] );
-        out.commands.append( [ "qdbus6", "org.kde.KWin", "/KWin", "reconfigure" ] );
-        return out;
-    }
+	// ---- Plasma (KWin screen edges) ----
+	// KWin's ElectricBorder numbers, used by the effects' BorderActivate lists.
+	function kwinEdge( corner ) { return { "top-left": 7, "top-right": 1, "bottom-right": 3, "bottom-left": 5 }[ arguments.corner ]; }
+	function kwinKey( corner ) { return { "top-left": "TopLeft", "top-right": "TopRight", "bottom-right": "BottomRight", "bottom-left": "BottomLeft" }[ arguments.corner ]; }
+	// The ElectricBorders value for an action; "" when Plasma has none for it (overview is an effect, handled apart).
+	function kwinAction( action ) {
+		var m = { none: "None", desktop: "ShowDesktop", lock: "LockScreen", launcher: "ApplicationLauncher", overview: "None" };
+		return structKeyExists( m, arguments.action ) ? m[ arguments.action ] : "";
+	}
+	// { commands: [ argv ], unsupported: [ corner ] }
+	function plasmaPlan( c ) {
+		var out = { commands: [], unsupported: [] };
+		var overviewEdges = [];
+		for ( var k in corners() ) {
+			var a = arguments.c[ k ];
+			var v = kwinAction( a );
+			if ( !len( v ) ) { out.unsupported.append( k & " (" & a & ")" ); v = "None"; }
+			out.commands.append( [ "kwriteconfig6", "--file", "kwinrc", "--group", "ElectricBorders", "--key", kwinKey( k ), v ] );
+			if ( a == "overview" ) overviewEdges.append( kwinEdge( k ) );
+		}
+		out.commands.append( [ "kwriteconfig6", "--file", "kwinrc", "--group", "Effect-overview", "--key", "BorderActivate", overviewEdges.len() ? overviewEdges.toList( "," ) : "9" ] );
+		out.commands.append( [ "qdbus6", "org.kde.KWin", "/KWin", "reconfigure" ] );
+		return out;
+	}
 
-    function desktops() {
-        return { noctalia: variables.proc.has( "noctalia" ), plasma: variables.proc.has( "kwriteconfig6" ) };
-    }
+	function desktops() {
+		return { noctalia: variables.proc.has( "noctalia" ), plasma: variables.proc.has( "kwriteconfig6" ) };
+	}
 
-    // Applies the saved corners; returns { noctalia, plasma, notes }.
-    function apply( c ) {
-        var res = { noctalia: "skipped", plasma: "skipped", notes: [] };
-        var d = desktops();
-        if ( d.noctalia ) {
-            var bad = 0;
-            for ( var s in noctaliaSettings( arguments.c ) ) if ( variables.proc.exec( [ "noctalia", "msg", "config-set", s[ 1 ], s[ 2 ] ], 15 ).exitCode != 0 ) bad++;
-            res.noctalia = bad ? "not running" : "applied";
-            if ( bad ) res.notes.append( "Noctalia did not answer: run this again from your Hyprland session (a new Noctalia starter config already has these corners)" );
-        }
-        if ( d.plasma ) {
-            var p = plasmaPlan( arguments.c );
-            for ( var cmd in p.commands ) variables.proc.exec( cmd, 15 );
-            res.plasma = "applied";
-            if ( p.unsupported.len() ) res.notes.append( "Plasma has no screen-edge action for: " & p.unsupported.toList( ", " ) & " (those corners do nothing there)" );
-        }
-        return res;
-    }
+	// Applies the saved corners; returns { noctalia, plasma, notes }.
+	function apply( c ) {
+		var res = { noctalia: "skipped", plasma: "skipped", notes: [] };
+		var d = desktops();
+		if ( d.noctalia ) {
+			var bad = 0;
+			for ( var s in noctaliaSettings( arguments.c ) ) if ( variables.proc.exec( [ "noctalia", "msg", "config-set", s[ 1 ], s[ 2 ] ], 15 ).exitCode != 0 ) bad++;
+			res.noctalia = bad ? "not running" : "applied";
+			if ( bad ) res.notes.append( "Noctalia did not answer: run this again from your Hyprland session (a new Noctalia starter config already has these corners)" );
+		}
+		if ( d.plasma ) {
+			var p = plasmaPlan( arguments.c );
+			for ( var cmd in p.commands ) variables.proc.exec( cmd, 15 );
+			res.plasma = "applied";
+			if ( p.unsupported.len() ) res.notes.append( "Plasma has no screen-edge action for: " & p.unsupported.toList( ", " ) & " (those corners do nothing there)" );
+		}
+		return res;
+	}
 
-    function statusCmd( asJson ) {
-        var c = read();
-        var lines = [];
-        for ( var k in corners() ) lines.append( left( k & repeatString( " ", 14 ), 14 ) & c[ k ] );
-        return variables.out.say( "ok", { corners: c, file: file(), saved: fileExists( file() ) }, arguments.asJson, lines );
-    }
+	function statusCmd( asJson ) {
+		var c = read();
+		var lines = [];
+		for ( var k in corners() ) lines.append( left( k & repeatString( " ", 14 ), 14 ) & c[ k ] );
+		return variables.out.say( "ok", { corners: c, file: file(), saved: fileExists( file() ) }, arguments.asJson, lines );
+	}
 
-    function setCmd( pairs, yes, dry, asJson ) {
-        var c = read();
-        if ( !arguments.pairs.len() ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "hotcorners" ), arguments.asJson );
-        for ( var p in arguments.pairs ) {
-            var k = lCase( listFirst( p, "=" ) );
-            var a = lCase( listRest( p, "=" ) );
-            if ( !arrayFind( corners(), k ) || !find( "=", p ) ) return variables.out.fail( "usage", "Unknown corner in " & p & " (use " & corners().toList( ", " ) & ")", arguments.asJson );
-            if ( !arrayFind( actions(), a ) ) return variables.out.fail( "usage", "Unknown action in " & p & " (use " & actions().toList( ", " ) & ")", arguments.asJson );
-            c[ k ] = a;
-        }
-        return change( c, arguments.yes, arguments.dry, arguments.asJson );
-    }
+	function setCmd( pairs, yes, dry, asJson ) {
+		var c = read();
+		if ( !arguments.pairs.len() ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "hotcorners" ), arguments.asJson );
+		for ( var p in arguments.pairs ) {
+			var k = lCase( listFirst( p, "=" ) );
+			var a = lCase( listRest( p, "=" ) );
+			if ( !arrayFind( corners(), k ) || !find( "=", p ) ) return variables.out.fail( "usage", "Unknown corner in " & p & " (use " & corners().toList( ", " ) & ")", arguments.asJson );
+			if ( !arrayFind( actions(), a ) ) return variables.out.fail( "usage", "Unknown action in " & p & " (use " & actions().toList( ", " ) & ")", arguments.asJson );
+			c[ k ] = a;
+		}
+		return change( c, arguments.yes, arguments.dry, arguments.asJson );
+	}
 
-    function change( c, yes, dry, asJson ) {
-        var summary = [];
-        for ( var k in corners() ) summary.append( k & "=" & arguments.c[ k ] );
-        var data = { corners: arguments.c, file: file() };
-        if ( arguments.dry || !arguments.yes ) return new bxrig.util.Mutation( variables.out ).show( "hot corners " & summary.toList( " " ), data, arguments.asJson, arguments.dry );
-        write( arguments.c );
-        var r = apply( arguments.c );
-        data.noctalia = r.noctalia; data.plasma = r.plasma; data.notes = r.notes;
-        var lines = [ "hot corners: " & summary.toList( " " ), "Noctalia: " & r.noctalia & "  Plasma: " & r.plasma ];
-        for ( var n in r.notes ) lines.append( "note: " & n );
-        return variables.out.say( "ok", data, arguments.asJson, lines );
-    }
+	function change( c, yes, dry, asJson ) {
+		var summary = [];
+		for ( var k in corners() ) summary.append( k & "=" & arguments.c[ k ] );
+		var data = { corners: arguments.c, file: file() };
+		if ( arguments.dry || !arguments.yes ) return new bxrig.util.Mutation( variables.out ).show( "hot corners " & summary.toList( " " ), data, arguments.asJson, arguments.dry );
+		write( arguments.c );
+		var r = apply( arguments.c );
+		data.noctalia = r.noctalia; data.plasma = r.plasma; data.notes = r.notes;
+		var lines = [ "hot corners: " & summary.toList( " " ), "Noctalia: " & r.noctalia & "  Plasma: " & r.plasma ];
+		for ( var n in r.notes ) lines.append( "note: " & n );
+		return variables.out.say( "ok", data, arguments.asJson, lines );
+	}
 
-    function run( words, dry = false, yes = false, asJson = false ) {
-        var verb = arguments.words.len() ? arguments.words[ 1 ] : "";
-        var rest = [];
-        for ( var i = 2; i <= arguments.words.len(); i++ ) rest.append( arguments.words[ i ] );
-        if ( verb == "" || verb == "status" ) return statusCmd( arguments.asJson );
-        if ( verb == "set" ) return setCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
-        if ( verb == "off" ) {
-            var c = {};
-            for ( var k in corners() ) c[ k ] = "none";
-            return change( c, arguments.yes, arguments.dry, arguments.asJson );
-        }
-        return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "hotcorners" ), arguments.asJson );
-    }
+	function run( words, dry = false, yes = false, asJson = false ) {
+		var verb = arguments.words.len() ? arguments.words[ 1 ] : "";
+		var rest = [];
+		for ( var i = 2; i <= arguments.words.len(); i++ ) rest.append( arguments.words[ i ] );
+		if ( verb == "" || verb == "status" ) return statusCmd( arguments.asJson );
+		if ( verb == "set" ) return setCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
+		if ( verb == "off" ) {
+			var c = {};
+			for ( var k in corners() ) c[ k ] = "none";
+			return change( c, arguments.yes, arguments.dry, arguments.asJson );
+		}
+		return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "hotcorners" ), arguments.asJson );
+	}
 }

@@ -4,82 +4,82 @@
 //   hidden    NoDisplay=true or Hidden=true
 //   launcher  one of BxRig's own page launchers (X-BxRig-Launcher), a shortcut to a BxRig screen and not an app you installed
 class DesktopEntry {
-    function init( env = "" ) {
-        variables.environ = isSimpleValue( arguments.env ) ? new bxrig.util.Env() : arguments.env;
-        return this;
-    }
+	function init( env = "" ) {
+		variables.environ = isSimpleValue( arguments.env ) ? new bxrig.util.Env() : arguments.env;
+		return this;
+	}
 
-    // The folders to read, later ones win for the same file name. BXRIG_APPS_DIRS (or the older BXRIG_DESKTOP_DIRS) replaces the list (colon separated).
-    // withFlatpak adds the Flatpak exports (leave it off where Flatpak apps are listed another way).
-    function dirs( withFlatpak = true ) {
-        var over = variables.environ.named( "appsDirs", variables.environ.named( "desktopDirs", "" ) );
-        if ( len( over ) ) return listToArray( over, ":" );
-        var out = [ "/usr/share/applications", "/usr/local/share/applications", variables.environ.xdgData( "applications" ) ];
-        if ( arguments.withFlatpak ) { out.append( "/var/lib/flatpak/exports/share/applications" ); out.append( variables.environ.xdgData( "flatpak/exports/share/applications" ) ); }
-        return out;
-    }
+	// The folders to read, later ones win for the same file name. BXRIG_APPS_DIRS (or the older BXRIG_DESKTOP_DIRS) replaces the list (colon separated).
+	// withFlatpak adds the Flatpak exports (leave it off where Flatpak apps are listed another way).
+	function dirs( withFlatpak = true ) {
+		var over = variables.environ.named( "appsDirs", variables.environ.named( "desktopDirs", "" ) );
+		if ( len( over ) ) return listToArray( over, ":" );
+		var out = [ "/usr/share/applications", "/usr/local/share/applications", variables.environ.xdgData( "applications" ) ];
+		if ( arguments.withFlatpak ) { out.append( "/var/lib/flatpak/exports/share/applications" ); out.append( variables.environ.xdgData( "flatpak/exports/share/applications" ) ); }
+		return out;
+	}
 
-    // Reads the [Desktop Entry] group of one file. Never throws: an unreadable file is an empty entry.
-    function parse( file ) {
-        var e = { name: "", exec: "", icon: "", type: "", hidden: false, comment: "", categories: "", launcher: false };
-        try {
-            for ( var sec in new bxrig.util.Ini().sections( fileRead( arguments.file ) ) ) {
-                if ( compare( sec.name, "Desktop Entry" ) != 0 ) continue;
-                for ( var kv in sec.pairs ) {
-                    var key = kv.key;
-                    var val = kv.value;
-                    if ( compare( key, "Name" ) == 0 && !len( e.name ) ) e.name = val;
-                    else if ( compare( key, "Exec" ) == 0 && !len( e.exec ) ) e.exec = val;
-                    else if ( compare( key, "Icon" ) == 0 && !len( e.icon ) ) e.icon = trim( val );
-                    else if ( compare( key, "Comment" ) == 0 && !len( e.comment ) ) e.comment = val;
-                    else if ( compare( key, "Categories" ) == 0 ) e.categories = val;
-                    else if ( compare( key, "Type" ) == 0 ) e.type = val;
-                    else if ( ( compare( key, "NoDisplay" ) == 0 || compare( key, "Hidden" ) == 0 ) && lCase( val ) == "true" ) e.hidden = true;
-                    else if ( compare( key, "X-BxRig-Launcher" ) == 0 ) e.launcher = true;
-                }
-            }
-        } catch ( any x ) {}
-        return e;
-    }
+	// Reads the [Desktop Entry] group of one file. Never throws: an unreadable file is an empty entry.
+	function parse( file ) {
+		var e = { name: "", exec: "", icon: "", type: "", hidden: false, comment: "", categories: "", launcher: false };
+		try {
+			for ( var sec in new bxrig.util.Ini().sections( fileRead( arguments.file ) ) ) {
+				if ( compare( sec.name, "Desktop Entry" ) != 0 ) continue;
+				for ( var kv in sec.pairs ) {
+					var key = kv.key;
+					var val = kv.value;
+					if ( compare( key, "Name" ) == 0 && !len( e.name ) ) e.name = val;
+					else if ( compare( key, "Exec" ) == 0 && !len( e.exec ) ) e.exec = val;
+					else if ( compare( key, "Icon" ) == 0 && !len( e.icon ) ) e.icon = trim( val );
+					else if ( compare( key, "Comment" ) == 0 && !len( e.comment ) ) e.comment = val;
+					else if ( compare( key, "Categories" ) == 0 ) e.categories = val;
+					else if ( compare( key, "Type" ) == 0 ) e.type = val;
+					else if ( ( compare( key, "NoDisplay" ) == 0 || compare( key, "Hidden" ) == 0 ) && lCase( val ) == "true" ) e.hidden = true;
+					else if ( compare( key, "X-BxRig-Launcher" ) == 0 ) e.launcher = true;
+				}
+			}
+		} catch ( any x ) {}
+		return e;
+	}
 
-    // Icon= of one file ("" when there is none).
-    function iconName( file ) {
-        return parse( arguments.file ).icon;
-    }
+	// Icon= of one file ("" when there is none).
+	function iconName( file ) {
+		return parse( arguments.file ).icon;
+	}
 
-    // The Exec line without field codes (%f %F %u %U %i %c %k ...); %% is a literal percent sign.
-    function cleanExec( exec ) {
-        var t = replace( arguments.exec, "%%", chr( 1 ), "all" );
-        t = reReplace( t, "%[a-zA-Z]", "", "all" );
-        return trim( replace( reReplace( t, " +", " ", "all" ), chr( 1 ), "%", "all" ) );
-    }
+	// The Exec line without field codes (%f %F %u %U %i %c %k ...); %% is a literal percent sign.
+	function cleanExec( exec ) {
+		var t = replace( arguments.exec, "%%", chr( 1 ), "all" );
+		t = reReplace( t, "%[a-zA-Z]", "", "all" );
+		return trim( replace( reReplace( t, " +", " ", "all" ), chr( 1 ), "%", "all" ) );
+	}
 
-    // [ { file, name, exec, icon, comment, categories, launcher } ] of the visible applications (Type=Application, not hidden, with a name;
-    // `exec` is optional). BxRig's own launchers are left out unless launchers is true. A later folder wins for the same file name; a hidden
-    // entry in a later folder removes the earlier one.
-    function entries( dirs, launchers = false, needExec = false ) {
-        var byFile = {};
-        for ( var d in arguments.dirs ) {
-            if ( !directoryExists( d ) ) continue;
-            var names = [];
-            try { names = directoryList( d, false, "name" ); } catch ( any e ) { continue; }
-            for ( var f in names ) {
-                if ( right( f, 8 ) != ".desktop" ) continue;
-                var e = parse( d & "/" & f );
-                if ( e.hidden || compare( e.type, "Application" ) != 0 || !len( e.name ) || ( arguments.needExec && !len( e.exec ) ) || ( e.launcher && !arguments.launchers ) ) { structDelete( byFile, f ); continue; }
-                e.file = d & "/" & f;
-                byFile[ f ] = e;
-            }
-        }
-        var out = [];
-        for ( var k in structKeyArray( byFile ) ) out.append( byFile[ k ] );
-        return out;
-    }
+	// [ { file, name, exec, icon, comment, categories, launcher } ] of the visible applications (Type=Application, not hidden, with a name;
+	// `exec` is optional). BxRig's own launchers are left out unless launchers is true. A later folder wins for the same file name; a hidden
+	// entry in a later folder removes the earlier one.
+	function entries( dirs, launchers = false, needExec = false ) {
+		var byFile = {};
+		for ( var d in arguments.dirs ) {
+			if ( !directoryExists( d ) ) continue;
+			var names = [];
+			try { names = directoryList( d, false, "name" ); } catch ( any e ) { continue; }
+			for ( var f in names ) {
+				if ( right( f, 8 ) != ".desktop" ) continue;
+				var e = parse( d & "/" & f );
+				if ( e.hidden || compare( e.type, "Application" ) != 0 || !len( e.name ) || ( arguments.needExec && !len( e.exec ) ) || ( e.launcher && !arguments.launchers ) ) { structDelete( byFile, f ); continue; }
+				e.file = d & "/" & f;
+				byFile[ f ] = e;
+			}
+		}
+		var out = [];
+		for ( var k in structKeyArray( byFile ) ) out.append( byFile[ k ] );
+		return out;
+	}
 
-    // The text of a [Desktop Entry] file from its lines in order ("Type=Application", "Name=x", a "# comment", ...).
-    function render( lines ) {
-        var out = "[Desktop Entry]" & chr( 10 );
-        for ( var l in arguments.lines ) out &= l & chr( 10 );
-        return out;
-    }
+	// The text of a [Desktop Entry] file from its lines in order ("Type=Application", "Name=x", a "# comment", ...).
+	function render( lines ) {
+		var out = "[Desktop Entry]" & chr( 10 );
+		for ( var l in arguments.lines ) out &= l & chr( 10 );
+		return out;
+	}
 }

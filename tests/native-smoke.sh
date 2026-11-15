@@ -2,7 +2,7 @@
 set -euo pipefail
 binary="${1:-./bxrig}"
 test -x "$binary"
-want="$(sed -n 's/^ *"version": *"\([^"]*\)".*/\1/p' "$(dirname "$0")/../box.json" | head -1)"
+want="$(sed -n 's/^[[:space:]]*"version":[[:space:]]*"\([^"]*\)".*/\1/p' "$(dirname "$0")/../box.json" | head -1)"
 "$binary" version | grep -F "BxRig $want"
 "$binary" doctor | grep -F 'Java 21'
 has() { grep -Fq -- "$1"; }

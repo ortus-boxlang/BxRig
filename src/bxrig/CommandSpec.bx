@@ -3,97 +3,97 @@
 // ask it for their usage text instead of writing the string again:  new bxrig.CommandSpec().usage( "pkg remove" ).
 // No state besides the parsed data. Flags that work on every command are the `globals()`.
 class CommandSpec {
-    // Flags come from the small CommandFlagData (cheap, read on every run that has flags); usage text from HelpData (parsed only when asked).
-    function init() {
-        variables.flagsOf = {};
-        for ( var entry in listToArray( new bxrig.CommandFlagData().flags(), ";" ) ) {
-            var colon = find( ":", entry );
-            variables.flagsOf[ left( entry, colon - 1 ) ] = colon < len( entry ) ? listToArray( mid( entry, colon + 1, len( entry ) ), "," ) : [];
-        }
-        variables.byName = "";
-        return this;
-    }
+	// Flags come from the small CommandFlagData (cheap, read on every run that has flags); usage text from HelpData (parsed only when asked).
+	function init() {
+		variables.flagsOf = {};
+		for ( var entry in listToArray( new bxrig.CommandFlagData().flags(), ";" ) ) {
+			var colon = find( ":", entry );
+			variables.flagsOf[ left( entry, colon - 1 ) ] = colon < len( entry ) ? listToArray( mid( entry, colon + 1, len( entry ) ), "," ) : [];
+		}
+		variables.byName = "";
+		return this;
+	}
 
-    function usageData() {
-        if ( isSimpleValue( variables.byName ) ) {
-            variables.byName = {};
-            for ( var g in jsonDeserialize( new bxrig.HelpData().json() ).groups ) for ( var c in g.commands ) variables.byName[ c.name ] = c;
-        }
-        return variables.byName;
-    }
+	function usageData() {
+		if ( isSimpleValue( variables.byName ) ) {
+			variables.byName = {};
+			for ( var g in jsonDeserialize( new bxrig.HelpData().json() ).groups ) for ( var c in g.commands ) variables.byName[ c.name ] = c;
+		}
+		return variables.byName;
+	}
 
-    function globals() {
-        return [ "json", "yes", "dry-run", "force", "quiet" ];
-    }
+	function globals() {
+		return [ "json", "yes", "dry-run", "force", "quiet" ];
+	}
 
-    function knows( name ) {
-        return structKeyExists( variables.flagsOf, arguments.name );
-    }
+	function knows( name ) {
+		return structKeyExists( variables.flagsOf, arguments.name );
+	}
 
-    // The cli.json entry of a command (summary, usage, examples, flags), or {}. Not called `find`: a method of that name would hide the find() function in this class.
-    function entry( name ) {
-        return knows( arguments.name ) ? usageData()[ arguments.name ] : {};
-    }
+	// The cli.json entry of a command (summary, usage, examples, flags), or {}. Not called `find`: a method of that name would hide the find() function in this class.
+	function entry( name ) {
+		return knows( arguments.name ) ? usageData()[ arguments.name ] : {};
+	}
 
-    // Names of the flags the command takes besides the globals.
-    function flags( name ) {
-        return knows( arguments.name ) ? variables.flagsOf[ arguments.name ] : [];
-    }
+	// Names of the flags the command takes besides the globals.
+	function flags( name ) {
+		return knows( arguments.name ) ? variables.flagsOf[ arguments.name ] : [];
+	}
 
-    // The flags in `given` that the command does not take (globals are always fine). A command that is not in the registry takes none.
-    function unknownFlags( name, given ) {
-        var ok = flags( arguments.name );
-        var bad = [];
-        for ( var f in arguments.given ) {
-            if ( arrayFind( globals(), f ) || arrayFind( ok, f ) ) continue;
-            bad.append( f );
-        }
-        return bad;
-    }
+	// The flags in `given` that the command does not take (globals are always fine). A command that is not in the registry takes none.
+	function unknownFlags( name, given ) {
+		var ok = flags( arguments.name );
+		var bad = [];
+		for ( var f in arguments.given ) {
+			if ( arrayFind( globals(), f ) || arrayFind( ok, f ) ) continue;
+			bad.append( f );
+		}
+		return bad;
+	}
 
-    // The usage lines split into one entry per variant ("pkg search TEXT ...", "pkg info NAME", ...). A variant always starts with the
-    // command name; the bar inside [ ] (as in [--fresh | --rerun]) does not split.
-    function variants( name ) {
-        var out = [];
-        if ( !knows( arguments.name ) ) return out;
-        for ( var line in usageData()[ arguments.name ].usage ) {
-            var depth = 0;
-            var cur = "";
-            var i = 1;
-            var n = len( line );
-            while ( i <= n ) {
-                var ch = mid( line, i, 1 );
-                if ( ch == "[" ) depth++;
-                if ( ch == "]" ) depth--;
-                if ( depth == 0 && mid( line, i, 3 ) == " | " ) { out.append( cur ); cur = ""; i += 3; continue; }
-                cur &= ch;
-                i++;
-            }
-            out.append( cur );
-        }
-        var cmdName = arguments.name;
-        return out.map( function( v ) { return left( v, len( cmdName ) ) == cmdName && ( len( v ) == len( cmdName ) || mid( v, len( cmdName ) + 1, 1 ) == " " ) ? v : cmdName & " " & v; } );
-    }
+	// The usage lines split into one entry per variant ("pkg search TEXT ...", "pkg info NAME", ...). A variant always starts with the
+	// command name; the bar inside [ ] (as in [--fresh | --rerun]) does not split.
+	function variants( name ) {
+		var out = [];
+		if ( !knows( arguments.name ) ) return out;
+		for ( var line in usageData()[ arguments.name ].usage ) {
+			var depth = 0;
+			var cur = "";
+			var i = 1;
+			var n = len( line );
+			while ( i <= n ) {
+				var ch = mid( line, i, 1 );
+				if ( ch == "[" ) depth++;
+				if ( ch == "]" ) depth--;
+				if ( depth == 0 && mid( line, i, 3 ) == " | " ) { out.append( cur ); cur = ""; i += 3; continue; }
+				cur &= ch;
+				i++;
+			}
+			out.append( cur );
+		}
+		var cmdName = arguments.name;
+		return out.map( function( v ) { return left( v, len( cmdName ) ) == cmdName && ( len( v ) == len( cmdName ) || mid( v, len( cmdName ) + 1, 1 ) == " " ) ? v : cmdName & " " & v; } );
+	}
 
-    function words( s ) {
-        return listToArray( arguments.s, " " );
-    }
+	function words( s ) {
+		return listToArray( arguments.s, " " );
+	}
 
-    // "Usage: bxrig ..." for a key such as "pkg" (every variant) or "pkg remove" (the variants that start with those words).
-    // Narrows from the right until something matches, so an unknown verb still gives the command's usage.
-    function usage( key ) {
-        var w = words( arguments.key );
-        var vs = variants( w.len() ? w[ 1 ] : "" );
-        for ( var n = w.len(); n >= 1; n-- ) {
-            var want = w.slice( 1, n );
-            var hit = vs.filter( function( v ) {
-                var vw = listToArray( v, " " );
-                if ( vw.len() < want.len() ) return false;
-                for ( var j = 1; j <= want.len(); j++ ) if ( compare( vw[ j ], want[ j ] ) != 0 ) return false;
-                return true;
-            } );
-            if ( hit.len() ) return "Usage: bxrig " & hit.toList( "  |  " );
-        }
-        return "Usage: bxrig " & arguments.key;
-    }
+	// "Usage: bxrig ..." for a key such as "pkg" (every variant) or "pkg remove" (the variants that start with those words).
+	// Narrows from the right until something matches, so an unknown verb still gives the command's usage.
+	function usage( key ) {
+		var w = words( arguments.key );
+		var vs = variants( w.len() ? w[ 1 ] : "" );
+		for ( var n = w.len(); n >= 1; n-- ) {
+			var want = w.slice( 1, n );
+			var hit = vs.filter( function( v ) {
+				var vw = listToArray( v, " " );
+				if ( vw.len() < want.len() ) return false;
+				for ( var j = 1; j <= want.len(); j++ ) if ( compare( vw[ j ], want[ j ] ) != 0 ) return false;
+				return true;
+			} );
+			if ( hit.len() ) return "Usage: bxrig " & hit.toList( "  |  " );
+		}
+		return "Usage: bxrig " & arguments.key;
+	}
 }

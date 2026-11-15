@@ -5,8 +5,8 @@ export HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/stat
 mkdir -p "$HOME"
 code() { set +e; "$@" >/dev/null 2>&1; echo $?; set -e; }
 mkjdk() { # dir version vendor
-  mkdir -p "$1/bin"; printf '#!/bin/sh\necho java\n' > "$1/bin/java"; chmod +x "$1/bin/java"
-  printf 'IMPLEMENTOR="%s"\nJAVA_VERSION="%s"\n' "$3" "$2" > "$1/release"
+	mkdir -p "$1/bin"; printf '#!/bin/sh\necho java\n' > "$1/bin/java"; chmod +x "$1/bin/java"
+	printf 'IMPLEMENTOR="%s"\nJAVA_VERSION="%s"\n' "$3" "$2" > "$1/release"
 }
 mkjdk "$tmp/jvm/java-17-openjdk" 17.0.13 Arch
 mkjdk "$tmp/sdkman/candidates/java/21.0.5-tem" 21.0.5 "Eclipse Adoptium"

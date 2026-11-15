@@ -1,4 +1,4 @@
 // The command reference (docs/reference/cli.json, packed with BxRig as a resource) for `bxrig help` and the command spec.
 class HelpData {
-    function json() { return new bxrig.util.Res().trimmed( "cli.json" ); }
+	function json() { return new bxrig.util.Res().trimmed( "cli.json" ); }
 }

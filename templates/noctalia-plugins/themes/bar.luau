@@ -5,5 +5,5 @@ barWidget.render(ui.glyph({ name = "palette" }))
 barWidget.setTooltip("Switch theme")
 
 function onClick()
-  noctalia.togglePanel("bxrig/themes:panel")
+	noctalia.togglePanel("bxrig/themes:panel")
 end

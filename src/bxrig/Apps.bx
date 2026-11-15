@@ -6,39 +6,39 @@
 // hidden (NoDisplay, Hidden), are left out. An entry starts with its Exec line, field codes (%U and friends) removed, detached from this
 // program. Exit: 0 done or cancelled, 4 precondition (no menu program, nothing to show).
 class Apps {
-    function init( cli, runner = "" ) {
-        variables.cli = arguments.cli;
-        variables.desk = new bxrig.util.DesktopEntry();
-        variables.inst = new bxrig.Installer( arguments.runner );
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.desk = new bxrig.util.DesktopEntry();
+		variables.inst = new bxrig.Installer( arguments.runner );
+		return this;
+	}
 
-    // [ { id, name, exec, icon } ] sorted by name (BxRig's own page launchers are included: you can start a BxRig screen from the grid).
-    function all() {
-        var rows = [];
-        for ( var e in variables.desk.entries( variables.desk.dirs(), true, true ) ) rows.append( { id: listLast( e.file, "/" ), name: e.name, exec: variables.desk.cleanExec( e.exec ), icon: e.icon } );
-        return rows.sort( function( a, b ) { return compareNoCase( a.name, b.name ); } );
-    }
+	// [ { id, name, exec, icon } ] sorted by name (BxRig's own page launchers are included: you can start a BxRig screen from the grid).
+	function all() {
+		var rows = [];
+		for ( var e in variables.desk.entries( variables.desk.dirs(), true, true ) ) rows.append( { id: listLast( e.file, "/" ), name: e.name, exec: variables.desk.cleanExec( e.exec ), icon: e.icon } );
+		return rows.sort( function( a, b ) { return compareNoCase( a.name, b.name ); } );
+	}
 
-    function list( asJson ) {
-        var rows = all();
-        return variables.cli.say( "apps list", "ok", { apps: rows }, arguments.asJson, rows.map( function( r ) { return r.name & "  (" & r.id & ")"; } ) );
-    }
+	function list( asJson ) {
+		var rows = all();
+		return variables.cli.say( "apps list", "ok", { apps: rows }, arguments.asJson, rows.map( function( r ) { return r.name & "  (" & r.id & ")"; } ) );
+	}
 
-    // `apps`
-    function grid() {
-        var rows = all();
-        if ( !rows.len() ) { println( "error: no applications were found" ); return new bxrig.util.Exit().precondition(); }
-        var pick = 0;
-        try {
-            var runner = new bxrig.Runner( variables.cli, variables.inst.runner() );
-            pick = runner.select( "Apps", rows.map( function( r ) { return len( r.icon ) ? { label: r.name, icon: r.icon } : r.name; } ) );
-        } catch ( any err ) {
-            println( "error: " & err.message );
-            return new bxrig.util.Exit().precondition();
-        }
-        if ( pick == 0 ) return new bxrig.util.Exit().ok();
-        variables.inst.proc().exec( [ "sh", "-c", 'setsid sh -c "$1" >/dev/null 2>&1 &', "_", rows[ pick ].exec ], 10 );
-        return new bxrig.util.Exit().ok();
-    }
+	// `apps`
+	function grid() {
+		var rows = all();
+		if ( !rows.len() ) { println( "error: no applications were found" ); return new bxrig.util.Exit().precondition(); }
+		var pick = 0;
+		try {
+			var runner = new bxrig.Runner( variables.cli, variables.inst.runner() );
+			pick = runner.select( "Apps", rows.map( function( r ) { return len( r.icon ) ? { label: r.name, icon: r.icon } : r.name; } ) );
+		} catch ( any err ) {
+			println( "error: " & err.message );
+			return new bxrig.util.Exit().precondition();
+		}
+		if ( pick == 0 ) return new bxrig.util.Exit().ok();
+		variables.inst.proc().exec( [ "sh", "-c", 'setsid sh -c "$1" >/dev/null 2>&1 &', "_", rows[ pick ].exec ], 10 );
+		return new bxrig.util.Exit().ok();
+	}
 }

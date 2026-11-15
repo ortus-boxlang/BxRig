@@ -1,37 +1,37 @@
 // Files owned by root (/etc, /usr/lib/systemd/system, sudoers): BxRig writes the text to a private temp file, then `sudo install -Dm...` moves it in.
 // This is the one place that spells that install command and makes those temp files. Argv arrays only.
 class SystemFile {
-    function init( proc = "" ) {
-        variables.proc = isSimpleValue( arguments.proc ) ? new bxrig.util.Proc( arguments.proc ) : arguments.proc;
-        return this;
-    }
+	function init( proc = "" ) {
+		variables.proc = isSimpleValue( arguments.proc ) ? new bxrig.util.Proc( arguments.proc ) : arguments.proc;
+		return this;
+	}
 
-    // A new, unused temp path (nothing is created): /tmp/bxrig-STEM-UUID.
-    function tempPath( stem ) {
-        return getTempDirectory() & "/bxrig-" & arguments.stem & "-" & createUUID();
-    }
+	// A new, unused temp path (nothing is created): /tmp/bxrig-STEM-UUID.
+	function tempPath( stem ) {
+		return getTempDirectory() & "/bxrig-" & arguments.stem & "-" & createUUID();
+	}
 
-    // Writes text to a new temp file that only you can read (mode 600, set before the text goes in); returns its path.
-    function stage( text, stem = "file" ) {
-        var f = tempPath( arguments.stem );
-        variables.proc.exec( [ "sh", "-c", 'umask 077; : > "$1"', "_", f ], 10 );
-        fileWrite( f, arguments.text );
-        return f;
-    }
+	// Writes text to a new temp file that only you can read (mode 600, set before the text goes in); returns its path.
+	function stage( text, stem = "file" ) {
+		var f = tempPath( arguments.stem );
+		variables.proc.exec( [ "sh", "-c", 'umask 077; : > "$1"', "_", f ], 10 );
+		fileWrite( f, arguments.text );
+		return f;
+	}
 
-    // sudo install -Dm644 SOURCE TARGET (rootOwned adds -o root -g root, for secrets and sudoers).
-    function installArgv( source, target, mode = "644", rootOwned = false ) {
-        var argv = [ "sudo", "install", "-Dm" & arguments.mode ];
-        if ( arguments.rootOwned ) for ( var a in [ "-o", "root", "-g", "root" ] ) argv.append( a );
-        argv.append( arguments.source );
-        argv.append( arguments.target );
-        return argv;
-    }
+	// sudo install -Dm644 SOURCE TARGET (rootOwned adds -o root -g root, for secrets and sudoers).
+	function installArgv( source, target, mode = "644", rootOwned = false ) {
+		var argv = [ "sudo", "install", "-Dm" & arguments.mode ];
+		if ( arguments.rootOwned ) for ( var a in [ "-o", "root", "-g", "root" ] ) argv.append( a );
+		argv.append( arguments.source );
+		argv.append( arguments.target );
+		return argv;
+	}
 
-    // Deletes temp files, ignoring the ones that are already gone.
-    function cleanup( paths ) {
-        for ( var p in ( isArray( arguments.paths ) ? arguments.paths : [ arguments.paths ] ) ) {
-            try { if ( fileExists( p ) ) fileDelete( p ); } catch ( any e ) {}
-        }
-    }
+	// Deletes temp files, ignoring the ones that are already gone.
+	function cleanup( paths ) {
+		for ( var p in ( isArray( arguments.paths ) ? arguments.paths : [ arguments.paths ] ) ) {
+			try { if ( fileExists( p ) ) fileDelete( p ); } catch ( any e ) {}
+		}
+	}
 }

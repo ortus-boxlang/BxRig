@@ -5,68 +5,68 @@
 //   toggle     starts or stops dictation now with Voxtype (`voxtype record toggle`); Superwhisper is push to talk and has no toggle. Key: Alt+Space
 // Exit: 0 ok, 2 plan without --yes, 4 precondition, 5/6/7 as `install`.
 class Dictation {
-    variables.engines = [
-        { id: "superwhisper", name: "Superwhisper", apps: [ "superwhisper" ], bin: "superwhisper", key: "Hold Right Alt to talk, release to paste. Change it in Superwhisper's Configuration (Escape cancels on Hyprland).", home: "https://superwhisper.com/linux" },
-        { id: "voxtype", name: "Voxtype", apps: [ "voxtype", "wtype" ], bin: "voxtype", key: "Hold F9 to dictate (Omarchy's setup). Change the model with: voxtype setup model. Other settings: ~/.config/voxtype/config.toml", home: "https://github.com/peteonrails/voxtype" }
-    ];
+	variables.engines = [
+		{ id: "superwhisper", name: "Superwhisper", apps: [ "superwhisper" ], bin: "superwhisper", key: "Hold Right Alt to talk, release to paste. Change it in Superwhisper's Configuration (Escape cancels on Hyprland).", home: "https://superwhisper.com/linux" },
+		{ id: "voxtype", name: "Voxtype", apps: [ "voxtype", "wtype" ], bin: "voxtype", key: "Hold F9 to dictate (Omarchy's setup). Change the model with: voxtype setup model. Other settings: ~/.config/voxtype/config.toml", home: "https://github.com/peteonrails/voxtype" }
+	];
 
-    function init( cli, runner = "" ) {
-        variables.cli = arguments.cli;
-        variables.out = new bxrig.util.Out( variables.cli, "dictation" );
-        variables.runner = arguments.runner;
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.proc = variables.inst.proc();
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( variables.cli, "dictation" );
+		variables.runner = arguments.runner;
+		variables.inst = new bxrig.Installer( arguments.runner );
+		variables.proc = variables.inst.proc();
+		return this;
+	}
 
-    function engine( id ) {
-        for ( var e in variables.engines ) if ( e.id == arguments.id ) return e;
-        return {};
-    }
+	function engine( id ) {
+		for ( var e in variables.engines ) if ( e.id == arguments.id ) return e;
+		return {};
+	}
 
 
-    // `dictation setup [ENGINE]`: install the app through the catalog (`bxrig install`), then say how to use it.
-    function setup( id, yes, dryRun, asJson ) {
-        var e = engine( len( arguments.id ) ? arguments.id : "superwhisper" );
-        if ( structIsEmpty( e ) ) return variables.out.say( "precondition", { error: "Unknown engine " & arguments.id }, arguments.asJson, [ "error: unknown engine " & arguments.id & " (use superwhisper or voxtype)" ] );
-        var data = { engine: e.id, apps: e.apps, shortcut: e.key };
-        if ( !arguments.yes || arguments.dryRun ) return variables.out.plan( "install " & e.apps.toList( ", " ) & " for dictation with " & e.name, data, arguments.asJson, arguments.dryRun, [ "Shortcut: " & e.key ] );
-        var argv = [ "bxrig", "install" ];
-        for ( var a in e.apps ) argv.append( a );
-        argv.append( "--yes" );
-        var r = variables.inst.proc().exec( argv, 3600 );
-        if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: "install failed (exit " & r.exitCode & ")" }, arguments.asJson, [ "error: installing " & e.name & " failed (exit " & r.exitCode & ")" ] );
-        return variables.out.say( "ok", data, arguments.asJson, [ e.name & " is installed.", "Shortcut: " & e.key ] );
-    }
+	// `dictation setup [ENGINE]`: install the app through the catalog (`bxrig install`), then say how to use it.
+	function setup( id, yes, dryRun, asJson ) {
+		var e = engine( len( arguments.id ) ? arguments.id : "superwhisper" );
+		if ( structIsEmpty( e ) ) return variables.out.say( "precondition", { error: "Unknown engine " & arguments.id }, arguments.asJson, [ "error: unknown engine " & arguments.id & " (use superwhisper or voxtype)" ] );
+		var data = { engine: e.id, apps: e.apps, shortcut: e.key };
+		if ( !arguments.yes || arguments.dryRun ) return variables.out.plan( "install " & e.apps.toList( ", " ) & " for dictation with " & e.name, data, arguments.asJson, arguments.dryRun, [ "Shortcut: " & e.key ] );
+		var argv = [ "bxrig", "install" ];
+		for ( var a in e.apps ) argv.append( a );
+		argv.append( "--yes" );
+		var r = variables.inst.proc().exec( argv, 3600 );
+		if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: "install failed (exit " & r.exitCode & ")" }, arguments.asJson, [ "error: installing " & e.name & " failed (exit " & r.exitCode & ")" ] );
+		return variables.out.say( "ok", data, arguments.asJson, [ e.name & " is installed.", "Shortcut: " & e.key ] );
+	}
 
-    // `dictation status`: which engines are installed, and the shortcut of each.
-    function status( asJson ) {
-        var rows = [];
-        var lines = [];
-        for ( var e in variables.engines ) {
-            var have = variables.proc.has( e.bin );
-            rows.append( { engine: e.id, installed: have, shortcut: e.key } );
-            lines.append( e.name & ": " & ( have ? "installed" : "not installed" ) & "  |  " & e.key );
-        }
-        return variables.out.say( "ok", { engines: rows }, arguments.asJson, lines );
-    }
+	// `dictation status`: which engines are installed, and the shortcut of each.
+	function status( asJson ) {
+		var rows = [];
+		var lines = [];
+		for ( var e in variables.engines ) {
+			var have = variables.proc.has( e.bin );
+			rows.append( { engine: e.id, installed: have, shortcut: e.key } );
+			lines.append( e.name & ": " & ( have ? "installed" : "not installed" ) & "  |  " & e.key );
+		}
+		return variables.out.say( "ok", { engines: rows }, arguments.asJson, lines );
+	}
 
-    // `dictation key [ENGINE]`: the shortcut the app ships (BxRig does not rebind it).
-    function key( id, asJson ) {
-        var list = len( arguments.id ) ? [ engine( arguments.id ) ] : variables.engines;
-        if ( list[ 1 ].keyExists( "id" ) == false ) return variables.out.say( "precondition", { error: "Unknown engine " & arguments.id }, arguments.asJson, [ "error: unknown engine " & arguments.id ] );
-        var lines = [];
-        for ( var e in list ) lines.append( e.name & ": " & e.key );
-        return variables.out.say( "ok", { shortcuts: list.map( function( e ) { return { engine: e.id, shortcut: e.key }; } ) }, arguments.asJson, lines );
-    }
+	// `dictation key [ENGINE]`: the shortcut the app ships (BxRig does not rebind it).
+	function key( id, asJson ) {
+		var list = len( arguments.id ) ? [ engine( arguments.id ) ] : variables.engines;
+		if ( list[ 1 ].keyExists( "id" ) == false ) return variables.out.say( "precondition", { error: "Unknown engine " & arguments.id }, arguments.asJson, [ "error: unknown engine " & arguments.id ] );
+		var lines = [];
+		for ( var e in list ) lines.append( e.name & ": " & e.key );
+		return variables.out.say( "ok", { shortcuts: list.map( function( e ) { return { engine: e.id, shortcut: e.key }; } ) }, arguments.asJson, lines );
+	}
 
-    // `dictation toggle`: start or stop recording with Voxtype.
-    function toggle( dryRun, asJson ) {
-        var argv = [ "voxtype", "record", "toggle" ];
-        if ( !variables.proc.has( "voxtype" ) ) return variables.out.say( "precondition", { error: "voxtype is not installed" }, arguments.asJson, [ "error: voxtype is not installed. Set it up: bxrig dictation setup voxtype --yes" ] );
-        if ( arguments.dryRun ) return variables.out.say( "ok", { argv: argv }, arguments.asJson, [ "Dry run: " & argv.toList( " " ), "Nothing was started." ] );
-        var r = variables.proc.exec( argv, 30 );
-        if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
-        return variables.out.say( "ok", { toggled: true }, arguments.asJson, [ "Dictation toggled." ] );
-    }
+	// `dictation toggle`: start or stop recording with Voxtype.
+	function toggle( dryRun, asJson ) {
+		var argv = [ "voxtype", "record", "toggle" ];
+		if ( !variables.proc.has( "voxtype" ) ) return variables.out.say( "precondition", { error: "voxtype is not installed" }, arguments.asJson, [ "error: voxtype is not installed. Set it up: bxrig dictation setup voxtype --yes" ] );
+		if ( arguments.dryRun ) return variables.out.say( "ok", { argv: argv }, arguments.asJson, [ "Dry run: " & argv.toList( " " ), "Nothing was started." ] );
+		var r = variables.proc.exec( argv, 30 );
+		if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+		return variables.out.say( "ok", { toggled: true }, arguments.asJson, [ "Dictation toggled." ] );
+	}
 }

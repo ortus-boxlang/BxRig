@@ -2,51 +2,51 @@
 //   c = new lib.Check( "name" );  c.check( "label", ok );  ...  c.done();
 // Prints "ok   LABEL" or "FAIL LABEL"; done() prints "NAME passed" (or the message you give) and exits 1 when anything failed.
 class Check {
-    function init( name = "" ) {
-        variables.name = arguments.name;
-        variables.failures = 0;
-        variables.dirs = [];
-        return this;
-    }
+	function init( name = "" ) {
+		variables.name = arguments.name;
+		variables.failures = 0;
+		variables.dirs = [];
+		return this;
+	}
 
-    function check( label, ok ) {
-        if ( arguments.ok ) println( "ok   " & arguments.label );
-        else { println( "FAIL " & arguments.label ); variables.failures = variables.failures + 1; }
-        return arguments.ok;
-    }
+	function check( label, ok ) {
+		if ( arguments.ok ) println( "ok   " & arguments.label );
+		else { println( "FAIL " & arguments.label ); variables.failures = variables.failures + 1; }
+		return arguments.ok;
+	}
 
-    function failures() { return variables.failures; }
+	function failures() { return variables.failures; }
 
-    function done( message = "" ) {
-        for ( var d in variables.dirs ) if ( directoryExists( d ) ) directoryDelete( d, true );
-        if ( variables.failures > 0 ) { println( variables.failures & " failed" ); exit( 1 ); }
-        println( len( arguments.message ) ? arguments.message : variables.name & " passed" );
-    }
+	function done( message = "" ) {
+		for ( var d in variables.dirs ) if ( directoryExists( d ) ) directoryDelete( d, true );
+		if ( variables.failures > 0 ) { println( variables.failures & " failed" ); exit( 1 ); }
+		println( len( arguments.message ) ? arguments.message : variables.name & " passed" );
+	}
 
-    // A new empty scratch folder, removed by done().
-    function tmp() {
-        var d = getTempDirectory() & "/bxrig-test-" & replace( createUUID(), "-", "", "all" );
-        directoryCreate( d, true, true );
-        variables.dirs.append( d );
-        return d;
-    }
+	// A new empty scratch folder, removed by done().
+	function tmp() {
+		var d = getTempDirectory() & "/bxrig-test-" & replace( createUUID(), "-", "", "all" );
+		directoryCreate( d, true, true );
+		variables.dirs.append( d );
+		return d;
+	}
 
-    // Runs a shell line (tests only): { exitCode, output }.
-    function sh( cmd ) { return systemExecute( "sh", [ "-c", arguments.cmd ], 60, true ); }
+	// Runs a shell line (tests only): { exitCode, output }.
+	function sh( cmd ) { return systemExecute( "sh", [ "-c", arguments.cmd ], 60, true ); }
 
-    // Writes a file, creating its folders.
-    function text( path, content = "" ) {
-        var dir = getDirectoryFromPath( arguments.path );
-        if ( len( dir ) && !directoryExists( dir ) ) directoryCreate( dir, true, true );
-        fileWrite( arguments.path, arguments.content );
-        return arguments.path;
-    }
+	// Writes a file, creating its folders.
+	function text( path, content = "" ) {
+		var dir = getDirectoryFromPath( arguments.path );
+		if ( len( dir ) && !directoryExists( dir ) ) directoryCreate( dir, true, true );
+		fileWrite( arguments.path, arguments.content );
+		return arguments.path;
+	}
 
-    function touch( path ) { return text( arguments.path, "" ); }
+	function touch( path ) { return text( arguments.path, "" ); }
 
-    // The text of a file.
-    function read( path ) { return fileRead( arguments.path ); }
+	// The text of a file.
+	function read( path ) { return fileRead( arguments.path ); }
 
-    // What the TUI canvas drew, as text (see MatchBox `tui.render_to_string`).
-    function frame( w = 80, h = 24 ) { return tui.render_to_string( arguments.w, arguments.h ); }
+	// What the TUI canvas drew, as text (see MatchBox `tui.render_to_string`).
+	function frame( w = 80, h = 24 ) { return tui.render_to_string( arguments.w, arguments.h ); }
 }

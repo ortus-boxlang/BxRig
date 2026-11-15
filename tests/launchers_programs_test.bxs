@@ -5,10 +5,10 @@ cli = new bxrig.util.Cli( "0.0.0" );
 calls = [];
 answers = {};
 runner = function( argv, timeout ) {
-    line = argv.toList( " " );
-    calls.append( line );
-    for ( k in answers ) if ( find( k, line ) ) return { exitCode: answers[ k ].code, timeout: false, output: answers[ k ].out };
-    return { exitCode: 0, timeout: false, output: "" };
+	line = argv.toList( " " );
+	calls.append( line );
+	for ( k in answers ) if ( find( k, line ) ) return { exitCode: answers[ k ].code, timeout: false, output: answers[ k ].out };
+	return { exitCode: 0, timeout: false, output: "" };
 };
 function said( cmd ) { for ( c in calls ) if ( find( cmd, c ) ) return true; return false; }
 
@@ -32,11 +32,11 @@ testkit.check( "no default browser exits 4", pg.browserPrivate( "", true, false 
 
 // ---- files here ----
 answers = {
-    "hyprctl activewindow": { code: 0, out: '{"pid": 100, "class": "kitty"}' },
-    "pgrep -P 100": { code: 0, out: "101" & chr( 10 ) & "102" & chr( 10 ) },
-    "pgrep -P 102": { code: 0, out: "103" & chr( 10 ) },
-    "pgrep -P 103": { code: 1, out: "" },
-    "readlink /proc/103/cwd": { code: 0, out: "/home/me/code" & chr( 10 ) }
+	"hyprctl activewindow": { code: 0, out: '{"pid": 100, "class": "kitty"}' },
+	"pgrep -P 100": { code: 0, out: "101" & chr( 10 ) & "102" & chr( 10 ) },
+	"pgrep -P 102": { code: 0, out: "103" & chr( 10 ) },
+	"pgrep -P 103": { code: 1, out: "" },
+	"readlink /proc/103/cwd": { code: 0, out: "/home/me/code" & chr( 10 ) }
 };
 calls = [];
 testkit.check( "the folder is the newest descendant's working directory", pg.focusedFolder() == "/home/me/code" );

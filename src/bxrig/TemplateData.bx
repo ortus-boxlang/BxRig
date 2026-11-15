@@ -1,18 +1,18 @@
 // The starter config templates (templates/, packed with BxRig as resources).
 class TemplateData {
-    function names() {
-        var out = [ "hyprland.lua", "starship.toml", "shell.zsh", "shell.bash", "shell.fish", "nvim/lua/config/bxrig.lua", "nvim/lua/plugins/bxrig.lua",
-            "nvim/lua/plugins/boxlang.lua", "nvim/lua/plugins/bxrig-themes.lua", "nvim/lua/plugins/bxrig-theme-reload.lua", "nvim/plugin/after/bxrig-transparency.lua" ];
-        // the plugin files (one folder per plugin; the README beside them is not a template)
-        for ( var p in new bxrig.util.Res().list( "templates/noctalia-plugins" ) ) if ( find( "/", p ) ) out.append( "noctalia-plugins/" & p );
-        out.append( "plymouth/bxrig.plymouth" );
-        out.append( "plymouth/bxrig.script" );
-        return out;
-    }
-    // A template's text ("" for a name that is not one).
-    function text( name ) {
-        var res = new bxrig.util.Res();
-        var path = "templates/" & arguments.name;
-        return res.exists( path ) ? res.text( path ) : "";
-    }
+	function names() {
+		var out = [ "hyprland.lua", "starship.toml", "shell.zsh", "shell.bash", "shell.fish", "nvim/lua/config/bxrig.lua", "nvim/lua/plugins/bxrig.lua",
+			"nvim/lua/plugins/boxlang.lua", "nvim/lua/plugins/bxrig-themes.lua", "nvim/lua/plugins/bxrig-theme-reload.lua", "nvim/plugin/after/bxrig-transparency.lua" ];
+		// the plugin files (one folder per plugin; the README beside them is not a template)
+		for ( var p in new bxrig.util.Res().list( "templates/noctalia-plugins" ) ) if ( find( "/", p ) ) out.append( "noctalia-plugins/" & p );
+		out.append( "plymouth/bxrig.plymouth" );
+		out.append( "plymouth/bxrig.script" );
+		return out;
+	}
+	// A template's text ("" for a name that is not one).
+	function text( name ) {
+		var res = new bxrig.util.Res();
+		var path = "templates/" & arguments.name;
+		return res.exists( path ) ? res.text( path ) : "";
+	}
 }

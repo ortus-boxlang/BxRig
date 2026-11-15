@@ -57,13 +57,13 @@ testkit.check( "pages: seventeen, in order", pages.len() == 17 && pages[ 1 ].id(
 want = { apps: "Firefox", boxlang: "1.9.0-snapshot", java: "temurin-21.0.13_9", maven: "3.10.0", gradle: "9.9.1", versions: "MatchBox", ports: "postgres", shortcuts: "Launcher", machines: "webtop-ubuntu", databases: "postgres", mail: "Your order 4821 has shipped", storage: "syno/backups", secrets: "ANTHROPIC_API_KEY", themes: "tokyo-night", logs: "port 5432 already in use" };
 big = new bxrig.ControlCenterApp( pages, "" );
 for ( pg in pages ) {
-    if ( pg.id() == "dashboard" ) continue;
-    big.goto( pg.id() );
-    view.paint( big, 10, 120, 38 );
-    sc = tui.render_to_string( 120, 38 );
-    ok = find( pg.title(), sc ) > 0 && find( want[ pg.id() ], sc ) > 0;
-    if ( pg.id() == "packages" ) ok = find( "Press /", sc ) > 0;
-    testkit.check( "page " & pg.id() & ": title and its demo rows show", ok );
+	if ( pg.id() == "dashboard" ) continue;
+	big.goto( pg.id() );
+	view.paint( big, 10, 120, 38 );
+	sc = tui.render_to_string( 120, 38 );
+	ok = find( pg.title(), sc ) > 0 && find( want[ pg.id() ], sc ) > 0;
+	if ( pg.id() == "packages" ) ok = find( "Press /", sc ) > 0;
+	testkit.check( "page " & pg.id() & ": title and its demo rows show", ok );
 }
 // the table: filter, cursor, actions
 big.goto( "ports" ); port = big.page();

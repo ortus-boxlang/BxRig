@@ -17,276 +17,276 @@
 // <cache>/appstream/ID.urls; the pictures themselves are fetched by ImageCache (kind "shots").
 // opts (tests): { share, home, iconBase, cache: {ImageCache opts} }. Environment: BXRIG_SHARE_DIR replaces /usr/share.
 class AppIcons {
-    function init( opts = {} ) {
-        variables.desk = new bxrig.util.DesktopEntry();
-        variables.environ = new bxrig.util.Env( structKeyExists( arguments.opts, "home" ) ? { HOME: arguments.opts.home, BXRIG_CONFIG_HOME: "", XDG_CONFIG_HOME: "", XDG_DATA_HOME: "", XDG_CACHE_HOME: "", XDG_STATE_HOME: "" } : {} );
-        variables.opts = arguments.opts;
-        variables.cache = new bxrig.ImageCache( arguments.opts.cache ?: {} );
-        variables.seen = {};
-        variables.sizes = [ "128x128", "256x256", "96x96", "64x64", "48x48", "72x72", "512x512", "32x32", "24x24", "22x22", "16x16" ];
-        variables.themeList = [];
-        variables.rasterTool = "?";
-        return this;
-    }
+	function init( opts = {} ) {
+		variables.desk = new bxrig.util.DesktopEntry();
+		variables.environ = new bxrig.util.Env( structKeyExists( arguments.opts, "home" ) ? { HOME: arguments.opts.home, BXRIG_CONFIG_HOME: "", XDG_CONFIG_HOME: "", XDG_DATA_HOME: "", XDG_CACHE_HOME: "", XDG_STATE_HOME: "" } : {} );
+		variables.opts = arguments.opts;
+		variables.cache = new bxrig.ImageCache( arguments.opts.cache ?: {} );
+		variables.seen = {};
+		variables.sizes = [ "128x128", "256x256", "96x96", "64x64", "48x48", "72x72", "512x512", "32x32", "24x24", "22x22", "16x16" ];
+		variables.themeList = [];
+		variables.rasterTool = "?";
+		return this;
+	}
 
-    function share() { return variables.opts.share ?: variables.environ.named( "shareDir", "/usr/share" ); }
-    function home() { return variables.opts.home ?: variables.environ.named( "home", "" ); }
-    function userShare() { return structKeyExists( variables.opts, "home" ) ? variables.opts.home & "/.local/share" : variables.environ.named( "xdgDataHome", home() & "/.local/share" ); }
-    function iconBase() { return variables.opts.iconBase ?: "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png"; }
+	function share() { return variables.opts.share ?: variables.environ.named( "shareDir", "/usr/share" ); }
+	function home() { return variables.opts.home ?: variables.environ.named( "home", "" ); }
+	function userShare() { return structKeyExists( variables.opts, "home" ) ? variables.opts.home & "/.local/share" : variables.environ.named( "xdgDataHome", home() & "/.local/share" ); }
+	function iconBase() { return variables.opts.iconBase ?: "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png"; }
 
-    // "Visual Studio Code" -> "visual-studio-code"
-    function slug( name ) {
-        var s = lCase( trim( arguments.name ) );
-        s = reReplace( s, "[^a-z0-9]+", "-", "all" );
-        return reReplace( s, "^-+|-+$", "", "all" );
-    }
+	// "Visual Studio Code" -> "visual-studio-code"
+	function slug( name ) {
+		var s = lCase( trim( arguments.name ) );
+		s = reReplace( s, "[^a-z0-9]+", "-", "all" );
+		return reReplace( s, "^-+|-+$", "", "all" );
+	}
 
-    // The names to try for a package or app name: itself, and without the usual packaging suffixes.
-    function names( name ) {
-        var base = slug( arguments.name );
-        var out = [];
-        if ( len( base ) ) out.append( base );
-        var stripped = reReplace( base, "-(bin|git|stable|beta|nightly|desktop|appimage|flatpak|qt|gtk|gui)$", "" );
-        if ( len( stripped ) && stripped != base ) out.append( stripped );
-        return out;
-    }
+	// The names to try for a package or app name: itself, and without the usual packaging suffixes.
+	function names( name ) {
+		var base = slug( arguments.name );
+		var out = [];
+		if ( len( base ) ) out.append( base );
+		var stripped = reReplace( base, "-(bin|git|stable|beta|nightly|desktop|appimage|flatpak|qt|gtk|gui)$", "" );
+		if ( len( stripped ) && stripped != base ) out.append( stripped );
+		return out;
+	}
 
-    function isPicture( path ) { var e = lCase( listLast( arguments.path, "." ) ); return arrayFind( [ "png", "jpg", "jpeg", "webp", "gif" ], e ) > 0; }
+	function isPicture( path ) { var e = lCase( listLast( arguments.path, "." ) ); return arrayFind( [ "png", "jpg", "jpeg", "webp", "gif" ], e ) > 0; }
 
-    // The icon theme names to look in, in this order: the current theme and what it Inherits, hicolor, then every other theme folder.
-    function themeNames( root ) {
-        var names = [];
-        var cur = variables.environ.named( "iconTheme", "" );
-        if ( !len( cur ) ) {
-            for ( var f in [ variables.environ.xdgConfig( "gtk-3.0/settings.ini" ), variables.environ.xdgConfig( "gtk-4.0/settings.ini" ) ] ) {
-                if ( len( cur ) || !fileExists( f ) ) continue;
-                try { for ( var line in listToArray( fileRead( f ), chr( 10 ) ) ) if ( left( trim( line ), 20 ) == "gtk-icon-theme-name=" || left( trim( line ), 21 ) == "gtk-icon-theme-name =" ) cur = trim( listLast( trim( line ), "=" ) ); } catch ( any e ) {}
-            }
-        }
-        var add = function( n ) { if ( len( n ) && reFind( "^[A-Za-z0-9_.-]+$", n ) && !arrayFindNoCase( names, n ) ) names.append( n ); };
-        var queue = len( cur ) ? [ cur ] : [];
-        var guard = 0;
-        while ( queue.len() && guard++ < 12 ) {
-            var t = queue[ 1 ]; queue.deleteAt( 1 );
-            if ( arrayFindNoCase( names, t ) ) continue;
-            add( t );
-            for ( var r in [ userShare() & "/icons", share() & "/icons" ] ) {
-                var idx = r & "/" & t & "/index.theme";
-                if ( !fileExists( idx ) ) continue;
-                try { for ( var line in listToArray( fileRead( idx ), chr( 10 ) ) ) if ( left( trim( line ), 9 ) == "Inherits=" ) for ( var inh in listToArray( mid( trim( line ), 10, 300 ), "," ) ) queue.append( trim( inh ) ); } catch ( any e ) {}
-                break;
-            }
-        }
-        add( "hicolor" );
-        try { for ( var t2 in directoryList( arguments.root, false, "name" ) ) if ( directoryExists( arguments.root & "/" & t2 ) ) add( t2 ); } catch ( any e ) {}
-        return names;
-    }
+	// The icon theme names to look in, in this order: the current theme and what it Inherits, hicolor, then every other theme folder.
+	function themeNames( root ) {
+		var names = [];
+		var cur = variables.environ.named( "iconTheme", "" );
+		if ( !len( cur ) ) {
+			for ( var f in [ variables.environ.xdgConfig( "gtk-3.0/settings.ini" ), variables.environ.xdgConfig( "gtk-4.0/settings.ini" ) ] ) {
+				if ( len( cur ) || !fileExists( f ) ) continue;
+				try { for ( var line in listToArray( fileRead( f ), chr( 10 ) ) ) if ( left( trim( line ), 20 ) == "gtk-icon-theme-name=" || left( trim( line ), 21 ) == "gtk-icon-theme-name =" ) cur = trim( listLast( trim( line ), "=" ) ); } catch ( any e ) {}
+			}
+		}
+		var add = function( n ) { if ( len( n ) && reFind( "^[A-Za-z0-9_.-]+$", n ) && !arrayFindNoCase( names, n ) ) names.append( n ); };
+		var queue = len( cur ) ? [ cur ] : [];
+		var guard = 0;
+		while ( queue.len() && guard++ < 12 ) {
+			var t = queue[ 1 ]; queue.deleteAt( 1 );
+			if ( arrayFindNoCase( names, t ) ) continue;
+			add( t );
+			for ( var r in [ userShare() & "/icons", share() & "/icons" ] ) {
+				var idx = r & "/" & t & "/index.theme";
+				if ( !fileExists( idx ) ) continue;
+				try { for ( var line in listToArray( fileRead( idx ), chr( 10 ) ) ) if ( left( trim( line ), 9 ) == "Inherits=" ) for ( var inh in listToArray( mid( trim( line ), 10, 300 ), "," ) ) queue.append( trim( inh ) ); } catch ( any e ) {}
+				break;
+			}
+		}
+		add( "hicolor" );
+		try { for ( var t2 in directoryList( arguments.root, false, "name" ) ) if ( directoryExists( arguments.root & "/" & t2 ) ) add( t2 ); } catch ( any e ) {}
+		return names;
+	}
 
-    function themeRoots() { return [ userShare() & "/icons", share() & "/icons" ]; }
+	function themeRoots() { return [ userShare() & "/icons", share() & "/icons" ]; }
 
-    // A picture of the named icon in the icon themes or pixmaps, or "".
-    function themed( iconName ) {
-        var ic = arguments.iconName;
-        if ( !len( ic ) ) return "";
-        if ( left( ic, 1 ) == "/" ) return fileExists( ic ) && isPicture( ic ) ? ic : "";
-        if ( find( "/", ic ) || find( "..", ic ) ) return "";
-        for ( var root in themeRoots() ) {
-            if ( !directoryExists( root ) ) continue;
-            for ( var th in themeNames( root ) ) for ( var sz in variables.sizes ) {
-                var n = listFirst( sz, "x" );
-                for ( var f in [ root & "/" & th & "/" & sz & "/apps/" & ic & ".png", root & "/" & th & "/apps/" & n & "/" & ic & ".png", root & "/" & th & "/" & sz & "/" & ic & ".png" ] ) if ( fileExists( f ) ) return f;
-            }
-        }
-        for ( var px in [ share() & "/pixmaps/" & ic & ".png", userShare() & "/pixmaps/" & ic & ".png" ] ) if ( fileExists( px ) ) return px;
-        return "";
-    }
+	// A picture of the named icon in the icon themes or pixmaps, or "".
+	function themed( iconName ) {
+		var ic = arguments.iconName;
+		if ( !len( ic ) ) return "";
+		if ( left( ic, 1 ) == "/" ) return fileExists( ic ) && isPicture( ic ) ? ic : "";
+		if ( find( "/", ic ) || find( "..", ic ) ) return "";
+		for ( var root in themeRoots() ) {
+			if ( !directoryExists( root ) ) continue;
+			for ( var th in themeNames( root ) ) for ( var sz in variables.sizes ) {
+				var n = listFirst( sz, "x" );
+				for ( var f in [ root & "/" & th & "/" & sz & "/apps/" & ic & ".png", root & "/" & th & "/apps/" & n & "/" & ic & ".png", root & "/" & th & "/" & sz & "/" & ic & ".png" ] ) if ( fileExists( f ) ) return f;
+			}
+		}
+		for ( var px in [ share() & "/pixmaps/" & ic & ".png", userShare() & "/pixmaps/" & ic & ".png" ] ) if ( fileExists( px ) ) return px;
+		return "";
+	}
 
-    // The SVG of an icon name (scalable folders first), or "".
-    function svgOf( iconName ) {
-        var ic = arguments.iconName;
-        if ( !len( ic ) || left( ic, 1 ) == "/" || find( "/", ic ) || find( "..", ic ) ) return left( ic, 1 ) == "/" && lCase( right( ic, 4 ) ) == ".svg" && fileExists( ic ) ? ic : "";
-        for ( var root in themeRoots() ) {
-            if ( !directoryExists( root ) ) continue;
-            for ( var th in themeNames( root ) ) for ( var f in [ root & "/" & th & "/scalable/apps/" & ic & ".svg", root & "/" & th & "/apps/scalable/" & ic & ".svg", root & "/" & th & "/scalable/" & ic & ".svg" ] ) if ( fileExists( f ) ) return f;
-        }
-        for ( var px in [ share() & "/pixmaps/" & ic & ".svg", userShare() & "/pixmaps/" & ic & ".svg" ] ) if ( fileExists( px ) ) return px;
-        return "";
-    }
+	// The SVG of an icon name (scalable folders first), or "".
+	function svgOf( iconName ) {
+		var ic = arguments.iconName;
+		if ( !len( ic ) || left( ic, 1 ) == "/" || find( "/", ic ) || find( "..", ic ) ) return left( ic, 1 ) == "/" && lCase( right( ic, 4 ) ) == ".svg" && fileExists( ic ) ? ic : "";
+		for ( var root in themeRoots() ) {
+			if ( !directoryExists( root ) ) continue;
+			for ( var th in themeNames( root ) ) for ( var f in [ root & "/" & th & "/scalable/apps/" & ic & ".svg", root & "/" & th & "/apps/scalable/" & ic & ".svg", root & "/" & th & "/scalable/" & ic & ".svg" ] ) if ( fileExists( f ) ) return f;
+		}
+		for ( var px in [ share() & "/pixmaps/" & ic & ".svg", userShare() & "/pixmaps/" & ic & ".svg" ] ) if ( fileExists( px ) ) return px;
+		return "";
+	}
 
-    // Tests: use this program (a path) to rasterize.
-    function useTool( path ) { variables.rasterTool = arguments.path; return this; }
+	// Tests: use this program (a path) to rasterize.
+	function useTool( path ) { variables.rasterTool = arguments.path; return this; }
 
-    // Which tool turns an SVG into a PNG: rsvg-convert (librsvg), magick or convert (ImageMagick), or "" when none is installed. Asked once.
-    function rasterTool() {
-        if ( variables.rasterTool == "?" ) {
-            variables.rasterTool = "";
-            try {
-                var r = systemExecute( "sh", [ "-c", "command -v rsvg-convert || command -v magick || command -v convert" ], 5, true );
-                if ( r.exitCode == 0 ) variables.rasterTool = getFileFromPath( trim( listFirst( r.output, chr( 10 ) ) ) );
-            } catch ( any e ) {}
-        }
-        return variables.rasterTool;
-    }
+	// Which tool turns an SVG into a PNG: rsvg-convert (librsvg), magick or convert (ImageMagick), or "" when none is installed. Asked once.
+	function rasterTool() {
+		if ( variables.rasterTool == "?" ) {
+			variables.rasterTool = "";
+			try {
+				var r = systemExecute( "sh", [ "-c", "command -v rsvg-convert || command -v magick || command -v convert" ], 5, true );
+				if ( r.exitCode == 0 ) variables.rasterTool = getFileFromPath( trim( listFirst( r.output, chr( 10 ) ) ) );
+			} catch ( any e ) {}
+		}
+		return variables.rasterTool;
+	}
 
-    // The SVG as a 128 px PNG in the cache ("" when there is no tool, the tool fails or takes too long; a failure is remembered by a marker file).
-    function rasterize( svg ) {
-        try {
-            var src = arguments.svg;
-            if ( !len( src ) || !fileExists( src ) ) return "";
-            var dir = variables.cache.dir( "svg" );
-            var k = variables.cache.key( src );
-            var out = dir & "/" & k & ".png";
-            if ( fileExists( out ) ) return out;
-            if ( fileExists( dir & "/" & k & ".fail" ) ) return "";
-            var tool = rasterTool();
-            if ( !len( tool ) ) return "";
-            directoryCreate( dir, true );
-            var tool2 = getFileFromPath( tool );
-            var args = tool2 == "rsvg-convert" ? [ "-w", "128", "-h", "128", "-o", out & ".tmp", src ] : ( tool2 == "magick" ? [ "-background", "none", "-density", "384", src, "-resize", "128x128", "PNG32:" & out & ".tmp" ] : [ "-background", "none", "-density", "384", src, "-resize", "128x128", "PNG32:" & out & ".tmp" ] );
-            var r = systemExecute( tool, args, 4, true );
-            if ( r.exitCode == 0 && fileExists( out & ".tmp" ) ) { fileMove( out & ".tmp", out ); return out; }
-            try { fileDelete( out & ".tmp" ); } catch ( any e2 ) {}
-            fileWrite( dir & "/" & k & ".fail", "failed" );
-        } catch ( any e ) {}
-        return "";
-    }
+	// The SVG as a 128 px PNG in the cache ("" when there is no tool, the tool fails or takes too long; a failure is remembered by a marker file).
+	function rasterize( svg ) {
+		try {
+			var src = arguments.svg;
+			if ( !len( src ) || !fileExists( src ) ) return "";
+			var dir = variables.cache.dir( "svg" );
+			var k = variables.cache.key( src );
+			var out = dir & "/" & k & ".png";
+			if ( fileExists( out ) ) return out;
+			if ( fileExists( dir & "/" & k & ".fail" ) ) return "";
+			var tool = rasterTool();
+			if ( !len( tool ) ) return "";
+			directoryCreate( dir, true );
+			var tool2 = getFileFromPath( tool );
+			var args = tool2 == "rsvg-convert" ? [ "-w", "128", "-h", "128", "-o", out & ".tmp", src ] : ( tool2 == "magick" ? [ "-background", "none", "-density", "384", src, "-resize", "128x128", "PNG32:" & out & ".tmp" ] : [ "-background", "none", "-density", "384", src, "-resize", "128x128", "PNG32:" & out & ".tmp" ] );
+			var r = systemExecute( tool, args, 4, true );
+			if ( r.exitCode == 0 && fileExists( out & ".tmp" ) ) { fileMove( out & ".tmp", out ); return out; }
+			try { fileDelete( out & ".tmp" ); } catch ( any e2 ) {}
+			fileWrite( dir & "/" & k & ".fail", "failed" );
+		} catch ( any e ) {}
+		return "";
+	}
 
-    function installed( name ) {
-        for ( var nm in names( arguments.name ) ) {
-            for ( var d in [ userShare() & "/applications/" & nm & ".desktop", share() & "/applications/" & nm & ".desktop" ] ) {
-                if ( !fileExists( d ) ) continue;
-                var iname = variables.desk.iconName( d );
-                var hit = themed( iname );
-                if ( !len( hit ) ) hit = rasterize( svgOf( iname ) );
-                if ( len( hit ) ) return hit;
-            }
-            var direct = themed( nm );
-            if ( len( direct ) ) return direct;
-        }
-        return "";
-    }
+	function installed( name ) {
+		for ( var nm in names( arguments.name ) ) {
+			for ( var d in [ userShare() & "/applications/" & nm & ".desktop", share() & "/applications/" & nm & ".desktop" ] ) {
+				if ( !fileExists( d ) ) continue;
+				var iname = variables.desk.iconName( d );
+				var hit = themed( iname );
+				if ( !len( hit ) ) hit = rasterize( svgOf( iname ) );
+				if ( len( hit ) ) return hit;
+			}
+			var direct = themed( nm );
+			if ( len( direct ) ) return direct;
+		}
+		return "";
+	}
 
-    function appstream( name ) {
-        for ( var nm in names( arguments.name ) ) {
-            for ( var root in [ share() & "/swcatalog/icons", share() & "/app-info/icons" ] ) {
-                if ( !directoryExists( root ) ) continue;
-                try {
-                    for ( var origin in directoryList( root, false, "name" ) ) for ( var sz in variables.sizes ) {
-                        var dir = root & "/" & origin & "/" & sz;
-                        if ( !directoryExists( dir ) ) continue;
-                        var found = directoryList( dir, false, "name", "*_" & nm & ".png" );
-                        if ( !found.len() && fileExists( dir & "/" & nm & ".png" ) ) return dir & "/" & nm & ".png";
-                        if ( found.len() ) return dir & "/" & found[ 1 ];
-                    }
-                } catch ( any e ) {}
-            }
-        }
-        return "";
-    }
+	function appstream( name ) {
+		for ( var nm in names( arguments.name ) ) {
+			for ( var root in [ share() & "/swcatalog/icons", share() & "/app-info/icons" ] ) {
+				if ( !directoryExists( root ) ) continue;
+				try {
+					for ( var origin in directoryList( root, false, "name" ) ) for ( var sz in variables.sizes ) {
+						var dir = root & "/" & origin & "/" & sz;
+						if ( !directoryExists( dir ) ) continue;
+						var found = directoryList( dir, false, "name", "*_" & nm & ".png" );
+						if ( !found.len() && fileExists( dir & "/" & nm & ".png" ) ) return dir & "/" & nm & ".png";
+						if ( found.len() ) return dir & "/" & found[ 1 ];
+					}
+				} catch ( any e ) {}
+			}
+		}
+		return "";
+	}
 
-    // Dashboard Icons: the plain name first; when that is known to be missing the variant that suits the theme ("dark" background wants -light).
-    function dashboard( name, theme ) {
-        for ( var nm in names( arguments.name ) ) {
-            var plain = iconBase() & "/" & nm & ".png";
-            var p = variables.cache.get( plain, "icons" );
-            if ( len( p ) ) return p;
-            if ( variables.cache.status( plain, "icons" ) == "failed" ) {
-                var variant = iconBase() & "/" & nm & ( arguments.theme == "light" ? "-dark" : "-light" ) & ".png";
-                var v = variables.cache.get( variant, "icons" );
-                if ( len( v ) ) return v;
-            }
-        }
-        return "";
-    }
+	// Dashboard Icons: the plain name first; when that is known to be missing the variant that suits the theme ("dark" background wants -light).
+	function dashboard( name, theme ) {
+		for ( var nm in names( arguments.name ) ) {
+			var plain = iconBase() & "/" & nm & ".png";
+			var p = variables.cache.get( plain, "icons" );
+			if ( len( p ) ) return p;
+			if ( variables.cache.status( plain, "icons" ) == "failed" ) {
+				var variant = iconBase() & "/" & nm & ( arguments.theme == "light" ? "-dark" : "-light" ) & ".png";
+				var v = variables.cache.get( variant, "icons" );
+				if ( len( v ) ) return v;
+			}
+		}
+		return "";
+	}
 
-    // A local picture for the app, or "". Local lookups are remembered for the life of this object; the network step is asked again on every call.
-    function iconFor( name, theme = "dark" ) {
-        try {
-            var key = lCase( arguments.name );
-            if ( !structKeyExists( variables.seen, key ) ) {
-                var local = themed( arguments.name );
-                if ( !len( local ) ) local = installed( arguments.name );
-                if ( !len( local ) ) local = rasterize( svgOf( arguments.name ) );
-                if ( !len( local ) ) local = appstream( arguments.name );
-                variables.seen[ key ] = local;
-            }
-            if ( len( variables.seen[ key ] ) ) return variables.seen[ key ];
-            return dashboard( arguments.name, arguments.theme );
-        } catch ( any e ) { return ""; }
-    }
+	// A local picture for the app, or "". Local lookups are remembered for the life of this object; the network step is asked again on every call.
+	function iconFor( name, theme = "dark" ) {
+		try {
+			var key = lCase( arguments.name );
+			if ( !structKeyExists( variables.seen, key ) ) {
+				var local = themed( arguments.name );
+				if ( !len( local ) ) local = installed( arguments.name );
+				if ( !len( local ) ) local = rasterize( svgOf( arguments.name ) );
+				if ( !len( local ) ) local = appstream( arguments.name );
+				variables.seen[ key ] = local;
+			}
+			if ( len( variables.seen[ key ] ) ) return variables.seen[ key ];
+			return dashboard( arguments.name, arguments.theme );
+		} catch ( any e ) { return ""; }
+	}
 
-    // ---- screenshots ----
-    function xmlFiles() {
-        var out = [];
-        for ( var d in [ share() & "/swcatalog/xml", share() & "/app-info/xmls" ] ) {
-            if ( !directoryExists( d ) ) continue;
-            try { for ( var f in directoryList( d, false, "name", "*.xml.gz" ) ) out.append( d & "/" & f ); } catch ( any e ) {}
-        }
-        return out;
-    }
+	// ---- screenshots ----
+	function xmlFiles() {
+		var out = [];
+		for ( var d in [ share() & "/swcatalog/xml", share() & "/app-info/xmls" ] ) {
+			if ( !directoryExists( d ) ) continue;
+			try { for ( var f in directoryList( d, false, "name", "*.xml.gz" ) ) out.append( d & "/" & f ); } catch ( any e ) {}
+		}
+		return out;
+	}
 
-    function indexDir() { return variables.cache.base() & "/appstream"; }
+	function indexDir() { return variables.cache.base() & "/appstream"; }
 
-    // The scan, as a shell script with positional arguments: ID, OUTFILE, NOW, then the XML files. ^ stands for a double quote.
-    function scanScript() {
-        var awk = "index($0, ^<id>^ id ^</id>^) { inside=1 } inside && /<image/ { u=substr($0, index($0, ^<image^)); u=substr(u, index(u, ^>^)+1); sub(/<.*$/, ^^, u); if (u != ^^) { t=($0 ~ /type=^thumbnail^/) ? ^t^ : ^s^; print t ^ ^ u } } inside && /<[/]component>/ { exit }";
-        var lines = [
-            "id=$1; out=$2; now=$3; shift 3",
-            "mkdir -p ^$(dirname ^$out^)^",
-            "echo $now > ^$out.scan^",
-            "for f in ^$@^; do",
-            "  zcat ^$f^ 2>/dev/null | awk -v id=^$id^ '" & awk & "' >> ^$out.tmp^",
-            "done",
-            "touch ^$out.tmp^",
-            "mv -f ^$out.tmp^ ^$out^; rm -f ^$out.scan^",
-            "exit 0"
-        ];
-        return replace( lines.toList( chr( 10 ) ), "^", chr( 34 ), "all" );
-    }
+	// The scan, as a shell script with positional arguments: ID, OUTFILE, NOW, then the XML files. ^ stands for a double quote.
+	function scanScript() {
+		var awk = "index($0, ^<id>^ id ^</id>^) { inside=1 } inside && /<image/ { u=substr($0, index($0, ^<image^)); u=substr(u, index(u, ^>^)+1); sub(/<.*$/, ^^, u); if (u != ^^) { t=($0 ~ /type=^thumbnail^/) ? ^t^ : ^s^; print t ^ ^ u } } inside && /<[/]component>/ { exit }";
+		var lines = [
+			"id=$1; out=$2; now=$3; shift 3",
+			"mkdir -p ^$(dirname ^$out^)^",
+			"echo $now > ^$out.scan^",
+			"for f in ^$@^; do",
+			"  zcat ^$f^ 2>/dev/null | awk -v id=^$id^ '" & awk & "' >> ^$out.tmp^",
+			"done",
+			"touch ^$out.tmp^",
+			"mv -f ^$out.tmp^ ^$out^; rm -f ^$out.scan^",
+			"exit 0"
+		];
+		return replace( lines.toList( chr( 10 ) ), "^", chr( 34 ), "all" );
+	}
 
-    function startScan( id, files ) {
-        var idx = indexDir() & "/" & arguments.id & ".urls";
-        var outer = replace( "s=$1; shift; nohup sh -c ^$s^ _ ^$@^ >/dev/null 2>&1 </dev/null &", "^", chr( 34 ), "all" );
-        var args = [ "-c", outer, "_", scanScript(), arguments.id, idx, variables.cache.now() ];
-        for ( var f in arguments.files ) args.append( f );
-        systemExecute( "sh", args, 10, false );
-    }
+	function startScan( id, files ) {
+		var idx = indexDir() & "/" & arguments.id & ".urls";
+		var outer = replace( "s=$1; shift; nohup sh -c ^$s^ _ ^$@^ >/dev/null 2>&1 </dev/null &", "^", chr( 34 ), "all" );
+		var args = [ "-c", outer, "_", scanScript(), arguments.id, idx, variables.cache.now() ];
+		for ( var f in arguments.files ) args.append( f );
+		systemExecute( "sh", args, 10, false );
+	}
 
-    // The screenshot URLs for a component id from its index file ([] when it is not built yet). Thumbnails are preferred over full size images.
-    function screenshotUrls( id ) {
-        var idx = indexDir() & "/" & arguments.id & ".urls";
-        var thumbs = []; var sources = [];
-        if ( !fileExists( idx ) ) return [];
-        for ( var line in listToArray( fileRead( idx ), chr( 10 ) ) ) {
-            var tl = trim( line );
-            if ( len( tl ) < 3 ) continue;
-            if ( left( tl, 1 ) == "t" ) thumbs.append( trim( mid( tl, 3, 1900 ) ) ); else if ( left( tl, 1 ) == "s" ) sources.append( trim( mid( tl, 3, 1900 ) ) );
-        }
-        return thumbs.len() ? thumbs : sources;
-    }
+	// The screenshot URLs for a component id from its index file ([] when it is not built yet). Thumbnails are preferred over full size images.
+	function screenshotUrls( id ) {
+		var idx = indexDir() & "/" & arguments.id & ".urls";
+		var thumbs = []; var sources = [];
+		if ( !fileExists( idx ) ) return [];
+		for ( var line in listToArray( fileRead( idx ), chr( 10 ) ) ) {
+			var tl = trim( line );
+			if ( len( tl ) < 3 ) continue;
+			if ( left( tl, 1 ) == "t" ) thumbs.append( trim( mid( tl, 3, 1900 ) ) ); else if ( left( tl, 1 ) == "s" ) sources.append( trim( mid( tl, 3, 1900 ) ) );
+		}
+		return thumbs.len() ? thumbs : sources;
+	}
 
-    // Local paths of the screenshots of a component, up to 4. Starts the index scan and the downloads in the background; [] until they are done.
-    function screenshotsFor( appstreamId ) {
-        var out = [];
-        try {
-            var id = arguments.appstreamId;
-            if ( !reFind( "^[A-Za-z0-9._-]{1,200}$", id ) ) return out;
-            var idx = indexDir() & "/" & id & ".urls";
-            if ( !fileExists( idx ) ) {
-                var scanning = variables.cache.markerAge( idx & ".scan" );
-                var files = xmlFiles();
-                if ( files.len() && !( scanning >= 0 && scanning < 300 ) ) startScan( id, files );
-                return out;
-            }
-            var urls = screenshotUrls( id );
-            var n = 0;
-            for ( var u in urls ) {
-                n++;
-                if ( n > 4 ) break;
-                var p = variables.cache.get( u, "shots" );
-                if ( len( p ) ) out.append( p );
-            }
-        } catch ( any e ) {}
-        return out;
-    }
+	// Local paths of the screenshots of a component, up to 4. Starts the index scan and the downloads in the background; [] until they are done.
+	function screenshotsFor( appstreamId ) {
+		var out = [];
+		try {
+			var id = arguments.appstreamId;
+			if ( !reFind( "^[A-Za-z0-9._-]{1,200}$", id ) ) return out;
+			var idx = indexDir() & "/" & id & ".urls";
+			if ( !fileExists( idx ) ) {
+				var scanning = variables.cache.markerAge( idx & ".scan" );
+				var files = xmlFiles();
+				if ( files.len() && !( scanning >= 0 && scanning < 300 ) ) startScan( id, files );
+				return out;
+			}
+			var urls = screenshotUrls( id );
+			var n = 0;
+			for ( var u in urls ) {
+				n++;
+				if ( n > 4 ) break;
+				var p = variables.cache.get( u, "shots" );
+				if ( len( p ) ) out.append( p );
+			}
+		} catch ( any e ) {}
+		return out;
+	}
 }

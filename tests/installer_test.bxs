@@ -15,7 +15,7 @@ runner = function( argv, timeout ) {
 };
 inst = new bxrig.Installer( runner );
 sel = [ app( "git", "pacman", [ "git" ] ), app( "podman", "pacman", [ "podman", "buildah", "skopeo" ] ),
-        app( "vscode", "aur", [ "visual-studio-code-bin" ] ), app( "brave", "aur", [ "brave-bin" ] ) ];
+		app( "vscode", "aur", [ "visual-studio-code-bin" ] ), app( "brave", "aur", [ "brave-bin" ] ) ];
 b = inst.steps( sel, false );
 testkit.check( "one pacman step for all pacman apps", b.steps[1].kind == "pacman" && b.steps[1].ids.toList() == "git,podman" );
 testkit.check( "pacman uses sudo and lists every target once", b.steps[1].commands[1].toList( " " ) == "sudo pacman -S --needed --noconfirm git podman buildah skopeo" );
@@ -23,7 +23,7 @@ testkit.check( "aur apps are one step each, after pacman", b.steps.len() == 3 &&
 b = inst.steps( [ app( "git", "pacman", [ "git" ] ) ], true );
 testkit.check( "root: no sudo", b.steps[1].commands[1][1] == "pacman" );
 b = inst.steps( [ app( "omazed", "pkgbuild", [ "omazed" ], { pkgbuild: { repo: "omacom/omarchy-pkgs", path: "pkgbuilds/omazed", ref: "master" } } ),
-                  app( "intellij", "unresolved", [ "x" ] ) ], false );
+				  app( "intellij", "unresolved", [ "x" ] ) ], false );
 testkit.check( "unpinned pkgbuild and unresolved are blocked, no steps", b.steps.len() == 0 && b.blocked.len() == 2 );
 testkit.check( "blocked reasons are explicit", find( "not a full commit", b.blocked[1].error ) && find( "no installable source", b.blocked[2].error ) );
 b = inst.steps( [ app( "omazed", "pkgbuild", [ "omazed" ], { pkgbuild: { repo: "omacom/omarchy-pkgs", path: "pkgbuilds/omazed", ref: "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f" } } ) ], false );

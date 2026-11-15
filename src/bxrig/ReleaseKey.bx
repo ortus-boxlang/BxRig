@@ -1,7 +1,7 @@
 // The public key that release manifests are verified with (Ed25519, keys/release.pub packed as a resource). Empty: no key, no verification.
 class ReleaseKey {
-    function pem() {
-        var res = new bxrig.util.Res();
-        return res.exists( "keys/release.pub" ) ? res.trimmed( "keys/release.pub" ) : "";
-    }
+	function pem() {
+		var res = new bxrig.util.Res();
+		return res.exists( "keys/release.pub" ) ? res.trimmed( "keys/release.pub" ) : "";
+	}
 }

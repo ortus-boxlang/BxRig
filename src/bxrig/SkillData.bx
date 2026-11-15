@@ -1,9 +1,9 @@
 // The BxRig agent skills (skills/<name>/SKILL.md, packed with BxRig as resources).
 class SkillData {
-    function names() { return new bxrig.util.Res().folders( "skills" ); }
-    function text( name ) {
-        var res = new bxrig.util.Res();
-        var path = "skills/" & arguments.name & "/SKILL.md";
-        return len( arguments.name ) && res.exists( path ) ? res.text( path ) : "";
-    }
+	function names() { return new bxrig.util.Res().folders( "skills" ); }
+	function text( name ) {
+		var res = new bxrig.util.Res();
+		var path = "skills/" & arguments.name & "/SKILL.md";
+		return len( arguments.name ) && res.exists( path ) ? res.text( path ) : "";
+	}
 }

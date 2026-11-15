@@ -9,83 +9,83 @@
 // rewrites the Hyprland module and the Plasma settings. Exit: 0 done, 2 plan without --yes, 4 invalid or a conflict, 6 write failed.
 // The scan of your own files is a best-effort read of `hl.bind( ... )` lines (mainMod and quoted names), not a Lua parser.
 class KeysEditor {
-    function init( cli ) {
-        variables.cli = arguments.cli;
-        variables.config = new bxrig.ConfigService().quiet( true );
-        variables.sc = new bxrig.Shortcuts();
-        return this;
-    }
+	function init( cli ) {
+		variables.cli = arguments.cli;
+		variables.config = new bxrig.ConfigService().quiet( true );
+		variables.sc = new bxrig.Shortcuts();
+		return this;
+	}
 
-    function file() { return variables.sc.overridesFile(); }
+	function file() { return variables.sc.overridesFile(); }
 
-    // The combos of the hl.bind lines in your Hyprland files (bxrig.lua is ours and skipped): [ { combo, file, line } ].
-    function userBinds() {
-        var out = [];
-        var dir = variables.config.cfgHome() & "/hypr";
-        if ( !directoryExists( dir ) ) return out;
-        for ( var f in directoryList( dir, false, "name" ) ) {
-            if ( right( f, 4 ) != ".lua" || f == "bxrig.lua" ) continue;
-            for ( var b in new bxrig.util.Lua().binds( fileRead( dir & "/" & f ) ) ) {
-                var norm = b.tokens.len() > 0 ? variables.sc.normalize( b.tokens.toList( "+" ) ) : "";
-                if ( len( norm ) ) out.append( { combo: norm, file: f, line: b.line } );
-            }
-        }
-        return out;
-    }
+	// The combos of the hl.bind lines in your Hyprland files (bxrig.lua is ours and skipped): [ { combo, file, line } ].
+	function userBinds() {
+		var out = [];
+		var dir = variables.config.cfgHome() & "/hypr";
+		if ( !directoryExists( dir ) ) return out;
+		for ( var f in directoryList( dir, false, "name" ) ) {
+			if ( right( f, 4 ) != ".lua" || f == "bxrig.lua" ) continue;
+			for ( var b in new bxrig.util.Lua().binds( fileRead( dir & "/" & f ) ) ) {
+				var norm = b.tokens.len() > 0 ? variables.sc.normalize( b.tokens.toList( "+" ) ) : "";
+				if ( len( norm ) ) out.append( { combo: norm, file: f, line: b.line } );
+			}
+		}
+		return out;
+	}
 
-    // Conflicts of the current table (the style that is on): { within, remapShadows, user } (see Shortcuts.conflicts).
-    function scan() {
-        return variables.sc.conflicts( userBinds() );
-    }
+	// Conflicts of the current table (the style that is on): { within, remapShadows, user } (see Shortcuts.conflicts).
+	function scan() {
+		return variables.sc.conflicts( userBinds() );
+	}
 
-    function conflicts( asJson ) {
-        var sc = scan();
-        var lines = [];
-        for ( var w in sc.within ) lines.append( "Two BxRig bindings share " & w.combo & ": " & w.ids.toList( ", " ) );
-        for ( var m in sc.remapShadows ) lines.append( m.id & " (" & m.combo & ") never fires: xremap turns that key into another one first (" & m.remap & ")" );
-        for ( var u in sc.user ) lines.append( u.id & " (" & u.combo & ") is also bound in your " & u.file & " line " & u.line );
-        if ( !lines.len() ) lines.append( "No conflicts." );
-        return variables.cli.say( "keys conflicts", "ok", { ok: !( sc.within.len() || sc.remapShadows.len() || sc.user.len() ), style: variables.sc.style().style, within: sc.within, remapShadows: sc.remapShadows, user: sc.user }, arguments.asJson, lines );
-    }
+	function conflicts( asJson ) {
+		var sc = scan();
+		var lines = [];
+		for ( var w in sc.within ) lines.append( "Two BxRig bindings share " & w.combo & ": " & w.ids.toList( ", " ) );
+		for ( var m in sc.remapShadows ) lines.append( m.id & " (" & m.combo & ") never fires: xremap turns that key into another one first (" & m.remap & ")" );
+		for ( var u in sc.user ) lines.append( u.id & " (" & u.combo & ") is also bound in your " & u.file & " line " & u.line );
+		if ( !lines.len() ) lines.append( "No conflicts." );
+		return variables.cli.say( "keys conflicts", "ok", { ok: !( sc.within.len() || sc.remapShadows.len() || sc.user.len() ), style: variables.sc.style().style, within: sc.within, remapShadows: sc.remapShadows, user: sc.user }, arguments.asJson, lines );
+	}
 
-    function writeOverrides( data ) {
-        var body = serializeJSON( arguments.data ) & chr( 10 );
-        return variables.config.writeText( "shortcuts-overrides", file(), body ) == 0;
-    }
+	function writeOverrides( data ) {
+		var body = serializeJSON( arguments.data ) & chr( 10 );
+		return variables.config.writeText( "shortcuts-overrides", file(), body ) == 0;
+	}
 
-    // `keys set ID KEYS`
-    function setKeys( id, keys, yes, force, asJson ) {
-        var cmd = "keys set";
-        var row = {};
-        for ( var r in variables.sc.table() ) if ( r.id == arguments.id ) row = r;
-        if ( structIsEmpty( row ) ) return variables.cli.say( cmd, "precondition", { error: "Unknown binding" }, arguments.asJson, [ "error: unknown binding " & arguments.id & ". See: bxrig keys show" ] );
-        if ( row.kind == "remap" ) return variables.cli.say( cmd, "precondition", { error: "Not editable" }, arguments.asJson, [ "error: " & arguments.id & " is a Cmd-style remap handled by xremap; only the bindings can be changed" ] );
-        var parsed = variables.sc.parseKeys( arguments.keys );
-        if ( !parsed.ok ) return variables.cli.say( cmd, "precondition", { error: parsed.error }, arguments.asJson, [ "error: " & parsed.error ] );
-        var combo = variables.sc.normalize( arguments.keys );
-        for ( var other in variables.sc.table() ) {
-            if ( other.id == arguments.id || !len( other.keys ) || variables.sc.normalize( other.keys ) != combo ) continue;
-            if ( other.kind == "remap" ) return variables.cli.say( cmd, "precondition", { error: "Rewritten by xremap (" & other.id & ")" }, arguments.asJson, [ "error: " & arguments.keys & " is rewritten by xremap in the " & variables.sc.style().style & " style (" & other.action & "), so a binding on it would never fire" ] );
-            return variables.cli.say( cmd, "precondition", { error: "Used by " & other.id }, arguments.asJson, [ "error: " & arguments.keys & " is already used by " & other.id & " (" & other.action & ")" ] );
-        }
-        var clash = userBinds().filter( function( ub ) { return ub.combo == combo; } );
-        if ( clash.len() && !arguments.force ) return variables.cli.say( cmd, "precondition", { error: "Used in your files", file: clash[ 1 ].file, line: clash[ 1 ].line }, arguments.asJson, [ "error: " & arguments.keys & " is already bound in your " & clash[ 1 ].file & " line " & clash[ 1 ].line & " (add --force to use it anyway)" ] );
-        var data = { id: arguments.id, keys: arguments.keys, was: row.keys };
-        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( row.action & " changes from " & ( len( row.keys ) ? row.keys : "no keys" ) & " to " & arguments.keys, data, arguments.asJson, false, [], "Add --yes to apply, then: bxrig keys apply --yes" );
-        var cur = variables.sc.loadOverrides();
-        cur[ arguments.id ] = arguments.keys;
-        if ( !writeOverrides( cur ) ) return variables.cli.say( cmd, "failed", { error: "Could not write " & file() }, arguments.asJson, [ "error: could not write " & file() ] );
-        return variables.cli.say( cmd, "ok", data, arguments.asJson, [ row.action & " is now " & arguments.keys & ". Write it into the Hyprland and Plasma settings: bxrig keys apply --yes" ] );
-    }
+	// `keys set ID KEYS`
+	function setKeys( id, keys, yes, force, asJson ) {
+		var cmd = "keys set";
+		var row = {};
+		for ( var r in variables.sc.table() ) if ( r.id == arguments.id ) row = r;
+		if ( structIsEmpty( row ) ) return variables.cli.say( cmd, "precondition", { error: "Unknown binding" }, arguments.asJson, [ "error: unknown binding " & arguments.id & ". See: bxrig keys show" ] );
+		if ( row.kind == "remap" ) return variables.cli.say( cmd, "precondition", { error: "Not editable" }, arguments.asJson, [ "error: " & arguments.id & " is a Cmd-style remap handled by xremap; only the bindings can be changed" ] );
+		var parsed = variables.sc.parseKeys( arguments.keys );
+		if ( !parsed.ok ) return variables.cli.say( cmd, "precondition", { error: parsed.error }, arguments.asJson, [ "error: " & parsed.error ] );
+		var combo = variables.sc.normalize( arguments.keys );
+		for ( var other in variables.sc.table() ) {
+			if ( other.id == arguments.id || !len( other.keys ) || variables.sc.normalize( other.keys ) != combo ) continue;
+			if ( other.kind == "remap" ) return variables.cli.say( cmd, "precondition", { error: "Rewritten by xremap (" & other.id & ")" }, arguments.asJson, [ "error: " & arguments.keys & " is rewritten by xremap in the " & variables.sc.style().style & " style (" & other.action & "), so a binding on it would never fire" ] );
+			return variables.cli.say( cmd, "precondition", { error: "Used by " & other.id }, arguments.asJson, [ "error: " & arguments.keys & " is already used by " & other.id & " (" & other.action & ")" ] );
+		}
+		var clash = userBinds().filter( function( ub ) { return ub.combo == combo; } );
+		if ( clash.len() && !arguments.force ) return variables.cli.say( cmd, "precondition", { error: "Used in your files", file: clash[ 1 ].file, line: clash[ 1 ].line }, arguments.asJson, [ "error: " & arguments.keys & " is already bound in your " & clash[ 1 ].file & " line " & clash[ 1 ].line & " (add --force to use it anyway)" ] );
+		var data = { id: arguments.id, keys: arguments.keys, was: row.keys };
+		if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( row.action & " changes from " & ( len( row.keys ) ? row.keys : "no keys" ) & " to " & arguments.keys, data, arguments.asJson, false, [], "Add --yes to apply, then: bxrig keys apply --yes" );
+		var cur = variables.sc.loadOverrides();
+		cur[ arguments.id ] = arguments.keys;
+		if ( !writeOverrides( cur ) ) return variables.cli.say( cmd, "failed", { error: "Could not write " & file() }, arguments.asJson, [ "error: could not write " & file() ] );
+		return variables.cli.say( cmd, "ok", data, arguments.asJson, [ row.action & " is now " & arguments.keys & ". Write it into the Hyprland and Plasma settings: bxrig keys apply --yes" ] );
+	}
 
-    // `keys reset ID`
-    function reset( id, yes, asJson ) {
-        var cmd = "keys reset";
-        var cur = variables.sc.loadOverrides();
-        if ( !structKeyExists( cur, arguments.id ) ) return variables.cli.say( cmd, "precondition", { error: "No override" }, arguments.asJson, [ "error: " & arguments.id & " has no custom keys" ] );
-        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( arguments.id & " goes back to its default keys.", { id: arguments.id }, arguments.asJson );
-        structDelete( cur, arguments.id );
-        if ( !writeOverrides( cur ) ) return variables.cli.say( cmd, "failed", { error: "Could not write " & file() }, arguments.asJson, [ "error: could not write " & file() ] );
-        return variables.cli.say( cmd, "ok", { id: arguments.id }, arguments.asJson, [ arguments.id & " is back to its default keys. Write it: bxrig keys apply --yes" ] );
-    }
+	// `keys reset ID`
+	function reset( id, yes, asJson ) {
+		var cmd = "keys reset";
+		var cur = variables.sc.loadOverrides();
+		if ( !structKeyExists( cur, arguments.id ) ) return variables.cli.say( cmd, "precondition", { error: "No override" }, arguments.asJson, [ "error: " & arguments.id & " has no custom keys" ] );
+		if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( arguments.id & " goes back to its default keys.", { id: arguments.id }, arguments.asJson );
+		structDelete( cur, arguments.id );
+		if ( !writeOverrides( cur ) ) return variables.cli.say( cmd, "failed", { error: "Could not write " & file() }, arguments.asJson, [ "error: could not write " & file() ] );
+		return variables.cli.say( cmd, "ok", { id: arguments.id }, arguments.asJson, [ arguments.id & " is back to its default keys. Write it: bxrig keys apply --yes" ] );
+	}
 }

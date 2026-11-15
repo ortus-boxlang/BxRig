@@ -6,7 +6,7 @@ cfg = base & "/cfg.txt";
 link = base & "/link.txt";
 
 function check( name, ok ) {
-  println( ( ok ? "PASS " : "FAIL " ) & name );
+	println( ( ok ? "PASS " : "FAIL " ) & name );
 }
 
 println( "spike: native fusion start" );

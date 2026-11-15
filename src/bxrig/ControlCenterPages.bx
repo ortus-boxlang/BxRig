@@ -2,37 +2,37 @@
 // `bxrig tui list`, the Control Center menu, the per-page launchers and the unbound shortcuts. ControlCenter.buildPages() returns the same pages in the
 // same order (a test checks ids, titles and icons against it). PageFactory.make( id, demo, dashboard ) builds the page for an id.
 class ControlCenterPages {
-    function list() {
-        return [
-            { id: "dashboard", title: "Dashboard", icon: "home" },
-            { id: "apps", title: "Apps", icon: "cube" },
-            { id: "boxlang", title: "BoxLang", icon: "archive" },
-            { id: "java", title: "Java", icon: "coffee" },
-            { id: "maven", title: "Maven", icon: "wrench" },
-            { id: "gradle", title: "Gradle", icon: "gear" },
-            { id: "versions", title: "Versions", icon: "tags" },
-            { id: "ports", title: "Ports", icon: "plug" },
-            { id: "packages", title: "Packages", icon: "download" },
-            { id: "shortcuts", title: "Shortcuts", icon: "keyboard" },
-            { id: "machines", title: "Machines", icon: "desktop" },
-            { id: "databases", title: "Databases", icon: "database" },
-            { id: "mail", title: "Mail", icon: "envelope" },
-            { id: "storage", title: "Storage", icon: "hdd" },
-            { id: "secrets", title: "Secrets", icon: "key" },
-            { id: "themes", title: "Themes", icon: "brush" },
-            { id: "logs", title: "Logs", icon: "file" }
-        ];
-    }
+	function list() {
+		return [
+			{ id: "dashboard", title: "Dashboard", icon: "home" },
+			{ id: "apps", title: "Apps", icon: "cube" },
+			{ id: "boxlang", title: "BoxLang", icon: "archive" },
+			{ id: "java", title: "Java", icon: "coffee" },
+			{ id: "maven", title: "Maven", icon: "wrench" },
+			{ id: "gradle", title: "Gradle", icon: "gear" },
+			{ id: "versions", title: "Versions", icon: "tags" },
+			{ id: "ports", title: "Ports", icon: "plug" },
+			{ id: "packages", title: "Packages", icon: "download" },
+			{ id: "shortcuts", title: "Shortcuts", icon: "keyboard" },
+			{ id: "machines", title: "Machines", icon: "desktop" },
+			{ id: "databases", title: "Databases", icon: "database" },
+			{ id: "mail", title: "Mail", icon: "envelope" },
+			{ id: "storage", title: "Storage", icon: "hdd" },
+			{ id: "secrets", title: "Secrets", icon: "key" },
+			{ id: "themes", title: "Themes", icon: "brush" },
+			{ id: "logs", title: "Logs", icon: "file" }
+		];
+	}
 
-    function ids() { return list().map( function( p ) { return p.id; } ); }
+	function ids() { return list().map( function( p ) { return p.id; } ); }
 
-    // The icon name of a page id (the one registry of icon names; the pages and providers ask here). "" for an unknown id.
-    function icon( id ) {
-        return find( arguments.id ).icon ?: "";
-    }
+	// The icon name of a page id (the one registry of icon names; the pages and providers ask here). "" for an unknown id.
+	function icon( id ) {
+		return find( arguments.id ).icon ?: "";
+	}
 
-    function find( id ) {
-        for ( var p in list() ) if ( p.id == arguments.id ) return p;
-        return {};
-    }
+	function find( id ) {
+		for ( var p in list() ) if ( p.id == arguments.id ) return p;
+		return {};
+	}
 }

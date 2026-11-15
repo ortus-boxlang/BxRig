@@ -1,9 +1,9 @@
 {
-  "settings": {
-    "command": {
-      "description": "The bxrig executable (name on PATH, absolute path, or ~/ path)",
-      "label": "bxrig command"
-    }
-  },
-  "title": "World Clock"
+	"settings": {
+		"command": {
+			"description": "The bxrig executable (name on PATH, absolute path, or ~/ path)",
+			"label": "bxrig command"
+		}
+	},
+	"title": "World Clock"
 }

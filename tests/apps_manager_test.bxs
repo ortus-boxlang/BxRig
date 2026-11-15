@@ -4,8 +4,8 @@ testkit = new lib.Check( "apps manager" );
 
 // selects the row with that name (a catalog row when `catalog` is true)
 function pickRow( model, name, catalog ) {
-    var n = 0;
-    for ( var r in model.rows() ) { n++; if ( r.name == name && ( r.catalog ?: false ) == catalog ) { model.list().select( n ); return; } }
+	var n = 0;
+	for ( var r in model.rows() ) { n++; if ( r.name == name && ( r.catalog ?: false ) == catalog ) { model.list().select( n ); return; } }
 }
 
 // ---- parsers

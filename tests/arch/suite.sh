@@ -13,23 +13,23 @@ fails=0
 
 # step NAME EXPECTED_EXIT COMMAND...
 step() {
-  local name="$1" want="$2"; shift 2
-  local start=$SECONDS rc
-  { echo "\$ $*"; "$@"; } > "$OUT/$name.log" 2>&1
-  rc=$?
-  local status=PASS
-  [[ "$rc" == "$want" ]] || { status=FAIL; fails=$((fails+1)); }
-  printf '%s\t%s\texpected=%s\tgot=%s\t%ss\n' "$status" "$name" "$want" "$rc" "$((SECONDS-start))" | tee -a "$OUT/results.tsv"
-  if [[ $status == FAIL ]]; then echo "--- last lines of $name.log:"; tail -n 25 "$OUT/$name.log" | sed 's/^/    | /'; fi
+	local name="$1" want="$2"; shift 2
+	local start=$SECONDS rc
+	{ echo "\$ $*"; "$@"; } > "$OUT/$name.log" 2>&1
+	rc=$?
+	local status=PASS
+	[[ "$rc" == "$want" ]] || { status=FAIL; fails=$((fails+1)); }
+	printf '%s\t%s\texpected=%s\tgot=%s\t%ss\n' "$status" "$name" "$want" "$rc" "$((SECONDS-start))" | tee -a "$OUT/results.tsv"
+	if [[ $status == FAIL ]]; then echo "--- last lines of $name.log:"; tail -n 25 "$OUT/$name.log" | sed 's/^/    | /'; fi
 }
 # Like step, but also requires the log to contain a string.
 step_grep() {
-  local name="$1" want="$2" needle="$3"; shift 3
-  step "$name" "$want" "$@"
-  if ! grep -Fq -- "$needle" "$OUT/$name.log"; then
-    sed -i "\$s/^PASS/FAIL/" "$OUT/results.tsv"; fails=$((fails+1))
-    printf 'FAIL\t%s\toutput missing: %s\n' "$name" "$needle" | tee -a "$OUT/results.tsv"
-  fi
+	local name="$1" want="$2" needle="$3"; shift 3
+	step "$name" "$want" "$@"
+	if ! grep -Fq -- "$needle" "$OUT/$name.log"; then
+		sed -i "\$s/^PASS/FAIL/" "$OUT/results.tsv"; fails=$((fails+1))
+		printf 'FAIL\t%s\toutput missing: %s\n' "$name" "$needle" | tee -a "$OUT/results.tsv"
+	fi
 }
 
 # GitHub reachability decides whether toolchain/native steps can run. Some sandboxes
@@ -38,8 +38,8 @@ if curl -fsS -m 15 -o /dev/null https://api.github.com/; then NET=1; else NET=0;
 # Listing of everything a bootstrap run could change for this user (path, size, mtime), plus the pacman
 # log length. Two listings are diffed to prove that a second full run changes nothing.
 snaplist() {
-  find "$HOME" -path "$WORK" -prune -o -path "$HOME/.cache/bxrig" -prune -o \( -type f -o -type l \) -printf '%p %s %T@\n' 2>/dev/null | sort
-  echo "pacman.log lines: $(wc -l < /var/log/pacman.log 2>/dev/null || echo 0)"
+	find "$HOME" -path "$WORK" -prune -o -path "$HOME/.cache/bxrig" -prune -o \( -type f -o -type l \) -printf '%p %s %T@\n' 2>/dev/null | sort
+	echo "pacman.log lines: $(wc -l < /var/log/pacman.log 2>/dev/null || echo 0)"
 }
 skip() { printf 'SKIP\t%s\t%s\n' "$1" "$2" | tee -a "$OUT/results.tsv"; }
 
@@ -70,86 +70,86 @@ step bootstrap-yay-present 0 bash -c 'command -v yay'
 step bootstrap-rust-active 0 bash -c 'rustc --version'
 step rust-default             0 rustup default stable
 if [[ $NET == 1 ]]; then
-  step bootstrap-toolchains       0 bash -c 'bash bootstrap/install.sh toolchains --yes </dev/null'
-  step_grep bootstrap-toolchains-rerun 0 'Nothing to do' bash -c 'bash bootstrap/install.sh toolchains --yes </dev/null'
-  # BoxLang follows the latest stable release: the installed version must equal what Ortus publishes as latest.
-  step bootstrap-boxlang-is-latest   0 bash -c 'want=$(curl -fsS -m 10 https://downloads.ortussolutions.com/ortussolutions/boxlang/version-latest.properties | sed -n "s/^version=\([0-9][0-9.]*\).*/\1/p" | head -1); [ -n "$want" ] && bash bootstrap/install.sh check | grep -F "boxlang: $want (want latest = $want)"'
-  step_grep bootstrap-pins-matchbox  0 "matchbox: $(jq -r .toolchain.matchbox.version box.json)" bash bootstrap/install.sh check
-  # nvm and Node are no longer part of the required install (they are the optional JavaScript toolchain)
-  step bootstrap-nvm-not-required 0 bash -c "! bash bootstrap/install.sh check | grep -E '^(nvm|node):'"
-  # B5: build the real binary with MatchBox and install it for the user.
-  step_grep bootstrap-install-binary       0 'Installed '      bash bootstrap/install.sh binary --yes
-  step_grep bootstrap-binary-runs          0 'BxRig 0.'      "$HOME/.local/bin/bxrig" version
-  step_grep bootstrap-install-binary-rerun 0 'Nothing to do'   bash bootstrap/install.sh binary --yes
-  step_grep bootstrap-check-binary         0 'bxrig: 0.'     bash bootstrap/install.sh check
-  step bootstrap-binary-rejects-impostor   1 bash -c 'printf "#!/bin/sh\necho nope\n" > /tmp/impostor; chmod 755 /tmp/impostor; bash bootstrap/install.sh binary --yes --binary /tmp/impostor'
-  # B7: the whole path on this clean machine is finished, and running it all again changes nothing.
-  step_grep bootstrap-fullpath-ready 0 'summary: ready' env PATH="$HOME/.local/bin:$PATH" bash bootstrap/install.sh check
-  snaplist > "$OUT/snap-before.txt"
-  step bootstrap-fullpath-rerun 0 bash -c 'bash bootstrap/install.sh packages --yes </dev/null && bash bootstrap/install.sh toolchains --yes </dev/null && bash bootstrap/install.sh binary --yes </dev/null'
-  snaplist > "$OUT/snap-after.txt"
-  step bootstrap-fullpath-no-changes 0 bash -c "if diff -u '$OUT/snap-before.txt' '$OUT/snap-after.txt' > '$OUT/snap.diff'; then exit 0; else echo 'the second run changed these:'; grep -E '^[-+][^-+]' '$OUT/snap.diff' | head -40; exit 1; fi"
+	step bootstrap-toolchains       0 bash -c 'bash bootstrap/install.sh toolchains --yes </dev/null'
+	step_grep bootstrap-toolchains-rerun 0 'Nothing to do' bash -c 'bash bootstrap/install.sh toolchains --yes </dev/null'
+	# BoxLang follows the latest stable release: the installed version must equal what Ortus publishes as latest.
+	step bootstrap-boxlang-is-latest   0 bash -c 'want=$(curl -fsS -m 10 https://downloads.ortussolutions.com/ortussolutions/boxlang/version-latest.properties | sed -n "s/^version=\([0-9][0-9.]*\).*/\1/p" | head -1); [ -n "$want" ] && bash bootstrap/install.sh check | grep -F "boxlang: $want (want latest = $want)"'
+	step_grep bootstrap-pins-matchbox  0 "matchbox: $(jq -r .toolchain.matchbox.version box.json)" bash bootstrap/install.sh check
+	# nvm and Node are no longer part of the required install (they are the optional JavaScript toolchain)
+	step bootstrap-nvm-not-required 0 bash -c "! bash bootstrap/install.sh check | grep -E '^(nvm|node):'"
+	# B5: build the real binary with MatchBox and install it for the user.
+	step_grep bootstrap-install-binary       0 'Installed '      bash bootstrap/install.sh binary --yes
+	step_grep bootstrap-binary-runs          0 'BxRig 0.'      "$HOME/.local/bin/bxrig" version
+	step_grep bootstrap-install-binary-rerun 0 'Nothing to do'   bash bootstrap/install.sh binary --yes
+	step_grep bootstrap-check-binary         0 'bxrig: 0.'     bash bootstrap/install.sh check
+	step bootstrap-binary-rejects-impostor   1 bash -c 'printf "#!/bin/sh\necho nope\n" > /tmp/impostor; chmod 755 /tmp/impostor; bash bootstrap/install.sh binary --yes --binary /tmp/impostor'
+	# B7: the whole path on this clean machine is finished, and running it all again changes nothing.
+	step_grep bootstrap-fullpath-ready 0 'summary: ready' env PATH="$HOME/.local/bin:$PATH" bash bootstrap/install.sh check
+	snaplist > "$OUT/snap-before.txt"
+	step bootstrap-fullpath-rerun 0 bash -c 'bash bootstrap/install.sh packages --yes </dev/null && bash bootstrap/install.sh toolchains --yes </dev/null && bash bootstrap/install.sh binary --yes </dev/null'
+	snaplist > "$OUT/snap-after.txt"
+	step bootstrap-fullpath-no-changes 0 bash -c "if diff -u '$OUT/snap-before.txt' '$OUT/snap-after.txt' > '$OUT/snap.diff'; then exit 0; else echo 'the second run changed these:'; grep -E '^[-+][^-+]' '$OUT/snap.diff' | head -40; exit 1; fi"
 else
-  skip bootstrap-toolchains "GitHub unreachable"; skip bootstrap-toolchains-rerun "GitHub unreachable"
+	skip bootstrap-toolchains "GitHub unreachable"; skip bootstrap-toolchains-rerun "GitHub unreachable"
 fi
 
 # --- Native build ---
 BIN=""
 if [[ $NET == 1 ]]; then
-  step native-compile 0 bash -c 'matchbox --version | grep -F "$(jq -r .toolchain.matchbox.version box.json)" && matchbox --target native --output bxrig-built src/Main.bx'
-  BIN="$(find . -maxdepth 1 -type f -executable -name bxrig-built -print -quit)"
+	step native-compile 0 bash -c 'matchbox --version | grep -F "$(jq -r .toolchain.matchbox.version box.json)" && matchbox --target native --output bxrig-built src/Main.bx'
+	BIN="$(find . -maxdepth 1 -type f -executable -name bxrig-built -print -quit)"
 else
-  skip native-compile "GitHub unreachable (MatchBox cannot install); native and real-pacman CLI steps skipped"
-  BIN=SKIP
+	skip native-compile "GitHub unreachable (MatchBox cannot install); native and real-pacman CLI steps skipped"
+	BIN=SKIP
 fi
 if [[ "$BIN" == SKIP ]]; then :
 elif [[ -z "$BIN" ]]; then
-  echo "FAIL native-binary-found (no executable)" | tee -a "$OUT/results.tsv"; fails=$((fails+1))
+	echo "FAIL native-binary-found (no executable)" | tee -a "$OUT/results.tsv"; fails=$((fails+1))
 else
-  BIN="$(realpath "$BIN")"
-  step native-smoke       0 bash tests/native-smoke.sh "$BIN"
-  step native-mock-install 0 bash tests/native-package-integration.sh "$BIN"
+	BIN="$(realpath "$BIN")"
+	step native-smoke       0 bash tests/native-smoke.sh "$BIN"
+	step native-mock-install 0 bash tests/native-package-integration.sh "$BIN"
 
-  # --- Real pacman, no mocks ---
-  step_grep real-pkg-status-installed   0 "installed"   "$BIN" package-status git
-  step real-pkg-status-missing          1               "$BIN" package-status yazi
-  step real-pkg-status-unknown-id       3               "$BIN" package-status bxrig-no-such-app
-  step_grep real-pkg-source-catalog     0 "pacman"      "$BIN" package-source git
-  step_grep real-pkg-source-aur         0 "aur"         "$BIN" package-source vscode
-  step real-pkg-source-unknown-id       3               "$BIN" package-source bxrig-no-such-app
-  step_grep real-plan-core              0 "to install"  "$BIN" plan --profile=core
-  # setup hyprland: the plan, and every package it names must exist in the real repos (stock Arch plus CachyOS)
-  step_grep real-setup-hyprland-plan    0 "Dry run"     "$BIN" setup hyprland --dry-run
-  step real-setup-hyprland-packages-exist 0 bash -c "pkgs=\$('$BIN' setup hyprland --dry-run --json | jq -r '.data.steps[0].commands[0][5:][]'); test -n \"\$pkgs\" && sudo pacman -Si \$pkgs >/dev/null"
-  # --- Desktop setup on the real system: xremap plan (AUR build names exist), the whole `setup hyprland`, and what it wrote ---
-  step real-install-yay                 0               sudo pacman -S --needed --noconfirm yay
-  step_grep real-setup-xremap-plan      0 "Dry run"     "$BIN" setup xremap --build=hypr --dry-run
-  step real-setup-xremap-kde-package    0               bash -c "'$BIN' setup xremap --build=kde --dry-run --json | jq -e '.data.steps[0].commands[0][4] == \"xremap-kde-bin\"'"
-  if [[ $NET == 1 ]]; then
-    step real-aur-xremap-hypr-exists    0               yay -Si xremap-hypr-bin
-    step real-aur-xremap-kde-exists     0               yay -Si xremap-kde-bin
-  fi
-  step real-keys-render-all             0               bash -c "for t in xremap hyprland plasma; do '$BIN' keys render \$t | grep -q . || exit 1; done"
-  step real-setup-hyprland              0               "$BIN" setup hyprland --yes
-  step real-hyprland-noctalia-installed 0               pacman -Q hyprland noctalia uwsm hyprlock
-  step real-starter-files-written       0               bash -c 'for f in .config/hypr/hyprland.lua .config/hypr/bxrig.lua .config/noctalia/config.toml .config/noctalia/palettes/BxRig.json .config/xremap/config.yml Pictures/BxRig/box.jpg; do test -s "$HOME/$f" || { echo "missing $f"; exit 1; }; done'
-  step real-wallpapers-byte-identical   0               bash -c 'for w in box.jpg grid.jpg aurora.jpg minimal.png; do cmp "$HOME/Pictures/BxRig/$w" "assets/wallpapers/$w" || exit 1; done'
-  step real-noctalia-config-valid-toml  0               python3 -c "import sys,tomllib; tomllib.load(open(sys.argv[1],'rb'))" "$HOME/.config/noctalia/config.toml"
-  step real-keys-check-clean            0               "$BIN" keys check
-  step real-setup-hyprland-rerun        0               "$BIN" setup hyprland --yes
-  # Hyprland itself judges the starter config (Lua) and the managed module; Noctalia has no offline check, so its binary is only run for its version
-  step real-hyprland-verify-config      0               bash -c 'XDG_RUNTIME_DIR=$(mktemp -d) Hyprland --verify-config --config "$HOME/.config/hypr/hyprland.lua"'
-  step real-noctalia-runs               0               bash -c 'noctalia --version || noctalia --help'
-  step real-install-no-yes              2               "$BIN" profile-install core
-  step real-install-profile-core        0               "$BIN" profile-install core --yes
-  step real-install-profile-core-rerun  0               "$BIN" profile-install core --yes
-  step_grep real-verify-jq              0 "installed"   "$BIN" package-status jq
-  step real-install-optional-official   0               "$BIN" optional-install pinta --yes
-  # the optional JavaScript toolchain: the pinned nvm installer and Node.js LTS, for real
-  step_grep real-toolchain-node-plan    0 "nvm install" "$BIN" toolchain node --dry-run
-  step real-toolchain-node              0 bash -c "\"$BIN\" toolchain node --yes </dev/null"
-  step real-node-runs                   0 bash -c '. "$HOME/.nvm/nvm.sh" && node --version'
-  step_grep real-toolchain-node-rerun   0 "already installed" "$BIN" toolchain node --yes
+	# --- Real pacman, no mocks ---
+	step_grep real-pkg-status-installed   0 "installed"   "$BIN" package-status git
+	step real-pkg-status-missing          1               "$BIN" package-status yazi
+	step real-pkg-status-unknown-id       3               "$BIN" package-status bxrig-no-such-app
+	step_grep real-pkg-source-catalog     0 "pacman"      "$BIN" package-source git
+	step_grep real-pkg-source-aur         0 "aur"         "$BIN" package-source vscode
+	step real-pkg-source-unknown-id       3               "$BIN" package-source bxrig-no-such-app
+	step_grep real-plan-core              0 "to install"  "$BIN" plan --profile=core
+	# setup hyprland: the plan, and every package it names must exist in the real repos (stock Arch plus CachyOS)
+	step_grep real-setup-hyprland-plan    0 "Dry run"     "$BIN" setup hyprland --dry-run
+	step real-setup-hyprland-packages-exist 0 bash -c "pkgs=\$('$BIN' setup hyprland --dry-run --json | jq -r '.data.steps[0].commands[0][5:][]'); test -n \"\$pkgs\" && sudo pacman -Si \$pkgs >/dev/null"
+	# --- Desktop setup on the real system: xremap plan (AUR build names exist), the whole `setup hyprland`, and what it wrote ---
+	step real-install-yay                 0               sudo pacman -S --needed --noconfirm yay
+	step_grep real-setup-xremap-plan      0 "Dry run"     "$BIN" setup xremap --build=hypr --dry-run
+	step real-setup-xremap-kde-package    0               bash -c "'$BIN' setup xremap --build=kde --dry-run --json | jq -e '.data.steps[0].commands[0][4] == \"xremap-kde-bin\"'"
+	if [[ $NET == 1 ]]; then
+		step real-aur-xremap-hypr-exists    0               yay -Si xremap-hypr-bin
+		step real-aur-xremap-kde-exists     0               yay -Si xremap-kde-bin
+	fi
+	step real-keys-render-all             0               bash -c "for t in xremap hyprland plasma; do '$BIN' keys render \$t | grep -q . || exit 1; done"
+	step real-setup-hyprland              0               "$BIN" setup hyprland --yes
+	step real-hyprland-noctalia-installed 0               pacman -Q hyprland noctalia uwsm hyprlock
+	step real-starter-files-written       0               bash -c 'for f in .config/hypr/hyprland.lua .config/hypr/bxrig.lua .config/noctalia/config.toml .config/noctalia/palettes/BxRig.json .config/xremap/config.yml Pictures/BxRig/box.jpg; do test -s "$HOME/$f" || { echo "missing $f"; exit 1; }; done'
+	step real-wallpapers-byte-identical   0               bash -c 'for w in box.jpg grid.jpg aurora.jpg minimal.png; do cmp "$HOME/Pictures/BxRig/$w" "assets/wallpapers/$w" || exit 1; done'
+	step real-noctalia-config-valid-toml  0               python3 -c "import sys,tomllib; tomllib.load(open(sys.argv[1],'rb'))" "$HOME/.config/noctalia/config.toml"
+	step real-keys-check-clean            0               "$BIN" keys check
+	step real-setup-hyprland-rerun        0               "$BIN" setup hyprland --yes
+	# Hyprland itself judges the starter config (Lua) and the managed module; Noctalia has no offline check, so its binary is only run for its version
+	step real-hyprland-verify-config      0               bash -c 'XDG_RUNTIME_DIR=$(mktemp -d) Hyprland --verify-config --config "$HOME/.config/hypr/hyprland.lua"'
+	step real-noctalia-runs               0               bash -c 'noctalia --version || noctalia --help'
+	step real-install-no-yes              2               "$BIN" profile-install core
+	step real-install-profile-core        0               "$BIN" profile-install core --yes
+	step real-install-profile-core-rerun  0               "$BIN" profile-install core --yes
+	step_grep real-verify-jq              0 "installed"   "$BIN" package-status jq
+	step real-install-optional-official   0               "$BIN" optional-install pinta --yes
+	# the optional JavaScript toolchain: the pinned nvm installer and Node.js LTS, for real
+	step_grep real-toolchain-node-plan    0 "nvm install" "$BIN" toolchain node --dry-run
+	step real-toolchain-node              0 bash -c "\"$BIN\" toolchain node --yes </dev/null"
+	step real-node-runs                   0 bash -c '. "$HOME/.nvm/nvm.sh" && node --version'
+	step_grep real-toolchain-node-rerun   0 "already installed" "$BIN" toolchain node --yes
 fi
 
 # --- Config helper on real filesystem ---

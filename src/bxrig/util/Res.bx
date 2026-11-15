@@ -1,30 +1,30 @@
 // The files packed with BxRig: src/resources/ (links to catalog/, templates/, themes/, skills/, assets/, keys/, cli.json, box.json),
 // read from disk when run from source and from the binary when compiled (MatchBox resources). One place for the newline rule.
 class Res {
-    // The file's text ending in exactly one newline (as the files are written in the repository).
-    function text( path ) { return trimmed( arguments.path ) & chr( 10 ); }
-    // The file's text without its trailing newlines.
-    function trimmed( path ) {
-        var s = resourceRead( arguments.path );
-        // left( s, 0 ) is an error in MatchBox, so a text of newlines only ends as ""
-        while ( len( s ) && ( right( s, 1 ) == chr( 10 ) || right( s, 1 ) == chr( 13 ) ) ) s = len( s ) > 1 ? left( s, len( s ) - 1 ) : "";
-        return s;
-    }
-    function binary( path ) { return resourceReadBinary( arguments.path ); }
-    function exists( path ) { return resourceExists( arguments.path ); }
-    // The paths under dir, relative to it ("a/b.txt" for "dir/a/b.txt"), sorted.
-    function list( dir ) {
-        var cut = len( arguments.dir ) + 2;
-        return resourceList( arguments.dir ).map( function( p ) { return mid( p, cut, len( p ) ); } );
-    }
-    // The names of the folders directly under dir.
-    function folders( dir ) {
-        var out = [];
-        for ( var p in list( arguments.dir ) ) {
-            if ( !find( "/", p ) ) continue;
-            var name = listFirst( p, "/" );
-            if ( !arrayFind( out, name ) ) out.append( name );
-        }
-        return out;
-    }
+	// The file's text ending in exactly one newline (as the files are written in the repository).
+	function text( path ) { return trimmed( arguments.path ) & chr( 10 ); }
+	// The file's text without its trailing newlines.
+	function trimmed( path ) {
+		var s = resourceRead( arguments.path );
+		// left( s, 0 ) is an error in MatchBox, so a text of newlines only ends as ""
+		while ( len( s ) && ( right( s, 1 ) == chr( 10 ) || right( s, 1 ) == chr( 13 ) ) ) s = len( s ) > 1 ? left( s, len( s ) - 1 ) : "";
+		return s;
+	}
+	function binary( path ) { return resourceReadBinary( arguments.path ); }
+	function exists( path ) { return resourceExists( arguments.path ); }
+	// The paths under dir, relative to it ("a/b.txt" for "dir/a/b.txt"), sorted.
+	function list( dir ) {
+		var cut = len( arguments.dir ) + 2;
+		return resourceList( arguments.dir ).map( function( p ) { return mid( p, cut, len( p ) ); } );
+	}
+	// The names of the folders directly under dir.
+	function folders( dir ) {
+		var out = [];
+		for ( var p in list( arguments.dir ) ) {
+			if ( !find( "/", p ) ) continue;
+			var name = listFirst( p, "/" );
+			if ( !arrayFind( out, name ) ) out.append( name );
+		}
+		return out;
+	}
 }

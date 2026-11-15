@@ -1,83 +1,83 @@
 // Running programs: the one place that starts a process. Argument arrays only, never a shell string (COMMAND-CONTRACT rule 9).
 // An injected runner (a function( argv, timeout )) replaces the real process in tests; share it with `proc.runner()`.
 class Proc {
-    function init( runner = "" ) {
-        variables.custom = arguments.runner ?: "";
-        return this;
-    }
+	function init( runner = "" ) {
+		variables.custom = arguments.runner ?: "";
+		return this;
+	}
 
-    // The injected runner, or "" when commands run for real.
-    function runner() {
-        return variables.custom;
-    }
+	// The injected runner, or "" when commands run for real.
+	function runner() {
+		return variables.custom;
+	}
 
-    // Runs one argv (the first word is the program) and may throw when it cannot start. Prefer exec().
-    function raw( argv, timeout = 30 ) {
-        if ( !isSimpleValue( variables.custom ) ) return variables.custom( arguments.argv, arguments.timeout );
-        var rest = [];
-        for ( var i = 2; i <= arguments.argv.len(); i++ ) rest.append( arguments.argv[ i ] );
-        return systemExecute( arguments.argv[ 1 ], rest, arguments.timeout, true );
-    }
+	// Runs one argv (the first word is the program) and may throw when it cannot start. Prefer exec().
+	function raw( argv, timeout = 30 ) {
+		if ( !isSimpleValue( variables.custom ) ) return variables.custom( arguments.argv, arguments.timeout );
+		var rest = [];
+		for ( var i = 2; i <= arguments.argv.len(); i++ ) rest.append( arguments.argv[ i ] );
+		return systemExecute( arguments.argv[ 1 ], rest, arguments.timeout, true );
+	}
 
-    // Runs one argv and never throws: { exitCode, output, timeout }. A program that cannot start gives exit 127 and the reason as output.
-    function exec( argv, timeout = 30 ) {
-        try {
-            return raw( arguments.argv, arguments.timeout );
-        } catch ( any e ) {
-            return { exitCode: 127, timeout: false, output: e.message };
-        }
-    }
+	// Runs one argv and never throws: { exitCode, output, timeout }. A program that cannot start gives exit 127 and the reason as output.
+	function exec( argv, timeout = 30 ) {
+		try {
+			return raw( arguments.argv, arguments.timeout );
+		} catch ( any e ) {
+			return { exitCode: 127, timeout: false, output: e.message };
+		}
+	}
 
-    // True when `name` is on the PATH (`command -v`, with the name passed as an argument, not pasted into a shell string).
-    function has( name ) {
-        return exec( [ "sh", "-c", 'command -v "$1"', "_", arguments.name ], 10 ).exitCode == 0;
-    }
+	// True when `name` is on the PATH (`command -v`, with the name passed as an argument, not pasted into a shell string).
+	function has( name ) {
+		return exec( [ "sh", "-c", 'command -v "$1"', "_", arguments.name ], 10 ).exitCode == 0;
+	}
 
-    // True when `name --version` runs and exits 0. Only for the places that really ask whether a tool works; "installed" is has().
-    function works( name ) {
-        return exec( [ arguments.name, "--version" ], 10 ).exitCode == 0;
-    }
+	// True when `name --version` runs and exits 0. Only for the places that really ask whether a tool works; "installed" is has().
+	function works( name ) {
+		return exec( [ arguments.name, "--version" ], 10 ).exitCode == 0;
+	}
 
-    // Starts one argv in the background, detached from this process (setsid, output discarded). Returns the result of the starter, not of the program.
-    function detach( argv ) {
-        var run = [ "sh", "-c", 'setsid "$@" >/dev/null 2>&1 &', "_" ];
-        for ( var p in arguments.argv ) run.append( p );
-        return exec( run, 10 );
-    }
+	// Starts one argv in the background, detached from this process (setsid, output discarded). Returns the result of the starter, not of the program.
+	function detach( argv ) {
+		var run = [ "sh", "-c", 'setsid "$@" >/dev/null 2>&1 &', "_" ];
+		for ( var p in arguments.argv ) run.append( p );
+		return exec( run, 10 );
+	}
 
-    // True when the effective user is root (uid 0).
-    function isRoot() {
-        var r = exec( [ "id", "-u" ], 10 );
-        return r.exitCode == 0 && trim( r.output ) == "0";
-    }
+	// True when the effective user is root (uid 0).
+	function isRoot() {
+		var r = exec( [ "id", "-u" ], 10 );
+		return r.exitCode == 0 && trim( r.output ) == "0";
+	}
 
-    // Runs a program with arguments: { exitCode, output, timeout }. Never throws.
-    function run( program, args = [], timeout = 30 ) {
-        var argv = [ arguments.program ];
-        for ( var a in arguments.args ) argv.append( a );
-        return exec( argv, arguments.timeout );
-    }
+	// Runs a program with arguments: { exitCode, output, timeout }. Never throws.
+	function run( program, args = [], timeout = 30 ) {
+		var argv = [ arguments.program ];
+		for ( var a in arguments.args ) argv.append( a );
+		return exec( argv, arguments.timeout );
+	}
 
-    // `bxrig ARGS --json` -> its `data` struct, or {} when it fails or does not answer with JSON.
-    function selfData( args = [], timeout = 120 ) {
-        var a = [];
-        for ( var x in arguments.args ) a.append( x );
-        a.append( "--json" );
-        try {
-            var j = jsonDeserialize( self( a, arguments.timeout ).output );
-            return structKeyExists( j, "data" ) && isStruct( j.data ) ? j.data : {};
-        } catch ( any e ) { return {}; }
-    }
+	// `bxrig ARGS --json` -> its `data` struct, or {} when it fails or does not answer with JSON.
+	function selfData( args = [], timeout = 120 ) {
+		var a = [];
+		for ( var x in arguments.args ) a.append( x );
+		a.append( "--json" );
+		try {
+			var j = jsonDeserialize( self( a, arguments.timeout ).output );
+			return structKeyExists( j, "data" ) && isStruct( j.data ) ? j.data : {};
+		} catch ( any e ) { return {}; }
+	}
 
-    // The path or name used to run BxRig itself (BXRIG_SELF, else `bxrig` from the PATH).
-    function selfPath() {
-        return new bxrig.util.Env().named( "self", "bxrig" );
-    }
+	// The path or name used to run BxRig itself (BXRIG_SELF, else `bxrig` from the PATH).
+	function selfPath() {
+		return new bxrig.util.Env().named( "self", "bxrig" );
+	}
 
-    // Runs BxRig itself with the given arguments (an array). Never throws.
-    function self( args = [], timeout = 1800 ) {
-        var argv = [ selfPath() ];
-        for ( var a in arguments.args ) argv.append( a );
-        return exec( argv, arguments.timeout );
-    }
+	// Runs BxRig itself with the given arguments (an array). Never throws.
+	function self( args = [], timeout = 1800 ) {
+		var argv = [ selfPath() ];
+		for ( var a in arguments.args ) argv.append( a );
+		return exec( argv, arguments.timeout );
+	}
 }

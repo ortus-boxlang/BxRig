@@ -4,36 +4,36 @@
 //   Terminal files follow Omarchy's own templates (default/themed/*.tpl): ghostty palette = N=#hex, kitty colorN #hex, alacritty [colors.*],
 //   foot [colors-dark] without the #. btop uses the theme[...] file format.
 class ThemeColors {
-    function init() {
-        return this;
-    }
+	function init() {
+		return this;
+	}
 
-    function nl() { return chr( 10 ); }
-    function names8() { return [ "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white" ]; }
+	function nl() { return chr( 10 ); }
+	function names8() { return [ "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white" ]; }
 
-    // Two colors.toml shapes exist, and both are read:
-    //   named (Omarchy 4 master): accent background foreground selection muted red green yellow blue magenta cyan bright_* bright_foreground, plus mode = "dark"|"light"
-    //   ansi  (older Omarchy):    accent background foreground cursor selection_* color0..color15
-    // The named shape maps to the 16 ANSI slots the way Omarchy's own terminal templates do (0 = background, 7 = foreground, 8 = muted, 15 = bright_foreground).
-    function ansiNames() { return [ "background", "red", "green", "yellow", "blue", "magenta", "cyan", "foreground", "muted", "bright_red", "bright_green", "bright_yellow", "bright_blue", "bright_magenta", "bright_cyan", "bright_foreground" ]; }
+	// Two colors.toml shapes exist, and both are read:
+	//   named (Omarchy 4 master): accent background foreground selection muted red green yellow blue magenta cyan bright_* bright_foreground, plus mode = "dark"|"light"
+	//   ansi  (older Omarchy):    accent background foreground cursor selection_* color0..color15
+	// The named shape maps to the 16 ANSI slots the way Omarchy's own terminal templates do (0 = background, 7 = foreground, 8 = muted, 15 = bright_foreground).
+	function ansiNames() { return [ "background", "red", "green", "yellow", "blue", "magenta", "cyan", "foreground", "muted", "bright_red", "bright_green", "bright_yellow", "bright_blue", "bright_magenta", "bright_cyan", "bright_foreground" ]; }
 
-    // Parses colors.toml text. Returns { ok, colors, errors }; colors always has accent, background, foreground, cursor, selection_foreground,
-    // selection_background and color0..color15, plus mode when the file says so. A missing required key or a value that is not #rrggbb
-    // is an error (the theme is rejected, never half applied).
-    function parse( text ) {
-        var out = { ok: true, colors: {}, errors: [] };
-        var body = replace( replace( replace( arguments.text, chr( 13 ), "", "all" ), '"', "", "all" ), "'", "", "all" );
-        var c = {};
-        for ( var rawLine in listToArray( body, chr( 10 ) ) ) {
-            var line = trim( rawLine );
-            if ( !len( line ) || left( line, 1 ) == "##" ) continue;
-            var m = reFind( "^([a-z_0-9]+)[ ]*=[ ]*(.*)$", line, 1, true );
-            if ( !m.pos[ 1 ] ) continue;
-            var key = mid( line, m.pos[ 2 ], m.len[ 2 ] );
-            var value = trim( listFirst( trim( mid( line, m.pos[ 3 ], m.len[ 3 ] ) ), " " ) );
-            if ( key == "mode" ) { c.mode = lCase( value ); continue; }
-            if ( left( value, 1 ) != "##" ) continue;
-            if ( !reFind( "^[##][0-9a-fA-F]{6}$", value ) ) { out.errors.append( key & " is not #rrggbb: " & value ); continue; }
+	// Parses colors.toml text. Returns { ok, colors, errors }; colors always has accent, background, foreground, cursor, selection_foreground,
+	// selection_background and color0..color15, plus mode when the file says so. A missing required key or a value that is not #rrggbb
+	// is an error (the theme is rejected, never half applied).
+	function parse( text ) {
+		var out = { ok: true, colors: {}, errors: [] };
+		var body = replace( replace( replace( arguments.text, chr( 13 ), "", "all" ), '"', "", "all" ), "'", "", "all" );
+		var c = {};
+		for ( var rawLine in listToArray( body, chr( 10 ) ) ) {
+			var line = trim( rawLine );
+			if ( !len( line ) || left( line, 1 ) == "##" ) continue;
+			var m = reFind( "^([a-z_0-9]+)[ ]*=[ ]*(.*)$", line, 1, true );
+			if ( !m.pos[ 1 ] ) continue;
+			var key = mid( line, m.pos[ 2 ], m.len[ 2 ] );
+			var value = trim( listFirst( trim( mid( line, m.pos[ 3 ], m.len[ 3 ] ) ), " " ) );
+			if ( key == "mode" ) { c.mode = lCase( value ); continue; }
+			if ( left( value, 1 ) != "##" ) continue;
+			if ( !reFind( "^[##][0-9a-fA-F]{6}$", value ) ) { out.errors.append( key & " is not #rrggbb: " & value ); continue; }
             c[ key ] = lCase( value );
         }
         for ( var k in [ "accent", "foreground", "background" ] ) if ( !structKeyExists( c, k ) ) out.errors.append( "missing " & k );
@@ -291,36 +291,36 @@ class ThemeColors {
             'set -g message-style "bg=' & mix( bg, fg, 0.12 ) & ',fg=' & fg & '"',
             'set -g mode-style "bg=' & arguments.c.selection_background & ',fg=' & arguments.c.selection_foreground & '"' ];
         return header( "##" ) & "# In ~/.tmux.conf:  source-file " & "~/.config/bxrig/theme/tmux.conf" & nl() & out.toList( nl() ) & nl();
-    }
+	}
 
-    function fzf( c ) {
-        var o = "--color=bg:" & arguments.c.background & ",bg+:" & mix( arguments.c.background, arguments.c.foreground, 0.12 ) & ",fg:" & arguments.c.foreground & ",fg+:" & arguments.c.color15
-            & ",hl:" & arguments.c.accent & ",hl+:" & arguments.c.accent & ",info:" & arguments.c.color4 & ",prompt:" & arguments.c.accent & ",pointer:" & arguments.c.accent
-            & ",marker:" & arguments.c.color2 & ",spinner:" & arguments.c.color5 & ",header:" & arguments.c.color6 & ",border:" & mix( arguments.c.background, arguments.c.foreground, 0.30 );
-        return header( "##" ) & "export FZF_DEFAULT_OPTS=" & chr( 34 ) & "${FZF_DEFAULT_OPTS:+$FZF_DEFAULT_OPTS }" & o & chr( 34 ) & nl();
-    }
+	function fzf( c ) {
+		var o = "--color=bg:" & arguments.c.background & ",bg+:" & mix( arguments.c.background, arguments.c.foreground, 0.12 ) & ",fg:" & arguments.c.foreground & ",fg+:" & arguments.c.color15
+			& ",hl:" & arguments.c.accent & ",hl+:" & arguments.c.accent & ",info:" & arguments.c.color4 & ",prompt:" & arguments.c.accent & ",pointer:" & arguments.c.accent
+			& ",marker:" & arguments.c.color2 & ",spinner:" & arguments.c.color5 & ",header:" & arguments.c.color6 & ",border:" & mix( arguments.c.background, arguments.c.foreground, 0.30 );
+		return header( "##" ) & "export FZF_DEFAULT_OPTS=" & chr( 34 ) & "${FZF_DEFAULT_OPTS:+$FZF_DEFAULT_OPTS }" & o & chr( 34 ) & nl();
+	}
 
-    function rofi( c, iconTheme = "" ) {
-        var bg = arguments.c.background; var fg = arguments.c.foreground; var acc = arguments.c.accent;
-        var cfg = len( arguments.iconTheme ) ? "configuration { icon-theme: " & chr( 34 ) & arguments.iconTheme & chr( 34 ) & "; }" & nl() : "";
-        return "/* Generated by `bxrig theme set`. */" & nl() & cfg & "* {" & nl() & "    bg: " & bg & "f2;" & nl() & "    bg-alt: " & mix( bg, fg, 0.10 ) & ";" & nl() & "    fg: " & fg & ";" & nl() & "    muted: " & mix( fg, bg, 0.40 ) & ";" & nl() & "    accent: " & acc & ";" & nl() & "    on-accent: " & onColor( acc, arguments.c ) & ";" & nl()
-            & "    background-color: transparent; text-color: @fg;" & nl() & "}" & nl()
-            & "window { background-color: @bg; border: 2px; border-color: @accent; border-radius: 12px; }" & nl()
-            & "inputbar { padding: 8px; background-color: @bg-alt; border-radius: 8px; children: [ prompt, entry ]; }" & nl()
-            & "prompt { text-color: @accent; padding: 0 8px 0 0; }" & nl()
-            & "listview { lines: 10; spacing: 2px; padding: 6px 0 0 0; }" & nl()
-            & "element { padding: 6px 8px; border-radius: 6px; spacing: 10px; }" & nl()
-            & "element-icon { size: 1.3em; }" & nl()
-            & "element selected.normal { background-color: @accent; text-color: @on-accent; }" & nl()
-            & "element-text { text-color: inherit; }" & nl();
-    }
+	function rofi( c, iconTheme = "" ) {
+		var bg = arguments.c.background; var fg = arguments.c.foreground; var acc = arguments.c.accent;
+		var cfg = len( arguments.iconTheme ) ? "configuration { icon-theme: " & chr( 34 ) & arguments.iconTheme & chr( 34 ) & "; }" & nl() : "";
+		return "/* Generated by `bxrig theme set`. */" & nl() & cfg & "* {" & nl() & "    bg: " & bg & "f2;" & nl() & "    bg-alt: " & mix( bg, fg, 0.10 ) & ";" & nl() & "    fg: " & fg & ";" & nl() & "    muted: " & mix( fg, bg, 0.40 ) & ";" & nl() & "    accent: " & acc & ";" & nl() & "    on-accent: " & onColor( acc, arguments.c ) & ";" & nl()
+			& "    background-color: transparent; text-color: @fg;" & nl() & "}" & nl()
+			& "window { background-color: @bg; border: 2px; border-color: @accent; border-radius: 12px; }" & nl()
+			& "inputbar { padding: 8px; background-color: @bg-alt; border-radius: 8px; children: [ prompt, entry ]; }" & nl()
+			& "prompt { text-color: @accent; padding: 0 8px 0 0; }" & nl()
+			& "listview { lines: 10; spacing: 2px; padding: 6px 0 0 0; }" & nl()
+			& "element { padding: 6px 8px; border-radius: 6px; spacing: 10px; }" & nl()
+			& "element-icon { size: 1.3em; }" & nl()
+			& "element selected.normal { background-color: @accent; text-color: @on-accent; }" & nl()
+			& "element-text { text-color: inherit; }" & nl();
+	}
 
-    // Fuzzel colours are RRGGBBAA without the #.
-    function fuzzel( c, iconTheme = "" ) {
-        var bg = arguments.c.background; var fg = arguments.c.foreground; var acc = arguments.c.accent;
-        var f = function( h, a = "ff" ) { return strip( h ) & a; };
-        var main = len( arguments.iconTheme ) ? "[main]" & nl() & "icon-theme=" & arguments.iconTheme & nl() : "";
-        return "# Generated by `bxrig theme set`." & nl() & main & "[colors]" & nl() & "background=" & f( bg, "f2" ) & nl() & "text=" & f( fg ) & nl() & "match=" & f( acc ) & nl() & "selection=" & f( acc ) & nl()
+	// Fuzzel colours are RRGGBBAA without the #.
+	function fuzzel( c, iconTheme = "" ) {
+		var bg = arguments.c.background; var fg = arguments.c.foreground; var acc = arguments.c.accent;
+		var f = function( h, a = "ff" ) { return strip( h ) & a; };
+		var main = len( arguments.iconTheme ) ? "[main]" & nl() & "icon-theme=" & arguments.iconTheme & nl() : "";
+		return "# Generated by `bxrig theme set`." & nl() & main & "[colors]" & nl() & "background=" & f( bg, "f2" ) & nl() & "text=" & f( fg ) & nl() & "match=" & f( acc ) & nl() & "selection=" & f( acc ) & nl()
             & "selection-text=" & f( onColor( acc, arguments.c ) ) & nl() & "selection-match=" & f( onColor( acc, arguments.c ) ) & nl() & "border=" & f( acc ) & nl() & "prompt=" & f( acc ) & nl() & "input=" & f( fg ) & nl() & "placeholder=" & f( mix( fg, bg, 0.5 ) ) & nl() & "counter=" & f( mix( fg, bg, 0.5 ) ) & nl();
     }
 
@@ -328,67 +328,67 @@ class ThemeColors {
         var bg = arguments.c.background; var fg = arguments.c.foreground; var acc = arguments.c.accent;
         return "/* Generated by `bxrig theme set`. */" & nl() & "window { background-color: " & bg & "; border: 2px solid " & acc & "; border-radius: 12px; }" & nl()
             & "#input { background-color: " & mix( bg, fg, 0.10 ) & "; color: " & fg & "; border: none; border-radius: 8px; margin: 8px; padding: 6px 10px; }" & nl()
-            & "#inner-box, #outer-box, #scroll { background-color: transparent; }" & nl()
+			& "#inner-box, #outer-box, #scroll { background-color: transparent; }" & nl()
             & "#entry { color: " & fg & "; padding: 6px 8px; border-radius: 6px; }" & nl()
-            & "#entry:selected { background-color: " & acc & "; color: " & onColor( acc, arguments.c ) & "; }" & nl()
+			& "#entry:selected { background-color: " & acc & "; color: " & onColor( acc, arguments.c ) & "; }" & nl()
             & "#text { color: inherit; }" & nl();
-    }
+	}
 
-    // The workbench.colorCustomizations object VS Code accepts, as a struct (the caller merges it into settings.json).
-    function vscode( c ) {
-        var bg = arguments.c.background; var fg = arguments.c.foreground; var acc = arguments.c.accent;
-        var panel = mix( bg, "##000000", 0.15 );
-        var o = {
-            "editor.background": bg, "editor.foreground": fg, "editor.selectionBackground": arguments.c.selection_background, "editorCursor.foreground": arguments.c.cursor,
-            "editor.lineHighlightBackground": mix( bg, fg, 0.06 ), "editorLineNumber.foreground": mix( fg, bg, 0.55 ), "editorLineNumber.activeForeground": fg,
-            "sideBar.background": panel, "sideBar.foreground": mix( fg, bg, 0.15 ), "activityBar.background": panel, "activityBar.foreground": fg, "activityBarBadge.background": acc, "activityBarBadge.foreground": onColor( acc, arguments.c ),
-            "statusBar.background": acc, "statusBar.foreground": onColor( acc, arguments.c ), "titleBar.activeBackground": panel, "titleBar.activeForeground": fg,
-            "tab.activeBackground": bg, "tab.inactiveBackground": panel, "tab.activeBorderTop": acc, "editorGroupHeader.tabsBackground": panel,
-            "panel.background": bg, "panel.border": mix( bg, fg, 0.15 ), "terminal.background": bg, "terminal.foreground": fg, "focusBorder": acc, "list.activeSelectionBackground": mix( bg, acc, 0.35 ),
-            "button.background": acc, "button.foreground": onColor( acc, arguments.c ), "input.background": mix( bg, fg, 0.08 ), "badge.background": acc, "badge.foreground": onColor( acc, arguments.c )
-        };
-        var names = [ "Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan", "White" ];
-        for ( var i = 1; i <= 8; i++ ) { o[ "terminal.ansi" & names[ i ] ] = arguments.c[ "color" & ( i - 1 ) ]; o[ "terminal.ansiBright" & names[ i ] ] = arguments.c[ "color" & ( i + 7 ) ]; }
-        return o;
-    }
+	// The workbench.colorCustomizations object VS Code accepts, as a struct (the caller merges it into settings.json).
+	function vscode( c ) {
+		var bg = arguments.c.background; var fg = arguments.c.foreground; var acc = arguments.c.accent;
+		var panel = mix( bg, "##000000", 0.15 );
+		var o = {
+			"editor.background": bg, "editor.foreground": fg, "editor.selectionBackground": arguments.c.selection_background, "editorCursor.foreground": arguments.c.cursor,
+			"editor.lineHighlightBackground": mix( bg, fg, 0.06 ), "editorLineNumber.foreground": mix( fg, bg, 0.55 ), "editorLineNumber.activeForeground": fg,
+			"sideBar.background": panel, "sideBar.foreground": mix( fg, bg, 0.15 ), "activityBar.background": panel, "activityBar.foreground": fg, "activityBarBadge.background": acc, "activityBarBadge.foreground": onColor( acc, arguments.c ),
+			"statusBar.background": acc, "statusBar.foreground": onColor( acc, arguments.c ), "titleBar.activeBackground": panel, "titleBar.activeForeground": fg,
+			"tab.activeBackground": bg, "tab.inactiveBackground": panel, "tab.activeBorderTop": acc, "editorGroupHeader.tabsBackground": panel,
+			"panel.background": bg, "panel.border": mix( bg, fg, 0.15 ), "terminal.background": bg, "terminal.foreground": fg, "focusBorder": acc, "list.activeSelectionBackground": mix( bg, acc, 0.35 ),
+			"button.background": acc, "button.foreground": onColor( acc, arguments.c ), "input.background": mix( bg, fg, 0.08 ), "badge.background": acc, "badge.foreground": onColor( acc, arguments.c )
+		};
+		var names = [ "Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan", "White" ];
+		for ( var i = 1; i <= 8; i++ ) { o[ "terminal.ansi" & names[ i ] ] = arguments.c[ "color" & ( i - 1 ) ]; o[ "terminal.ansiBright" & names[ i ] ] = arguments.c[ "color" & ( i + 7 ) ]; }
+		return o;
+	}
 
-    function strip( h ) { return replace( arguments.h, "##", "", "all" ); }
+	function strip( h ) { return replace( arguments.h, "##", "", "all" ); }
 
-    function foot( c ) {
-        var out = [ "[colors-dark]", "foreground=" & strip( c.foreground ), "background=" & strip( c.background ),
-                    "selection-foreground=" & strip( c.selection_foreground ), "selection-background=" & strip( c.selection_background ),
-                    "cursor=" & strip( c.background ) & " " & strip( c.cursor ), "" ];
-        for ( var i = 0; i < 8; i++ ) out.append( "regular" & i & "=" & strip( ansi( arguments.c, i ) ) );
-        out.append( "" );
-        for ( var j = 0; j < 8; j++ ) out.append( "bright" & j & "=" & strip( ansi( arguments.c, j + 8 ) ) );
-        return header( "##" ) & out.toList( nl() ) & nl();
-    }
+	function foot( c ) {
+		var out = [ "[colors-dark]", "foreground=" & strip( c.foreground ), "background=" & strip( c.background ),
+					"selection-foreground=" & strip( c.selection_foreground ), "selection-background=" & strip( c.selection_background ),
+					"cursor=" & strip( c.background ) & " " & strip( c.cursor ), "" ];
+		for ( var i = 0; i < 8; i++ ) out.append( "regular" & i & "=" & strip( ansi( arguments.c, i ) ) );
+		out.append( "" );
+		for ( var j = 0; j < 8; j++ ) out.append( "bright" & j & "=" & strip( ansi( arguments.c, j + 8 ) ) );
+		return header( "##" ) & out.toList( nl() ) & nl();
+	}
 
-    // btop theme[...] keys. The gradient runs from the background to the foreground through mixes.
-    function btop( c ) {
-        var t = function( k, v ) { return "theme[" & k & '] = "' & v & '"'; };
-        var muted = mix( c.background, c.foreground, 0.45 );
-        var out = [ t( "main_bg", c.background ), t( "main_fg", c.foreground ), t( "title", c.foreground ), t( "hi_fg", c.accent ),
-                    t( "selected_bg", c.selection_background ), t( "selected_fg", c.accent ), t( "inactive_fg", muted ),
-                    t( "graph_text", c.foreground ), t( "meter_bg", c.selection_background ), t( "proc_misc", c.foreground ),
-                    t( "cpu_box", c.color5 ), t( "mem_box", c.color2 ), t( "net_box", c.color1 ), t( "proc_box", c.accent ), t( "div_line", muted ),
-                    t( "temp_start", c.color2 ), t( "temp_mid", c.color3 ), t( "temp_end", c.color1 ),
-                    t( "cpu_start", c.color6 ), t( "cpu_mid", c.color4 ), t( "cpu_end", c.color5 ),
-                    t( "free_start", c.color5 ), t( "free_mid", c.color4 ), t( "free_end", c.color6 ),
-                    t( "cached_start", c.color4 ), t( "cached_mid", c.color6 ), t( "cached_end", c.color5 ),
-                    t( "available_start", c.color3 ), t( "available_mid", c.color1 ), t( "available_end", c.color1 ),
-                    t( "used_start", c.color2 ), t( "used_mid", c.color6 ), t( "used_end", c.color4 ),
-                    t( "download_start", c.color3 ), t( "download_mid", c.color1 ), t( "download_end", c.color1 ),
-                    t( "upload_start", c.color2 ), t( "upload_mid", c.color6 ), t( "upload_end", c.color4 ),
-                    t( "process_start", c.color6 ), t( "process_mid", c.color4 ), t( "process_end", c.color5 ) ];
-        for ( var i = 0; i < 8; i++ ) out.append( t( "gradient_color_" & i, mix( c.background, c.foreground, i / 7 ) ) );
-        return header( "##" ) & out.toList( nl() ) & nl();
-    }
+	// btop theme[...] keys. The gradient runs from the background to the foreground through mixes.
+	function btop( c ) {
+		var t = function( k, v ) { return "theme[" & k & '] = "' & v & '"'; };
+		var muted = mix( c.background, c.foreground, 0.45 );
+		var out = [ t( "main_bg", c.background ), t( "main_fg", c.foreground ), t( "title", c.foreground ), t( "hi_fg", c.accent ),
+					t( "selected_bg", c.selection_background ), t( "selected_fg", c.accent ), t( "inactive_fg", muted ),
+					t( "graph_text", c.foreground ), t( "meter_bg", c.selection_background ), t( "proc_misc", c.foreground ),
+					t( "cpu_box", c.color5 ), t( "mem_box", c.color2 ), t( "net_box", c.color1 ), t( "proc_box", c.accent ), t( "div_line", muted ),
+					t( "temp_start", c.color2 ), t( "temp_mid", c.color3 ), t( "temp_end", c.color1 ),
+					t( "cpu_start", c.color6 ), t( "cpu_mid", c.color4 ), t( "cpu_end", c.color5 ),
+					t( "free_start", c.color5 ), t( "free_mid", c.color4 ), t( "free_end", c.color6 ),
+					t( "cached_start", c.color4 ), t( "cached_mid", c.color6 ), t( "cached_end", c.color5 ),
+					t( "available_start", c.color3 ), t( "available_mid", c.color1 ), t( "available_end", c.color1 ),
+					t( "used_start", c.color2 ), t( "used_mid", c.color6 ), t( "used_end", c.color4 ),
+					t( "download_start", c.color3 ), t( "download_mid", c.color1 ), t( "download_end", c.color1 ),
+					t( "upload_start", c.color2 ), t( "upload_mid", c.color6 ), t( "upload_end", c.color4 ),
+					t( "process_start", c.color6 ), t( "process_mid", c.color4 ), t( "process_end", c.color5 ) ];
+		for ( var i = 0; i < 8; i++ ) out.append( t( "gradient_color_" & i, mix( c.background, c.foreground, i / 7 ) ) );
+		return header( "##" ) & out.toList( nl() ) & nl();
+	}
 
-    // Hyprland rgba() colour (with alpha ee) for the active border.
-    function rgba( h, alpha = "ee" ) { return "rgba(" & strip( arguments.h ) & arguments.alpha & ")"; }
+	// Hyprland rgba() colour (with alpha ee) for the active border.
+	function rgba( h, alpha = "ee" ) { return "rgba(" & strip( arguments.h ) & arguments.alpha & ")"; }
 
-    function header( mark ) {
-        return arguments.mark & " Generated by `bxrig theme set`. Rewritten on every theme change; do not edit." & nl();
-    }
+	function header( mark ) {
+		return arguments.mark & " Generated by `bxrig theme set`. Rewritten on every theme change; do not edit." & nl();
+	}
 }

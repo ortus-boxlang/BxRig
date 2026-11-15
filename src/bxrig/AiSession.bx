@@ -7,86 +7,86 @@
 // NAME is the full session name or what follows `bxrig-`. Exit: 0 done, 2 usage or plan without --yes, 4 precondition (tmux or the agent
 // missing, bad name, no such session), 6 a tmux command failed.
 class AiSession {
-    function init( cli, runner = "" ) {
-        variables.text = new bxrig.util.Text();
-        variables.cli = arguments.cli;
-        variables.proc = new bxrig.util.Proc( arguments.runner );
-        variables.ai = new bxrig.Ai( arguments.cli, arguments.runner );
-        variables.agents = new bxrig.AiAgents();
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.text = new bxrig.util.Text();
+		variables.cli = arguments.cli;
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.ai = new bxrig.Ai( arguments.cli, arguments.runner );
+		variables.agents = new bxrig.AiAgents();
+		return this;
+	}
 
-    function prefix() { return "bxrig-"; }
+	function prefix() { return "bxrig-"; }
 
 
-    // Full session name for what the user typed.
-    function fullName( name ) {
-        return left( arguments.name, len( prefix() ) ) == prefix() ? arguments.name : prefix() & arguments.name;
-    }
+	// Full session name for what the user typed.
+	function fullName( name ) {
+		return left( arguments.name, len( prefix() ) ) == prefix() ? arguments.name : prefix() & arguments.name;
+	}
 
-    // The names of BxRig's tmux sessions (empty when tmux has no server running).
-    function names() {
-        var r = variables.proc.exec( [ "tmux", "list-sessions", "-F", "##{session_name}" ], 15 );
-        if ( r.exitCode != 0 ) return [];
-        return listToArray( r.output, chr( 10 ) ).map( function( n ) { return trim( n ); } ).filter( function( n ) { return left( n, len( prefix() ) ) == prefix(); } );
-    }
+	// The names of BxRig's tmux sessions (empty when tmux has no server running).
+	function names() {
+		var r = variables.proc.exec( [ "tmux", "list-sessions", "-F", "##{session_name}" ], 15 );
+		if ( r.exitCode != 0 ) return [];
+		return listToArray( r.output, chr( 10 ) ).map( function( n ) { return trim( n ); } ).filter( function( n ) { return left( n, len( prefix() ) ) == prefix(); } );
+	}
 
-    function hasTmux() { return variables.proc.has( "tmux" ); }
+	function hasTmux() { return variables.proc.has( "tmux" ); }
 
-    function quoted( argv ) {
-        var q = chr( 39 );
-        return arguments.argv.map( function( w ) { return q & replace( w, q, q & chr( 92 ) & q & q, "all" ) & q; } ).toList( " " );
-    }
+	function quoted( argv ) {
+		var q = chr( 39 );
+		return arguments.argv.map( function( w ) { return q & replace( w, q, q & chr( 92 ) & q & q, "all" ) & q; } ).toList( " " );
+	}
 
-    // `ai session start [ID] [--name=N] [--dir=PATH] [--dry-run]`
-    function start( id, name, dir, dryRun, asJson ) {
-        var cmd = "ai session start";
-        var pick = len( arguments.id ) ? arguments.id : variables.ai.defaultId();
-        if ( !len( pick ) ) return variables.cli.say( cmd, "precondition", { error: "No agent" }, arguments.asJson, [ "error: no agent given and no default set. Use: bxrig ai session start claude-code" ] );
-        var a = variables.agents.find( pick );
-        if ( structIsEmpty( a ) ) return variables.cli.say( cmd, "precondition", { error: "Unknown agent" }, arguments.asJson, [ "error: unknown agent " & pick & " (use " & variables.agents.ids().toList( ", " ) & ")" ] );
-        if ( len( arguments.name ) && !new bxrig.util.Names().valid( "label", arguments.name ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: a session name is letters, digits, - and _ (up to 40)" ] );
-        if ( !hasTmux() ) return variables.cli.say( cmd, "precondition", { error: "tmux is not installed" }, arguments.asJson, [ "error: tmux is not installed. Install it: bxrig install tmux" ] );
-        if ( !variables.ai.installed( a.command ) ) return variables.cli.say( cmd, "precondition", { error: a.id & " is not installed" }, arguments.asJson, [ "error: " & a.name & " is not installed. Install it first: bxrig install " & a.id ] );
-        var folder = len( arguments.dir ) ? arguments.dir : new bxrig.util.Env().named( "pwd", "." );
-        if ( !directoryExists( folder ) ) return variables.cli.say( cmd, "precondition", { error: "No such folder" }, arguments.asJson, [ "error: " & folder & " is not a folder" ] );
-        var session = prefix() & a.id & ( len( arguments.name ) ? "-" & arguments.name : "" );
-        var inner = variables.ai.agentCommand( a );
-        var argv = [ "tmux", "new-session", "-d", "-s", session, "-c", folder, quoted( inner ) ];
-        var data = { session: session, agent: a.id, dir: folder, command: argv };
-        if ( arrayFind( names(), session ) ) return variables.cli.say( cmd, "ok", variables.text.merge( data, { existed: true } ), arguments.asJson, [ session & " is already running. Join it: bxrig ai session attach " & session ] );
-        if ( arguments.dryRun ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Dry run: " & argv.toList( " " ) ], true );
-        var r = variables.proc.exec( argv, 30 );
-        if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", variables.text.merge( data, { error: trim( r.output ) } ), arguments.asJson, [ "error: tmux could not start the session: " & trim( r.output ) ] );
-        return variables.cli.say( cmd, "ok", variables.text.merge( data, { existed: false } ), arguments.asJson, [ "Started " & session & " in " & folder & ". Join it: bxrig ai session attach " & session ] );
-    }
+	// `ai session start [ID] [--name=N] [--dir=PATH] [--dry-run]`
+	function start( id, name, dir, dryRun, asJson ) {
+		var cmd = "ai session start";
+		var pick = len( arguments.id ) ? arguments.id : variables.ai.defaultId();
+		if ( !len( pick ) ) return variables.cli.say( cmd, "precondition", { error: "No agent" }, arguments.asJson, [ "error: no agent given and no default set. Use: bxrig ai session start claude-code" ] );
+		var a = variables.agents.find( pick );
+		if ( structIsEmpty( a ) ) return variables.cli.say( cmd, "precondition", { error: "Unknown agent" }, arguments.asJson, [ "error: unknown agent " & pick & " (use " & variables.agents.ids().toList( ", " ) & ")" ] );
+		if ( len( arguments.name ) && !new bxrig.util.Names().valid( "label", arguments.name ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: a session name is letters, digits, - and _ (up to 40)" ] );
+		if ( !hasTmux() ) return variables.cli.say( cmd, "precondition", { error: "tmux is not installed" }, arguments.asJson, [ "error: tmux is not installed. Install it: bxrig install tmux" ] );
+		if ( !variables.ai.installed( a.command ) ) return variables.cli.say( cmd, "precondition", { error: a.id & " is not installed" }, arguments.asJson, [ "error: " & a.name & " is not installed. Install it first: bxrig install " & a.id ] );
+		var folder = len( arguments.dir ) ? arguments.dir : new bxrig.util.Env().named( "pwd", "." );
+		if ( !directoryExists( folder ) ) return variables.cli.say( cmd, "precondition", { error: "No such folder" }, arguments.asJson, [ "error: " & folder & " is not a folder" ] );
+		var session = prefix() & a.id & ( len( arguments.name ) ? "-" & arguments.name : "" );
+		var inner = variables.ai.agentCommand( a );
+		var argv = [ "tmux", "new-session", "-d", "-s", session, "-c", folder, quoted( inner ) ];
+		var data = { session: session, agent: a.id, dir: folder, command: argv };
+		if ( arrayFind( names(), session ) ) return variables.cli.say( cmd, "ok", variables.text.merge( data, { existed: true } ), arguments.asJson, [ session & " is already running. Join it: bxrig ai session attach " & session ] );
+		if ( arguments.dryRun ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Dry run: " & argv.toList( " " ) ], true );
+		var r = variables.proc.exec( argv, 30 );
+		if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", variables.text.merge( data, { error: trim( r.output ) } ), arguments.asJson, [ "error: tmux could not start the session: " & trim( r.output ) ] );
+		return variables.cli.say( cmd, "ok", variables.text.merge( data, { existed: false } ), arguments.asJson, [ "Started " & session & " in " & folder & ". Join it: bxrig ai session attach " & session ] );
+	}
 
-    // `ai session list`
-    function list( asJson ) {
-        var all = names();
-        return variables.cli.say( "ai session list", "ok", { sessions: all }, arguments.asJson, all.len() ? all : [ "No agent sessions are running. Start one: bxrig ai session start" ] );
-    }
+	// `ai session list`
+	function list( asJson ) {
+		var all = names();
+		return variables.cli.say( "ai session list", "ok", { sessions: all }, arguments.asJson, all.len() ? all : [ "No agent sessions are running. Start one: bxrig ai session start" ] );
+	}
 
-    // `ai session attach NAME`
-    function attach( name, asJson ) {
-        var cmd = "ai session attach";
-        if ( !new bxrig.util.Names().valid( "label", replace( arguments.name, prefix(), "" ) ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: bad session name" ] );
-        if ( !hasTmux() ) return variables.cli.say( cmd, "precondition", { error: "tmux is not installed" }, arguments.asJson, [ "error: tmux is not installed. Install it: bxrig install tmux" ] );
-        var session = fullName( arguments.name );
-        if ( !arrayFind( names(), session ) ) return variables.cli.say( cmd, "precondition", { error: "No such session" }, arguments.asJson, [ "error: no session " & session & " (see: bxrig ai session list)" ] );
-        var r = systemExecute( "tmux", [ "attach-session", "-t", session ], 0, false, ".", "", "", true, {}, true );
-        return r.exitCode;
-    }
+	// `ai session attach NAME`
+	function attach( name, asJson ) {
+		var cmd = "ai session attach";
+		if ( !new bxrig.util.Names().valid( "label", replace( arguments.name, prefix(), "" ) ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: bad session name" ] );
+		if ( !hasTmux() ) return variables.cli.say( cmd, "precondition", { error: "tmux is not installed" }, arguments.asJson, [ "error: tmux is not installed. Install it: bxrig install tmux" ] );
+		var session = fullName( arguments.name );
+		if ( !arrayFind( names(), session ) ) return variables.cli.say( cmd, "precondition", { error: "No such session" }, arguments.asJson, [ "error: no session " & session & " (see: bxrig ai session list)" ] );
+		var r = systemExecute( "tmux", [ "attach-session", "-t", session ], 0, false, ".", "", "", true, {}, true );
+		return r.exitCode;
+	}
 
-    // `ai session stop NAME --yes`
-    function stop( name, yes, asJson ) {
-        var cmd = "ai session stop";
-        if ( !new bxrig.util.Names().valid( "label", replace( arguments.name, prefix(), "" ) ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: bad session name" ] );
-        var session = fullName( arguments.name );
-        if ( !arrayFind( names(), session ) ) return variables.cli.say( cmd, "precondition", { error: "No such session" }, arguments.asJson, [ "error: no session " & session ] );
-        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "end " & session & " and whatever is running in it.", { session: session }, arguments.asJson );
-        var r = variables.proc.exec( [ "tmux", "kill-session", "-t", session ], 15 );
-        if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
-        return variables.cli.say( cmd, "ok", { session: session }, arguments.asJson, [ session & " was ended." ] );
-    }
+	// `ai session stop NAME --yes`
+	function stop( name, yes, asJson ) {
+		var cmd = "ai session stop";
+		if ( !new bxrig.util.Names().valid( "label", replace( arguments.name, prefix(), "" ) ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: bad session name" ] );
+		var session = fullName( arguments.name );
+		if ( !arrayFind( names(), session ) ) return variables.cli.say( cmd, "precondition", { error: "No such session" }, arguments.asJson, [ "error: no session " & session ] );
+		if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "end " & session & " and whatever is running in it.", { session: session }, arguments.asJson );
+		var r = variables.proc.exec( [ "tmux", "kill-session", "-t", session ], 15 );
+		if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+		return variables.cli.say( cmd, "ok", { session: session }, arguments.asJson, [ session & " was ended." ] );
+	}
 }

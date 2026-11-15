@@ -20,37 +20,37 @@ args = ap.parse_args()
 KEYS = {'enter': '\r', 'down': '\x1b[B', 'up': '\x1b[A', 'left': '\x1b[D', 'right': '\x1b[C', 'space': ' ', 'tab': '\t', 'esc': '\x1b', 'backtab': '\x1b[Z', 'bs': '\x7f', 'backslash': chr(92)}
 # scenario: (seconds to wait after, action[, screenshot name]). action is a key name, "wait", or "text:..." typed char by char
 SCENARIO = [
-    (2.4, 'wait', '01-dashboard'),
-    (0.8, 'down'), (0.8, 'up'), (0.9, 'enter'), (1.6, 'wait', '02-update-plan'), (0.8, 'n'),
-    # the Apps manager: search is always on, typing searches; Discover finds catalog apps first; Updates has one button
-    (0.9, 'tab'), (1.8, 'wait', '03-apps-installed'),
-    (0.5, 'text:fire'), (1.2, 'wait', '03b-apps-search'), (0.6, 'esc'),
-    (0.8, 'down'), (0.6, 'x'), (1.6, 'wait', '03c-apps-remove-plan'), (0.8, 'n'),
-    (0.8, 'right'), (1.4, 'wait', '03d-apps-discover'), (0.5, 'text:email'), (2.2, 'wait', '03e-apps-email'),
-    (0.7, 'down'), (0.7, 'down'), (0.7, 'i'), (1.8, 'wait', '03f-apps-install-plan'), (0.8, 'n'),
-    (0.7, 'esc'), (0.5, 'esc'), (0.6, 'right'), (1.6, 'wait', '03g-apps-updates'), (0.8, 'down'), (0.6, 'u'), (1.8, 'wait', '03h-apps-update-plan'), (0.8, 'n'),
-    (0.9, 'tab'), (1.6, 'wait', '03-boxlang'),
-    (0.9, 'tab'), (1.6, 'wait', '04-java'), (0.8, 'down'), (0.8, 'd'), (1.6, 'wait', '05-java-default-plan'), (0.8, 'n'),
-    (0.9, 'i'), (0.6, 'text:25'), (1.4, 'wait', '06-java-install-ask'), (0.7, 'esc'),
-    (0.9, 'tab'), (1.4, 'wait', '07-maven'),
-    (0.9, 'tab'), (1.4, 'wait', '08-gradle'),
-    (0.9, 'tab'), (1.6, 'wait', '09-versions'),
-    (0.9, 'tab'), (1.8, 'wait', '10-ports'), (0.8, '/'), (0.4, 'text:redis'), (1.4, 'wait', '11-ports-filter'), (0.7, 'enter'), (0.8, 'x'), (1.6, 'wait', '12-ports-stop-plan'), (0.7, 'n'),
-    (0.9, 'tab'), (1.2, 'wait'), (0.8, '/'), (0.4, 'text:docker'), (0.8, 'enter'), (1.8, 'wait', '13-packages'),
-    (0.9, 'tab'), (1.6, 'wait', '14-shortcuts'),
-    (0.9, 'tab'), (1.6, 'wait', '15-machines'),
-    (0.9, 'tab'), (1.6, 'wait', '16-databases'),
-    (0.9, 'tab'), (1.6, 'wait', '17-mail'),
-    (0.9, 'tab'), (1.6, 'wait', '18-storage'),
-    (0.9, 'tab'), (1.6, 'wait', '19-secrets'),
-    (0.9, 'tab'), (1.6, 'wait', '20-themes'),
-    (0.9, 'tab'), (1.6, 'wait', '21-logs'), (0.8, 'p'), (1.4, 'wait', '22-logs-info'),
-    # the sidebar toggle: collapse (the page takes the width, the top row is the breadcrumb), open it again with Left, then back
-    (1.0, 'backslash'), (1.8, 'wait', '23-logs-collapsed'),
-    (0.9, 'backtab'), (1.4, 'wait', '24-themes-collapsed'),
-    (0.9, 'left'), (1.6, 'wait', '25-sidebar-open-again'),
-    (0.7, 'tab'), (1.4, 'wait', '26-back-to-dashboard'),
-    (0.5, 'q'),
+	(2.4, 'wait', '01-dashboard'),
+	(0.8, 'down'), (0.8, 'up'), (0.9, 'enter'), (1.6, 'wait', '02-update-plan'), (0.8, 'n'),
+	# the Apps manager: search is always on, typing searches; Discover finds catalog apps first; Updates has one button
+	(0.9, 'tab'), (1.8, 'wait', '03-apps-installed'),
+	(0.5, 'text:fire'), (1.2, 'wait', '03b-apps-search'), (0.6, 'esc'),
+	(0.8, 'down'), (0.6, 'x'), (1.6, 'wait', '03c-apps-remove-plan'), (0.8, 'n'),
+	(0.8, 'right'), (1.4, 'wait', '03d-apps-discover'), (0.5, 'text:email'), (2.2, 'wait', '03e-apps-email'),
+	(0.7, 'down'), (0.7, 'down'), (0.7, 'i'), (1.8, 'wait', '03f-apps-install-plan'), (0.8, 'n'),
+	(0.7, 'esc'), (0.5, 'esc'), (0.6, 'right'), (1.6, 'wait', '03g-apps-updates'), (0.8, 'down'), (0.6, 'u'), (1.8, 'wait', '03h-apps-update-plan'), (0.8, 'n'),
+	(0.9, 'tab'), (1.6, 'wait', '03-boxlang'),
+	(0.9, 'tab'), (1.6, 'wait', '04-java'), (0.8, 'down'), (0.8, 'd'), (1.6, 'wait', '05-java-default-plan'), (0.8, 'n'),
+	(0.9, 'i'), (0.6, 'text:25'), (1.4, 'wait', '06-java-install-ask'), (0.7, 'esc'),
+	(0.9, 'tab'), (1.4, 'wait', '07-maven'),
+	(0.9, 'tab'), (1.4, 'wait', '08-gradle'),
+	(0.9, 'tab'), (1.6, 'wait', '09-versions'),
+	(0.9, 'tab'), (1.8, 'wait', '10-ports'), (0.8, '/'), (0.4, 'text:redis'), (1.4, 'wait', '11-ports-filter'), (0.7, 'enter'), (0.8, 'x'), (1.6, 'wait', '12-ports-stop-plan'), (0.7, 'n'),
+	(0.9, 'tab'), (1.2, 'wait'), (0.8, '/'), (0.4, 'text:docker'), (0.8, 'enter'), (1.8, 'wait', '13-packages'),
+	(0.9, 'tab'), (1.6, 'wait', '14-shortcuts'),
+	(0.9, 'tab'), (1.6, 'wait', '15-machines'),
+	(0.9, 'tab'), (1.6, 'wait', '16-databases'),
+	(0.9, 'tab'), (1.6, 'wait', '17-mail'),
+	(0.9, 'tab'), (1.6, 'wait', '18-storage'),
+	(0.9, 'tab'), (1.6, 'wait', '19-secrets'),
+	(0.9, 'tab'), (1.6, 'wait', '20-themes'),
+	(0.9, 'tab'), (1.6, 'wait', '21-logs'), (0.8, 'p'), (1.4, 'wait', '22-logs-info'),
+	# the sidebar toggle: collapse (the page takes the width, the top row is the breadcrumb), open it again with Left, then back
+	(1.0, 'backslash'), (1.8, 'wait', '23-logs-collapsed'),
+	(0.9, 'backtab'), (1.4, 'wait', '24-themes-collapsed'),
+	(0.9, 'left'), (1.6, 'wait', '25-sidebar-open-again'),
+	(0.7, 'tab'), (1.4, 'wait', '26-back-to-dashboard'),
+	(0.5, 'q'),
 ]
 
 cols, rows = args.cols, args.rows
@@ -61,32 +61,32 @@ shutil.rmtree(frames_dir, ignore_errors=True); os.makedirs(frames_dir)
 # --- run the wizard in a pty and capture timestamped output ---
 pid, fd = pty.fork()
 if pid == 0:
-    env = dict(os.environ, TERM='xterm-256color', COLORTERM='truecolor')
-    cmd = [args.bin, 'tui', '--demo', '--icons=' + args.icons]
-    os.execvpe(cmd[0], cmd, dict(env, LANG='C.UTF-8'))
+	env = dict(os.environ, TERM='xterm-256color', COLORTERM='truecolor')
+	cmd = [args.bin, 'tui', '--demo', '--icons=' + args.icons]
+	os.execvpe(cmd[0], cmd, dict(env, LANG='C.UTF-8'))
 fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack('HHHH', rows, cols, 0, 0))
 t0 = time.time(); chunks = []
 def pump(until):
-    while time.time() < until:
-        r, _, _ = select.select([fd], [], [], 0.02)
-        if r:
-            try: data = os.read(fd, 65536)
-            except OSError: return False
-            if not data: return False
-            chunks.append((time.time() - t0, data))
-    return True
+	while time.time() < until:
+		r, _, _ = select.select([fd], [], [], 0.02)
+		if r:
+			try: data = os.read(fd, 65536)
+			except OSError: return False
+			if not data: return False
+			chunks.append((time.time() - t0, data))
+	return True
 alive = pump(t0 + 0.8)
 shots = []
 for step in SCENARIO:
-    delay, action = step[0], step[1]
-    if not alive: break
-    if action.startswith('text:'):
-        for ch in action[5:]:
-            os.write(fd, ch.encode()); alive = pump(time.time() + 0.12)
-    elif action != 'wait':
-        os.write(fd, (KEYS.get(action) or action).encode())
-    alive = pump(time.time() + delay)
-    if len(step) > 2: shots.append((step[2], time.time() - t0))
+	delay, action = step[0], step[1]
+	if not alive: break
+	if action.startswith('text:'):
+		for ch in action[5:]:
+			os.write(fd, ch.encode()); alive = pump(time.time() + 0.12)
+	elif action != 'wait':
+		os.write(fd, (KEYS.get(action) or action).encode())
+	alive = pump(time.time() + delay)
+	if len(step) > 2: shots.append((step[2], time.time() - t0))
 pump(time.time() + 0.5)
 total = chunks[-1][0] if chunks else 1
 try: os.waitpid(pid, os.WNOHANG)
@@ -96,7 +96,7 @@ print(f'captured {len(chunks)} chunks over {total:.1f}s')
 # --- render frames ---
 FS = 18
 def font(path, size=FS):
-    return ImageFont.truetype(path, size)
+	return ImageFont.truetype(path, size)
 JB = '/usr/share/fonts/truetype/jetbrains-mono/'
 f_reg = font(JB + 'JetBrainsMono-Regular.ttf'); f_bold = font(JB + 'JetBrainsMono-Bold.ttf')
 import glob
@@ -107,47 +107,47 @@ bbox = f_reg.getbbox('M'); cw = int(round(f_reg.getlength('M'))); ch_h = int(FS 
 W, H = cols * cw, rows * ch_h
 cache = {}
 def has_glyph(f, c):
-    key = (id(f), c)
-    if key not in cache:
-        try:
-            m = f.getmask(c); cache[key] = m.getbbox() is not None or c == ' '
-        except Exception: cache[key] = False
-    return cache[key]
+	key = (id(f), c)
+	if key not in cache:
+		try:
+			m = f.getmask(c); cache[key] = m.getbbox() is not None or c == ' '
+		except Exception: cache[key] = False
+	return cache[key]
 NAMED = {'black':(0,0,0),'red':(205,49,49),'green':(13,188,121),'brown':(229,229,16),'blue':(36,114,200),'magenta':(188,63,188),'cyan':(17,168,205),'white':(229,229,229),
-         'brightblack':(102,102,102),'brightred':(241,76,76),'brightgreen':(35,209,139),'brightbrown':(245,245,67),'brightblue':(59,142,234),'brightmagenta':(214,112,214),'brightcyan':(41,184,219),'brightwhite':(255,255,255)}
+		 'brightblack':(102,102,102),'brightred':(241,76,76),'brightgreen':(35,209,139),'brightbrown':(245,245,67),'brightblue':(59,142,234),'brightmagenta':(214,112,214),'brightcyan':(41,184,219),'brightwhite':(255,255,255)}
 DEF_FG, DEF_BG = (0xc6,0xd0,0xf5), (0x30,0x34,0x46)
 def color(c, default):
-    if c == 'default': return default
-    if c in NAMED: return NAMED[c]
-    if len(c) == 6:
-        try: return (int(c[0:2],16), int(c[2:4],16), int(c[4:6],16))
-        except ValueError: pass
-    return default
+	if c == 'default': return default
+	if c in NAMED: return NAMED[c]
+	if len(c) == 6:
+		try: return (int(c[0:2],16), int(c[2:4],16), int(c[4:6],16))
+		except ValueError: pass
+	return default
 
 screen = pyte.Screen(cols, rows); stream = pyte.Stream(screen)
 decoder = codecs.getincrementaldecoder('utf-8')('replace')
 def draw_frame(path):
-    img = Image.new('RGB', (W, H), DEF_BG); d = ImageDraw.Draw(img)
-    for y in range(rows):
-        line = screen.buffer[y]
-        for x in range(cols):
-            c = line[x]
-            bg = color(c.bg, DEF_BG); fgc = color(c.fg, DEF_FG)
-            if c.reverse: bg, fgc = fgc, bg
-            if bg != DEF_BG: d.rectangle([x*cw, y*ch_h, (x+1)*cw, (y+1)*ch_h], fill=bg)
-            if c.data in ('▀', '▄', '█'):
-                x0, y0, x1, y1 = x*cw, y*ch_h, (x+1)*cw, (y+1)*ch_h
-                ym = (y0 + y1) // 2
-                box = (x0, y0, x1, y1) if c.data == '█' else (x0, y0, x1, ym) if c.data == '▀' else (x0, ym, x1, y1)
-                d.rectangle([box[0], box[1], box[2] - 1, box[3] - 1], fill=fgc)
-                continue
-            if c.data != ' ':
-                f = f_bold if c.bold else f_reg
-                if f_sym and 0xe000 <= ord(c.data[0]) <= 0xf8ff: f = f_sym
-                elif not has_glyph(f, c.data):
-                    f = f_sym if (f_sym and (0xe000 <= ord(c.data[0]) <= 0xf8ff) and has_glyph(f_sym, c.data)) else (f_fbb if c.bold else f_fb)
-                d.text((x*cw, y*ch_h + 1), c.data, font=f, fill=fgc)
-    img.save(path)
+	img = Image.new('RGB', (W, H), DEF_BG); d = ImageDraw.Draw(img)
+	for y in range(rows):
+		line = screen.buffer[y]
+		for x in range(cols):
+			c = line[x]
+			bg = color(c.bg, DEF_BG); fgc = color(c.fg, DEF_FG)
+			if c.reverse: bg, fgc = fgc, bg
+			if bg != DEF_BG: d.rectangle([x*cw, y*ch_h, (x+1)*cw, (y+1)*ch_h], fill=bg)
+			if c.data in ('▀', '▄', '█'):
+				x0, y0, x1, y1 = x*cw, y*ch_h, (x+1)*cw, (y+1)*ch_h
+				ym = (y0 + y1) // 2
+				box = (x0, y0, x1, y1) if c.data == '█' else (x0, y0, x1, ym) if c.data == '▀' else (x0, ym, x1, y1)
+				d.rectangle([box[0], box[1], box[2] - 1, box[3] - 1], fill=fgc)
+				continue
+			if c.data != ' ':
+				f = f_bold if c.bold else f_reg
+				if f_sym and 0xe000 <= ord(c.data[0]) <= 0xf8ff: f = f_sym
+				elif not has_glyph(f, c.data):
+					f = f_sym if (f_sym and (0xe000 <= ord(c.data[0]) <= 0xf8ff) and has_glyph(f_sym, c.data)) else (f_fbb if c.bold else f_fb)
+				d.text((x*cw, y*ch_h + 1), c.data, font=f, fill=fgc)
+	img.save(path)
 
 shots_dir = os.path.join(args.out, 'screenshots'); os.makedirs(shots_dir, exist_ok=True)
 for f in os.listdir(shots_dir): os.remove(os.path.join(shots_dir, f))
@@ -155,12 +155,12 @@ shot_times = sorted(shots, key=lambda s: s[1])
 n = int(total * args.fps) + 1
 idx = 0; si = 0
 for i in range(n):
-    t = i / args.fps
-    while idx < len(chunks) and chunks[idx][0] <= t:
-        stream.feed(decoder.decode(chunks[idx][1])); idx += 1
-    draw_frame(os.path.join(frames_dir, f'f{i:05d}.png'))
-    while si < len(shot_times) and shot_times[si][1] <= t + 1 / args.fps:
-        shutil.copy(os.path.join(frames_dir, f'f{i:05d}.png'), os.path.join(shots_dir, shot_times[si][0] + '.png')); si += 1
+	t = i / args.fps
+	while idx < len(chunks) and chunks[idx][0] <= t:
+		stream.feed(decoder.decode(chunks[idx][1])); idx += 1
+	draw_frame(os.path.join(frames_dir, f'f{i:05d}.png'))
+	while si < len(shot_times) and shot_times[si][1] <= t + 1 / args.fps:
+		shutil.copy(os.path.join(frames_dir, f'f{i:05d}.png'), os.path.join(shots_dir, shot_times[si][0] + '.png')); si += 1
 print('frames', n, 'size', W, 'x', H, 'screenshots', len(os.listdir(shots_dir)))
 
 # --- encode ---

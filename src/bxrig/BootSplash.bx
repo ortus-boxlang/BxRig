@@ -13,138 +13,138 @@
 // Test overrides: BXRIG_PLYMOUTH_DIR, BXRIG_MKINITCPIO, BXRIG_CMDLINE, BXRIG_BOOT_DIR.
 // Exit: 0 done, 2 plan without --yes, 4 precondition (root, not Arch), 5 pacman, 6 a step failed.
 class BootSplash {
-    function init( cli, runner = "" ) {
-        variables.cli = arguments.cli;
-        variables.environ = new bxrig.util.Env();
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.proc = variables.inst.proc();
-        variables.pacman = new bxrig.util.Pacman( variables.proc );
-        variables.out = new bxrig.util.Out( variables.cli, "setup boot" );
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.environ = new bxrig.util.Env();
+		variables.inst = new bxrig.Installer( arguments.runner );
+		variables.proc = variables.inst.proc();
+		variables.pacman = new bxrig.util.Pacman( variables.proc );
+		variables.out = new bxrig.util.Out( variables.cli, "setup boot" );
+		return this;
+	}
 
-    function themesDir() { return variables.environ.get( "BXRIG_PLYMOUTH_DIR", "/usr/share/plymouth/themes" ); }
-    function themeDir() { return themesDir() & "/bxrig"; }
-    function mkinitcpio() { return variables.environ.get( "BXRIG_MKINITCPIO", "/etc/mkinitcpio.conf" ); }
-    function cmdline() {
-        var f = variables.environ.get( "BXRIG_CMDLINE", "/proc/cmdline" );
-        return fileExists( f ) ? trim( fileRead( f ) ) : "";
-    }
-    function bootDir() { return variables.environ.get( "BXRIG_BOOT_DIR", "/boot" ); }
-    function stateFile() { return new bxrig.ConfigService().stateDir() & "/setup-boot.json"; }
+	function themesDir() { return variables.environ.get( "BXRIG_PLYMOUTH_DIR", "/usr/share/plymouth/themes" ); }
+	function themeDir() { return themesDir() & "/bxrig"; }
+	function mkinitcpio() { return variables.environ.get( "BXRIG_MKINITCPIO", "/etc/mkinitcpio.conf" ); }
+	function cmdline() {
+		var f = variables.environ.get( "BXRIG_CMDLINE", "/proc/cmdline" );
+		return fileExists( f ) ? trim( fileRead( f ) ) : "";
+	}
+	function bootDir() { return variables.environ.get( "BXRIG_BOOT_DIR", "/boot" ); }
+	function stateFile() { return new bxrig.ConfigService().stateDir() & "/setup-boot.json"; }
 
-    // The HOOKS line has plymouth.
-    function hasHook() {
-        if ( !fileExists( mkinitcpio() ) ) return false;
-        for ( var line in listToArray( fileRead( mkinitcpio() ), chr( 10 ) ) ) {
-            if ( left( trim( line ), 6 ) == "HOOKS=" ) return reFindNoCase( "[( ]plymouth[ )]", line ) > 0;
-        }
-        return false;
-    }
-    function hasSplash() { return listFind( cmdline(), "splash", " " ) > 0; }
-    function currentTheme() {
-        var r = variables.proc.exec( [ "plymouth-set-default-theme" ], 10 );
-        return r.exitCode == 0 ? trim( r.output ) : "";
-    }
-    // Where to add `splash`, for the boot loader found.
-    function splashHint() {
-        var b = bootDir();
-        if ( fileExists( b & "/limine.conf" ) || fileExists( b & "/limine/limine.conf" ) || fileExists( "/etc/default/limine" ) )
-            return "Limine: add `quiet splash` to KERNEL_CMDLINE in /etc/default/limine (CachyOS), or to the cmdline: lines of limine.conf, then reboot";
-        if ( fileExists( "/etc/default/grub" ) ) return "GRUB: add `quiet splash` to GRUB_CMDLINE_LINUX_DEFAULT in /etc/default/grub, then `sudo grub-mkconfig -o /boot/grub/grub.cfg`";
-        if ( directoryExists( b & "/loader/entries" ) ) return "systemd-boot: add `quiet splash` to the options line of your entry in " & b & "/loader/entries/, then reboot";
-        return "add `quiet splash` to your kernel command line, then reboot";
-    }
+	// The HOOKS line has plymouth.
+	function hasHook() {
+		if ( !fileExists( mkinitcpio() ) ) return false;
+		for ( var line in listToArray( fileRead( mkinitcpio() ), chr( 10 ) ) ) {
+			if ( left( trim( line ), 6 ) == "HOOKS=" ) return reFindNoCase( "[( ]plymouth[ )]", line ) > 0;
+		}
+		return false;
+	}
+	function hasSplash() { return listFind( cmdline(), "splash", " " ) > 0; }
+	function currentTheme() {
+		var r = variables.proc.exec( [ "plymouth-set-default-theme" ], 10 );
+		return r.exitCode == 0 ? trim( r.output ) : "";
+	}
+	// Where to add `splash`, for the boot loader found.
+	function splashHint() {
+		var b = bootDir();
+		if ( fileExists( b & "/limine.conf" ) || fileExists( b & "/limine/limine.conf" ) || fileExists( "/etc/default/limine" ) )
+			return "Limine: add `quiet splash` to KERNEL_CMDLINE in /etc/default/limine (CachyOS), or to the cmdline: lines of limine.conf, then reboot";
+		if ( fileExists( "/etc/default/grub" ) ) return "GRUB: add `quiet splash` to GRUB_CMDLINE_LINUX_DEFAULT in /etc/default/grub, then `sudo grub-mkconfig -o /boot/grub/grub.cfg`";
+		if ( directoryExists( b & "/loader/entries" ) ) return "systemd-boot: add `quiet splash` to the options line of your entry in " & b & "/loader/entries/, then reboot";
+		return "add `quiet splash` to your kernel command line, then reboot";
+	}
 
-    // The theme files written to a staging folder (copied into place with sudo by the plan).
-    function stage( dir ) {
-        directoryCreate( arguments.dir, true, true );
-        var td = new bxrig.TemplateData();
-        fileWrite( arguments.dir & "/bxrig.plymouth", td.text( "plymouth/bxrig.plymouth" ) );
-        fileWrite( arguments.dir & "/bxrig.script", td.text( "plymouth/bxrig.script" ) );
-        var assets = new bxrig.Assets( variables.cli, variables.inst.runner() );
-        for ( var img in [ "logo.png", "glow.png", "dot.png" ] ) assets.decode( "plymouth/" & img, arguments.dir & "/" & img );
-    }
+	// The theme files written to a staging folder (copied into place with sudo by the plan).
+	function stage( dir ) {
+		directoryCreate( arguments.dir, true, true );
+		var td = new bxrig.TemplateData();
+		fileWrite( arguments.dir & "/bxrig.plymouth", td.text( "plymouth/bxrig.plymouth" ) );
+		fileWrite( arguments.dir & "/bxrig.script", td.text( "plymouth/bxrig.script" ) );
+		var assets = new bxrig.Assets( variables.cli, variables.inst.runner() );
+		for ( var img in [ "logo.png", "glow.png", "dot.png" ] ) assets.decode( "plymouth/" & img, arguments.dir & "/" & img );
+	}
 
-    // sed: on the HOOKS= line without plymouth, put plymouth after systemd, else after udev (MatchBox literals drop backslashes: chr( 92 ))
-    function hookSed() {
-        var b = chr( 92 );
-        return "/^HOOKS=/{/plymouth/!{s/" & b & "b(systemd)" & b & "b/" & b & "1 plymouth/;t;s/" & b & "b(udev)" & b & "b/" & b & "1 plymouth/}}";
-    }
+	// sed: on the HOOKS= line without plymouth, put plymouth after systemd, else after udev (MatchBox literals drop backslashes: chr( 92 ))
+	function hookSed() {
+		var b = chr( 92 );
+		return "/^HOOKS=/{/plymouth/!{s/" & b & "b(systemd)" & b & "b/" & b & "1 plymouth/;t;s/" & b & "b(udev)" & b & "b/" & b & "1 plymouth/}}";
+	}
 
-    function plan( staging ) {
-        var p = { steps: [], notes: [], errors: [] };
-        if ( variables.proc.isRoot() ) p.errors.append( "Run as a regular user; sudo is used for the steps that need it" );
-        if ( !variables.proc.has( "pacman" ) ) p.errors.append( "The boot splash setup needs Arch Linux or CachyOS (pacman and mkinitcpio)" );
-        if ( p.errors.len() ) return p;
-        if ( !variables.pacman.isInstalled( "plymouth" ) ) p.steps.append( { id: "package", title: "install plymouth", commands: [ variables.pacman.installArgv( [ "plymouth" ], false ) ] } );
-        p.steps.append( { id: "theme", title: "put the BxRig theme in " & themeDir(), stage: true,
-            commands: [ [ "sudo", "install", "-d", "-m", "755", themeDir() ], [ "sudo", "sh", "-c", 'cp -f "$1"/* "$2"/ && chmod 644 "$2"/*', "_", arguments.staging, themeDir() ] ] } );
-        if ( !hasHook() ) {
-            if ( !fileExists( mkinitcpio() ) ) p.notes.append( "No " & mkinitcpio() & ": add the plymouth hook to your initramfs yourself" );
-            else p.steps.append( { id: "hook", title: "add the plymouth hook to HOOKS in " & mkinitcpio() & " (backup: " & mkinitcpio() & ".bxrig-backup)",
-                commands: [ [ "sudo", "cp", "-n", mkinitcpio(), mkinitcpio() & ".bxrig-backup" ],
-                            [ "sudo", "sed", "-i", "-E", hookSed(), mkinitcpio() ] ] } );
-        }
-        p.steps.append( { id: "default", title: "make bxrig the boot theme and rebuild the initramfs", commands: [ [ "sudo", "plymouth-set-default-theme", "-R", "bxrig" ] ] } );
-        if ( !hasSplash() ) p.notes.append( "The splash shows only with `splash` on the kernel command line. " & splashHint() & "." );
-        return p;
-    }
+	function plan( staging ) {
+		var p = { steps: [], notes: [], errors: [] };
+		if ( variables.proc.isRoot() ) p.errors.append( "Run as a regular user; sudo is used for the steps that need it" );
+		if ( !variables.proc.has( "pacman" ) ) p.errors.append( "The boot splash setup needs Arch Linux or CachyOS (pacman and mkinitcpio)" );
+		if ( p.errors.len() ) return p;
+		if ( !variables.pacman.isInstalled( "plymouth" ) ) p.steps.append( { id: "package", title: "install plymouth", commands: [ variables.pacman.installArgv( [ "plymouth" ], false ) ] } );
+		p.steps.append( { id: "theme", title: "put the BxRig theme in " & themeDir(), stage: true,
+			commands: [ [ "sudo", "install", "-d", "-m", "755", themeDir() ], [ "sudo", "sh", "-c", 'cp -f "$1"/* "$2"/ && chmod 644 "$2"/*', "_", arguments.staging, themeDir() ] ] } );
+		if ( !hasHook() ) {
+			if ( !fileExists( mkinitcpio() ) ) p.notes.append( "No " & mkinitcpio() & ": add the plymouth hook to your initramfs yourself" );
+			else p.steps.append( { id: "hook", title: "add the plymouth hook to HOOKS in " & mkinitcpio() & " (backup: " & mkinitcpio() & ".bxrig-backup)",
+				commands: [ [ "sudo", "cp", "-n", mkinitcpio(), mkinitcpio() & ".bxrig-backup" ],
+							[ "sudo", "sed", "-i", "-E", hookSed(), mkinitcpio() ] ] } );
+		}
+		p.steps.append( { id: "default", title: "make bxrig the boot theme and rebuild the initramfs", commands: [ [ "sudo", "plymouth-set-default-theme", "-R", "bxrig" ] ] } );
+		if ( !hasSplash() ) p.notes.append( "The splash shows only with `splash` on the kernel command line. " & splashHint() & "." );
+		return p;
+	}
 
-    function run( verb, yes, dry, asJson ) {
-        if ( arguments.verb == "status" ) {
-            var d = { installed: directoryExists( themeDir() ), current: currentTheme(), hook: hasHook(), splash: hasSplash() };
-            return variables.out.say( "ok", d, arguments.asJson, [ "theme: " & ( d.installed ? "installed" : "not installed" ) & ( len( d.current ) ? " (active: " & d.current & ")" : "" ),
-                "plymouth hook: " & ( d.hook ? "yes" : "no" ), "splash on the kernel command line: " & ( d.splash ? "yes" : "no (" & splashHint() & ")" ) ] );
-        }
-        if ( arguments.verb == "undo" ) return undo( arguments.yes, arguments.dry, arguments.asJson );
-        var staging = variables.environ.cache( "boot-splash" );
-        var p = plan( staging );
-        var data = { steps: p.steps, notes: p.notes, errors: p.errors, done: [], failed: [] };
-        if ( p.errors.len() ) return variables.out.say( "precondition", data, arguments.asJson, p.errors.map( function( e ) { return "error: " & e; } ) );
-        var lines = [ "Plan: setup boot, " & p.steps.len() & " steps" ];
-        for ( var s in p.steps ) { lines.append( "  " & s.id & ": " & s.title ); for ( var c in s.commands ) lines.append( "    " & c.toList( " " ) ); }
-        for ( var n in p.notes ) lines.append( "  note: " & n );
-        if ( arguments.dry || !arguments.yes ) { lines.append( new bxrig.util.Mutation().footer( arguments.dry ) ); return variables.out.say( arguments.dry ? "ok" : "plan", data, arguments.asJson, lines, arguments.dry ); }
-        var before = currentTheme();
-        if ( len( before ) && before != "bxrig" ) {
-            directoryCreate( getDirectoryFromPath( stateFile() ), true, true );
-            fileWrite( stateFile(), jsonSerialize( { previous: before } ) );
-        }
-        var code = 0;
-        for ( var s in p.steps ) {
-            if ( s.stage ?: false ) { try { stage( staging ); } catch ( any e ) { data.failed.append( { id: s.id, error: e.message } ); code = 6; break; } }
-            var bad = "";
-            for ( var c in s.commands ) {
-                var r = variables.proc.exec( c, 1800 );
-                if ( r.timeout || r.exitCode != 0 ) { bad = "exit " & ( r.timeout ? 124 : r.exitCode ) & ": " & trim( r.output ); break; }
-            }
-            if ( len( bad ) ) { data.failed.append( { id: s.id, error: bad } ); code = s.id == "package" ? 5 : 6; break; }
-            data.done.append( s.id );
-        }
-        if ( directoryExists( staging ) ) { try { directoryDelete( staging, true ); } catch ( any e ) {} }
-        var out = [];
-        for ( var d in data.done ) out.append( "Done: " & d );
-        for ( var f in data.failed ) out.append( "Failed: " & f.id & " (" & f.error & ")" );
-        if ( !data.failed.len() ) for ( var n in p.notes ) out.append( "Note: " & n );
-        return variables.out.say( code == 0 ? "ok" : code, data, arguments.asJson, out );
-    }
+	function run( verb, yes, dry, asJson ) {
+		if ( arguments.verb == "status" ) {
+			var d = { installed: directoryExists( themeDir() ), current: currentTheme(), hook: hasHook(), splash: hasSplash() };
+			return variables.out.say( "ok", d, arguments.asJson, [ "theme: " & ( d.installed ? "installed" : "not installed" ) & ( len( d.current ) ? " (active: " & d.current & ")" : "" ),
+				"plymouth hook: " & ( d.hook ? "yes" : "no" ), "splash on the kernel command line: " & ( d.splash ? "yes" : "no (" & splashHint() & ")" ) ] );
+		}
+		if ( arguments.verb == "undo" ) return undo( arguments.yes, arguments.dry, arguments.asJson );
+		var staging = variables.environ.cache( "boot-splash" );
+		var p = plan( staging );
+		var data = { steps: p.steps, notes: p.notes, errors: p.errors, done: [], failed: [] };
+		if ( p.errors.len() ) return variables.out.say( "precondition", data, arguments.asJson, p.errors.map( function( e ) { return "error: " & e; } ) );
+		var lines = [ "Plan: setup boot, " & p.steps.len() & " steps" ];
+		for ( var s in p.steps ) { lines.append( "  " & s.id & ": " & s.title ); for ( var c in s.commands ) lines.append( "    " & c.toList( " " ) ); }
+		for ( var n in p.notes ) lines.append( "  note: " & n );
+		if ( arguments.dry || !arguments.yes ) { lines.append( new bxrig.util.Mutation().footer( arguments.dry ) ); return variables.out.say( arguments.dry ? "ok" : "plan", data, arguments.asJson, lines, arguments.dry ); }
+		var before = currentTheme();
+		if ( len( before ) && before != "bxrig" ) {
+			directoryCreate( getDirectoryFromPath( stateFile() ), true, true );
+			fileWrite( stateFile(), jsonSerialize( { previous: before } ) );
+		}
+		var code = 0;
+		for ( var s in p.steps ) {
+			if ( s.stage ?: false ) { try { stage( staging ); } catch ( any e ) { data.failed.append( { id: s.id, error: e.message } ); code = 6; break; } }
+			var bad = "";
+			for ( var c in s.commands ) {
+				var r = variables.proc.exec( c, 1800 );
+				if ( r.timeout || r.exitCode != 0 ) { bad = "exit " & ( r.timeout ? 124 : r.exitCode ) & ": " & trim( r.output ); break; }
+			}
+			if ( len( bad ) ) { data.failed.append( { id: s.id, error: bad } ); code = s.id == "package" ? 5 : 6; break; }
+			data.done.append( s.id );
+		}
+		if ( directoryExists( staging ) ) { try { directoryDelete( staging, true ); } catch ( any e ) {} }
+		var out = [];
+		for ( var d in data.done ) out.append( "Done: " & d );
+		for ( var f in data.failed ) out.append( "Failed: " & f.id & " (" & f.error & ")" );
+		if ( !data.failed.len() ) for ( var n in p.notes ) out.append( "Note: " & n );
+		return variables.out.say( code == 0 ? "ok" : code, data, arguments.asJson, out );
+	}
 
-    function undo( yes, dry, asJson ) {
-        var prev = "";
-        var st = new bxrig.util.Json().read( stateFile() );
-        if ( isStruct( st ) ) prev = st.previous ?: "";
-        var cmds = [];
-        cmds.append( len( prev ) ? [ "sudo", "plymouth-set-default-theme", "-R", prev ] : [ "sudo", "plymouth-set-default-theme", "-r", "-R" ] );
-        cmds.append( [ "sudo", "rm", "-rf", themeDir() ] );
-        var lines = [ "Plan: setup undo boot", "  " & ( len( prev ) ? "back to the " & prev & " theme" : "back to the default theme" ) & " and remove " & themeDir() ];
-        var data = { previous: prev, commands: cmds };
-        if ( arguments.dry || !arguments.yes ) { lines.append( new bxrig.util.Mutation().footer( arguments.dry ) ); return variables.out.say( arguments.dry ? "ok" : "plan", data, arguments.asJson, lines, arguments.dry ); }
-        for ( var c in cmds ) {
-            var r = variables.proc.exec( c, 1800 );
-            if ( r.timeout || r.exitCode != 0 ) return variables.out.say( "failed", data, arguments.asJson, [ "error: " & c.toList( " " ) & " failed: " & trim( r.output ) ] );
-        }
-        if ( fileExists( stateFile() ) ) fileDelete( stateFile() );
-        return variables.out.say( "ok", data, arguments.asJson, [ "The boot splash is back to " & ( len( prev ) ? prev : "the default" ) & "." ] );
-    }
+	function undo( yes, dry, asJson ) {
+		var prev = "";
+		var st = new bxrig.util.Json().read( stateFile() );
+		if ( isStruct( st ) ) prev = st.previous ?: "";
+		var cmds = [];
+		cmds.append( len( prev ) ? [ "sudo", "plymouth-set-default-theme", "-R", prev ] : [ "sudo", "plymouth-set-default-theme", "-r", "-R" ] );
+		cmds.append( [ "sudo", "rm", "-rf", themeDir() ] );
+		var lines = [ "Plan: setup undo boot", "  " & ( len( prev ) ? "back to the " & prev & " theme" : "back to the default theme" ) & " and remove " & themeDir() ];
+		var data = { previous: prev, commands: cmds };
+		if ( arguments.dry || !arguments.yes ) { lines.append( new bxrig.util.Mutation().footer( arguments.dry ) ); return variables.out.say( arguments.dry ? "ok" : "plan", data, arguments.asJson, lines, arguments.dry ); }
+		for ( var c in cmds ) {
+			var r = variables.proc.exec( c, 1800 );
+			if ( r.timeout || r.exitCode != 0 ) return variables.out.say( "failed", data, arguments.asJson, [ "error: " & c.toList( " " ) & " failed: " & trim( r.output ) ] );
+		}
+		if ( fileExists( stateFile() ) ) fileDelete( stateFile() );
+		return variables.out.say( "ok", data, arguments.asJson, [ "The boot splash is back to " & ( len( prev ) ? prev : "the default" ) & "." ] );
+	}
 }

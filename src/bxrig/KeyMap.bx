@@ -5,27 +5,27 @@
 //   map.hints()                    [ [ cap, label ] ] of the bindings that have both, in the order they were bound: what the footer shows
 // A binding with an empty cap or label works but is not shown (the second key of a pair, a synonym).
 class KeyMap {
-    function init() {
-        variables.rows = [];
-        return this;
-    }
+	function init() {
+		variables.rows = [];
+		return this;
+	}
 
-    function bind( cap, keys, label, action, scope = "any" ) {
-        variables.rows.append( { cap: arguments.cap, keys: isArray( arguments.keys ) ? arguments.keys : [ arguments.keys ], label: arguments.label, action: arguments.action, scope: arguments.scope } );
-        return this;
-    }
+	function bind( cap, keys, label, action, scope = "any" ) {
+		variables.rows.append( { cap: arguments.cap, keys: isArray( arguments.keys ) ? arguments.keys : [ arguments.keys ], label: arguments.label, action: arguments.action, scope: arguments.scope } );
+		return this;
+	}
 
-    function match( key, scopes = [ "any" ] ) {
-        for ( var r in variables.rows ) {
-            if ( !arrayFind( arguments.scopes, r.scope ) ) continue;
-            for ( var kk in r.keys ) if ( compare( kk, arguments.key ) == 0 ) return r.action;
-        }
-        return "";
-    }
+	function match( key, scopes = [ "any" ] ) {
+		for ( var r in variables.rows ) {
+			if ( !arrayFind( arguments.scopes, r.scope ) ) continue;
+			for ( var kk in r.keys ) if ( compare( kk, arguments.key ) == 0 ) return r.action;
+		}
+		return "";
+	}
 
-    function hints() {
-        var out = [];
-        for ( var r in variables.rows ) if ( len( r.cap ) && len( r.label ) ) out.append( [ r.cap, r.label ] );
-        return out;
-    }
+	function hints() {
+		var out = [];
+		for ( var r in variables.rows ) if ( len( r.cap ) && len( r.label ) ) out.append( [ r.cap, r.label ] );
+		return out;
+	}
 }

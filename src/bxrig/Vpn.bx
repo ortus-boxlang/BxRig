@@ -4,27 +4,27 @@
 // then `nordvpn login`. Source: the nordvpn-bin AUR package's install notes (checked 2026-11-12). NordLayer is not covered.
 // Exit: 0 done, 2 plan without --yes, 4 precondition (NordVPN missing), 6 a command failed.
 class Vpn {
-    function init( cli, runner = "" ) {
-        variables.cli = arguments.cli;
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.systemd = new bxrig.util.Systemd( variables.inst.proc() );
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.inst = new bxrig.Installer( arguments.runner );
+		variables.systemd = new bxrig.util.Systemd( variables.inst.proc() );
+		return this;
+	}
 
-    function nordvpn( yes, asJson ) {
-        var cmd = "vpn nordvpn setup";
-        var found = false;
-        try { found = variables.inst.proc().exec( [ "sh", "-c", 'command -v nordvpn', "_" ], 10 ).exitCode == 0; } catch ( any e ) {}
-        if ( !found ) return variables.cli.say( cmd, "precondition", { error: "NordVPN is not installed" }, arguments.asJson, [ "error: NordVPN is not installed. Install it: bxrig install nordvpn" ] );
-        var user = new bxrig.util.Env().named( "user", "" );
-        var steps = [ variables.systemd.enableArgv( "nordvpnd", false, true ), [ "sudo", "gpasswd", "-a", user, "nordvpn" ] ];
-        var data = { steps: steps };
-        if ( !len( user ) ) return variables.cli.say( cmd, "precondition", { error: "No USER" }, arguments.asJson, [ "error: could not tell which user to add to the nordvpn group" ] );
-        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "", data, arguments.asJson, false, [ "  " & steps[ 1 ].toList( " " ), "  " & steps[ 2 ].toList( " " ) ] );
-        for ( var s in steps ) {
-            var r = variables.inst.proc().exec( s, 60 );
-            if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ), step: s }, arguments.asJson, [ "error: " & s.toList( " " ) & ": " & trim( r.output ) ] );
-        }
-        return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "The NordVPN daemon is running and you are in the nordvpn group.", "Log out and in (or reboot) for the group to count, then run: nordvpn login" ] );
-    }
+	function nordvpn( yes, asJson ) {
+		var cmd = "vpn nordvpn setup";
+		var found = false;
+		try { found = variables.inst.proc().exec( [ "sh", "-c", 'command -v nordvpn', "_" ], 10 ).exitCode == 0; } catch ( any e ) {}
+		if ( !found ) return variables.cli.say( cmd, "precondition", { error: "NordVPN is not installed" }, arguments.asJson, [ "error: NordVPN is not installed. Install it: bxrig install nordvpn" ] );
+		var user = new bxrig.util.Env().named( "user", "" );
+		var steps = [ variables.systemd.enableArgv( "nordvpnd", false, true ), [ "sudo", "gpasswd", "-a", user, "nordvpn" ] ];
+		var data = { steps: steps };
+		if ( !len( user ) ) return variables.cli.say( cmd, "precondition", { error: "No USER" }, arguments.asJson, [ "error: could not tell which user to add to the nordvpn group" ] );
+		if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "", data, arguments.asJson, false, [ "  " & steps[ 1 ].toList( " " ), "  " & steps[ 2 ].toList( " " ) ] );
+		for ( var s in steps ) {
+			var r = variables.inst.proc().exec( s, 60 );
+			if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ), step: s }, arguments.asJson, [ "error: " & s.toList( " " ) & ": " & trim( r.output ) ] );
+		}
+		return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "The NordVPN daemon is running and you are in the nordvpn group.", "Log out and in (or reboot) for the group to count, then run: nordvpn login" ] );
+	}
 }

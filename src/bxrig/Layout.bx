@@ -6,73 +6,73 @@
 // The Hyprland dispatchers are the documented legacy ones and have not run on a real Hyprland 0.55+ (Lua) session here.
 // Exit: 0 done, 4 precondition (no Hyprland or Plasma session, hyprctl missing), 6 a dispatch failed.
 class Layout {
-    function init( cli, runner = "" ) {
-        variables.text = new bxrig.util.Text();
-        variables.cli = arguments.cli;
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.proc = variables.inst.proc();
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.text = new bxrig.util.Text();
+		variables.cli = arguments.cli;
+		variables.inst = new bxrig.Installer( arguments.runner );
+		variables.proc = variables.inst.proc();
+		return this;
+	}
 
-    function backend() {
-        return new bxrig.util.Desktop().shell();
-    }
+	function backend() {
+		return new bxrig.util.Desktop().shell();
+	}
 
-    // The windows of the active workspace: [ { address, floating } ].
-    function windows() {
-        var ws = variables.proc.exec( [ "hyprctl", "activeworkspace", "-j" ], 10 );
-        var cl = variables.proc.exec( [ "hyprctl", "clients", "-j" ], 10 );
-        if ( ws.exitCode != 0 || cl.exitCode != 0 ) return { ok: false, rows: [], id: 0 };
-        var id = 0;
-        var rows = [];
-        try {
-            id = jsonDeserialize( ws.output ).id;
-            for ( var c in jsonDeserialize( cl.output ) ) if ( ( c.workspace.id ?: -999 ) == id && ( c.mapped ?: true ) ) rows.append( { address: c.address, floating: c.floating ?: false } );
-        } catch ( any e ) { return { ok: false, rows: [], id: 0 }; }
-        return { ok: true, rows: rows, id: id };
-    }
+	// The windows of the active workspace: [ { address, floating } ].
+	function windows() {
+		var ws = variables.proc.exec( [ "hyprctl", "activeworkspace", "-j" ], 10 );
+		var cl = variables.proc.exec( [ "hyprctl", "clients", "-j" ], 10 );
+		if ( ws.exitCode != 0 || cl.exitCode != 0 ) return { ok: false, rows: [], id: 0 };
+		var id = 0;
+		var rows = [];
+		try {
+			id = jsonDeserialize( ws.output ).id;
+			for ( var c in jsonDeserialize( cl.output ) ) if ( ( c.workspace.id ?: -999 ) == id && ( c.mapped ?: true ) ) rows.append( { address: c.address, floating: c.floating ?: false } );
+		} catch ( any e ) { return { ok: false, rows: [], id: 0 }; }
+		return { ok: true, rows: rows, id: id };
+	}
 
-    function status( asJson ) {
-        var be = backend();
-        if ( be == "hyprland" ) {
-            var w = windows();
-            if ( !w.ok ) return variables.cli.say( "layout status", "precondition", { error: "hyprctl failed" }, arguments.asJson, [ "error: could not read the workspace from hyprctl" ] );
-            var tiled = w.rows.filter( function( r ) { return !r.floating; } ).len();
-            return variables.cli.say( "layout status", "ok", { backend: be, workspace: w.id, windows: w.rows.len(), tiled: tiled, floating: w.rows.len() - tiled }, arguments.asJson, [ "Workspace " & w.id & ": " & w.rows.len() & " windows, " & tiled & " tiled, " & ( w.rows.len() - tiled ) & " floating" ] );
-        }
-        if ( be == "plasma" ) {
-            var t = new bxrig.Tiling( variables.cli, variables.inst.runner() ).state();
-            return variables.cli.say( "layout status", "ok", { backend: be, tiling: t.enabled }, arguments.asJson, [ "Plasma tiling (HyprKwin): " & ( t.enabled ? "on" : "off" ) ] );
-        }
-        return variables.cli.say( "layout status", "precondition", { error: "No backend" }, arguments.asJson, [ "error: a Hyprland session or KDE Plasma is needed" ] );
-    }
+	function status( asJson ) {
+		var be = backend();
+		if ( be == "hyprland" ) {
+			var w = windows();
+			if ( !w.ok ) return variables.cli.say( "layout status", "precondition", { error: "hyprctl failed" }, arguments.asJson, [ "error: could not read the workspace from hyprctl" ] );
+			var tiled = w.rows.filter( function( r ) { return !r.floating; } ).len();
+			return variables.cli.say( "layout status", "ok", { backend: be, workspace: w.id, windows: w.rows.len(), tiled: tiled, floating: w.rows.len() - tiled }, arguments.asJson, [ "Workspace " & w.id & ": " & w.rows.len() & " windows, " & tiled & " tiled, " & ( w.rows.len() - tiled ) & " floating" ] );
+		}
+		if ( be == "plasma" ) {
+			var t = new bxrig.Tiling( variables.cli, variables.inst.runner() ).state();
+			return variables.cli.say( "layout status", "ok", { backend: be, tiling: t.enabled }, arguments.asJson, [ "Plasma tiling (HyprKwin): " & ( t.enabled ? "on" : "off" ) ] );
+		}
+		return variables.cli.say( "layout status", "precondition", { error: "No backend" }, arguments.asJson, [ "error: a Hyprland session or KDE Plasma is needed" ] );
+	}
 
-    // `layout toggle|float|tile`
-    function apply( mode, dryRun, asJson ) {
-        var cmd = "layout " & arguments.mode;
-        var be = backend();
-        if ( be == "plasma" ) {
-            var tl = new bxrig.Tiling( variables.cli, variables.inst.runner() );
-            var on = arguments.mode == "tile" ? true : ( arguments.mode == "float" ? false : !tl.state().enabled );
-            if ( arguments.dryRun ) return variables.cli.say( cmd, "ok", { backend: be, tiling: on }, arguments.asJson, [ "Dry run: tiling " & ( on ? "on" : "off" ) ], true );
-            return tl.set( on, arguments.asJson );
-        }
-        if ( be != "hyprland" ) return variables.cli.say( cmd, "precondition", { error: "No backend" }, arguments.asJson, [ "error: a Hyprland session or KDE Plasma is needed" ] );
-        var w = windows();
-        if ( !w.ok ) return variables.cli.say( cmd, "precondition", { error: "hyprctl failed" }, arguments.asJson, [ "error: could not read the workspace from hyprctl" ] );
-        if ( !w.rows.len() ) return variables.cli.say( cmd, "ok", { backend: be, changed: 0 }, arguments.asJson, [ "No windows on this workspace." ] );
-        var anyTiled = w.rows.filter( function( r ) { return !r.floating; } ).len() > 0;
-        var makeFloat = arguments.mode == "float" ? true : ( arguments.mode == "tile" ? false : anyTiled );
-        var verb = makeFloat ? "setfloating" : "settiled";
-        var todo = w.rows.filter( function( r ) { return r.floating != makeFloat; } );
-        var cmds = todo.map( function( r ) { return [ "hyprctl", "dispatch", verb, "address:" & r.address ]; } );
-        var data = { backend: be, workspace: w.id, to: makeFloat ? "floating" : "tiled", changed: todo.len(), commands: cmds };
-        if ( arguments.dryRun ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Dry run: " & todo.len() & " window(s) become " & data.to ], true );
-        for ( var c in cmds ) {
-            var r = variables.proc.exec( c, 10 );
-            if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", variables.text.merge( data, { error: trim( r.output ) } ), arguments.asJson, [ "error: " & c.toList( " " ) & ": " & trim( r.output ) ] );
-        }
-        return variables.cli.say( cmd, "ok", data, arguments.asJson, [ todo.len() & " window(s) on workspace " & w.id & " are now " & data.to & "." ] );
-    }
+	// `layout toggle|float|tile`
+	function apply( mode, dryRun, asJson ) {
+		var cmd = "layout " & arguments.mode;
+		var be = backend();
+		if ( be == "plasma" ) {
+			var tl = new bxrig.Tiling( variables.cli, variables.inst.runner() );
+			var on = arguments.mode == "tile" ? true : ( arguments.mode == "float" ? false : !tl.state().enabled );
+			if ( arguments.dryRun ) return variables.cli.say( cmd, "ok", { backend: be, tiling: on }, arguments.asJson, [ "Dry run: tiling " & ( on ? "on" : "off" ) ], true );
+			return tl.set( on, arguments.asJson );
+		}
+		if ( be != "hyprland" ) return variables.cli.say( cmd, "precondition", { error: "No backend" }, arguments.asJson, [ "error: a Hyprland session or KDE Plasma is needed" ] );
+		var w = windows();
+		if ( !w.ok ) return variables.cli.say( cmd, "precondition", { error: "hyprctl failed" }, arguments.asJson, [ "error: could not read the workspace from hyprctl" ] );
+		if ( !w.rows.len() ) return variables.cli.say( cmd, "ok", { backend: be, changed: 0 }, arguments.asJson, [ "No windows on this workspace." ] );
+		var anyTiled = w.rows.filter( function( r ) { return !r.floating; } ).len() > 0;
+		var makeFloat = arguments.mode == "float" ? true : ( arguments.mode == "tile" ? false : anyTiled );
+		var verb = makeFloat ? "setfloating" : "settiled";
+		var todo = w.rows.filter( function( r ) { return r.floating != makeFloat; } );
+		var cmds = todo.map( function( r ) { return [ "hyprctl", "dispatch", verb, "address:" & r.address ]; } );
+		var data = { backend: be, workspace: w.id, to: makeFloat ? "floating" : "tiled", changed: todo.len(), commands: cmds };
+		if ( arguments.dryRun ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Dry run: " & todo.len() & " window(s) become " & data.to ], true );
+		for ( var c in cmds ) {
+			var r = variables.proc.exec( c, 10 );
+			if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", variables.text.merge( data, { error: trim( r.output ) } ), arguments.asJson, [ "error: " & c.toList( " " ) & ": " & trim( r.output ) ] );
+		}
+		return variables.cli.say( cmd, "ok", data, arguments.asJson, [ todo.len() & " window(s) on workspace " & w.id & " are now " & data.to & "." ] );
+	}
 
 }

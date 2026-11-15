@@ -13,10 +13,10 @@ rc=0
 extra=()
 # A MatchBox built by CI (or by you) instead of the published one: mounted read-only, installed by the bootstrap.
 if [[ -n "${BXRIG_MATCHBOX_FILE:-}" ]]; then
-  extra=(-v "$(realpath "$BXRIG_MATCHBOX_FILE")":/matchbox-in:ro -e BXRIG_MATCHBOX_FILE=/matchbox-in)
+	extra=(-v "$(realpath "$BXRIG_MATCHBOX_FILE")":/matchbox-in:ro -e BXRIG_MATCHBOX_FILE=/matchbox-in)
 fi
 "$engine" run --rm \
-  -v "$root":/src:ro -v "$out":/out "${extra[@]}" \
-  bxrig-arch-test bash /src/tests/arch/suite.sh || rc=$?
+	-v "$root":/src:ro -v "$out":/out "${extra[@]}" \
+	bxrig-arch-test bash /src/tests/arch/suite.sh || rc=$?
 echo "Logs: $out"
 exit "$rc"

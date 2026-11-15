@@ -11,7 +11,7 @@ cat > "$tmp/pages.json" <<'JSON'
    {"type":"multi","id":"tags","label":"Tags","default":[],"options":[{"value":"x","label":"X"},{"value":"y","label":"Y"}]}]}]}
 JSON
 run_keys() {  # OUT KEYS... : runs the wizard in a pty and sends the keys (python escapes), returns its exit code
-  python3 - "$binary" "$tmp/pages.json" "$1" "$2" <<'PY'
+	python3 - "$binary" "$tmp/pages.json" "$1" "$2" <<'PY'
 import os, pty, select, sys, time, struct, fcntl, termios
 sys.path.insert(0, os.environ['BXRIG_TEST_LIB'])
 from pty_ready import ready

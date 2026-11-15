@@ -25,11 +25,11 @@ done
 pacman_packages=(); aur_packages=(); unavailable=()
 for pkg in "${missing[@]}"; do
   if pacman -Si "$pkg" >/dev/null 2>&1; then
-    pacman_packages+=("$pkg")
+	pacman_packages+=("$pkg")
   elif command -v yay >/dev/null 2>&1 && yay -Si "$pkg" >/dev/null 2>&1; then
-    aur_packages+=("$pkg")
+	aur_packages+=("$pkg")
   else
-    unavailable+=("$pkg")
+	unavailable+=("$pkg")
   fi
 done
 if [[ ${#unavailable[@]} -gt 0 ]]; then
@@ -46,8 +46,8 @@ if [[ ${#pacman_packages[@]} -gt 0 ]]; then
 fi
 if [[ ${#aur_packages[@]} -gt 0 ]]; then
   if [[ "$(id -u)" -eq 0 ]]; then
-    echo "AUR installs must run as an unprivileged user" >&2
-    exit 4
+	echo "AUR installs must run as an unprivileged user" >&2
+	exit 4
   fi
   yay -S --needed "${aur_packages[@]}"
 fi

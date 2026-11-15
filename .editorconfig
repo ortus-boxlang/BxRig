@@ -1,4 +1,4 @@
-# One style for the files BxRig packs and writes (see tests/format-test.sh, which CI runs).
+# BxRig's one format: tabs for indentation, shown 4 wide. scripts/format.sh applies it and CI checks it (--check).
 root = true
 
 [*]
@@ -6,12 +6,16 @@ charset = utf-8
 end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
+indent_style = tab
+indent_size = 4
+tab_width = 4
+
+# YAML does not allow tabs
+[*.{yml,yaml}]
 indent_style = space
 indent_size = 2
 
-# fish_indent's own style
-[*.fish]
-indent_size = 4
-
+# Markdown: indentation and trailing spaces carry meaning
 [*.md]
+indent_style = unset
 trim_trailing_whitespace = false

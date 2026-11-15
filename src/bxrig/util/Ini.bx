@@ -7,63 +7,63 @@
 //   set( lines, section, key, value )     the lines (the file split on newlines) with the key set in the section: replaced where it is, else added at the
 //                                         end of the section; the section is added at the end when the file has none. Every other line is kept as it is.
 class Ini {
-    function sections( text ) {
-        var out = [ { name: "", pairs: [] } ];
-        for ( var raw in listToArray( replace( arguments.text ?: "", chr( 13 ), "", "all" ), chr( 10 ) ) ) {
-            var line = trim( raw );
-            if ( !len( line ) || left( line, 1 ) == "##" || left( line, 1 ) == ";" ) continue;
-            if ( left( line, 1 ) == "[" ) {
-                out.append( { name: trim( reReplace( line, "^\[|\].*$", "", "all" ) ), pairs: [] } );
-                continue;
-            }
-            var at = find( "=", line );
-            if ( at < 2 ) continue;
-            var key = trim( left( line, at - 1 ) );
-            if ( len( key ) ) out[ out.len() ].pairs.append( { key: key, value: trim( mid( line, at + 1, len( line ) ) ) } );
-        }
-        return out;
-    }
+	function sections( text ) {
+		var out = [ { name: "", pairs: [] } ];
+		for ( var raw in listToArray( replace( arguments.text ?: "", chr( 13 ), "", "all" ), chr( 10 ) ) ) {
+			var line = trim( raw );
+			if ( !len( line ) || left( line, 1 ) == "##" || left( line, 1 ) == ";" ) continue;
+			if ( left( line, 1 ) == "[" ) {
+				out.append( { name: trim( reReplace( line, "^\[|\].*$", "", "all" ) ), pairs: [] } );
+				continue;
+			}
+			var at = find( "=", line );
+			if ( at < 2 ) continue;
+			var key = trim( left( line, at - 1 ) );
+			if ( len( key ) ) out[ out.len() ].pairs.append( { key: key, value: trim( mid( line, at + 1, len( line ) ) ) } );
+		}
+		return out;
+	}
 
-    function same( a, b, exact = false ) {
-        return arguments.exact ? compare( arguments.a, arguments.b ) == 0 : lCase( arguments.a ) == lCase( arguments.b );
-    }
+	function same( a, b, exact = false ) {
+		return arguments.exact ? compare( arguments.a, arguments.b ) == 0 : lCase( arguments.a ) == lCase( arguments.b );
+	}
 
-    function values( text, section, key, exact = false ) {
-        var out = [];
-        for ( var s in sections( arguments.text ) ) {
-            if ( !same( s.name, arguments.section, arguments.exact ) ) continue;
-            for ( var p in s.pairs ) if ( same( p.key, arguments.key, arguments.exact ) ) out.append( p.value );
-        }
-        return out;
-    }
+	function values( text, section, key, exact = false ) {
+		var out = [];
+		for ( var s in sections( arguments.text ) ) {
+			if ( !same( s.name, arguments.section, arguments.exact ) ) continue;
+			for ( var p in s.pairs ) if ( same( p.key, arguments.key, arguments.exact ) ) out.append( p.value );
+		}
+		return out;
+	}
 
-    function get( text, section, key, fallback = "" ) {
-        var v = values( arguments.text, arguments.section, arguments.key );
-        return v.len() ? v[ 1 ] : arguments.fallback;
-    }
+	function get( text, section, key, fallback = "" ) {
+		var v = values( arguments.text, arguments.section, arguments.key );
+		return v.len() ? v[ 1 ] : arguments.fallback;
+	}
 
-    function last( text, section, key, fallback = "" ) {
-        var v = values( arguments.text, arguments.section, arguments.key );
-        return v.len() ? v[ v.len() ] : arguments.fallback;
-    }
+	function last( text, section, key, fallback = "" ) {
+		var v = values( arguments.text, arguments.section, arguments.key );
+		return v.len() ? v[ v.len() ] : arguments.fallback;
+	}
 
-    function set( lines, section, key, value ) {
-        var out = [];
-        var inSec = false;
-        var done = false;
-        var seen = false;
-        var want = arguments.key & "=" & arguments.value;
-        for ( var line in arguments.lines ) {
-            var t = trim( line );
-            if ( left( t, 1 ) == "[" ) {
-                if ( inSec && !done ) { out.append( want ); done = true; }
-                inSec = same( t, "[" & arguments.section & "]" );
-                if ( inSec ) seen = true;
-            } else if ( inSec && !done && lCase( left( t, len( arguments.key ) + 1 ) ) == ( lCase( arguments.key ) & "=" ) ) { out.append( want ); done = true; continue; }
-            out.append( line );
-        }
-        if ( !seen ) { out.append( "[" & arguments.section & "]" ); out.append( want ); }
-        else if ( !done ) out.append( want );
-        return out;
-    }
+	function set( lines, section, key, value ) {
+		var out = [];
+		var inSec = false;
+		var done = false;
+		var seen = false;
+		var want = arguments.key & "=" & arguments.value;
+		for ( var line in arguments.lines ) {
+			var t = trim( line );
+			if ( left( t, 1 ) == "[" ) {
+				if ( inSec && !done ) { out.append( want ); done = true; }
+				inSec = same( t, "[" & arguments.section & "]" );
+				if ( inSec ) seen = true;
+			} else if ( inSec && !done && lCase( left( t, len( arguments.key ) + 1 ) ) == ( lCase( arguments.key ) & "=" ) ) { out.append( want ); done = true; continue; }
+			out.append( line );
+		}
+		if ( !seen ) { out.append( "[" & arguments.section & "]" ); out.append( want ); }
+		else if ( !done ) out.append( want );
+		return out;
+	}
 }

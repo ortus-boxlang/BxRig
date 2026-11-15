@@ -12,217 +12,217 @@
 // Overrides for tests: BXRIG_SDKMAN_DIR, BXRIG_SDKMAN_API (default https://api.sdkman.io/2), BXRIG_SDKMAN_INSTALLER (default https://get.sdkman.io?rcupdate=false).
 // Exit: 0 ok, 2 plan shown without --yes or bad usage, 4 unknown candidate, version or missing prerequisite or SDKMAN not installed, 6 the sdk command failed.
 class Sdk {
-    function init( cli, runner = "" ) {
-        variables.proc = new bxrig.util.Proc();
-        variables.http = new bxrig.util.Http( variables.proc );
-        variables.environ = new bxrig.util.Env();
-        variables.cli = arguments.cli;
-        variables.out = new bxrig.util.Out( variables.cli, "sdk" );
-        variables.config = new bxrig.ConfigService().quiet( true );
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.proc = new bxrig.util.Proc();
+		variables.http = new bxrig.util.Http( variables.proc );
+		variables.environ = new bxrig.util.Env();
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( variables.cli, "sdk" );
+		variables.config = new bxrig.ConfigService().quiet( true );
+		return this;
+	}
 
-    function dir() { return variables.environ.named( "sdkmanDir", variables.environ.home() & "/.sdkman" ); }
-    function api() { return variables.environ.named( "sdkmanApi", "https://api.sdkman.io/2" ); }
-    function installerUrl() { return variables.environ.named( "sdkmanInstaller", "https://get.sdkman.io?rcupdate=false" ); }
-    function candidates() { return [ "java", "maven", "gradle" ]; }
-    function installed() { return fileExists( dir() & "/bin/sdkman-init.sh" ); }
-    function cfgDir() { return variables.config.cfgHome() & "/bxrig"; }
-    function shFile() { return cfgDir() & "/sdk.sh"; }
-    function fishFile() { return cfgDir() & "/sdk.fish"; }
+	function dir() { return variables.environ.named( "sdkmanDir", variables.environ.home() & "/.sdkman" ); }
+	function api() { return variables.environ.named( "sdkmanApi", "https://api.sdkman.io/2" ); }
+	function installerUrl() { return variables.environ.named( "sdkmanInstaller", "https://get.sdkman.io?rcupdate=false" ); }
+	function candidates() { return [ "java", "maven", "gradle" ]; }
+	function installed() { return fileExists( dir() & "/bin/sdkman-init.sh" ); }
+	function cfgDir() { return variables.config.cfgHome() & "/bxrig"; }
+	function shFile() { return cfgDir() & "/sdk.sh"; }
+	function fishFile() { return cfgDir() & "/sdk.fish"; }
 
-    function sh( args, timeout = 1800 ) {
-        try { return systemExecute( "bash", arguments.args, arguments.timeout, true ); } catch ( any e ) { return { exitCode: 127, output: e.message }; }
-    }
+	function sh( args, timeout = 1800 ) {
+		try { return systemExecute( "bash", arguments.args, arguments.timeout, true ); } catch ( any e ) { return { exitCode: 127, output: e.message }; }
+	}
 
 
-    // ---- what is on disk ----
-    function installedVersions( cand ) {
-        var d = dir() & "/candidates/" & arguments.cand;
-        var out = [];
-        if ( !directoryExists( d ) ) return out;
-        for ( var n in directoryList( d, false, "name" ) ) if ( n != "current" ) out.append( n );
-        arraySort( out, "textnocase", "desc" );
-        return out;
-    }
+	// ---- what is on disk ----
+	function installedVersions( cand ) {
+		var d = dir() & "/candidates/" & arguments.cand;
+		var out = [];
+		if ( !directoryExists( d ) ) return out;
+		for ( var n in directoryList( d, false, "name" ) ) if ( n != "current" ) out.append( n );
+		arraySort( out, "textnocase", "desc" );
+		return out;
+	}
 
-    // The version the `current` link points at, or "".
-    function defaultVersion( cand ) {
-        var f = dir() & "/candidates/" & arguments.cand & "/current";
-        try { if ( directoryExists( f ) ) { var real = getCanonicalPath( f ); return listLast( real, "/" ); } } catch ( any e ) {}
-        return "";
-    }
+	// The version the `current` link points at, or "".
+	function defaultVersion( cand ) {
+		var f = dir() & "/candidates/" & arguments.cand & "/current";
+		try { if ( directoryExists( f ) ) { var real = getCanonicalPath( f ); return listLast( real, "/" ); } } catch ( any e ) {}
+		return "";
+	}
 
-    // ---- what SDKMAN offers ----
-    function fetch( url ) {
-        var r = variables.http.get( arguments.url, 25 );
-        return r.ok ? r.output : "";
-    }
+	// ---- what SDKMAN offers ----
+	function fetch( url ) {
+		var r = variables.http.get( arguments.url, 25 );
+		return r.ok ? r.output : "";
+	}
 
-    // `versions/list` text of Java -> [ { vendor, version, id } ]
-    function parseJava( text ) {
-        var out = [];
-        var vendor = "";
-        for ( var line in listToArray( arguments.text, chr( 10 ), true ) ) {
-            if ( find( "|", line ) == 0 || left( trim( line ), 1 ) == "=" || left( trim( line ), 1 ) == "-" ) continue;
-            var parts = listToArray( line, "|", true );
-            if ( parts.len() < 4 ) continue;
-            var v = trim( parts[ 1 ] );
-            if ( v == "Vendor" ) continue;
-            if ( len( v ) ) vendor = v;
-            var id = trim( parts[ 4 ] );
-            if ( !len( id ) ) continue;
-            out.append( { vendor: vendor, version: trim( parts[ 3 ] ), id: id } );
-        }
-        return out;
-    }
+	// `versions/list` text of Java -> [ { vendor, version, id } ]
+	function parseJava( text ) {
+		var out = [];
+		var vendor = "";
+		for ( var line in listToArray( arguments.text, chr( 10 ), true ) ) {
+			if ( find( "|", line ) == 0 || left( trim( line ), 1 ) == "=" || left( trim( line ), 1 ) == "-" ) continue;
+			var parts = listToArray( line, "|", true );
+			if ( parts.len() < 4 ) continue;
+			var v = trim( parts[ 1 ] );
+			if ( v == "Vendor" ) continue;
+			if ( len( v ) ) vendor = v;
+			var id = trim( parts[ 4 ] );
+			if ( !len( id ) ) continue;
+			out.append( { vendor: vendor, version: trim( parts[ 3 ] ), id: id } );
+		}
+		return out;
+	}
 
-    // `versions/list` text of Maven or Gradle -> [ version ], newest first. The list is printed in columns that run down, so the columns are read one after the other.
-    function parseSimple( text ) {
-        var cols = [];
-        for ( var line in listToArray( arguments.text, chr( 10 ), true ) ) {
-            if ( !len( line ) || left( line, 1 ) != " " ) continue;
-            var ci = 0;
-            for ( var tok in listToArray( line, " " ) ) {
-                if ( !reFind( "^[0-9][0-9A-Za-z.+_-]*$", tok ) ) continue;
-                ci++;
-                while ( cols.len() < ci ) cols.append( [] );
-                cols[ ci ].append( tok );
-            }
-        }
-        var out = [];
-        var seen = {};
-        for ( var col in cols ) for ( var v in col ) if ( !structKeyExists( seen, v ) ) { seen[ v ] = true; out.append( v ); }
-        return out;
-    }
+	// `versions/list` text of Maven or Gradle -> [ version ], newest first. The list is printed in columns that run down, so the columns are read one after the other.
+	function parseSimple( text ) {
+		var cols = [];
+		for ( var line in listToArray( arguments.text, chr( 10 ), true ) ) {
+			if ( !len( line ) || left( line, 1 ) != " " ) continue;
+			var ci = 0;
+			for ( var tok in listToArray( line, " " ) ) {
+				if ( !reFind( "^[0-9][0-9A-Za-z.+_-]*$", tok ) ) continue;
+				ci++;
+				while ( cols.len() < ci ) cols.append( [] );
+				cols[ ci ].append( tok );
+			}
+		}
+		var out = [];
+		var seen = {};
+		for ( var col in cols ) for ( var v in col ) if ( !structKeyExists( seen, v ) ) { seen[ v ] = true; out.append( v ); }
+		return out;
+	}
 
-    function available( cand ) {
-        var txt = fetch( api() & "/candidates/" & arguments.cand & "/linuxx64/versions/list?current=&installed=" );
-        if ( !len( txt ) ) return { ok: false, rows: [], error: "could not reach " & api() };
-        if ( arguments.cand == "java" ) return { ok: true, rows: parseJava( txt ) };
-        var rows = [];
-        for ( var v in parseSimple( txt ) ) rows.append( { vendor: "", version: v, id: v } );
-        return { ok: true, rows: rows };
-    }
+	function available( cand ) {
+		var txt = fetch( api() & "/candidates/" & arguments.cand & "/linuxx64/versions/list?current=&installed=" );
+		if ( !len( txt ) ) return { ok: false, rows: [], error: "could not reach " & api() };
+		if ( arguments.cand == "java" ) return { ok: true, rows: parseJava( txt ) };
+		var rows = [];
+		for ( var v in parseSimple( txt ) ) rows.append( { vendor: "", version: v, id: v } );
+		return { ok: true, rows: rows };
+	}
 
-    function latest( cand ) { return trim( fetch( api() & "/candidates/default/" & arguments.cand ) ); }
+	function latest( cand ) { return trim( fetch( api() & "/candidates/default/" & arguments.cand ) ); }
 
-    // The newest Temurin identifier of a Java major, from the available list, or "".
-    function temurinFor( major ) {
-        var a = available( "java" );
-        if ( !a.ok ) return "";
-        for ( var r in a.rows ) if ( right( r.id, 4 ) == "-tem" && ( left( r.id, len( arguments.major ) + 1 ) == arguments.major & "." || r.id == arguments.major & "-tem" ) ) return r.id;
-        return "";
-    }
+	// The newest Temurin identifier of a Java major, from the available list, or "".
+	function temurinFor( major ) {
+		var a = available( "java" );
+		if ( !a.ok ) return "";
+		for ( var r in a.rows ) if ( right( r.id, 4 ) == "-tem" && ( left( r.id, len( arguments.major ) + 1 ) == arguments.major & "." || r.id == arguments.major & "-tem" ) ) return r.id;
+		return "";
+	}
 
-    // ---- commands ----
-    function validCand( c ) { return arrayFind( candidates(), arguments.c ) > 0; }
-    function validVer( v ) { return reFind( "^[A-Za-z0-9][A-Za-z0-9.+_-]*$", arguments.v ) > 0; }
+	// ---- commands ----
+	function validCand( c ) { return arrayFind( candidates(), arguments.c ) > 0; }
+	function validVer( v ) { return reFind( "^[A-Za-z0-9][A-Za-z0-9.+_-]*$", arguments.v ) > 0; }
 
-    function status( asJson ) {
-        var data = { installed: installed(), dir: dir(), candidates: {} };
-        var lines = [ "SDKMAN: " & ( data.installed ? "installed in " & dir() : "not installed. Install it with: bxrig sdk setup --yes" ) ];
-        for ( var c in candidates() ) {
-            var vs = installedVersions( c );
-            var def = defaultVersion( c );
-            data.candidates[ c ] = { versions: vs, default: def };
-            lines.append( left( c & "      ", 8 ) & vs.len() & " installed" & ( len( def ) ? ", default " & def : "" ) );
-        }
-        return variables.out.say( "ok", data, arguments.asJson, lines );
-    }
+	function status( asJson ) {
+		var data = { installed: installed(), dir: dir(), candidates: {} };
+		var lines = [ "SDKMAN: " & ( data.installed ? "installed in " & dir() : "not installed. Install it with: bxrig sdk setup --yes" ) ];
+		for ( var c in candidates() ) {
+			var vs = installedVersions( c );
+			var def = defaultVersion( c );
+			data.candidates[ c ] = { versions: vs, default: def };
+			lines.append( left( c & "      ", 8 ) & vs.len() & " installed" & ( len( def ) ? ", default " & def : "" ) );
+		}
+		return variables.out.say( "ok", data, arguments.asJson, lines );
+	}
 
-    function writeEnv() {
-        directoryCreate( cfgDir(), true, true );
-        var d = dir();
-        var sh = [ "# Written by `bxrig sdk`. Maven and Gradle from SDKMAN; Java is set by `bxrig java default`.", "export SDKMAN_DIR=" & chr( 34 ) & d & chr( 34 ) ];
+	function writeEnv() {
+		directoryCreate( cfgDir(), true, true );
+		var d = dir();
+		var sh = [ "# Written by `bxrig sdk`. Maven and Gradle from SDKMAN; Java is set by `bxrig java default`.", "export SDKMAN_DIR=" & chr( 34 ) & d & chr( 34 ) ];
         var fish = [ "# Written by `bxrig sdk`. Maven and Gradle from SDKMAN; Java is set by `bxrig java default`.", "set -gx SDKMAN_DIR " & d ];
-        for ( var c in [ "maven", "gradle" ] ) {
-            var up = uCase( c );
-            sh.append( "[ -d " & chr( 34 ) & "$SDKMAN_DIR/candidates/" & c & "/current/bin" & chr( 34 ) & " ] && export " & up & "_HOME=" & chr( 34 ) & "$SDKMAN_DIR/candidates/" & c & "/current" & chr( 34 ) & " && export PATH=" & chr( 34 ) & "$" & up & "_HOME/bin:$PATH" & chr( 34 ) );
-            fish.append( "test -d $SDKMAN_DIR/candidates/" & c & "/current/bin; and set -gx " & up & "_HOME $SDKMAN_DIR/candidates/" & c & "/current; and fish_add_path -gP $" & up & "_HOME/bin" );
-        }
-        variables.config.writeAtomic( shFile(), sh.toList( chr( 10 ) ) & chr( 10 ), "644" );
-        variables.config.writeAtomic( fishFile(), fish.toList( chr( 10 ) ) & chr( 10 ), "644" );
-    }
+		for ( var c in [ "maven", "gradle" ] ) {
+			var up = uCase( c );
+			sh.append( "[ -d " & chr( 34 ) & "$SDKMAN_DIR/candidates/" & c & "/current/bin" & chr( 34 ) & " ] && export " & up & "_HOME=" & chr( 34 ) & "$SDKMAN_DIR/candidates/" & c & "/current" & chr( 34 ) & " && export PATH=" & chr( 34 ) & "$" & up & "_HOME/bin:$PATH" & chr( 34 ) );
+			fish.append( "test -d $SDKMAN_DIR/candidates/" & c & "/current/bin; and set -gx " & up & "_HOME $SDKMAN_DIR/candidates/" & c & "/current; and fish_add_path -gP $" & up & "_HOME/bin" );
+		}
+		variables.config.writeAtomic( shFile(), sh.toList( chr( 10 ) ) & chr( 10 ), "644" );
+		variables.config.writeAtomic( fishFile(), fish.toList( chr( 10 ) ) & chr( 10 ), "644" );
+	}
 
-    function setup( yes, dry, asJson ) {
-        if ( installed() ) { writeEnv(); return variables.out.say( "ok", { installed: true, already: true }, arguments.asJson, [ "SDKMAN is already installed in " & dir() & ". The Maven and Gradle shell files are up to date." ] ); }
-        var planTitle = "install SDKMAN into " & dir() & " (from " & installerUrl() & ").";
-        var plan = [ "Your shell files are NOT changed: the installer runs without its rc update, and BxRig's own shell starters source what is needed.", "Needs curl, zip and unzip." ];
-        var data = { dir: dir() };
-        var missing = [];
-        for ( var t in [ "curl", "zip", "unzip" ] ) if ( !variables.proc.has( t ) ) missing.append( t );
-        if ( missing.len() ) {
-            var shown = [ new bxrig.util.Mutation().banner() & planTitle ];
-            for ( var pl in plan ) shown.append( pl );
-            shown.append( "error: missing " & missing.toList( ", " ) & ". Install them: bxrig pkg install " & missing.toList( " " ) );
-            return variables.out.say( "precondition", { error: "missing " & missing.toList( ", " ) }, arguments.asJson, shown );
-        }
-        if ( !arguments.yes || arguments.dry ) return variables.out.plan( planTitle, data, arguments.asJson, arguments.dry, plan, "Add --yes to install." );
-        var r = variables.proc.exec( variables.http.installerArgv( installerUrl(), "bash", [], { "SDKMAN_DIR": dir() } ), 1800 );
-        if ( r.exitCode != 0 || !installed() ) return variables.out.fail( "failed", "the SDKMAN installer failed: " & trim( right( r.output, 300 ) ), arguments.asJson );
-        writeEnv();
-        return variables.out.say( "ok", { installed: true, dir: dir() }, arguments.asJson, [ "SDKMAN is installed in " & dir() & ".", "Next: bxrig java install 21 --yes, bxrig sdk install maven 3.9.9 --yes" ] );
-    }
+	function setup( yes, dry, asJson ) {
+		if ( installed() ) { writeEnv(); return variables.out.say( "ok", { installed: true, already: true }, arguments.asJson, [ "SDKMAN is already installed in " & dir() & ". The Maven and Gradle shell files are up to date." ] ); }
+		var planTitle = "install SDKMAN into " & dir() & " (from " & installerUrl() & ").";
+		var plan = [ "Your shell files are NOT changed: the installer runs without its rc update, and BxRig's own shell starters source what is needed.", "Needs curl, zip and unzip." ];
+		var data = { dir: dir() };
+		var missing = [];
+		for ( var t in [ "curl", "zip", "unzip" ] ) if ( !variables.proc.has( t ) ) missing.append( t );
+		if ( missing.len() ) {
+			var shown = [ new bxrig.util.Mutation().banner() & planTitle ];
+			for ( var pl in plan ) shown.append( pl );
+			shown.append( "error: missing " & missing.toList( ", " ) & ". Install them: bxrig pkg install " & missing.toList( " " ) );
+			return variables.out.say( "precondition", { error: "missing " & missing.toList( ", " ) }, arguments.asJson, shown );
+		}
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( planTitle, data, arguments.asJson, arguments.dry, plan, "Add --yes to install." );
+		var r = variables.proc.exec( variables.http.installerArgv( installerUrl(), "bash", [], { "SDKMAN_DIR": dir() } ), 1800 );
+		if ( r.exitCode != 0 || !installed() ) return variables.out.fail( "failed", "the SDKMAN installer failed: " & trim( right( r.output, 300 ) ), arguments.asJson );
+		writeEnv();
+		return variables.out.say( "ok", { installed: true, dir: dir() }, arguments.asJson, [ "SDKMAN is installed in " & dir() & ".", "Next: bxrig java install 21 --yes, bxrig sdk install maven 3.9.9 --yes" ] );
+	}
 
-    function list( cand, asJson ) {
-        var vs = installedVersions( arguments.cand );
-        var def = defaultVersion( arguments.cand );
-        var lines = [];
-        for ( var v in vs ) lines.append( ( v == def ? "* " : "  " ) & v );
-        if ( !vs.len() ) lines.append( "No " & arguments.cand & " installed through SDKMAN." );
-        return variables.out.say( "ok", { candidate: arguments.cand, versions: vs, default: def }, arguments.asJson, lines );
-    }
+	function list( cand, asJson ) {
+		var vs = installedVersions( arguments.cand );
+		var def = defaultVersion( arguments.cand );
+		var lines = [];
+		for ( var v in vs ) lines.append( ( v == def ? "* " : "  " ) & v );
+		if ( !vs.len() ) lines.append( "No " & arguments.cand & " installed through SDKMAN." );
+		return variables.out.say( "ok", { candidate: arguments.cand, versions: vs, default: def }, arguments.asJson, lines );
+	}
 
-    function listAvailable( cand, asJson ) {
-        var a = available( arguments.cand );
-        if ( !a.ok ) return variables.out.fail( "failed", a.error, arguments.asJson );
-        var have = installedVersions( arguments.cand );
-        var rows = [];
-        var lines = [];
-        for ( var r in a.rows ) { r.installed = arrayFind( have, r.id ) > 0; rows.append( r ); lines.append( ( r.installed ? "* " : "  " ) & left( r.vendor & repeatString( " ", 16 ), 16 ) & left( r.version & repeatString( " ", 20 ), 20 ) & r.id ); }
-        return variables.out.say( "ok", { candidate: arguments.cand, available: rows }, arguments.asJson, lines );
-    }
+	function listAvailable( cand, asJson ) {
+		var a = available( arguments.cand );
+		if ( !a.ok ) return variables.out.fail( "failed", a.error, arguments.asJson );
+		var have = installedVersions( arguments.cand );
+		var rows = [];
+		var lines = [];
+		for ( var r in a.rows ) { r.installed = arrayFind( have, r.id ) > 0; rows.append( r ); lines.append( ( r.installed ? "* " : "  " ) & left( r.vendor & repeatString( " ", 16 ), 16 ) & left( r.version & repeatString( " ", 20 ), 20 ) & r.id ); }
+		return variables.out.say( "ok", { candidate: arguments.cand, available: rows }, arguments.asJson, lines );
+	}
 
-    // Runs `sdk ACTION ...` in bash with SDKMAN loaded. stdin "n" answers the "make it the default?" question with no.
-    function runSdk( action, cand, ver ) {
-        var verb = arguments.action == "remove" ? "uninstall" : arguments.action;
-        return sh( [ "-c", "export SDKMAN_DIR=" & chr( 34 ) & "$1" & chr( 34 ) & " && source " & chr( 34 ) & "$1/bin/sdkman-init.sh" & chr( 34 ) & " && " & ( arguments.action == "install" ? "echo n | " : "" ) & "sdk " & verb & " " & chr( 34 ) & "$2" & chr( 34 ) & " " & chr( 34 ) & "$3" & chr( 34 ) & " < /dev/null", "_", dir(), arguments.cand, arguments.ver ] );
-    }
+	// Runs `sdk ACTION ...` in bash with SDKMAN loaded. stdin "n" answers the "make it the default?" question with no.
+	function runSdk( action, cand, ver ) {
+		var verb = arguments.action == "remove" ? "uninstall" : arguments.action;
+		return sh( [ "-c", "export SDKMAN_DIR=" & chr( 34 ) & "$1" & chr( 34 ) & " && source " & chr( 34 ) & "$1/bin/sdkman-init.sh" & chr( 34 ) & " && " & ( arguments.action == "install" ? "echo n | " : "" ) & "sdk " & verb & " " & chr( 34 ) & "$2" & chr( 34 ) & " " & chr( 34 ) & "$3" & chr( 34 ) & " < /dev/null", "_", dir(), arguments.cand, arguments.ver ] );
+	}
 
-    function act( action, cand, ver, yes, dry, asJson ) {
-        if ( !validCand( arguments.cand ) ) return variables.out.say( "usage", { error: "usage" }, arguments.asJson, [ "Usage: bxrig sdk " & arguments.action & " java|maven|gradle VERSION [--yes] [--dry-run]" ] );
-        if ( !len( arguments.ver ) || !validVer( arguments.ver ) ) return variables.out.say( "usage", { error: "usage" }, arguments.asJson, [ "Usage: bxrig sdk " & arguments.action & " " & arguments.cand & " VERSION   (see: bxrig sdk available " & arguments.cand & ")" ] );
-        if ( !installed() ) return variables.out.fail( "precondition", "SDKMAN is not installed. Install it with: bxrig sdk setup --yes", arguments.asJson );
-        var have = installedVersions( arguments.cand );
-        var isHave = arrayFind( have, arguments.ver ) > 0;
-        if ( arguments.action != "install" && !isHave ) return variables.out.fail( "precondition", arguments.cand & " " & arguments.ver & " is not installed. See: bxrig sdk list " & arguments.cand, arguments.asJson );
-        if ( arguments.action == "install" && isHave ) return variables.out.say( "ok", { candidate: arguments.cand, version: arguments.ver, already: true }, arguments.asJson, [ arguments.cand & " " & arguments.ver & " is already installed." ] );
-        var verb = arguments.action == "install" ? "install" : ( arguments.action == "default" ? "make the default" : "remove" );
-        var planTitle = "sdk " & ( arguments.action == "remove" ? "uninstall" : arguments.action ) & " " & arguments.cand & " " & arguments.ver & " (" & verb & " " & arguments.cand & " " & arguments.ver & ").";
-        var plan = [];
-        if ( arguments.action == "install" && !have.len() ) plan.append( "It is the first " & arguments.cand & ", so SDKMAN makes it the default." );
-        var data = { candidate: arguments.cand, version: arguments.ver, action: arguments.action };
-        if ( !arguments.yes || arguments.dry ) return variables.out.plan( planTitle, data, arguments.asJson, arguments.dry, plan );
-        var r = runSdk( arguments.action, arguments.cand, arguments.ver );
-        if ( r.exitCode != 0 ) return variables.out.fail( "failed", "sdk " & arguments.action & " failed: " & trim( right( r.output, 400 ) ), arguments.asJson );
-        writeEnv();
-        var done = [ "Done: " & arguments.action & " " & arguments.cand & " " & arguments.ver ];
-        if ( arguments.cand == "java" && arguments.action == "install" ) done.append( "Use it in new shells: bxrig java default sdkman-" & arguments.ver & " --yes" );
-        return variables.out.say( "ok", data, arguments.asJson, done );
-    }
+	function act( action, cand, ver, yes, dry, asJson ) {
+		if ( !validCand( arguments.cand ) ) return variables.out.say( "usage", { error: "usage" }, arguments.asJson, [ "Usage: bxrig sdk " & arguments.action & " java|maven|gradle VERSION [--yes] [--dry-run]" ] );
+		if ( !len( arguments.ver ) || !validVer( arguments.ver ) ) return variables.out.say( "usage", { error: "usage" }, arguments.asJson, [ "Usage: bxrig sdk " & arguments.action & " " & arguments.cand & " VERSION   (see: bxrig sdk available " & arguments.cand & ")" ] );
+		if ( !installed() ) return variables.out.fail( "precondition", "SDKMAN is not installed. Install it with: bxrig sdk setup --yes", arguments.asJson );
+		var have = installedVersions( arguments.cand );
+		var isHave = arrayFind( have, arguments.ver ) > 0;
+		if ( arguments.action != "install" && !isHave ) return variables.out.fail( "precondition", arguments.cand & " " & arguments.ver & " is not installed. See: bxrig sdk list " & arguments.cand, arguments.asJson );
+		if ( arguments.action == "install" && isHave ) return variables.out.say( "ok", { candidate: arguments.cand, version: arguments.ver, already: true }, arguments.asJson, [ arguments.cand & " " & arguments.ver & " is already installed." ] );
+		var verb = arguments.action == "install" ? "install" : ( arguments.action == "default" ? "make the default" : "remove" );
+		var planTitle = "sdk " & ( arguments.action == "remove" ? "uninstall" : arguments.action ) & " " & arguments.cand & " " & arguments.ver & " (" & verb & " " & arguments.cand & " " & arguments.ver & ").";
+		var plan = [];
+		if ( arguments.action == "install" && !have.len() ) plan.append( "It is the first " & arguments.cand & ", so SDKMAN makes it the default." );
+		var data = { candidate: arguments.cand, version: arguments.ver, action: arguments.action };
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( planTitle, data, arguments.asJson, arguments.dry, plan );
+		var r = runSdk( arguments.action, arguments.cand, arguments.ver );
+		if ( r.exitCode != 0 ) return variables.out.fail( "failed", "sdk " & arguments.action & " failed: " & trim( right( r.output, 400 ) ), arguments.asJson );
+		writeEnv();
+		var done = [ "Done: " & arguments.action & " " & arguments.cand & " " & arguments.ver ];
+		if ( arguments.cand == "java" && arguments.action == "install" ) done.append( "Use it in new shells: bxrig java default sdkman-" & arguments.ver & " --yes" );
+		return variables.out.say( "ok", data, arguments.asJson, done );
+	}
 
-    function run( words, opts, yes, dry, asJson ) {
-        var sub = arguments.words.len() ? arguments.words[ 1 ] : "status";
-        var cand = arguments.words.len() >= 2 ? arguments.words[ 2 ] : "";
-        var ver = arguments.words.len() >= 3 ? arguments.words[ 3 ] : "";
-        if ( sub == "status" ) return status( arguments.asJson );
-        if ( sub == "setup" ) return setup( arguments.yes, arguments.dry, arguments.asJson );
-        if ( sub == "list" || sub == "available" ) {
-            if ( !validCand( cand ) ) return variables.out.say( "usage", { error: "usage" }, arguments.asJson, [ "Usage: bxrig sdk " & sub & " java|maven|gradle [--json]" ] );
-            return sub == "list" ? list( cand, arguments.asJson ) : listAvailable( cand, arguments.asJson );
-        }
-        if ( sub == "install" || sub == "default" || sub == "remove" ) return act( sub, cand, ver, arguments.yes, arguments.dry, arguments.asJson );
-        return variables.out.say( "usage", { error: "usage" }, arguments.asJson, [ new bxrig.CommandSpec().usage( "sdk" ) ] );
-    }
+	function run( words, opts, yes, dry, asJson ) {
+		var sub = arguments.words.len() ? arguments.words[ 1 ] : "status";
+		var cand = arguments.words.len() >= 2 ? arguments.words[ 2 ] : "";
+		var ver = arguments.words.len() >= 3 ? arguments.words[ 3 ] : "";
+		if ( sub == "status" ) return status( arguments.asJson );
+		if ( sub == "setup" ) return setup( arguments.yes, arguments.dry, arguments.asJson );
+		if ( sub == "list" || sub == "available" ) {
+			if ( !validCand( cand ) ) return variables.out.say( "usage", { error: "usage" }, arguments.asJson, [ "Usage: bxrig sdk " & sub & " java|maven|gradle [--json]" ] );
+			return sub == "list" ? list( cand, arguments.asJson ) : listAvailable( cand, arguments.asJson );
+		}
+		if ( sub == "install" || sub == "default" || sub == "remove" ) return act( sub, cand, ver, arguments.yes, arguments.dry, arguments.asJson );
+		return variables.out.say( "usage", { error: "usage" }, arguments.asJson, [ new bxrig.CommandSpec().usage( "sdk" ) ] );
+	}
 }

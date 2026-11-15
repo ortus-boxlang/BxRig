@@ -1,13 +1,13 @@
 // The bundled themes (themes/<name>/colors.toml and neovim.lua, packed with BxRig as resources).
 class ThemeData {
-    function names() { return new bxrig.util.Res().folders( "themes" ); }
-    // The bxrig* themes are BxRig's own; the rest come from Omarchy (themes/NOTICE.md).
-    function origin( name ) { return left( arguments.name, 5 ) == "bxrig" ? "bxrig" : "omarchy"; }
-    function colors( name ) { return file( arguments.name, "colors.toml" ); }
-    function neovim( name ) { return file( arguments.name, "neovim.lua" ); }
-    private function file( name, leaf ) {
-        var res = new bxrig.util.Res();
-        var path = "themes/" & arguments.name & "/" & arguments.leaf;
-        return len( arguments.name ) && res.exists( path ) ? res.text( path ) : "";
-    }
+	function names() { return new bxrig.util.Res().folders( "themes" ); }
+	// The bxrig* themes are BxRig's own; the rest come from Omarchy (themes/NOTICE.md).
+	function origin( name ) { return left( arguments.name, 5 ) == "bxrig" ? "bxrig" : "omarchy"; }
+	function colors( name ) { return file( arguments.name, "colors.toml" ); }
+	function neovim( name ) { return file( arguments.name, "neovim.lua" ); }
+	private function file( name, leaf ) {
+		var res = new bxrig.util.Res();
+		var path = "themes/" & arguments.name & "/" & arguments.leaf;
+		return len( arguments.name ) && res.exists( path ) ? res.text( path ) : "";
+	}
 }

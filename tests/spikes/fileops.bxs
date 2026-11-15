@@ -6,10 +6,10 @@ tmp = getTempDirectory() & "/bxrig-spike-" & createUUID();
 results = [];
 
 function probe( name, detail ) {
-  println( "PASS " & name & ( len( detail ) ? ": " & detail : "" ) );
+	println( "PASS " & name & ( len( detail ) ? ": " & detail : "" ) );
 }
 function fail( name, detail ) {
-  println( "FAIL " & name & ": " & detail );
+	println( "FAIL " & name & ": " & detail );
 }
 
 try { directoryCreate( tmp, true, true ); probe( "directoryCreate", tmp ); } catch ( any e ) { fail( "directoryCreate", e.message ); }
@@ -29,14 +29,14 @@ try { fileDelete( tmp & "/c.txt" ); println( ( !fileExists( tmp & "/c.txt" ) ? "
 // Symlink detection: create one with the shell (as the CLI already uses systemExecute) and look for a BoxLang-side way to see it.
 link = tmp & "/link.txt";
 try {
-  r = systemExecute( name = "ln", arguments = "-s " & b & " " & link, timeout = 10, terminateOnTimeout = true );
-  println( ( r.exitCode == 0 ? "PASS" : "FAIL" ) & " systemExecute ln -s (exit " & r.exitCode & ")" );
+	r = systemExecute( name = "ln", arguments = "-s " & b & " " & link, timeout = 10, terminateOnTimeout = true );
+	println( ( r.exitCode == 0 ? "PASS" : "FAIL" ) & " systemExecute ln -s (exit " & r.exitCode & ")" );
 } catch ( any e ) { fail( "systemExecute ln -s", e.message ); }
 try { fi = getFileInfo( link ); probe( "getFileInfo(link)", "keys=" & structKeyList( fi ) ); } catch ( any e ) { fail( "getFileInfo(link)", e.message ); }
 try { println( "INFO isSymbolicLink BIF: " & ( isSymbolicLink( link ) ? "true" : "false" ) ); } catch ( any e ) { fail( "isSymbolicLink", e.message ); }
 try {
-  t = systemExecute( name = "test", arguments = "-L " & link, timeout = 10, terminateOnTimeout = true );
-  println( ( t.exitCode == 0 ? "PASS" : "FAIL" ) & " shell fallback `test -L` sees the symlink" );
+	t = systemExecute( name = "test", arguments = "-L " & link, timeout = 10, terminateOnTimeout = true );
+	println( ( t.exitCode == 0 ? "PASS" : "FAIL" ) & " shell fallback `test -L` sees the symlink" );
 } catch ( any e ) { fail( "shell test -L", e.message ); }
 
 // JSON, hashing, ids, environment.

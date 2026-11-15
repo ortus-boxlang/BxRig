@@ -5,8 +5,8 @@
 root="$(cd "$(dirname "$0")/.." && pwd)"
 fails=0
 count() { # pattern, path, max   (counts matching lines, fixed string)
-  local n; n="$(grep -rF --include='*.bx' --include='*.sh' -- "$1" "$root/$2" 2>/dev/null | wc -l)"
-  if (( n > $3 )); then echo "FAIL: '$1' in $2 is $n, allowed $3"; fails=$((fails+1)); elif (( n < $3 )); then echo "note: '$1' in $2 is $n, lower the maximum from $3"; fi
+	local n; n="$(grep -rF --include='*.bx' --include='*.sh' -- "$1" "$root/$2" 2>/dev/null | wc -l)"
+	if (( n > $3 )); then echo "FAIL: '$1' in $2 is $n, allowed $3"; fails=$((fails+1)); elif (( n < $3 )); then echo "note: '$1' in $2 is $n, lower the maximum from $3"; fi
 }
 count 'function say('              src/bxrig 2
 count 'function fail('             src/bxrig 2
@@ -25,13 +25,13 @@ count 'function check( label, ok )' tests 2
 count 'jsonDeserialize( fileRead(' src/bxrig 24
 # external tools have one home each (src/bxrig/util): pacman, the AUR helper, systemctl and curl are only ever spelled there
 for pat in '"pacman", "-' '"yay", "-' '"curl", "-' '"systemctl", "[-a-z]'; do
-  n="$(grep -rnE "\[ *\"(sudo\", )?$pat" "$root/src" --include='*.bx' | grep -v '/util/' | grep -vE '^\S+:[0-9]+:\s*//' | wc -l)"
-  (( n == 0 )) || { echo "FAIL: $n argv lists start a command ($pat) outside src/bxrig/util (use Pacman, Aur, Systemd or Http)"; fails=$((fails+1)); }
+	n="$(grep -rnE "\[ *\"(sudo\", )?$pat" "$root/src" --include='*.bx' | grep -v '/util/' | grep -vE '^\S+:[0-9]+:\s*//' | wc -l)"
+	(( n == 0 )) || { echo "FAIL: $n argv lists start a command ($pat) outside src/bxrig/util (use Pacman, Aur, Systemd or Http)"; fails=$((fails+1)); }
 done
 # one home each: the desktop (util/Desktop), first-party URLs (util/Urls), the version (generated util/Version)
 for pat in 'XDG_CURRENT_DESKTOP' 'HYPRLAND_INSTANCE_SIGNATURE'; do
-  n="$(grep -rn "getSystemSetting( \"$pat\"" "$root/src" --include='*.bx' | grep -v '/util/Desktop.bx' | wc -l)"
-  (( n == 0 )) || { echo "FAIL: $n reads of $pat outside src/bxrig/util/Desktop.bx"; fails=$((fails+1)); }
+	n="$(grep -rn "getSystemSetting( \"$pat\"" "$root/src" --include='*.bx' | grep -v '/util/Desktop.bx' | wc -l)"
+	(( n == 0 )) || { echo "FAIL: $n reads of $pat outside src/bxrig/util/Desktop.bx"; fails=$((fails+1)); }
 done
 n="$(grep -rn '0\.11\.0\|"version" *=' "$root/src" --include='*.bx' | grep -v '/util/Version.bx' | wc -l)"
 (( n == 0 )) || { echo "FAIL: the version string is spelled outside util/Version.bx"; fails=$((fails+1)); }
@@ -59,12 +59,12 @@ n="$(grep -rn 'getSystemSetting(' "$root/src" --include='*.bx' | grep -v '/util/
 n="$(grep -rn 'function icon() { return "' "$root/src" --include='*.bx' | wc -l)"
 (( n == 0 )) || { echo "FAIL: $n page icon names spelled outside ControlCenterPages (use ControlCenterPages.icon( id ))"; fails=$((fails+1)); }
 # the views draw through TuiKit directly (no one-line forwarders of mix, brand, shimmer, put, fillRect, gtext)
-n="$(grep -rnE '^    function (put|fillRect|gtext|shimmer|mix|brand)\(' "$root"/src/bxrig/*View.bx | wc -l)"
+n="$(grep -rnP '^\tfunction (put|fillRect|gtext|shimmer|mix|brand)\(' "$root"/src/bxrig/*View.bx | wc -l)"
 (( n == 0 )) || { echo "FAIL: $n view forwarders to TuiKit (call variables.kit directly)"; fails=$((fails+1)); }
 # every test file is run by CI (a new test cannot be forgotten)
 for t in "$root"/tests/*-test.sh "$root"/tests/*_test.bxs "$root"/tests/catalog_check.bxs; do
-  [[ -f "$t" ]] || continue
-  grep -q "$(basename "$t")" "$root/.github/workflows/ci.yml" || { echo "FAIL: $(basename "$t") is not listed in .github/workflows/ci.yml"; fails=$((fails+1)); }
+	[[ -f "$t" ]] || continue
+	grep -q "$(basename "$t")" "$root/.github/workflows/ci.yml" || { echo "FAIL: $(basename "$t") is not listed in .github/workflows/ci.yml"; fails=$((fails+1)); }
 done
 (( fails == 0 )) || exit 1
 echo "dry-test: ok"

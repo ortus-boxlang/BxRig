@@ -10,52 +10,52 @@
 // A screen paints with the kit and records hits as it paints; a test reads the frame back with tui.render_to_string( w, h ).
 // The state of a list (cursor, scroll, filter) is kept by TuiList; the event loop is TuiRunner.
 class TuiKit {
-    function init( tui ) {
-        variables.fmt = new bxrig.util.Fmt();
-        variables.tui = arguments.tui;
-        variables.pal = {
-            BASE: "##303446", MANTLE: "##292c3c", CRUST: "##232634", SURFACE0: "##414559", SURFACE1: "##51576d", OVERLAY: "##737994",
-            TEXT: "##c6d0f5", SUB: "##a5adce", GREEN: "##00ff78", CYAN: "##00dbff", YELLOW: "##e5c890", RED: "##e78284", MAUVE: "##ca9ee6", SKY: "##99d1db", PEACH: "##ef9f76"
-        };
-        variables.hits = [];
-        variables.fade = 1;
-        variables.icons = false;
-        variables.images = imagesDefault();
-        // Nerd Font (Font Awesome range) code points; each is one cell wide in a Nerd Font and is checked against the Symbols Nerd Font.
-        variables.glyphs = {
-            home: "f015", gear: "f013", coffee: "f0f4", terminal: "f120", server: "f233", database: "f1c0", cloud: "f0c2", key: "f084", brush: "f1fc", file: "f0f6", keyboard: "f11c",
-            cube: "f1b2", download: "f019", plug: "f1e6", desktop: "f108", hdd: "f0a0", history: "f1da", java: "e738", tags: "f02c", archive: "f187", wrench: "f0ad", envelope: "f0e0", check: "f00c"
-        };
-        return this;
-    }
+	function init( tui ) {
+		variables.fmt = new bxrig.util.Fmt();
+		variables.tui = arguments.tui;
+		variables.pal = {
+			BASE: "##303446", MANTLE: "##292c3c", CRUST: "##232634", SURFACE0: "##414559", SURFACE1: "##51576d", OVERLAY: "##737994",
+			TEXT: "##c6d0f5", SUB: "##a5adce", GREEN: "##00ff78", CYAN: "##00dbff", YELLOW: "##e5c890", RED: "##e78284", MAUVE: "##ca9ee6", SKY: "##99d1db", PEACH: "##ef9f76"
+		};
+		variables.hits = [];
+		variables.fade = 1;
+		variables.icons = false;
+		variables.images = imagesDefault();
+		// Nerd Font (Font Awesome range) code points; each is one cell wide in a Nerd Font and is checked against the Symbols Nerd Font.
+		variables.glyphs = {
+			home: "f015", gear: "f013", coffee: "f0f4", terminal: "f120", server: "f233", database: "f1c0", cloud: "f0c2", key: "f084", brush: "f1fc", file: "f0f6", keyboard: "f11c",
+			cube: "f1b2", download: "f019", plug: "f1e6", desktop: "f108", hdd: "f0a0", history: "f1da", java: "e738", tags: "f02c", archive: "f187", wrench: "f0ad", envelope: "f0e0", check: "f00c"
+		};
+		return this;
+	}
 
-    function tui() { return variables.tui; }
+	function tui() { return variables.tui; }
 
-    // Star positions for a backdrop: [ { x, y, i } ], count of them from one small fixed generator (the same sky for the same size), skipping the
-    // rectangle `avoid` ({ x, y, w, h }, or {} for none). Callers cache the result per size and draw the stars their own way.
-    function starPositions( count, width, height, avoid = {} ) {
-        var out = [];
-        var seed = 2654435769;
-        for ( var i = 0; i < arguments.count; i++ ) {
-            seed = ( seed * 1664525 + 1013904223 ) mod 4294967296;
-            var x = int( seed / 256 ) mod arguments.width;
-            seed = ( seed * 1664525 + 1013904223 ) mod 4294967296;
-            var y = int( seed / 256 ) mod arguments.height;
-            if ( structKeyExists( arguments.avoid, "x" ) && x >= arguments.avoid.x && x < arguments.avoid.x + arguments.avoid.w && y >= arguments.avoid.y && y < arguments.avoid.y + arguments.avoid.h ) continue;
-            out.append( { x: x, y: y, i: i } );
-        }
-        return out;
-    }
-    function color( name ) { return variables.pal[ arguments.name ]; }
-    function setFade( f ) { variables.fade = arguments.f; return this; }
+	// Star positions for a backdrop: [ { x, y, i } ], count of them from one small fixed generator (the same sky for the same size), skipping the
+	// rectangle `avoid` ({ x, y, w, h }, or {} for none). Callers cache the result per size and draw the stars their own way.
+	function starPositions( count, width, height, avoid = {} ) {
+		var out = [];
+		var seed = 2654435769;
+		for ( var i = 0; i < arguments.count; i++ ) {
+			seed = ( seed * 1664525 + 1013904223 ) mod 4294967296;
+			var x = int( seed / 256 ) mod arguments.width;
+			seed = ( seed * 1664525 + 1013904223 ) mod 4294967296;
+			var y = int( seed / 256 ) mod arguments.height;
+			if ( structKeyExists( arguments.avoid, "x" ) && x >= arguments.avoid.x && x < arguments.avoid.x + arguments.avoid.w && y >= arguments.avoid.y && y < arguments.avoid.y + arguments.avoid.h ) continue;
+			out.append( { x: x, y: y, i: i } );
+		}
+		return out;
+	}
+	function color( name ) { return variables.pal[ arguments.name ]; }
+	function setFade( f ) { variables.fade = arguments.f; return this; }
 
-    // Icons are Nerd Font glyphs, drawn only when switched on (a terminal without the font would show boxes). icon( name ) is "" when off or the name is unknown.
-    function setIcons( on ) { variables.icons = arguments.on; return this; }
-    function hasIcons() { return variables.icons; }
-    function icon( name ) { return variables.icons && structKeyExists( variables.glyphs, arguments.name ) ? chr( inputBaseN( variables.glyphs[ arguments.name ], 16 ) ) : ""; }
+	// Icons are Nerd Font glyphs, drawn only when switched on (a terminal without the font would show boxes). icon( name ) is "" when off or the name is unknown.
+	function setIcons( on ) { variables.icons = arguments.on; return this; }
+	function hasIcons() { return variables.icons; }
+	function icon( name ) { return variables.icons && structKeyExists( variables.glyphs, arguments.name ) ? chr( inputBaseN( variables.glyphs[ arguments.name ], 16 ) ) : ""; }
 
-    // ---- colours ----
-    function rgb( hex ) { var h = replace( arguments.hex, "#", "", "all" ); return [ inputBaseN( mid( h, 1, 2 ), 16 ), inputBaseN( mid( h, 3, 2 ), 16 ), inputBaseN( mid( h, 5, 2 ), 16 ) ]; }
+	// ---- colours ----
+	function rgb( hex ) { var h = replace( arguments.hex, "#", "", "all" ); return [ inputBaseN( mid( h, 1, 2 ), 16 ), inputBaseN( mid( h, 3, 2 ), 16 ), inputBaseN( mid( h, 5, 2 ), 16 ) ]; }
     function toHex( r, g, b ) { var out = "##"; for ( var v in [ arguments.r, arguments.g, arguments.b ] ) out &= right( "0" & formatBaseN( int( min( 255, max( 0, v ) ) ), 16 ), 2 ); return out; }
     function mix( a, b, t ) {
         var x = rgb( arguments.a ); var y = rgb( arguments.b ); var k = min( 1, max( 0, arguments.t ) );

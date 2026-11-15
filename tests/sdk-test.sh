@@ -37,7 +37,7 @@ echo 3.10.0 > "$tmp/api/candidates/default/maven"
 (cd "$tmp/api" && exec python3 -m http.server 0 --bind 127.0.0.1 >"$tmp/srv.log" 2>&1) & srv=$!
 for _ in $(seq 1 50); do port="$(grep -o 'port [0-9]*' "$tmp/srv.log" 2>/dev/null | head -1 | grep -o '[0-9]*' || true)"; [[ -n "${port:-}" ]] && break; sleep 0.1; done
 [[ -n "${port:-}" ]] || { # older python prints "Serving HTTP on 127.0.0.1 port N"; wait a little more
-  sleep 1; port="$(grep -o 'port [0-9]*' "$tmp/srv.log" | head -1 | grep -o '[0-9]*')"; }
+	sleep 1; port="$(grep -o 'port [0-9]*' "$tmp/srv.log" | head -1 | grep -o '[0-9]*')"; }
 export BXRIG_SDKMAN_API="http://127.0.0.1:$port"
 
 # a fake installer that creates a fake SDKMAN with a `sdk` function

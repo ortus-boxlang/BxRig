@@ -9,49 +9,49 @@
 // Browser commands: chromium is `chromium`; the others are the vendors' standard names (brave, google-chrome-stable, microsoft-edge-stable,
 // firefox), not verified here.
 class Web {
-    function init( cli, runner = "" ) {
-        variables.environ = new bxrig.util.Env();
-        variables.text = new bxrig.util.Text();
-        variables.cli = arguments.cli;
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.config = new bxrig.ConfigService().quiet( true );
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.environ = new bxrig.util.Env();
+		variables.text = new bxrig.util.Text();
+		variables.cli = arguments.cli;
+		variables.inst = new bxrig.Installer( arguments.runner );
+		variables.config = new bxrig.ConfigService().quiet( true );
+		return this;
+	}
 
-    function appsDir() { return variables.environ.xdgData( "applications" ); }
-    function fileFor( name ) { return appsDir() & "/bxrig-web-" & arguments.name & ".desktop"; }
-    function validUrl( url ) { return reFind( "^https?://[^ ""'<>]+$", arguments.url ) > 0; }
+	function appsDir() { return variables.environ.xdgData( "applications" ); }
+	function fileFor( name ) { return appsDir() & "/bxrig-web-" & arguments.name & ".desktop"; }
+	function validUrl( url ) { return reFind( "^https?://[^ ""'<>]+$", arguments.url ) > 0; }
 
-    // id -> { cmd, app }: the command and whether it has an app mode.
-    function browsers() {
-        return {
-            brave: { cmd: "brave", app: true },
-            chromium: { cmd: "chromium", app: true },
-            "google-chrome": { cmd: "google-chrome-stable", app: true },
-            edge: { cmd: "microsoft-edge-stable", app: true },
-            firefox: { cmd: "firefox", app: false }
-        };
-    }
+	// id -> { cmd, app }: the command and whether it has an app mode.
+	function browsers() {
+		return {
+			brave: { cmd: "brave", app: true },
+			chromium: { cmd: "chromium", app: true },
+			"google-chrome": { cmd: "google-chrome-stable", app: true },
+			edge: { cmd: "microsoft-edge-stable", app: true },
+			firefox: { cmd: "firefox", app: false }
+		};
+	}
 
-    function installed( cmd ) {
-        try { return variables.inst.proc().exec( [ "sh", "-c", 'command -v "$1"', "_", arguments.cmd ], 10 ).exitCode == 0; } catch ( any e ) { return false; }
-    }
+	function installed( cmd ) {
+		try { return variables.inst.proc().exec( [ "sh", "-c", 'command -v "$1"', "_", arguments.cmd ], 10 ).exitCode == 0; } catch ( any e ) { return false; }
+	}
 
-    // The browser id to use: the one asked for, else the default browser, else the first installed.
-    function pickBrowser( asked ) {
-        var all = browsers();
-        if ( len( arguments.asked ) ) return structKeyExists( all, arguments.asked ) ? arguments.asked : "";
-        var dflt = "";
-        try { dflt = trim( variables.inst.proc().exec( [ "xdg-settings", "get", "default-web-browser" ], 10 ).output ); } catch ( any e ) {}
-        for ( var id in structKeyArray( all ) ) if ( len( dflt ) && find( id, lcase( dflt ) ) > 0 && installed( all[ id ].cmd ) ) return id;
-        for ( var id2 in [ "brave", "chromium", "google-chrome", "edge", "firefox" ] ) if ( installed( all[ id2 ].cmd ) ) return id2;
-        return "";
-    }
+	// The browser id to use: the one asked for, else the default browser, else the first installed.
+	function pickBrowser( asked ) {
+		var all = browsers();
+		if ( len( arguments.asked ) ) return structKeyExists( all, arguments.asked ) ? arguments.asked : "";
+		var dflt = "";
+		try { dflt = trim( variables.inst.proc().exec( [ "xdg-settings", "get", "default-web-browser" ], 10 ).output ); } catch ( any e ) {}
+		for ( var id in structKeyArray( all ) ) if ( len( dflt ) && find( id, lcase( dflt ) ) > 0 && installed( all[ id ].cmd ) ) return id;
+		for ( var id2 in [ "brave", "chromium", "google-chrome", "edge", "firefox" ] ) if ( installed( all[ id2 ].cmd ) ) return id2;
+		return "";
+	}
 
-    function entryText( name, url, browser ) {
-        var b = browsers()[ arguments.browser ];
-        var exec = b.app ? b.cmd & " --app=" & arguments.url : b.cmd & " --new-window " & arguments.url;
-        return new bxrig.util.DesktopEntry().render( [ "# Written by bxrig (web add). Edit it freely: BxRig will not overwrite a changed file.", "Type=Application",
+	function entryText( name, url, browser ) {
+		var b = browsers()[ arguments.browser ];
+		var exec = b.app ? b.cmd & " --app=" & arguments.url : b.cmd & " --new-window " & arguments.url;
+		return new bxrig.util.DesktopEntry().render( [ "# Written by bxrig (web add). Edit it freely: BxRig will not overwrite a changed file.", "Type=Application",
             "Name=" & arguments.name, "Exec=" & exec, "Icon=web-browser", "Categories=Network;", "X-BxRig-Web=" & arguments.url ] );
     }
 

@@ -10,393 +10,393 @@
 // Nothing here changes the system by itself: every entry runs a command that has its own plan and --yes rules (the destructive ones are
 // started with --yes only after you confirm). Exit: 0 done or cancelled, 4 precondition (no menu program, no terminal for a `run` entry).
 class Menu {
-    function init( cli, runner = "" ) {
-        variables.environ = new bxrig.util.Env();
-        variables.cli = arguments.cli;
-        variables.inst = new bxrig.Installer( arguments.runner );
-        variables.proc = variables.inst.proc();
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.environ = new bxrig.util.Env();
+		variables.cli = arguments.cli;
+		variables.inst = new bxrig.Installer( arguments.runner );
+		variables.proc = variables.inst.proc();
+		return this;
+	}
 
-    // The tree, with the catalog groups filled in.
-    function tree() {
-        var groups = [];
-        try {
-            var cat = new bxrig.Catalog().load();
-            var g = cat.groups;
-            arraySort( g, function( a, b ) { return a.order < b.order ? -1 : ( a.order > b.order ? 1 : 0 ); } );
-            for ( var x in g ) groups.append( { id: x.id, title: x.title } );
-        } catch ( any e ) {}
-        return new bxrig.MenuTree().sections( groups );
-    }
+	// The tree, with the catalog groups filled in.
+	function tree() {
+		var groups = [];
+		try {
+			var cat = new bxrig.Catalog().load();
+			var g = cat.groups;
+			arraySort( g, function( a, b ) { return a.order < b.order ? -1 : ( a.order > b.order ? 1 : 0 ); } );
+			for ( var x in g ) groups.append( { id: x.id, title: x.title } );
+		} catch ( any e ) {}
+		return new bxrig.MenuTree().sections( groups );
+	}
 
-    // Every entry that does something, with its path ("Appearance > Theme").
-    function flatten( entries, prefix = "" ) {
-        var out = [];
-        for ( var e in arguments.entries ) {
-            var path = ( len( arguments.prefix ) ? arguments.prefix & " > " : "" ) & e.label;
-            if ( e.kind == "sub" ) { for ( var c in flatten( e.children, path ) ) out.append( c ); }
-            else out.append( { path: path, entry: e } );
-        }
-        return out;
-    }
+	// Every entry that does something, with its path ("Appearance > Theme").
+	function flatten( entries, prefix = "" ) {
+		var out = [];
+		for ( var e in arguments.entries ) {
+			var path = ( len( arguments.prefix ) ? arguments.prefix & " > " : "" ) & e.label;
+			if ( e.kind == "sub" ) { for ( var c in flatten( e.children, path ) ) out.append( c ); }
+			else out.append( { path: path, entry: e } );
+		}
+		return out;
+	}
 
-    // What an entry runs, as text.
-    function describe( e ) {
-        var c = structKeyExists( e, "argv" ) ? "bxrig " & e.argv.toList( " " ) : "";
-        switch ( e.kind ) {
-            case "spawn": return "opens: " & c;
-            case "run": return "shows in a terminal: " & c;
-            case "term": return "opens in a terminal: " & c;
-            case "tui": return "opens in a terminal: " & c & ( structKeyExists( e, "icon" ) ? " (icon: " & e.icon & ")" : "" );
-            case "open": return "opens " & e.url;
-            case "pick": return "choose from " & e.source & ", then: " & c;
-            case "ask": return "asks for text, then: " & c;
-            case "rebind": return "pick a shortcut, type new keys, then: bxrig keys set ID KEYS --yes";
-            case "pkgsearch": return "searches " & ( e.source == "aur" ? "the AUR" : "the repos and the AUR" ) & ", then: bxrig pkg install NAME --yes";
-            case "catalog": return "lists the " & e.label & " apps, then: bxrig install ID --yes";
-            case "db": return "opens the databases menu: bxrig db menu";
-            case "webcreate": return "asks for a name and a URL, then: bxrig web add NAME URL";
-            case "webrm": return "pick one, confirm, then: bxrig web rm NAME";
-        }
-        return "";
-    }
+	// What an entry runs, as text.
+	function describe( e ) {
+		var c = structKeyExists( e, "argv" ) ? "bxrig " & e.argv.toList( " " ) : "";
+		switch ( e.kind ) {
+			case "spawn": return "opens: " & c;
+			case "run": return "shows in a terminal: " & c;
+			case "term": return "opens in a terminal: " & c;
+			case "tui": return "opens in a terminal: " & c & ( structKeyExists( e, "icon" ) ? " (icon: " & e.icon & ")" : "" );
+			case "open": return "opens " & e.url;
+			case "pick": return "choose from " & e.source & ", then: " & c;
+			case "ask": return "asks for text, then: " & c;
+			case "rebind": return "pick a shortcut, type new keys, then: bxrig keys set ID KEYS --yes";
+			case "pkgsearch": return "searches " & ( e.source == "aur" ? "the AUR" : "the repos and the AUR" ) & ", then: bxrig pkg install NAME --yes";
+			case "catalog": return "lists the " & e.label & " apps, then: bxrig install ID --yes";
+			case "db": return "opens the databases menu: bxrig db menu";
+			case "webcreate": return "asks for a name and a URL, then: bxrig web add NAME URL";
+			case "webrm": return "pick one, confirm, then: bxrig web rm NAME";
+		}
+		return "";
+	}
 
-    // The tree as indented text lines.
-    function lineList( entries, depth ) {
-        var out = [];
-        var pad = repeatString( "  ", arguments.depth );
-        for ( var r in arguments.entries ) {
-            if ( r.kind == "sub" ) { out.append( pad & r.label ); for ( var l in lineList( r.children, arguments.depth + 1 ) ) out.append( l ); }
-            else out.append( pad & r.label & ( len( describe( r ) ) ? "   (" & describe( r ) & ")" : "" ) );
-        }
-        return out;
-    }
+	// The tree as indented text lines.
+	function lineList( entries, depth ) {
+		var out = [];
+		var pad = repeatString( "  ", arguments.depth );
+		for ( var r in arguments.entries ) {
+			if ( r.kind == "sub" ) { out.append( pad & r.label ); for ( var l in lineList( r.children, arguments.depth + 1 ) ) out.append( l ); }
+			else out.append( pad & r.label & ( len( describe( r ) ) ? "   (" & describe( r ) & ")" : "" ) );
+		}
+		return out;
+	}
 
-    function show( asJson ) {
-        var rows = tree();
-        return variables.cli.say( "menu items", "ok", { menu: rows, entries: flatten( rows ).len() }, arguments.asJson, lineList( rows, 0 ) );
-    }
+	function show( asJson ) {
+		var rows = tree();
+		return variables.cli.say( "menu items", "ok", { menu: rows, entries: flatten( rows ).len() }, arguments.asJson, lineList( rows, 0 ) );
+	}
 
-    // `menu search TEXT`: the entries whose path contains TEXT.
-    function search( text, asJson ) {
-        var t = lCase( trim( arguments.text ) );
-        var hits = flatten( tree() ).filter( function( f ) { return findNoCase( t, f.path ) > 0; } );
-        var rows = hits.map( function( h ) { return { path: h.path, kind: h.entry.kind, does: describe( h.entry ) }; } );
-        var lines = rows.map( function( r ) { return r.path & "   (" & r.does & ")"; } );
-        if ( !rows.len() ) lines.append( "No menu entry matches " & arguments.text );
-        return variables.cli.say( "menu search", "ok", { query: arguments.text, results: rows }, arguments.asJson, lines );
-    }
+	// `menu search TEXT`: the entries whose path contains TEXT.
+	function search( text, asJson ) {
+		var t = lCase( trim( arguments.text ) );
+		var hits = flatten( tree() ).filter( function( f ) { return findNoCase( t, f.path ) > 0; } );
+		var rows = hits.map( function( h ) { return { path: h.path, kind: h.entry.kind, does: describe( h.entry ) }; } );
+		var lines = rows.map( function( r ) { return r.path & "   (" & r.does & ")"; } );
+		if ( !rows.len() ) lines.append( "No menu entry matches " & arguments.text );
+		return variables.cli.say( "menu search", "ok", { query: arguments.text, results: rows }, arguments.asJson, lines );
+	}
 
-    // Every submenu with its path: [ { path, label, children } ].
-    function routes( entries, prefix = "" ) {
-        var out = [];
-        for ( var e in arguments.entries ) {
-            if ( e.kind != "sub" ) continue;
-            var path = ( len( arguments.prefix ) ? arguments.prefix & " > " : "" ) & e.label;
-            out.append( { path: path, label: e.label, children: e.children } );
-            for ( var c in routes( e.children, path ) ) out.append( c );
-        }
-        return out;
-    }
+	// Every submenu with its path: [ { path, label, children } ].
+	function routes( entries, prefix = "" ) {
+		var out = [];
+		for ( var e in arguments.entries ) {
+			if ( e.kind != "sub" ) continue;
+			var path = ( len( arguments.prefix ) ? arguments.prefix & " > " : "" ) & e.label;
+			out.append( { path: path, label: e.label, children: e.children } );
+			for ( var c in routes( e.children, path ) ) out.append( c );
+		}
+		return out;
+	}
 
-    // `menu open ROUTE`: that submenu on its own (a label like "capture" or a path like "trigger > capture"). No route lists them.
-    function open( route, asJson ) {
-        var cmd = "menu open";
-        var want = lCase( trim( arguments.route ) );
-        var all = routes( tree() );
-        if ( !len( want ) ) return variables.cli.say( cmd, "ok", { routes: all.map( function( r ) { return r.path; } ) }, arguments.asJson, all.map( function( r ) { return r.path; } ) );
-        var hit = all.filter( function( r ) { return lCase( r.label ) == want || lCase( r.path ) == want; } );
-        if ( !hit.len() ) return variables.cli.say( cmd, "precondition", { error: "Unknown route " & arguments.route }, arguments.asJson, [ "error: no menu section called " & arguments.route & ". List them: bxrig menu open" ] );
-        try {
-            var runner = new bxrig.Runner( variables.cli, variables.inst.runner() );
-            return level( runner, hit[ 1 ].label, hit[ 1 ].children );
-        } catch ( any err ) {
-            return variables.cli.say( cmd, "precondition", { error: err.message }, arguments.asJson, [ "error: " & err.message ] );
-        }
-    }
+	// `menu open ROUTE`: that submenu on its own (a label like "capture" or a path like "trigger > capture"). No route lists them.
+	function open( route, asJson ) {
+		var cmd = "menu open";
+		var want = lCase( trim( arguments.route ) );
+		var all = routes( tree() );
+		if ( !len( want ) ) return variables.cli.say( cmd, "ok", { routes: all.map( function( r ) { return r.path; } ) }, arguments.asJson, all.map( function( r ) { return r.path; } ) );
+		var hit = all.filter( function( r ) { return lCase( r.label ) == want || lCase( r.path ) == want; } );
+		if ( !hit.len() ) return variables.cli.say( cmd, "precondition", { error: "Unknown route " & arguments.route }, arguments.asJson, [ "error: no menu section called " & arguments.route & ". List them: bxrig menu open" ] );
+		try {
+			var runner = new bxrig.Runner( variables.cli, variables.inst.runner() );
+			return level( runner, hit[ 1 ].label, hit[ 1 ].children );
+		} catch ( any err ) {
+			return variables.cli.say( cmd, "precondition", { error: err.message }, arguments.asJson, [ "error: " & err.message ] );
+		}
+	}
 
-    // ---- live lists for pick entries ----
-    function exec( argv, timeout = 30 ) {
-        try { return variables.inst.proc().exec( arguments.argv, arguments.timeout ); } catch ( any e ) { return { exitCode: 127, output: e.message }; }
-    }
+	// ---- live lists for pick entries ----
+	function exec( argv, timeout = 30 ) {
+		try { return variables.inst.proc().exec( arguments.argv, arguments.timeout ); } catch ( any e ) { return { exitCode: 127, output: e.message }; }
+	}
 
 
-    // [ { label, value, current } ] for a source. Empty when there is nothing to choose.
-    function choices( source ) {
-        var out = [];
-        var src = arguments.source;
-        if ( src == "themes" ) {
-            var th = new bxrig.Theme( variables.cli );
-            var cur = th.readState().name;
-            for ( var n in th.names() ) out.append( { label: n, value: n, current: n == cur } );
-        } else if ( src == "user-themes" ) {
-            var th2 = new bxrig.Theme( variables.cli );
-            var all = th2.discover();
-            for ( var k in th2.names() ) if ( all[ k ].origin == "user" ) out.append( { label: k, value: k, current: false } );
-        } else if ( src == "browsers" || src == "filemanagers" ) {
-            var cat = new bxrig.Catalog().load();
-            var pk = new bxrig.Packages( variables.cli, cat );
-            var names = pk.installedNames();
-            var wantCat = src == "browsers" ? "Browsers" : "File Management";
-            for ( var a in cat.apps ) if ( a.category == wantCat && a.source != "web" && pk.isInstalled( a, names ) ) out.append( { label: a.name, value: a.id, current: false } );
-        } else if ( src == "terminals" ) {
-            var tc = new bxrig.TerminalConfig( true );
-            for ( var t in tc.terminals() ) if ( variables.proc.has( t.cmd ) ) out.append( { label: t.id, value: t.id, current: false } );
-        } else if ( src == "packages" ) {
-            var r = exec( [ variables.environ.self(), "pkg", "installed", "--explicit", "--json" ], 60 );
-            try { for ( var p in jsonDeserialize( r.output ).data.packages ) out.append( { label: p.name & " " & p.version, value: p.name, current: false } ); } catch ( any e ) {}
-        } else if ( src == "apps-installed" ) {
-            var cat2 = new bxrig.Catalog().load();
-            var pk2 = new bxrig.Packages( variables.cli, cat2 );
-            var names2 = pk2.installedNames();
-            for ( var b in cat2.apps ) if ( pk2.isInstalled( b, names2 ) ) out.append( { label: b.name & "  (" & b.id & ")", value: b.id, current: false } );
-        } else if ( src == "nas" ) {
-            var nr = exec( [ variables.environ.self(), "nas", "list", "--json" ], 30 );
-            try { for ( var nx in jsonDeserialize( nr.output ).data.nas ) out.append( { label: nx.name & "  (" & nx.protocol & "://" & nx.host & ")", value: nx.name, current: false } ); } catch ( any e ) {}
-        } else if ( src == "agents" ) {
-            var ar = exec( [ variables.environ.self(), "ai", "list", "--json" ], 30 );
-            try { for ( var ag in jsonDeserialize( ar.output ).data.agents ) if ( ag.installed ) out.append( { label: ag.name, value: ag.id, current: ag.default } ); } catch ( any e ) {}
-        } else if ( src == "zones" ) {
-            var zr = exec( [ variables.environ.self(), "time", "zone", "--list" ], 30 );
-            for ( var zn in listToArray( trim( zr.output ), chr( 10 ) ) ) out.append( { label: zn, value: zn, current: false } );
-        } else if ( src == "vms" ) {
-            for ( var v in new bxrig.Vm( variables.cli ).allRecords() ) out.append( { label: v.name & "  (" & v.kind & ")", value: v.name, current: false } );
-        } else if ( src == "fonts" || src == "fonts-uninstalled" ) {
-            for ( var fo in new bxrig.Appearance( variables.cli ).fontRows() ) if ( ( src == "fonts" ) == fo.installed ) out.append( { label: fo.label & "  (" & fo.family & ")", value: fo.id, current: false } );
-        } else if ( src == "monitors" ) {
-            for ( var mo in new bxrig.Display( variables.cli ).monitors() ) out.append( { label: mo.name & "  " & mo.width & "x" & mo.height & "  scale " & mo.scale, value: mo.name, current: false } );
-        } else if ( src == "backgrounds" ) {
-            for ( var im in new bxrig.Appearance( variables.cli ).images() ) out.append( { label: im.name, value: im.path, current: false } );
-        } else if ( src == "shortcuts" || src == "shortcuts-run" ) {
-            for ( var sr0 in new bxrig.Shortcuts().show() ) if ( src == "shortcuts" || sr0.runs ) out.append( { label: ( len( sr0.keys ) ? sr0.keys : "(no keys)" ) & "   " & sr0.action, value: sr0.id, current: false } );
-        } else if ( src == "skills-installed" ) {
-            var sr = exec( [ variables.environ.self(), "skills", "installed", "--json" ], 30 );
-            try { for ( var s in jsonDeserialize( sr.output ).data.skills ) out.append( { label: s.name, value: s.name, current: false } ); } catch ( any e ) {}
-        }
-        return out;
-    }
+	// [ { label, value, current } ] for a source. Empty when there is nothing to choose.
+	function choices( source ) {
+		var out = [];
+		var src = arguments.source;
+		if ( src == "themes" ) {
+			var th = new bxrig.Theme( variables.cli );
+			var cur = th.readState().name;
+			for ( var n in th.names() ) out.append( { label: n, value: n, current: n == cur } );
+		} else if ( src == "user-themes" ) {
+			var th2 = new bxrig.Theme( variables.cli );
+			var all = th2.discover();
+			for ( var k in th2.names() ) if ( all[ k ].origin == "user" ) out.append( { label: k, value: k, current: false } );
+		} else if ( src == "browsers" || src == "filemanagers" ) {
+			var cat = new bxrig.Catalog().load();
+			var pk = new bxrig.Packages( variables.cli, cat );
+			var names = pk.installedNames();
+			var wantCat = src == "browsers" ? "Browsers" : "File Management";
+			for ( var a in cat.apps ) if ( a.category == wantCat && a.source != "web" && pk.isInstalled( a, names ) ) out.append( { label: a.name, value: a.id, current: false } );
+		} else if ( src == "terminals" ) {
+			var tc = new bxrig.TerminalConfig( true );
+			for ( var t in tc.terminals() ) if ( variables.proc.has( t.cmd ) ) out.append( { label: t.id, value: t.id, current: false } );
+		} else if ( src == "packages" ) {
+			var r = exec( [ variables.environ.self(), "pkg", "installed", "--explicit", "--json" ], 60 );
+			try { for ( var p in jsonDeserialize( r.output ).data.packages ) out.append( { label: p.name & " " & p.version, value: p.name, current: false } ); } catch ( any e ) {}
+		} else if ( src == "apps-installed" ) {
+			var cat2 = new bxrig.Catalog().load();
+			var pk2 = new bxrig.Packages( variables.cli, cat2 );
+			var names2 = pk2.installedNames();
+			for ( var b in cat2.apps ) if ( pk2.isInstalled( b, names2 ) ) out.append( { label: b.name & "  (" & b.id & ")", value: b.id, current: false } );
+		} else if ( src == "nas" ) {
+			var nr = exec( [ variables.environ.self(), "nas", "list", "--json" ], 30 );
+			try { for ( var nx in jsonDeserialize( nr.output ).data.nas ) out.append( { label: nx.name & "  (" & nx.protocol & "://" & nx.host & ")", value: nx.name, current: false } ); } catch ( any e ) {}
+		} else if ( src == "agents" ) {
+			var ar = exec( [ variables.environ.self(), "ai", "list", "--json" ], 30 );
+			try { for ( var ag in jsonDeserialize( ar.output ).data.agents ) if ( ag.installed ) out.append( { label: ag.name, value: ag.id, current: ag.default } ); } catch ( any e ) {}
+		} else if ( src == "zones" ) {
+			var zr = exec( [ variables.environ.self(), "time", "zone", "--list" ], 30 );
+			for ( var zn in listToArray( trim( zr.output ), chr( 10 ) ) ) out.append( { label: zn, value: zn, current: false } );
+		} else if ( src == "vms" ) {
+			for ( var v in new bxrig.Vm( variables.cli ).allRecords() ) out.append( { label: v.name & "  (" & v.kind & ")", value: v.name, current: false } );
+		} else if ( src == "fonts" || src == "fonts-uninstalled" ) {
+			for ( var fo in new bxrig.Appearance( variables.cli ).fontRows() ) if ( ( src == "fonts" ) == fo.installed ) out.append( { label: fo.label & "  (" & fo.family & ")", value: fo.id, current: false } );
+		} else if ( src == "monitors" ) {
+			for ( var mo in new bxrig.Display( variables.cli ).monitors() ) out.append( { label: mo.name & "  " & mo.width & "x" & mo.height & "  scale " & mo.scale, value: mo.name, current: false } );
+		} else if ( src == "backgrounds" ) {
+			for ( var im in new bxrig.Appearance( variables.cli ).images() ) out.append( { label: im.name, value: im.path, current: false } );
+		} else if ( src == "shortcuts" || src == "shortcuts-run" ) {
+			for ( var sr0 in new bxrig.Shortcuts().show() ) if ( src == "shortcuts" || sr0.runs ) out.append( { label: ( len( sr0.keys ) ? sr0.keys : "(no keys)" ) & "   " & sr0.action, value: sr0.id, current: false } );
+		} else if ( src == "skills-installed" ) {
+			var sr = exec( [ variables.environ.self(), "skills", "installed", "--json" ], 30 );
+			try { for ( var s in jsonDeserialize( sr.output ).data.skills ) out.append( { label: s.name, value: s.name, current: false } ); } catch ( any e ) {}
+		}
+		return out;
+	}
 
-    // ---- running things ----
-    // The terminal program (and the flag that precedes the command) for `run` entries.
-    function terminalArgv() {
-        for ( var t in [ "ghostty", "kitty", "foot", "alacritty", "konsole" ] ) {
-            if ( variables.proc.has( t ) ) return arrayFind( [ "ghostty", "alacritty", "konsole" ], t ) ? [ t, "-e" ] : [ t ];
-        }
-        return [];
-    }
+	// ---- running things ----
+	// The terminal program (and the flag that precedes the command) for `run` entries.
+	function terminalArgv() {
+		for ( var t in [ "ghostty", "kitty", "foot", "alacritty", "konsole" ] ) {
+			if ( variables.proc.has( t ) ) return arrayFind( [ "ghostty", "alacritty", "konsole" ], t ) ? [ t, "-e" ] : [ t ];
+		}
+		return [];
+	}
 
-    function detach( argv ) {
-        var run = [ "sh", "-c", 'setsid "$@" >/dev/null 2>&1 &', "_" ];
-        for ( var p in arguments.argv ) run.append( p );
-        variables.inst.proc().exec( run, 10 );
-    }
+	function detach( argv ) {
+		var run = [ "sh", "-c", 'setsid "$@" >/dev/null 2>&1 &', "_" ];
+		for ( var p in arguments.argv ) run.append( p );
+		variables.inst.proc().exec( run, 10 );
+	}
 
-    // Starts one entry (spawn or run).
-    function start( entry ) {
-        if ( arguments.entry.kind == "spawn" ) {
-            var sp = [ variables.environ.self() ];
-            for ( var a in arguments.entry.argv ) sp.append( a );
-            detach( sp );
-            return new bxrig.util.Exit().ok();
-        }
-        var term = terminalArgv();
-        if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.util.Exit().precondition(); }
-        var argv = [];
-        for ( var t in term ) argv.append( t );
-        for ( var w in [ "sh", "-c", 'bxrig_cmd="$1"; shift; "$bxrig_cmd" "$@"; echo; echo "Press Enter to close"; read _', "_", variables.environ.self() ] ) argv.append( w );
-        for ( var a2 in arguments.entry.argv ) argv.append( a2 );
-        detach( argv );
-        return new bxrig.util.Exit().ok();
-    }
+	// Starts one entry (spawn or run).
+	function start( entry ) {
+		if ( arguments.entry.kind == "spawn" ) {
+			var sp = [ variables.environ.self() ];
+			for ( var a in arguments.entry.argv ) sp.append( a );
+			detach( sp );
+			return new bxrig.util.Exit().ok();
+		}
+		var term = terminalArgv();
+		if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.util.Exit().precondition(); }
+		var argv = [];
+		for ( var t in term ) argv.append( t );
+		for ( var w in [ "sh", "-c", 'bxrig_cmd="$1"; shift; "$bxrig_cmd" "$@"; echo; echo "Press Enter to close"; read _', "_", variables.environ.self() ] ) argv.append( w );
+		for ( var a2 in arguments.entry.argv ) argv.append( a2 );
+		detach( argv );
+		return new bxrig.util.Exit().ok();
+	}
 
-    // A Control Center page in its own terminal window: the terminal closes when you leave the page (no "press Enter" step).
-    function startTui( entry ) {
-        var term = terminalArgv();
-        if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.util.Exit().precondition(); }
-        var argv = [];
-        for ( var t in term ) argv.append( t );
-        argv.append( variables.environ.self() );
-        for ( var a in arguments.entry.argv ) argv.append( a );
-        detach( argv );
-        return new bxrig.util.Exit().ok();
-    }
+	// A Control Center page in its own terminal window: the terminal closes when you leave the page (no "press Enter" step).
+	function startTui( entry ) {
+		var term = terminalArgv();
+		if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.util.Exit().precondition(); }
+		var argv = [];
+		for ( var t in term ) argv.append( t );
+		argv.append( variables.environ.self() );
+		for ( var a in arguments.entry.argv ) argv.append( a );
+		detach( argv );
+		return new bxrig.util.Exit().ok();
+	}
 
-    // A command in its own terminal window that closes when it ends (the wizard).
-    function startTerm( entry ) {
-        var term = terminalArgv();
-        if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.util.Exit().precondition(); }
-        var argv = [];
-        for ( var t in term ) argv.append( t );
-        argv.append( variables.environ.self() );
-        for ( var a in arguments.entry.argv ) argv.append( a );
-        detach( argv );
-        return new bxrig.util.Exit().ok();
-    }
+	// A command in its own terminal window that closes when it ends (the wizard).
+	function startTerm( entry ) {
+		var term = terminalArgv();
+		if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.util.Exit().precondition(); }
+		var argv = [];
+		for ( var t in term ) argv.append( t );
+		argv.append( variables.environ.self() );
+		for ( var a in arguments.entry.argv ) argv.append( a );
+		detach( argv );
+		return new bxrig.util.Exit().ok();
+	}
 
-    function sub( argv, value ) {
-        return arguments.argv.map( function( a ) { return replace( a, "{}", value, "all" ); } );
-    }
+	function sub( argv, value ) {
+		return arguments.argv.map( function( a ) { return replace( a, "{}", value, "all" ); } );
+	}
 
-    function confirm( runner, text ) {
-        return arguments.runner.select( arguments.text, [ "Cancel", "Yes" ] ) == 2;
-    }
+	function confirm( runner, text ) {
+		return arguments.runner.select( arguments.text, [ "Cancel", "Yes" ] ) == 2;
+	}
 
-    function note( runner, text ) { arguments.runner.select( arguments.text, [ "OK" ] ); }
+	function note( runner, text ) { arguments.runner.select( arguments.text, [ "OK" ] ); }
 
-    function pickAndRun( runner, e ) {
-        var ch = choices( e.source );
-        if ( !ch.len() ) { note( arguments.runner, "Nothing to choose here" ); return new bxrig.util.Exit().ok(); }
-        var labels = ch.map( function( c ) { return ( c.current ? "✓ " : "  " ) & c.label; } );
-        var pick = arguments.runner.select( e.label, labels );
-        if ( pick == 0 ) return new bxrig.util.Exit().ok();
-        var chosen = ch[ pick ];
-        if ( structKeyExists( e, "confirm" ) && !confirm( arguments.runner, replace( e.confirm, "{}", chosen.value, "all" ) ) ) return new bxrig.util.Exit().ok();
-        return start( { kind: e.mode ?: "spawn", argv: sub( e.argv, chosen.value ) } );
-    }
+	function pickAndRun( runner, e ) {
+		var ch = choices( e.source );
+		if ( !ch.len() ) { note( arguments.runner, "Nothing to choose here" ); return new bxrig.util.Exit().ok(); }
+		var labels = ch.map( function( c ) { return ( c.current ? "✓ " : "  " ) & c.label; } );
+		var pick = arguments.runner.select( e.label, labels );
+		if ( pick == 0 ) return new bxrig.util.Exit().ok();
+		var chosen = ch[ pick ];
+		if ( structKeyExists( e, "confirm" ) && !confirm( arguments.runner, replace( e.confirm, "{}", chosen.value, "all" ) ) ) return new bxrig.util.Exit().ok();
+		return start( { kind: e.mode ?: "spawn", argv: sub( e.argv, chosen.value ) } );
+	}
 
-    function askAndRun( runner, e ) {
-        if ( !arguments.runner.inputSupported() ) { note( arguments.runner, "Your menu provider cannot take typed text. Run: bxrig " & e.argv.toList( " " ) ); return new bxrig.util.Exit().ok(); }
-        var text = arguments.runner.input( e.prompt );
-        if ( !len( text ) ) return new bxrig.util.Exit().ok();
-        return start( { kind: e.mode ?: "run", argv: sub( e.argv, text ) } );
-    }
+	function askAndRun( runner, e ) {
+		if ( !arguments.runner.inputSupported() ) { note( arguments.runner, "Your menu provider cannot take typed text. Run: bxrig " & e.argv.toList( " " ) ); return new bxrig.util.Exit().ok(); }
+		var text = arguments.runner.input( e.prompt );
+		if ( !len( text ) ) return new bxrig.util.Exit().ok();
+		return start( { kind: e.mode ?: "run", argv: sub( e.argv, text ) } );
+	}
 
-    // Rebind: pick a shortcut, ask for its new keys, then `keys set` in a terminal (it shows a conflict or the plan result).
-    function rebindFlow( runner, e ) {
-        if ( !arguments.runner.inputSupported() ) { note( arguments.runner, "Your menu program cannot take typed text. Run: bxrig keys set ID KEYS --yes" ); return new bxrig.util.Exit().ok(); }
-        var ch = choices( "shortcuts" );
-        var pick = arguments.runner.select( "Rebind which shortcut?", ch.map( function( c ) { return c.label; } ) );
-        if ( pick == 0 ) return new bxrig.util.Exit().ok();
-        var keys = arguments.runner.input( "New keys for " & trim( listLast( ch[ pick ].label, "   " ) ) & " (like Super+Alt+K)" );
-        if ( !len( keys ) ) return new bxrig.util.Exit().ok();
-        return start( { kind: "run", argv: [ "keys", "set", ch[ pick ].value, keys, "--yes" ] } );
-    }
+	// Rebind: pick a shortcut, ask for its new keys, then `keys set` in a terminal (it shows a conflict or the plan result).
+	function rebindFlow( runner, e ) {
+		if ( !arguments.runner.inputSupported() ) { note( arguments.runner, "Your menu program cannot take typed text. Run: bxrig keys set ID KEYS --yes" ); return new bxrig.util.Exit().ok(); }
+		var ch = choices( "shortcuts" );
+		var pick = arguments.runner.select( "Rebind which shortcut?", ch.map( function( c ) { return c.label; } ) );
+		if ( pick == 0 ) return new bxrig.util.Exit().ok();
+		var keys = arguments.runner.input( "New keys for " & trim( listLast( ch[ pick ].label, "   " ) ) & " (like Super+Alt+K)" );
+		if ( !len( keys ) ) return new bxrig.util.Exit().ok();
+		return start( { kind: "run", argv: [ "keys", "set", ch[ pick ].value, keys, "--yes" ] } );
+	}
 
-    // Package search: ask for text, list the matches (repos and AUR), confirm, install in a terminal (sudo may ask for a password).
-    function pkgSearchFlow( runner, e ) {
-        if ( !arguments.runner.inputSupported() ) { note( arguments.runner, "Your menu provider cannot take typed text. Run: bxrig pkg search TEXT" ); return new bxrig.util.Exit().ok(); }
-        var text = arguments.runner.input( e.source == "aur" ? "Search the AUR" : "Search packages" );
-        if ( !len( text ) ) return new bxrig.util.Exit().ok();
-        var r = exec( [ variables.environ.self(), "pkg", "search", text, "--source=" & e.source, "--limit=60", "--json" ], 90 );
-        var rows = [];
-        try { rows = jsonDeserialize( r.output ).data.results; } catch ( any x ) {}
-        if ( !rows.len() ) { note( arguments.runner, "No packages match " & text ); return new bxrig.util.Exit().ok(); }
-        var labels = rows.map( function( p ) { return ( p.installed ? "✓ " : "  " ) & p.repo & "/" & p.name & " " & p.version & ( len( p.description ) ? "  " & left( p.description, 70 ) : "" ); } );
-        var pick = arguments.runner.select( "Install which package?", labels );
-        if ( pick == 0 ) return new bxrig.util.Exit().ok();
-        var chosen = rows[ pick ];
-        if ( chosen.installed ) { note( arguments.runner, chosen.name & " is already installed" ); return new bxrig.util.Exit().ok(); }
-        if ( !confirm( arguments.runner, "Install " & chosen.name & ( chosen.source == "aur" ? " from the AUR (a user-submitted build script)?" : "?" ) ) ) return new bxrig.util.Exit().ok();
-        var argv = [ "pkg", "install", chosen.name, "--yes" ];
-        if ( chosen.source == "aur" ) argv.append( "--aur" );
-        return start( { kind: "run", argv: argv } );
-    }
+	// Package search: ask for text, list the matches (repos and AUR), confirm, install in a terminal (sudo may ask for a password).
+	function pkgSearchFlow( runner, e ) {
+		if ( !arguments.runner.inputSupported() ) { note( arguments.runner, "Your menu provider cannot take typed text. Run: bxrig pkg search TEXT" ); return new bxrig.util.Exit().ok(); }
+		var text = arguments.runner.input( e.source == "aur" ? "Search the AUR" : "Search packages" );
+		if ( !len( text ) ) return new bxrig.util.Exit().ok();
+		var r = exec( [ variables.environ.self(), "pkg", "search", text, "--source=" & e.source, "--limit=60", "--json" ], 90 );
+		var rows = [];
+		try { rows = jsonDeserialize( r.output ).data.results; } catch ( any x ) {}
+		if ( !rows.len() ) { note( arguments.runner, "No packages match " & text ); return new bxrig.util.Exit().ok(); }
+		var labels = rows.map( function( p ) { return ( p.installed ? "✓ " : "  " ) & p.repo & "/" & p.name & " " & p.version & ( len( p.description ) ? "  " & left( p.description, 70 ) : "" ); } );
+		var pick = arguments.runner.select( "Install which package?", labels );
+		if ( pick == 0 ) return new bxrig.util.Exit().ok();
+		var chosen = rows[ pick ];
+		if ( chosen.installed ) { note( arguments.runner, chosen.name & " is already installed" ); return new bxrig.util.Exit().ok(); }
+		if ( !confirm( arguments.runner, "Install " & chosen.name & ( chosen.source == "aur" ? " from the AUR (a user-submitted build script)?" : "?" ) ) ) return new bxrig.util.Exit().ok();
+		var argv = [ "pkg", "install", chosen.name, "--yes" ];
+		if ( chosen.source == "aur" ) argv.append( "--aur" );
+		return start( { kind: "run", argv: argv } );
+	}
 
-    // The apps of one catalog group: pick one, confirm, install it in a terminal.
-    function catalogFlow( runner, e ) {
-        var cat = new bxrig.Catalog().load();
-        var pk = new bxrig.Packages( variables.cli, cat );
-        var names = pk.installedNames();
-        var apps = cat.apps.filter( function( a ) { return a.group == e.group; } );
-        arraySort( apps, function( a, b ) { return compareNoCase( a.name, b.name ); } );
-        if ( !apps.len() ) { note( arguments.runner, "No apps in this group" ); return new bxrig.util.Exit().ok(); }
-        var labels = apps.map( function( a ) { return ( pk.isInstalled( a, names ) ? "✓ " : "  " ) & a.name & "  " & left( a.description ?: "", 70 ); } );
-        var pick = arguments.runner.select( e.label, labels );
-        if ( pick == 0 ) return new bxrig.util.Exit().ok();
-        var chosen = apps[ pick ];
-        if ( pk.isInstalled( chosen, names ) ) { note( arguments.runner, chosen.name & " is already installed" ); return new bxrig.util.Exit().ok(); }
-        if ( !confirm( arguments.runner, "Install " & chosen.name & "?" ) ) return new bxrig.util.Exit().ok();
-        return start( { kind: "run", argv: [ "install", chosen.id, "--yes" ] } );
-    }
+	// The apps of one catalog group: pick one, confirm, install it in a terminal.
+	function catalogFlow( runner, e ) {
+		var cat = new bxrig.Catalog().load();
+		var pk = new bxrig.Packages( variables.cli, cat );
+		var names = pk.installedNames();
+		var apps = cat.apps.filter( function( a ) { return a.group == e.group; } );
+		arraySort( apps, function( a, b ) { return compareNoCase( a.name, b.name ); } );
+		if ( !apps.len() ) { note( arguments.runner, "No apps in this group" ); return new bxrig.util.Exit().ok(); }
+		var labels = apps.map( function( a ) { return ( pk.isInstalled( a, names ) ? "✓ " : "  " ) & a.name & "  " & left( a.description ?: "", 70 ); } );
+		var pick = arguments.runner.select( e.label, labels );
+		if ( pick == 0 ) return new bxrig.util.Exit().ok();
+		var chosen = apps[ pick ];
+		if ( pk.isInstalled( chosen, names ) ) { note( arguments.runner, chosen.name & " is already installed" ); return new bxrig.util.Exit().ok(); }
+		if ( !confirm( arguments.runner, "Install " & chosen.name & "?" ) ) return new bxrig.util.Exit().ok();
+		return start( { kind: "run", argv: [ "install", chosen.id, "--yes" ] } );
+	}
 
-    // Create web app, Omarchy style: asks for the name and the URL, then adds it. Providers that cannot take typed text open a terminal
-    // that asks the same questions (`bxrig web add`).
-    function createWebApp( runner ) {
-        if ( !arguments.runner.inputSupported() ) return start( { kind: "run", argv: [ "web", "add" ] } );
-        var name = arguments.runner.input( "Web app name" );
-        if ( !len( name ) ) return new bxrig.util.Exit().ok();
-        var url = arguments.runner.input( "URL (https://...)" );
-        if ( !len( url ) ) return new bxrig.util.Exit().ok();
-        var r = variables.inst.proc().exec( [ variables.environ.self(), "web", "add", name, url, "--yes" ], 60 );
-        arguments.runner.select( r.exitCode == 0 ? "Added " & name : "Could not add " & name & ": " & left( trim( r.output ), 120 ), [ "OK" ] );
-        return new bxrig.util.Exit().ok();
-    }
+	// Create web app, Omarchy style: asks for the name and the URL, then adds it. Providers that cannot take typed text open a terminal
+	// that asks the same questions (`bxrig web add`).
+	function createWebApp( runner ) {
+		if ( !arguments.runner.inputSupported() ) return start( { kind: "run", argv: [ "web", "add" ] } );
+		var name = arguments.runner.input( "Web app name" );
+		if ( !len( name ) ) return new bxrig.util.Exit().ok();
+		var url = arguments.runner.input( "URL (https://...)" );
+		if ( !len( url ) ) return new bxrig.util.Exit().ok();
+		var r = variables.inst.proc().exec( [ variables.environ.self(), "web", "add", name, url, "--yes" ], 60 );
+		arguments.runner.select( r.exitCode == 0 ? "Added " & name : "Could not add " & name & ": " & left( trim( r.output ), 120 ), [ "OK" ] );
+		return new bxrig.util.Exit().ok();
+	}
 
-    // Remove a web app: pick one, confirm, delete.
-    function removeWebApp( runner ) {
-        var apps = new bxrig.Web( variables.cli, variables.inst.runner() ).apps();
-        if ( !apps.len() ) { note( arguments.runner, "No web apps yet" ); return new bxrig.util.Exit().ok(); }
-        var labels = apps.map( function( a ) { return a.name & "  " & a.url; } );
-        var pick = arguments.runner.select( "Remove which web app?", labels );
-        if ( pick == 0 ) return new bxrig.util.Exit().ok();
-        if ( !confirm( arguments.runner, "Remove " & apps[ pick ].name & "?" ) ) return new bxrig.util.Exit().ok();
-        variables.inst.proc().exec( [ variables.environ.self(), "web", "rm", apps[ pick ].name, "--yes" ], 30 );
-        return new bxrig.util.Exit().ok();
-    }
+	// Remove a web app: pick one, confirm, delete.
+	function removeWebApp( runner ) {
+		var apps = new bxrig.Web( variables.cli, variables.inst.runner() ).apps();
+		if ( !apps.len() ) { note( arguments.runner, "No web apps yet" ); return new bxrig.util.Exit().ok(); }
+		var labels = apps.map( function( a ) { return a.name & "  " & a.url; } );
+		var pick = arguments.runner.select( "Remove which web app?", labels );
+		if ( pick == 0 ) return new bxrig.util.Exit().ok();
+		if ( !confirm( arguments.runner, "Remove " & apps[ pick ].name & "?" ) ) return new bxrig.util.Exit().ok();
+		variables.inst.proc().exec( [ variables.environ.self(), "web", "rm", apps[ pick ].name, "--yes" ], 30 );
+		return new bxrig.util.Exit().ok();
+	}
 
-    // Does one entry (anything but a submenu). Returns an exit code (0 keeps the menu open).
-    function activate( runner, e ) {
-        switch ( e.kind ) {
-            case "db": new bxrig.Db( variables.cli, variables.inst.runner() ).menu(); return new bxrig.util.Exit().ok();
-            case "webcreate": return createWebApp( arguments.runner );
-            case "webrm": return removeWebApp( arguments.runner );
-            case "pick": return pickAndRun( arguments.runner, e );
-            case "rebind": return rebindFlow( arguments.runner, e );
-            case "ask": return askAndRun( arguments.runner, e );
-            case "pkgsearch": return pkgSearchFlow( arguments.runner, e );
-            case "catalog": return catalogFlow( arguments.runner, e );
-            case "open": detach( [ "xdg-open", e.url ] ); return new bxrig.util.Exit().ok();
-            case "tui": return startTui( e );
-            case "term": return startTerm( e );
-        }
-        if ( structKeyExists( e, "confirm" ) && !confirm( arguments.runner, e.confirm ) ) return new bxrig.util.Exit().ok();
-        return start( e );
-    }
+	// Does one entry (anything but a submenu). Returns an exit code (0 keeps the menu open).
+	function activate( runner, e ) {
+		switch ( e.kind ) {
+			case "db": new bxrig.Db( variables.cli, variables.inst.runner() ).menu(); return new bxrig.util.Exit().ok();
+			case "webcreate": return createWebApp( arguments.runner );
+			case "webrm": return removeWebApp( arguments.runner );
+			case "pick": return pickAndRun( arguments.runner, e );
+			case "rebind": return rebindFlow( arguments.runner, e );
+			case "ask": return askAndRun( arguments.runner, e );
+			case "pkgsearch": return pkgSearchFlow( arguments.runner, e );
+			case "catalog": return catalogFlow( arguments.runner, e );
+			case "open": detach( [ "xdg-open", e.url ] ); return new bxrig.util.Exit().ok();
+			case "tui": return startTui( e );
+			case "term": return startTerm( e );
+		}
+		if ( structKeyExists( e, "confirm" ) && !confirm( arguments.runner, e.confirm ) ) return new bxrig.util.Exit().ok();
+		return start( e );
+	}
 
-    // Search everything: one flat list of every entry's path; your provider filters as you type.
-    function searchAll( runner, entries ) {
-        var flat = flatten( arguments.entries );
-        var pick = arguments.runner.select( "Search", flat.map( function( f ) { return f.path; } ) );
-        if ( pick == 0 ) return new bxrig.util.Exit().ok();
-        return activate( arguments.runner, flat[ pick ].entry );
-    }
+	// Search everything: one flat list of every entry's path; your provider filters as you type.
+	function searchAll( runner, entries ) {
+		var flat = flatten( arguments.entries );
+		var pick = arguments.runner.select( "Search", flat.map( function( f ) { return f.path; } ) );
+		if ( pick == 0 ) return new bxrig.util.Exit().ok();
+		return activate( arguments.runner, flat[ pick ].entry );
+	}
 
-    // The icon each section really has in the icon theme (see IconTheme): { wanted name: name that exists or "" }.
-    function resolveIcons( entries ) {
-        var want = [ "system-search", "application-exit", "go-previous" ];
-        for ( var e in arguments.entries ) if ( structKeyExists( e, "themeIcon" ) ) want.append( e.themeIcon );
-        try { return new bxrig.IconTheme().resolve( want ); } catch ( any err ) { return {}; }
-    }
+	// The icon each section really has in the icon theme (see IconTheme): { wanted name: name that exists or "" }.
+	function resolveIcons( entries ) {
+		var want = [ "system-search", "application-exit", "go-previous" ];
+		for ( var e in arguments.entries ) if ( structKeyExists( e, "themeIcon" ) ) want.append( e.themeIcon );
+		try { return new bxrig.IconTheme().resolve( want ); } catch ( any err ) { return {}; }
+	}
 
-    // Shows one level and follows the choice. Returns when the user goes back or cancels. The top level starts with Search.
-    function level( runner, title, entries, top = false ) {
-        if ( !structKeyExists( variables, "iconMap" ) ) variables.iconMap = resolveIcons( arguments.entries );
-        var icons = variables.iconMap;
-        var iconOf = function( n ) { return structKeyExists( icons, n ) ? icons[ n ] : ""; };
-        while ( true ) {
-            var labels = arguments.entries.map( function( e ) { return structKeyExists( e, "themeIcon" ) && len( iconOf( e.themeIcon ) ) ? { label: e.label, icon: iconOf( e.themeIcon ) } : e.label; } );
-            var off = 0;
-            if ( arguments.top ) { labels.prepend( len( iconOf( "system-search" ) ) ? { label: "Search…", icon: iconOf( "system-search" ) } : "Search…" ); off = 1; }
-            var tail = arguments.top ? { label: "Exit", icon: iconOf( "application-exit" ) } : { label: "Back", icon: iconOf( "go-previous" ) };
-            labels.append( len( tail.icon ) ? tail : tail.label );
-            var pick = arguments.runner.select( arguments.title, labels );
-            if ( pick == 0 || pick == labels.len() ) return new bxrig.util.Exit().ok();
-            if ( arguments.top && pick == 1 ) { var sc = searchAll( arguments.runner, arguments.entries ); if ( sc != 0 ) return sc; continue; }
-            var e = arguments.entries[ pick - off ];
-            if ( e.kind == "sub" ) { var inner = level( arguments.runner, e.label, e.children ); if ( inner != 0 ) return inner; }
-            else { var rc = activate( arguments.runner, e ); if ( rc != 0 ) return rc; }
-        }
-        return new bxrig.util.Exit().ok();
-    }
+	// Shows one level and follows the choice. Returns when the user goes back or cancels. The top level starts with Search.
+	function level( runner, title, entries, top = false ) {
+		if ( !structKeyExists( variables, "iconMap" ) ) variables.iconMap = resolveIcons( arguments.entries );
+		var icons = variables.iconMap;
+		var iconOf = function( n ) { return structKeyExists( icons, n ) ? icons[ n ] : ""; };
+		while ( true ) {
+			var labels = arguments.entries.map( function( e ) { return structKeyExists( e, "themeIcon" ) && len( iconOf( e.themeIcon ) ) ? { label: e.label, icon: iconOf( e.themeIcon ) } : e.label; } );
+			var off = 0;
+			if ( arguments.top ) { labels.prepend( len( iconOf( "system-search" ) ) ? { label: "Search…", icon: iconOf( "system-search" ) } : "Search…" ); off = 1; }
+			var tail = arguments.top ? { label: "Exit", icon: iconOf( "application-exit" ) } : { label: "Back", icon: iconOf( "go-previous" ) };
+			labels.append( len( tail.icon ) ? tail : tail.label );
+			var pick = arguments.runner.select( arguments.title, labels );
+			if ( pick == 0 || pick == labels.len() ) return new bxrig.util.Exit().ok();
+			if ( arguments.top && pick == 1 ) { var sc = searchAll( arguments.runner, arguments.entries ); if ( sc != 0 ) return sc; continue; }
+			var e = arguments.entries[ pick - off ];
+			if ( e.kind == "sub" ) { var inner = level( arguments.runner, e.label, e.children ); if ( inner != 0 ) return inner; }
+			else { var rc = activate( arguments.runner, e ); if ( rc != 0 ) return rc; }
+		}
+		return new bxrig.util.Exit().ok();
+	}
 
-    function run() {
-        try {
-            var runner = new bxrig.Runner( variables.cli, variables.inst.runner() );
-            return level( runner, "BxRig", tree(), true );
-        } catch ( any err ) {
-            println( "error: " & err.message );
-            return new bxrig.util.Exit().precondition();
-        }
-    }
+	function run() {
+		try {
+			var runner = new bxrig.Runner( variables.cli, variables.inst.runner() );
+			return level( runner, "BxRig", tree(), true );
+		} catch ( any err ) {
+			println( "error: " & err.message );
+			return new bxrig.util.Exit().precondition();
+		}
+	}
 }

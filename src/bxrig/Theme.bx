@@ -14,142 +14,142 @@
 // Like `runner set` these are settings: they act at once (no --yes) and take --dry-run. User config files are never edited.
 // Exit: 0 done, 2 bad usage, 4 precondition (unknown or invalid theme), 6 a file could not be written.
 class Theme {
-    function init( cli, runner = "" ) {
-        variables.environ = new bxrig.util.Env();
-        variables.cli = arguments.cli;
-        variables.out = new bxrig.util.Out( variables.cli, "theme" );
-        variables.proc = new bxrig.util.Proc( arguments.runner );
-        variables.config = new bxrig.ConfigService().quiet( true );
-        variables.tc = new bxrig.ThemeColors();
-        variables.td = new bxrig.ThemeData();
-        return this;
-    }
+	function init( cli, runner = "" ) {
+		variables.environ = new bxrig.util.Env();
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( variables.cli, "theme" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.config = new bxrig.ConfigService().quiet( true );
+		variables.tc = new bxrig.ThemeColors();
+		variables.td = new bxrig.ThemeData();
+		return this;
+	}
 
-    function cfg() { return variables.config.cfgHome(); }
-    function outDir() { return cfg() & "/bxrig/theme"; }
-    function stateFile() { return cfg() & "/bxrig/theme.json"; }
-    function modes() { return [ "theme", "dark", "light", "auto" ]; }
+	function cfg() { return variables.config.cfgHome(); }
+	function outDir() { return cfg() & "/bxrig/theme"; }
+	function stateFile() { return cfg() & "/bxrig/theme.json"; }
+	function modes() { return [ "theme", "dark", "light", "auto" ]; }
 
-    // Directories that hold themes, with where they come from.
-    function sources() {
-        return [ { origin: "user", dir: cfg() & "/bxrig/themes" },
-                 { origin: "omarchy", dir: cfg() & "/omarchy/themes" },
-                 { origin: "omarchy", dir: variables.environ.home() & "/.local/share/omarchy/themes" } ];
-    }
+	// Directories that hold themes, with where they come from.
+	function sources() {
+		return [ { origin: "user", dir: cfg() & "/bxrig/themes" },
+				 { origin: "omarchy", dir: cfg() & "/omarchy/themes" },
+				 { origin: "omarchy", dir: variables.environ.home() & "/.local/share/omarchy/themes" } ];
+	}
 
-    // name -> { name, origin, dir } (dir is "" for a bundled theme); the first source that has a name wins.
-    function discover() {
-        var found = {};
-        for ( var s in sources() ) {
-            if ( !directoryExists( s.dir ) ) continue;
-            for ( var n in directoryList( s.dir, false, "name" ) ) {
-                if ( structKeyExists( found, n ) || !fileExists( s.dir & "/" & n & "/colors.toml" ) ) continue;
-                found[ n ] = { name: n, origin: s.origin, dir: s.dir & "/" & n };
-            }
-        }
-        for ( var b in variables.td.names() ) if ( !structKeyExists( found, b ) ) found[ b ] = { name: b, origin: variables.td.origin( b ) == "bxrig" ? "bundled" : "bundled", dir: "" };
-        return found;
-    }
+	// name -> { name, origin, dir } (dir is "" for a bundled theme); the first source that has a name wins.
+	function discover() {
+		var found = {};
+		for ( var s in sources() ) {
+			if ( !directoryExists( s.dir ) ) continue;
+			for ( var n in directoryList( s.dir, false, "name" ) ) {
+				if ( structKeyExists( found, n ) || !fileExists( s.dir & "/" & n & "/colors.toml" ) ) continue;
+				found[ n ] = { name: n, origin: s.origin, dir: s.dir & "/" & n };
+			}
+		}
+		for ( var b in variables.td.names() ) if ( !structKeyExists( found, b ) ) found[ b ] = { name: b, origin: variables.td.origin( b ) == "bxrig" ? "bundled" : "bundled", dir: "" };
+		return found;
+	}
 
-    function names() {
-        var out = [];
-        for ( var k in discover() ) out.append( k );
-        arraySort( out, "textnocase" );
-        return out;
-    }
+	function names() {
+		var out = [];
+		for ( var k in discover() ) out.append( k );
+		arraySort( out, "textnocase" );
+		return out;
+	}
 
-    // Every bundled theme has its own wallpaper: ~/Pictures/BxRig/NAME.jpg, fetched and checked by bxrig.Wallpapers when missing.
-    // "" when there is none (a theme without one, or offline with no local copy): then your wallpaper stays.
-    function bundledWallpaper( name ) {
-        var w = new bxrig.Wallpapers( variables.proc.runner() );
-        return w.known( arguments.name ) ? w.target( arguments.name ) : "";
-    }
-    // The wallpaper to switch to: a bundled theme's own is fetched (and checked) when missing; "" when there is none.
-    function wallpaperFor( t ) {
-        var w = new bxrig.Wallpapers( variables.proc.runner() );
-        if ( arguments.t.origin != "user" && len( arguments.t.wallpaper ) && arguments.t.wallpaper == w.target( arguments.t.name ) ) return w.ensure( arguments.t.name );
-        return arguments.t.wallpaper;
-    }
-    // "tokyo-night" -> "Tokyo Night", "bxrig-light" -> "BxRig Light"
-    function label( name ) {
-        var words = listToArray( arguments.name, "-" ).map( function( x ) { return x == "bxrig" ? "BxRig" : uCase( left( x, 1 ) ) & mid( x, 2, len( x ) ); } );
-        return words.toList( " " );
-    }
+	// Every bundled theme has its own wallpaper: ~/Pictures/BxRig/NAME.jpg, fetched and checked by bxrig.Wallpapers when missing.
+	// "" when there is none (a theme without one, or offline with no local copy): then your wallpaper stays.
+	function bundledWallpaper( name ) {
+		var w = new bxrig.Wallpapers( variables.proc.runner() );
+		return w.known( arguments.name ) ? w.target( arguments.name ) : "";
+	}
+	// The wallpaper to switch to: a bundled theme's own is fetched (and checked) when missing; "" when there is none.
+	function wallpaperFor( t ) {
+		var w = new bxrig.Wallpapers( variables.proc.runner() );
+		if ( arguments.t.origin != "user" && len( arguments.t.wallpaper ) && arguments.t.wallpaper == w.target( arguments.t.name ) ) return w.ensure( arguments.t.name );
+		return arguments.t.wallpaper;
+	}
+	// "tokyo-night" -> "Tokyo Night", "bxrig-light" -> "BxRig Light"
+	function label( name ) {
+		var words = listToArray( arguments.name, "-" ).map( function( x ) { return x == "bxrig" ? "BxRig" : uCase( left( x, 1 ) ) & mid( x, 2, len( x ) ); } );
+		return words.toList( " " );
+	}
 
-    // { found, name, origin, colorsText, neovimText, wallpaper }
-    function find( name ) {
-        var all = discover();
-        if ( !structKeyExists( all, arguments.name ) ) return { found: false };
-        var t = all[ arguments.name ];
-        var out = { found: true, name: t.name, origin: t.origin, colorsText: "", neovimText: "", wallpaper: "" };
-        if ( len( t.dir ) ) {
-            out.colorsText = fileRead( t.dir & "/colors.toml" );
-            if ( fileExists( t.dir & "/neovim.lua" ) ) out.neovimText = fileRead( t.dir & "/neovim.lua" );
-            if ( directoryExists( t.dir & "/backgrounds" ) ) {
-                var pics = directoryList( t.dir & "/backgrounds", false, "name" );
-                arraySort( pics, "textnocase" );
-                if ( pics.len() ) out.wallpaper = t.dir & "/backgrounds/" & pics[ 1 ];
-            }
-        } else {
-            out.colorsText = variables.td.colors( t.name );
-            out.neovimText = variables.td.neovim( t.name );
-            out.wallpaper = bundledWallpaper( t.name );
-        }
-        return out;
-    }
+	// { found, name, origin, colorsText, neovimText, wallpaper }
+	function find( name ) {
+		var all = discover();
+		if ( !structKeyExists( all, arguments.name ) ) return { found: false };
+		var t = all[ arguments.name ];
+		var out = { found: true, name: t.name, origin: t.origin, colorsText: "", neovimText: "", wallpaper: "" };
+		if ( len( t.dir ) ) {
+			out.colorsText = fileRead( t.dir & "/colors.toml" );
+			if ( fileExists( t.dir & "/neovim.lua" ) ) out.neovimText = fileRead( t.dir & "/neovim.lua" );
+			if ( directoryExists( t.dir & "/backgrounds" ) ) {
+				var pics = directoryList( t.dir & "/backgrounds", false, "name" );
+				arraySort( pics, "textnocase" );
+				if ( pics.len() ) out.wallpaper = t.dir & "/backgrounds/" & pics[ 1 ];
+			}
+		} else {
+			out.colorsText = variables.td.colors( t.name );
+			out.neovimText = variables.td.neovim( t.name );
+			out.wallpaper = bundledWallpaper( t.name );
+		}
+		return out;
+	}
 
-    function readState() {
-        var j = new bxrig.util.JsonStore().read( stateFile(), { name: "", mode: "theme" } );
-        if ( !arrayFind( modes(), j.mode ) ) j.mode = "theme";
-        return { name: j.name, mode: j.mode };
-    }
+	function readState() {
+		var j = new bxrig.util.JsonStore().read( stateFile(), { name: "", mode: "theme" } );
+		if ( !arrayFind( modes(), j.mode ) ) j.mode = "theme";
+		return { name: j.name, mode: j.mode };
+	}
 
-    function writeState( name, mode ) {
-        new bxrig.util.JsonStore().write( "theme-state", stateFile(), { name: arguments.name, mode: arguments.mode } );
-    }
+	function writeState( name, mode ) {
+		new bxrig.util.JsonStore().write( "theme-state", stateFile(), { name: arguments.name, mode: arguments.mode } );
+	}
 
-    // The mode Noctalia and Plasma are set to: the theme's own unless pinned (or auto).
-    function resolveMode( stateMode, c ) {
-        if ( arguments.stateMode == "theme" ) return variables.tc.isLight( arguments.c ) ? "light" : "dark";
-        return arguments.stateMode;
-    }
+	// The mode Noctalia and Plasma are set to: the theme's own unless pinned (or auto).
+	function resolveMode( stateMode, c ) {
+		if ( arguments.stateMode == "theme" ) return variables.tc.isLight( arguments.c ) ? "light" : "dark";
+		return arguments.stateMode;
+	}
 
-    // The generated files for a parsed theme, in the config service entry shape.
-    function files( c, neovimText ) {
-        var d = outDir();
-        var icons = new bxrig.IconTheme().name();
-        var out = [
-            { name: "theme-palette", target: cfg() & "/noctalia/palettes/BxRigTheme.json", mode: "644", content: variables.tc.palette( arguments.c ) },
-            { name: "theme-ghostty", target: d & "/ghostty", mode: "644", content: variables.tc.ghostty( arguments.c ) },
-            { name: "theme-kitty", target: d & "/kitty.conf", mode: "644", content: variables.tc.kitty( arguments.c ) },
-            { name: "theme-alacritty", target: d & "/alacritty.toml", mode: "644", content: variables.tc.alacritty( arguments.c ) },
-            { name: "theme-foot", target: d & "/foot.ini", mode: "644", content: variables.tc.foot( arguments.c ) },
-            { name: "theme-btop", target: cfg() & "/btop/themes/bxrig.theme", mode: "644", content: variables.tc.btop( arguments.c ) },
-            { name: "theme-hypr", target: d & "/hypr.lua", mode: "644", content: hyprAccent( arguments.c ) },
-            { name: "theme-tmux", target: d & "/tmux.conf", mode: "644", content: variables.tc.tmux( arguments.c ) },
-            { name: "theme-fzf", target: d & "/fzf.sh", mode: "644", content: variables.tc.fzf( arguments.c ) },
-            { name: "theme-rofi", target: d & "/rofi.rasi", mode: "644", content: variables.tc.rofi( arguments.c, icons ) },
-            { name: "theme-gtk4", target: cfg() & "/gtk-4.0/gtk.css", mode: "644", content: variables.tc.gtk( arguments.c ) },
-            { name: "theme-gtk3", target: cfg() & "/gtk-3.0/gtk.css", mode: "644", content: variables.tc.gtk( arguments.c ) },
-            { name: "theme-qt6ct", target: cfg() & "/qt6ct/colors/bxrig.conf", mode: "644", content: variables.tc.qtct( arguments.c ) },
-            { name: "theme-qt5ct", target: cfg() & "/qt5ct/colors/bxrig.conf", mode: "644", content: variables.tc.qtct( arguments.c ) },
-            { name: "theme-fuzzel", target: cfg() & "/fuzzel/fuzzel.ini", mode: "644", content: variables.tc.fuzzel( arguments.c, icons ) },
-            { name: "theme-wofi", target: cfg() & "/wofi/style.css", mode: "644", content: variables.tc.wofi( arguments.c ) }
-        ];
-        // Rofi reads config.rasi: a stub that imports the generated theme, written only when you have none.
-        out.append( { name: "theme-rofi-config", target: cfg() & "/rofi/config.rasi", mode: "644", content: '@theme "' & d & '/rofi.rasi"' & chr( 10 ) } );
-        // Plasma: the theme's own colour scheme (applied by notify with plasma-apply-colorscheme)
-        out.append( { name: "theme-kde", target: variables.environ.xdgData( "color-schemes/BxRig.colors" ), mode: "644", content: variables.tc.kdeColors( arguments.c, "BxRig" ) } );
-        // btop only reads a theme named in btop.conf: the file is created when missing, otherwise only its color_theme line changes.
-        out.append( { name: "theme-btop-config", target: cfg() & "/btop/btop.conf", mode: "644", content: btopConfig( cfg() & "/btop/btop.conf" ) } );
-        if ( len( arguments.neovimText ) ) out.append( { name: "theme-neovim", target: variables.config.stateDir() & "/current/theme/neovim.lua", mode: "644", content: arguments.neovimText } );
-        return out;
-    }
+	// The generated files for a parsed theme, in the config service entry shape.
+	function files( c, neovimText ) {
+		var d = outDir();
+		var icons = new bxrig.IconTheme().name();
+		var out = [
+			{ name: "theme-palette", target: cfg() & "/noctalia/palettes/BxRigTheme.json", mode: "644", content: variables.tc.palette( arguments.c ) },
+			{ name: "theme-ghostty", target: d & "/ghostty", mode: "644", content: variables.tc.ghostty( arguments.c ) },
+			{ name: "theme-kitty", target: d & "/kitty.conf", mode: "644", content: variables.tc.kitty( arguments.c ) },
+			{ name: "theme-alacritty", target: d & "/alacritty.toml", mode: "644", content: variables.tc.alacritty( arguments.c ) },
+			{ name: "theme-foot", target: d & "/foot.ini", mode: "644", content: variables.tc.foot( arguments.c ) },
+			{ name: "theme-btop", target: cfg() & "/btop/themes/bxrig.theme", mode: "644", content: variables.tc.btop( arguments.c ) },
+			{ name: "theme-hypr", target: d & "/hypr.lua", mode: "644", content: hyprAccent( arguments.c ) },
+			{ name: "theme-tmux", target: d & "/tmux.conf", mode: "644", content: variables.tc.tmux( arguments.c ) },
+			{ name: "theme-fzf", target: d & "/fzf.sh", mode: "644", content: variables.tc.fzf( arguments.c ) },
+			{ name: "theme-rofi", target: d & "/rofi.rasi", mode: "644", content: variables.tc.rofi( arguments.c, icons ) },
+			{ name: "theme-gtk4", target: cfg() & "/gtk-4.0/gtk.css", mode: "644", content: variables.tc.gtk( arguments.c ) },
+			{ name: "theme-gtk3", target: cfg() & "/gtk-3.0/gtk.css", mode: "644", content: variables.tc.gtk( arguments.c ) },
+			{ name: "theme-qt6ct", target: cfg() & "/qt6ct/colors/bxrig.conf", mode: "644", content: variables.tc.qtct( arguments.c ) },
+			{ name: "theme-qt5ct", target: cfg() & "/qt5ct/colors/bxrig.conf", mode: "644", content: variables.tc.qtct( arguments.c ) },
+			{ name: "theme-fuzzel", target: cfg() & "/fuzzel/fuzzel.ini", mode: "644", content: variables.tc.fuzzel( arguments.c, icons ) },
+			{ name: "theme-wofi", target: cfg() & "/wofi/style.css", mode: "644", content: variables.tc.wofi( arguments.c ) }
+		];
+		// Rofi reads config.rasi: a stub that imports the generated theme, written only when you have none.
+		out.append( { name: "theme-rofi-config", target: cfg() & "/rofi/config.rasi", mode: "644", content: '@theme "' & d & '/rofi.rasi"' & chr( 10 ) } );
+		// Plasma: the theme's own colour scheme (applied by notify with plasma-apply-colorscheme)
+		out.append( { name: "theme-kde", target: variables.environ.xdgData( "color-schemes/BxRig.colors" ), mode: "644", content: variables.tc.kdeColors( arguments.c, "BxRig" ) } );
+		// btop only reads a theme named in btop.conf: the file is created when missing, otherwise only its color_theme line changes.
+		out.append( { name: "theme-btop-config", target: cfg() & "/btop/btop.conf", mode: "644", content: btopConfig( cfg() & "/btop/btop.conf" ) } );
+		if ( len( arguments.neovimText ) ) out.append( { name: "theme-neovim", target: variables.config.stateDir() & "/current/theme/neovim.lua", mode: "644", content: arguments.neovimText } );
+		return out;
+	}
 
-    // btop.conf with color_theme = "bxrig" and theme_background on: your file with those two lines set (or added), or a stub when you have none.
-    function btopConfig( path ) {
-        var want = { color_theme: '"bxrig"', theme_background: "True" };
-        if ( !fileExists( arguments.path ) ) return "# Created by `bxrig theme set`; btop adds its other settings on exit." & chr( 10 ) & 'color_theme = "bxrig"' & chr( 10 ) & "theme_background = True" & chr( 10 );
+	// btop.conf with color_theme = "bxrig" and theme_background on: your file with those two lines set (or added), or a stub when you have none.
+	function btopConfig( path ) {
+		var want = { color_theme: '"bxrig"', theme_background: "True" };
+		if ( !fileExists( arguments.path ) ) return "# Created by `bxrig theme set`; btop adds its other settings on exit." & chr( 10 ) & 'color_theme = "bxrig"' & chr( 10 ) & "theme_background = True" & chr( 10 );
         // Line by line (no regex): a line whose key, before the =, is one of ours is replaced; the rest is kept as it is.
         var src = replace( fileRead( arguments.path ), chr( 13 ), "", "all" ).split( chr( 10 ) );
         var lines = [];
