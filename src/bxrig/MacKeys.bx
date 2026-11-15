@@ -5,12 +5,13 @@ class MacKeys {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
         variables.proc = new bxrig.util.Proc( arguments.runner );
+        variables.systemd = new bxrig.util.Systemd( variables.proc );
         variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }
 
     function unitFile() { return variables.config.cfgHome() & "/systemd/user/xremap.service"; }
-    function active() { return trim( variables.proc.exec( [ "systemctl", "--user", "is-active", "xremap" ], 10 ).output ) == "active"; }
+    function active() { return variables.systemd.isActive( "xremap", true ); }
 
     function status( asJson ) {
         var on = active();
@@ -20,7 +21,7 @@ class MacKeys {
     function set( on, yes, asJson ) {
         var cmd = "keys mac " & ( arguments.on ? "on" : "off" );
         if ( !fileExists( unitFile() ) ) return variables.cli.say( cmd, "precondition", { error: "xremap is not set up" }, arguments.asJson, [ "error: xremap is not set up. Run: bxrig setup xremap --yes" ] );
-        var argv = [ "systemctl", "--user", arguments.on ? "enable" : "disable", "--now", "xremap" ];
+        var argv = arguments.on ? variables.systemd.enableArgv( "xremap", true ) : variables.systemd.disableArgv( "xremap", true );
         if ( !arguments.yes ) return variables.cli.say( cmd, "plan", { command: argv }, arguments.asJson, [ "Plan: " & argv.toList( " " ), "Nothing was changed. Add --yes to apply." ] );
         var r = variables.proc.exec( argv, 30 );
         if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );

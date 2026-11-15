@@ -20,6 +20,7 @@ class Mail {
         variables.cli = arguments.cli;
         variables.environ = new bxrig.util.Env();
         variables.db = new bxrig.Db( arguments.cli, arguments.runner );
+        variables.http = new bxrig.util.Http( new bxrig.util.Proc( arguments.runner ) );
         variables.config = new bxrig.ConfigService();
         return this;
     }
@@ -42,25 +43,15 @@ class Mail {
         return len( forced ) ? reReplace( forced, "/+$", "" ) : "http://127.0.0.1:" & uiPort();
     }
 
-    // ---- HTTP to the catcher (curl) ----
+    // ---- HTTP to the catcher ----
     // method GET|POST|DELETE, path starts with /. Returns { ok, status, body }.
-    function http( method, path, body = "" ) {
-        var a = [ "-sS", "--max-time", "10", "-o", "-", "-w", chr( 10 ) & "%{http_code}", "-X", arguments.method, base() & arguments.path ];
-        if ( len( arguments.body ) ) { a.append( "-H" ); a.append( "Content-Type: application/json" ); a.append( "-d" ); a.append( arguments.body ); }
-        try {
-            var r = systemExecute( "curl", a, 20, true );
-            if ( r.exitCode != 0 ) return { ok: false, status: 0, body: r.output };
-            var text = r.output;
-            var nl = chr( 10 );
-            var cut = len( text ) - len( listLast( text, nl ) );
-            var status = int( val( listLast( text, nl ) ) );
-            return { ok: status >= 200 && status < 300, status: status, body: cut > 1 ? left( text, cut - 1 ) : "" };
-        } catch ( any e ) { return { ok: false, status: 0, body: e.message }; }
+    function api( method, path, body = "" ) {
+        return variables.http.request( arguments.method, base() & arguments.path, arguments.body );
     }
 
     // The parsed JSON of a GET, or { ok:false } when the catcher does not answer.
     function getJson( path ) {
-        var r = http( "GET", arguments.path );
+        var r = api( "GET", arguments.path );
         if ( !r.ok ) return { ok: false, status: r.status };
         try { return { ok: true, data: jsonDeserialize( r.body ) }; } catch ( any e ) { return { ok: false, status: r.status }; }
     }
@@ -242,7 +233,7 @@ class Mail {
         if ( structKeyExists( m, "error" ) ) return notRunning( cmd, arguments.asJson );
         var plan = [ ( arguments.dry ? "Dry run" : "Plan" ) & ": would delete all " & m.total & " messages in the inbox.", arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ];
         if ( !arguments.yes || arguments.dry ) return variables.cli.say( cmd, arguments.dry ? "ok" : "plan", { would_delete: m.total }, arguments.asJson, plan, arguments.dry );
-        var r = http( "DELETE", "/api/v1/messages" );
+        var r = api( "DELETE", "/api/v1/messages" );
         if ( !r.ok ) return variables.cli.fail( cmd, "failed", "The catcher refused the request (HTTP " & r.status & ")", arguments.asJson );
         return variables.cli.say( cmd, "ok", { deleted: m.total }, arguments.asJson, [ "Deleted " & m.total & " messages." ] );
     }
@@ -260,7 +251,7 @@ class Mail {
 
     // Deletes the given message ids (the Control Center uses this). Returns true on success.
     function deleteIds( ids ) {
-        return http( "DELETE", "/api/v1/messages", jsonSerialize( { IDs: arguments.ids } ) ).ok;
+        return api( "DELETE", "/api/v1/messages", jsonSerialize( { IDs: arguments.ids } ) ).ok;
     }
 
     function openUi( id, asJson ) {
@@ -280,7 +271,7 @@ class Mail {
         var rcpt = len( arguments.to ) ? arguments.to : "you@example.test";
         var subj = len( arguments.subject ) ? arguments.subject : "Test mail from BxRig";
         var body = jsonSerialize( { From: { Email: "bxrig@localhost", Name: "BxRig" }, To: [ { Email: rcpt } ], Subject: subj, Text: "If you can read this in the inbox, your mail catcher works." & chr( 10 ) & "Point your app at 127.0.0.1:" & smtpPort() & "." } );
-        var r = http( "POST", "/api/v1/send", body );
+        var r = api( "POST", "/api/v1/send", body );
         if ( !r.ok ) return variables.cli.fail( cmd, "failed", "The catcher refused the test message (HTTP " & r.status & ")", arguments.asJson );
         return variables.cli.say( cmd, "ok", { recipient: rcpt, subject_line: subj }, arguments.asJson, [ "Sent a test message to " & rcpt & ". See it with: bxrig mail list" ] );
     }

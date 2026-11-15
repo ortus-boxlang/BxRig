@@ -12,6 +12,9 @@ class Installer {
     function init( runner ) {
         variables.custom = arguments.runner ?: "";
         variables.procs = new bxrig.util.Proc( variables.custom );
+        variables.pacman = new bxrig.util.Pacman( variables.procs );
+        variables.aur = new bxrig.util.Aur( variables.procs );
+        variables.http = new bxrig.util.Http( variables.procs );
         return this;
     }
 
@@ -87,9 +90,7 @@ class Installer {
                 pacmanIds.append( app.id );
                 for ( var t in targets ) if ( !arrayFind( pacmanTargets, t ) ) pacmanTargets.append( t );
             } else if ( app.source == "aur" ) {
-                var argv = [ "yay", "-S", "--needed", "--noconfirm" ];
-                for ( var t in targets ) argv.append( t );
-                aur.append( { kind: "aur", ids: [ app.id ], commands: [ argv ] } );
+                aur.append( { kind: "aur", ids: [ app.id ], commands: [ variables.aur.installArgv( targets ) ] } );
             } else if ( app.source == "pkgbuild" ) {
                 var built = pkgbuildStep( app );
                 if ( structKeyExists( built, "blocked" ) ) blocked.append( built.blocked );
@@ -97,8 +98,7 @@ class Installer {
             } else if ( app.source == "script" ) {
                 // the vendor installer: downloaded and piped to its shell; URL and arguments travel as arguments, never interpolated
                 var shellName = structKeyExists( app.script, "shell" ) ? app.script.shell : "bash";
-                var argv2 = [ "bash", "-c", 'set -o pipefail; curl -fsSL "$1" | ' & shellName & ' -s -- "${@:2}"', "bxrig-script", app.script.url ];
-                if ( structKeyExists( app.script, "args" ) ) for ( var sa in app.script.args ) argv2.append( sa );
+                var argv2 = variables.http.installerArgv( app.script.url, shellName, structKeyExists( app.script, "args" ) ? app.script.args : [] );
                 scripts.append( { kind: "script", ids: [ app.id ], commands: [ argv2 ] } );
             } else if ( app.source == "web" ) {
                 webs.append( { kind: "web", ids: [ app.id ], commands: [], files: [ launcherFile( app, homeDir ) ] } );
@@ -108,10 +108,7 @@ class Installer {
         }
         var out = [];
         if ( pacmanIds.len() ) {
-            var pac = asRoot ? [ "pacman" ] : [ "sudo", "pacman" ];
-            for ( var a in [ "-S", "--needed", "--noconfirm" ] ) pac.append( a );
-            for ( var t in pacmanTargets ) pac.append( t );
-            out.append( { kind: "pacman", ids: pacmanIds, commands: [ pac ] } );
+            out.append( { kind: "pacman", ids: pacmanIds, commands: [ variables.pacman.installArgv( pacmanTargets, asRoot ) ] } );
         }
         for ( var s in aur ) out.append( s );
         for ( var s in builds ) out.append( s );

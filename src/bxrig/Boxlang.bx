@@ -18,6 +18,7 @@ class Boxlang {
         variables.cli = arguments.cli;
         variables.out = new bxrig.util.Out( variables.cli, "boxlang" );
         variables.proc = new bxrig.util.Proc( arguments.runner );
+        variables.http = new bxrig.util.Http( variables.proc );
         return this;
     }
 
@@ -87,8 +88,8 @@ class Boxlang {
         var rows = [];
         for ( var page = 0; page < 20; page++ ) {
             var url = variables.forgebox & "/entries/boxlang-modules?orderBy=popular&max=50&offset=" & ( page * 50 ) & ( len( arguments.term ) ? "&searchTerm=" & urlEncodedFormat( arguments.term ) : "" );
-            var r = variables.proc.exec( [ "curl", "-fsSL", "--max-time", "30", url ], 60 );
-            if ( r.exitCode != 0 ) return { ok: rows.len() > 0, error: "ForgeBox did not answer", rows: rows };
+            var r = variables.http.get( url, 30 );
+            if ( !r.ok ) return { ok: rows.len() > 0, error: "ForgeBox did not answer", rows: rows };
             try {
                 var j = jsonDeserialize( r.output );
                 var got = j.data.results;

@@ -20,6 +20,8 @@ class Nas {
         variables.cli = arguments.cli;
         variables.out = new bxrig.util.Out( variables.cli, "nas" );
         variables.proc = new bxrig.util.Proc( arguments.runner );
+        variables.pacman = new bxrig.util.Pacman( variables.proc );
+        variables.systemd = new bxrig.util.Systemd( variables.proc );
         variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }
@@ -88,7 +90,7 @@ class Nas {
 
     // ---- setup and discovery ----
     function setupCmd( yes, dry, asJson ) {
-        var cmds = [ [ "sudo", "pacman", "-S", "--needed", "--noconfirm", "cifs-utils", "nfs-utils", "smbclient", "avahi", "nss-mdns", "rsync" ], [ "sudo", "systemctl", "enable", "--now", "avahi-daemon.service" ] ];
+        var cmds = [ variables.pacman.installArgv( [ "cifs-utils", "nfs-utils", "smbclient", "avahi", "nss-mdns", "rsync" ] ), variables.systemd.enableArgv( "avahi-daemon.service", false, true ) ];
         return finish( "install the NAS tools and start avahi (so names like synology.local resolve; add mdns_minimal to the hosts line of /etc/nsswitch.conf if they do not)", [], cmds, arguments.yes, arguments.dry, arguments.asJson );
     }
 
@@ -270,7 +272,7 @@ class Nas {
         if ( !len( mnt ) ) return variables.out.fail( "precondition", "systemd-escape was not found", arguments.asJson );
         var d = { name: nm, share: share, mountpoint: mp, mount_unit: mnt, automount_unit: aut };
         if ( v == "off" ) {
-            var offCmds = [ [ "sudo", "systemctl", "disable", "--now", aut ], [ "sudo", "systemctl", "stop", mnt ], [ "sudo", "rm", "-f", unitDir() & "/" & mnt, unitDir() & "/" & aut ], [ "sudo", "systemctl", "daemon-reload" ] ];
+            var offCmds = [ variables.systemd.disableArgv( aut, false, true ), variables.systemd.stopArgv( mnt, false, true ), [ "sudo", "rm", "-f", unitDir() & "/" & mnt, unitDir() & "/" & aut ], variables.systemd.reloadArgv( false, true ) ];
             var code = finish( "turn the automatic mount of " & nm & "/" & share & " off", [], offCmds, arguments.yes, arguments.dry, arguments.asJson, d );
             if ( code == 0 && arguments.yes && !arguments.dry ) { var so = read(); if ( structKeyExists( so.nas[ nm ].shares, share ) ) so.nas[ nm ].shares[ share ].auto = false; write( so ); }
             return code;
@@ -293,8 +295,8 @@ class Nas {
         cmds.append( [ "mkdir", "-p", mp ] );
         cmds.append( [ "sudo", "install", "-Dm644", tmpM, unitDir() & "/" & mnt ] );
         cmds.append( [ "sudo", "install", "-Dm644", tmpA, unitDir() & "/" & aut ] );
-        cmds.append( [ "sudo", "systemctl", "daemon-reload" ] );
-        cmds.append( [ "sudo", "systemctl", "enable", "--now", aut ] );
+        cmds.append( variables.systemd.reloadArgv( false, true ) );
+        cmds.append( variables.systemd.enableArgv( aut, false, true ) );
         var shown = [ "mounts " & source( r, share ) & " at " & mp & " the first time something opens it, and lets go after 10 idle minutes", ( r.protocol == "smb" ? "the password is kept in " & credFile( nm ) & " (root only, mode 600), because systemd mounts as root" : "NFS needs no password" ) ];
         var code2 = finish( "turn the automatic mount of " & nm & "/" & share & " on", shown, cmds, arguments.yes, arguments.dry, arguments.asJson, d );
         try { for ( var tf in [ cc.tmp, tmpM, tmpA ] ) if ( len( tf ) && left( tf, 1 ) == "/" && fileExists( tf ) ) fileDelete( tf ); } catch ( any e ) {}

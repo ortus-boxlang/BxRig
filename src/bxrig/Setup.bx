@@ -6,16 +6,16 @@ class Setup {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
         variables.inst = new bxrig.Installer( arguments.runner );
+        variables.pacman = new bxrig.util.Pacman( variables.inst.proc() );
+        variables.aur = new bxrig.util.Aur( variables.inst.proc() );
         return this;
     }
 
     // The version of the installed kwin package ("6.6.2"), or "" when it is not installed.
     function kwinVersion() {
         try {
-            var r = variables.inst.exec( [ "pacman", "-Q", "kwin" ], 15 );
-            if ( r.exitCode != 0 ) return "";
-            var parts = listToArray( trim( r.output ), " " );
-            return parts.len() >= 2 ? listFirst( parts[2], "-" ) : "";
+            var v = variables.pacman.version( "kwin" );
+            return len( v ) ? listFirst( v, "-" ) : "";
         } catch ( any e ) {
             return "";
         }
@@ -79,7 +79,7 @@ class Setup {
             hasCurl: variables.inst.hasCommand( "curl" ),
             os: osId(),
             arch: trim( variables.inst.exec( [ "uname", "-m" ], 10 ).output ),
-            hasPacman: variables.inst.hasCommand( "pacman" ),
+            hasPacman: variables.pacman.available(),
             hyprlandAdded: hyprlandAdded(),
             isRoot: variables.inst.isRoot(),
             hasSudo: variables.inst.hasCommand( "sudo" ),
@@ -90,7 +90,7 @@ class Setup {
             hyprkwinInstalled: hyprkwinInstalled(),
             user: getSystemSetting( "USER", "" ),
             loginShell: getSystemSetting( "SHELL", "" ),
-            hasYay: variables.inst.hasCommand( "yay" ),
+            hasYay: variables.aur.available(),
             groups: listToArray( trim( variables.inst.exec( [ "id", "-nG" ], 10 ).output ), " " ),
             udevRule: fileExists( new bxrig.SetupPlan().udevRulePath() ),
             workDir: reReplace( getTempDirectory(), "/+$", "" ) & "/bxrig-hyprkwin-" & left( createUUID(), 8 )

@@ -7,6 +7,7 @@ class Dolphin {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
         variables.inst = new bxrig.Installer( arguments.runner );
+        variables.pacman = new bxrig.util.Pacman( variables.inst.proc() );
         return this;
     }
 
@@ -16,9 +17,7 @@ class Dolphin {
 
     function installed( names ) {
         try {
-            var r = variables.inst.exec( [ "pacman", "-Qq" ], 60 );
-            var have = {};
-            for ( var l in listToArray( r.output, chr( 10 ) ) ) have[ trim( l ) ] = true;
+            var have = variables.pacman.installed();
             var missing = [];
             for ( var n in arguments.names ) if ( !structKeyExists( have, n ) ) missing.append( n );
             return missing;

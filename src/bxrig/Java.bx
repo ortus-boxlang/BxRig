@@ -16,6 +16,7 @@ class Java {
         variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
         variables.out = new bxrig.util.Out( variables.cli, "java" );
+        variables.http = new bxrig.util.Http( new bxrig.util.Proc( arguments.runner ) );
         variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }
@@ -86,13 +87,9 @@ class Java {
     }
 
     // ---- releases ----
-    function curl( args ) {
-        try { return systemExecute( "curl", arguments.args, 600, true ); } catch ( any e ) { return { exitCode: 127, output: e.message }; }
-    }
-
     function releases() {
-        var r = curl( [ "-fsSL", "--max-time", "20", api() & "/v3/info/available_releases" ] );
-        if ( r.exitCode != 0 ) return { ok: false, error: "could not reach " & api() };
+        var r = variables.http.get( api() & "/v3/info/available_releases", 20 );
+        if ( !r.ok ) return { ok: false, error: "could not reach " & api() };
         try {
             var j = jsonDeserialize( r.output );
             return { ok: true, releases: j.available_releases, lts: j.available_lts_releases, latest: j.most_recent_feature_release };
@@ -143,8 +140,8 @@ class Java {
         var tmp = dataDir() & "/.download-" & m;
         directoryCreate( tmp, true, true );
         var tar = tmp & "/jdk.tar.gz";
-        var d = curl( [ "-fsSL", "--max-time", "900", "-o", tar, downloadUrl( m ) ] );
-        if ( d.exitCode != 0 || !fileExists( tar ) ) { try { directoryDelete( tmp, true ); } catch ( any e ) {} return variables.out.fail( "failed", "download failed: " & trim( d.output ), arguments.asJson ); }
+        var d = variables.http.download( downloadUrl( m ), tar, 900 );
+        if ( !d.ok || !fileExists( tar ) ) { try { directoryDelete( tmp, true ); } catch ( any e ) {} return variables.out.fail( "failed", "download failed: " & trim( d.output ), arguments.asJson ); }
         var stage = tmp & "/x";
         directoryCreate( stage, true, true );
         var x = systemExecute( "tar", [ "-xzf", tar, "-C", stage, "--strip-components=1" ], 600, true );

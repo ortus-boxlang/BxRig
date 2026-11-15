@@ -8,6 +8,7 @@ class SystemActions {
         variables.cli = arguments.cli;
         variables.out = new bxrig.util.Out( variables.cli, "system" );
         variables.proc = new bxrig.util.Proc( arguments.runner );
+        variables.systemd = new bxrig.util.Systemd( variables.proc );
         return this;
     }
 
@@ -24,8 +25,8 @@ class SystemActions {
             var sid = getSystemSetting( "XDG_SESSION_ID", "" );
             return variables.proc.has( "loginctl" ) && len( sid ) ? { argv: [ "loginctl", "terminate-session", sid ], via: "systemd" } : {};
         }
-        if ( !variables.proc.has( "systemctl" ) ) return {};
-        return { argv: [ "systemctl", v == "shutdown" ? "poweroff" : v ], via: "systemd" };
+        if ( !variables.systemd.available() ) return {};
+        return { argv: variables.systemd.powerArgv( v ), via: "systemd" };
     }
 
     function run( verb, yes, dryRun, asJson ) {

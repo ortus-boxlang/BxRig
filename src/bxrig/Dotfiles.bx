@@ -16,6 +16,7 @@ class Dotfiles {
         variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
         variables.inst = new bxrig.Installer( arguments.runner );
+        variables.pacman = new bxrig.util.Pacman( variables.inst.proc() );
         variables.config = new bxrig.ConfigService();
         return this;
     }
@@ -197,7 +198,7 @@ class Dotfiles {
 
     function summary( p ) {
         var lines = [ "Dotfiles from " & p.repo, "  method: " & p.method & ( p.method != p.detected ? " (detected: " & p.detected & ")" : " (detected from the repo)" ), "  " & p.total & " files: " & p.fresh.len() & " new, " & p.same.len() & " already in place, " & p.conflicts.len() & " you already have" ];
-        if ( p.installTool ) lines.append( "  would install " & p.tool & " first (sudo pacman -S --needed " & p.tool & ")" );
+        if ( p.installTool ) lines.append( "  would install " & p.tool & " first (" & variables.pacman.installLine( [ p.tool ] ) & ")" );
         if ( p.conflicts.len() ) {
             lines.append( "  Your dotfiles win. These existing files would be replaced (each is backed up first):" );
             for ( var c in p.conflicts ) lines.append( "    " & c.target );
@@ -275,7 +276,7 @@ class Dotfiles {
             lines = [];
         }
         if ( p.installTool ) {
-            var ins = variables.inst.exec( [ "sudo", "pacman", "-S", "--needed", "--noconfirm", p.tool ], 1800 );
+            var ins = variables.inst.exec( variables.pacman.installArgv( [ p.tool ] ), 1800 );
             if ( ins.exitCode != 0 ) return variables.cli.say( cmd, "precondition", variables.text.merge( data, { error: "Could not install " & p.tool } ), arguments.asJson, [ "error: could not install " & p.tool & " (" & trim( ins.output ) & ")" ] );
         }
         var stamp = trim( variables.inst.exec( [ "date", "+%Y%m%d-%H%M%S" ], 10 ).output );

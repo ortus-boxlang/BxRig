@@ -13,6 +13,8 @@ class Power {
         variables.cli = arguments.cli;
         variables.out = new bxrig.util.Out( variables.cli, "power" );
         variables.proc = new bxrig.util.Proc( arguments.runner );
+        variables.pacman = new bxrig.util.Pacman( variables.proc );
+        variables.systemd = new bxrig.util.Systemd( variables.proc );
         return this;
     }
 
@@ -52,7 +54,7 @@ class Power {
         return "custom";
     }
 
-    function active( unit ) { return variables.proc.exec( [ "systemctl", "is-active", "--quiet", arguments.unit ], 10 ).exitCode == 0; }
+    function active( unit ) { return variables.systemd.active( arguments.unit ); }
 
     // kB from /proc/meminfo.
     function meminfo( key ) {
@@ -118,7 +120,7 @@ class Power {
 
     function setupCmd( yes, dry, force, asJson ) {
         if ( !batteries().len() && !arguments.force ) return variables.out.say( "ok", { skipped: "no battery" }, arguments.asJson, [ "No battery found: this is a desktop, so there is nothing to set up. (--force installs the tools anyway.)" ] );
-        var steps = [ [ "sudo", "pacman", "-S", "--needed", "--noconfirm", "power-profiles-daemon", "upower" ], [ "sudo", "systemctl", "enable", "--now", "power-profiles-daemon.service", "upower.service" ] ];
+        var steps = [ variables.pacman.installArgv( [ "power-profiles-daemon", "upower" ] ), variables.systemd.enableArgv( [ "power-profiles-daemon.service", "upower.service" ], false, true ) ];
         var data = { steps: steps.map( function( s ) { return s.toList( " " ); } ) };
         if ( !arguments.yes || arguments.dry ) {
             var lines = [ arguments.dry ? "Dry run: laptop power tools" : "Plan: laptop power tools" ];

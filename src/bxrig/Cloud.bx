@@ -13,6 +13,7 @@ class Cloud {
         variables.text = new bxrig.util.Text();
         variables.cli = arguments.cli;
         variables.proc = new bxrig.util.Proc( arguments.runner );
+        variables.systemd = new bxrig.util.Systemd( variables.proc );
         variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }
@@ -73,8 +74,8 @@ class Cloud {
         if ( state == "drifted" || state == "blocked" ) return variables.cli.say( cmd, "precondition", data, arguments.asJson, [ "error: " & entry.target & " was changed by you, so it was kept. Unmount it first (bxrig cloud unmount " & arguments.name & " --yes) and delete the file to start over." ] );
         if ( !arguments.yes ) return variables.cli.say( cmd, "plan", data, arguments.asJson, [ "Plan: mount " & arguments.name & ": at " & dir & " through the user service " & unitName( arguments.name ) & " (starts at every login).", "Nothing was changed. Add --yes to apply." ] );
         if ( variables.config.configWrite( entry, entry.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, "failed", data, arguments.asJson, [ "error: could not write " & entry.target ] );
-        variables.proc.exec( [ "systemctl", "--user", "daemon-reload" ], 20 );
-        var r = variables.proc.exec( [ "systemctl", "--user", "enable", "--now", unitName( arguments.name ) ], 60 );
+        variables.systemd.reload( true );
+        var r = variables.systemd.enable( unitName( arguments.name ), true );
         if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", variables.text.merge( data, { error: trim( r.output ) } ), arguments.asJson, [ "error: could not start the mount: " & trim( r.output ), "See: journalctl --user -u " & unitName( arguments.name ) ] );
         return variables.cli.say( cmd, "ok", data, arguments.asJson, [ arguments.name & " is mounted at " & dir & " and will be again at every login." ] );
     }
@@ -86,14 +87,14 @@ class Cloud {
         var unit = unitDir() & "/" & unitName( arguments.name );
         if ( !fileExists( unit ) ) return variables.cli.say( cmd, "precondition", { error: "No such mount" }, arguments.asJson, [ "error: BxRig has no mount for " & arguments.name ] );
         if ( !arguments.yes ) return variables.cli.say( cmd, "plan", { remote: arguments.name }, arguments.asJson, [ "Plan: stop and disable " & unitName( arguments.name ) & ".", "Nothing was changed. Add --yes to apply." ] );
-        var r = variables.proc.exec( [ "systemctl", "--user", "disable", "--now", unitName( arguments.name ) ], 60 );
+        var r = variables.systemd.disable( unitName( arguments.name ), true, 60 );
         if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
         var m = reFind( "--vfs-cache-mode writes", fileRead( unit ) );
         var dirLine = "";
         for ( var line in listToArray( fileRead( unit ), chr( 10 ) ) ) if ( left( line, 10 ) == "ExecStart=" ) dirLine = line;
         var folder = len( dirLine ) ? listLast( replace( dirLine, " --vfs-cache-mode writes", "" ), " " ) : "";
         var clean = len( folder ) && fileRead( unit ) == unitText( arguments.name, folder );
-        if ( clean ) { fileDelete( unit ); variables.proc.exec( [ "systemctl", "--user", "daemon-reload" ], 20 ); }
+        if ( clean ) { fileDelete( unit ); variables.systemd.reload( true ); }
         return variables.cli.say( cmd, "ok", { remote: arguments.name, unit_removed: clean }, arguments.asJson, [ arguments.name & " was unmounted." & ( clean ? "" : " The unit file was kept because you changed it." ) ] );
     }
 
@@ -103,7 +104,7 @@ class Cloud {
         if ( directoryExists( unitDir() ) ) for ( var f in directoryList( unitDir(), false, "name" ) ) {
             if ( left( f, 12 ) != "bxrig-cloud-" || right( f, 8 ) != ".service" ) continue;
             var n = mid( f, 13, len( f ) - 20 );
-            rows.append( { remote: n, active: trim( variables.proc.exec( [ "systemctl", "--user", "is-active", f ], 10 ).output ) == "active" } );
+            rows.append( { remote: n, active: variables.systemd.isActive( f, true ) } );
         }
         return variables.cli.say( "cloud status", "ok", { mounts: rows }, arguments.asJson, rows.len() ? rows.map( function( r ) { return r.remote & "  " & ( r.active ? "mounted" : "not running" ); } ) : [ "No cloud mounts. Add one: bxrig cloud mount NAME" ] );
     }

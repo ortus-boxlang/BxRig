@@ -19,6 +19,10 @@ class Update {
         variables.text = new bxrig.util.Text();
         variables.out = new bxrig.util.Out( variables.cli, "update" );
         variables.proc = new bxrig.util.Proc( arguments.runner );
+        variables.pacman = new bxrig.util.Pacman( variables.proc );
+        variables.aur = new bxrig.util.Aur( variables.proc );
+        variables.systemd = new bxrig.util.Systemd( variables.proc );
+        variables.http = new bxrig.util.Http( variables.proc );
         variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }
@@ -79,13 +83,13 @@ class Update {
         var dir = reReplace( getTempDirectory(), "/+$", "" ) & "/bxrig-upd-" & left( createUUID(), 8 );
         directoryCreate( dir, true );
         try {
-            var got = variables.proc.exec( [ "curl", "-fsSL", "--max-time", "30", "-o", dir & "/p", base() & "/" & arguments.chan & "/version-latest.properties" ], 60 );
-            if ( got.exitCode != 0 ) return { ok: false, error: "unreachable" };
+            var got = variables.http.download( base() & "/" & arguments.chan & "/version-latest.properties", dir & "/p", 30 );
+            if ( !got.ok ) return { ok: false, error: "unreachable" };
             var key = pubKeyFile();
             var signed = false;
             if ( len( key ) ) {
-                var sg = variables.proc.exec( [ "curl", "-fsSL", "--max-time", "30", "-o", dir & "/p.sig", base() & "/" & arguments.chan & "/version-latest.properties.sig" ], 60 );
-                if ( sg.exitCode != 0 ) return { ok: false, error: "unsigned" };
+                var sg = variables.http.download( base() & "/" & arguments.chan & "/version-latest.properties.sig", dir & "/p.sig", 30 );
+                if ( !sg.ok ) return { ok: false, error: "unsigned" };
                 var v = variables.proc.exec( [ "openssl", "pkeyutl", "-verify", "-pubin", "-inkey", key, "-rawin", "-in", dir & "/p", "-sigfile", dir & "/p.sig" ], 30 );
                 if ( v.exitCode != 0 ) return { ok: false, error: "signature" };
                 signed = true;
@@ -140,9 +144,9 @@ class Update {
         if ( structKeyExists( p, "sha256" ) && sha( target ) == p.sha256 ) return variables.out.say( "ok", variables.text.merge( data, { updated: false } ), arguments.asJson, [ "Already on the latest " & d.channel & " build." ] );
         if ( !arguments.yes ) return variables.out.say( "plan", data, arguments.asJson, [ "Plan: replace " & target & " with the " & d.channel & " build " & ( p.version ?: "" ), "Nothing was changed. Add --yes to apply." ] );
         var tmp = target & ".new-" & left( createUUID(), 8 );
-        var dl = variables.proc.exec( [ "curl", "-fsSL", "--max-time", "600", "-o", tmp, base() & "/" & d.channel & "/bxrig-linux-x86_64" ], 700 );
-        var sum = variables.proc.exec( [ "curl", "-fsSL", "--max-time", "30", base() & "/" & d.channel & "/bxrig-linux-x86_64.sha256" ], 60 );
-        if ( dl.exitCode != 0 || sum.exitCode != 0 ) { if ( fileExists( tmp ) ) fileDelete( tmp ); return variables.out.say( "official", { error: "download failed" }, arguments.asJson, [ "error: the download failed" ] ); }
+        var dl = variables.http.download( base() & "/" & d.channel & "/bxrig-linux-x86_64", tmp, 600 );
+        var sum = variables.http.get( base() & "/" & d.channel & "/bxrig-linux-x86_64.sha256", 30 );
+        if ( !dl.ok || !sum.ok ) { if ( fileExists( tmp ) ) fileDelete( tmp ); return variables.out.say( "official", { error: "download failed" }, arguments.asJson, [ "error: the download failed" ] ); }
         var got = sha( tmp );
         if ( listFirst( trim( sum.output ), " " ) != got || ( structKeyExists( p, "sha256" ) && p.sha256 != got ) ) { fileDelete( tmp ); return variables.out.say( "official", { error: "checksum mismatch" }, arguments.asJson, [ "error: the SHA-256 does not match; nothing was replaced" ] ); }
         variables.proc.exec( [ "chmod", "755", tmp ], 10 );
@@ -157,7 +161,7 @@ class Update {
         var d = load();
         if ( arguments.action == "status" ) return variables.out.say( "ok", { enabled: d.notify }, arguments.asJson, [ "Update notifications: " & ( d.notify ? "on (daily)" : "off" ) ] );
         if ( arguments.action == "off" ) {
-            variables.proc.exec( [ "systemctl", "--user", "disable", "--now", "bxrig-update-check.timer" ], 30 );
+            variables.systemd.disable( "bxrig-update-check.timer", true );
             d.notify = false; save( d );
             return variables.out.say( "ok", { enabled: false }, arguments.asJson, [ "Update notifications are off." ] );
         }
@@ -165,8 +169,8 @@ class Update {
         var svc = { name: "update-service", target: unit( "service" ), mode: "644", content: "[Unit]" & chr( 10 ) & "Description=BxRig update check" & chr( 10 ) & chr( 10 ) & "[Service]" & chr( 10 ) & "Type=oneshot" & chr( 10 ) & "ExecStart=sh -c 'PATH=$HOME/.local/bin:$PATH bxrig update check --notify; true'" & chr( 10 ) };
         var tim = { name: "update-timer", target: unit( "timer" ), mode: "644", content: "[Unit]" & chr( 10 ) & "Description=BxRig daily update check" & chr( 10 ) & chr( 10 ) & "[Timer]" & chr( 10 ) & "OnCalendar=daily" & chr( 10 ) & "RandomizedDelaySec=1h" & chr( 10 ) & "Persistent=true" & chr( 10 ) & chr( 10 ) & "[Install]" & chr( 10 ) & "WantedBy=timers.target" & chr( 10 ) };
         for ( var e in [ svc, tim ] ) { var st = variables.config.configState( e ); if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( e, e.content, "apply", true, false ); }
-        variables.proc.exec( [ "systemctl", "--user", "daemon-reload" ], 30 );
-        var r = variables.proc.exec( [ "systemctl", "--user", "enable", "--now", "bxrig-update-check.timer" ], 60 );
+        variables.systemd.reload( true );
+        var r = variables.systemd.enable( "bxrig-update-check.timer", true );
         if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: could not start the timer" ] );
         d.notify = true; save( d );
         return variables.out.say( "ok", { enabled: true }, arguments.asJson, [ "Update notifications are on: a daily check, shown as a desktop notification." ] );
@@ -177,8 +181,8 @@ class Update {
         var snap = variables.proc.has( "snapper" ) ? [ "sudo", "snapper", "create", "--description", "before bxrig system update" ] : ( variables.proc.has( "timeshift" ) ? [ "sudo", "timeshift", "--create", "--comments", "before bxrig system update" ] : [] );
         var steps = [];
         if ( snap.len() ) steps.append( snap );
-        steps.append( [ "sudo", "pacman", "-Syu", "--noconfirm" ] );
-        if ( variables.proc.has( "yay" ) ) steps.append( [ "yay", "-Sua", "--noconfirm" ] );
+        steps.append( variables.pacman.upgradeArgv() );
+        if ( variables.aur.available() ) steps.append( variables.aur.upgradeArgv() );
         var data = { steps: steps.map( function( s ) { return s.toList( " " ); } ), snapshot: snap.len() > 0 };
         if ( !arguments.yes ) {
             var plan = [ "Plan:" ];

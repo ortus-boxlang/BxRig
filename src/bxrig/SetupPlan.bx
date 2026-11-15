@@ -13,6 +13,14 @@
 //
 // Errors are preconditions (exit 4): nothing runs when there is one. HyprKwin is taken from a pinned full commit.
 class SetupPlan {
+    function init() {
+        variables.pacman = new bxrig.util.Pacman();
+        variables.aur = new bxrig.util.Aur();
+        variables.systemd = new bxrig.util.Systemd();
+        variables.http = new bxrig.util.Http();
+        return this;
+    }
+
     // The pinned HyprKwin release (v1.2.0). Re-pin by resolving a new tag and checking `tools/` still has the scripts used below.
     function pins() {
         return { hyprkwin: { repo: "https://github.com/DGBooth/HyprKwin.git", tag: "v1.2.0", commit: "31abb63939111a811d1e356c693cda5dbe54ed69" } };
@@ -74,9 +82,7 @@ class SetupPlan {
         if ( out.errors.len() ) return out;
 
         if ( missing.len() ) {
-            var pac = [ "sudo", "pacman", "-S", "--needed", "--noconfirm" ];
-            for ( var m in missing ) pac.append( m );
-            out.steps.append( { id: "packages", title: "install " & missing.toList( " " ), kind: "pacman", commands: [ pac ] } );
+            out.steps.append( { id: "packages", title: "install " & missing.toList( " " ), kind: "pacman", commands: [ variables.pacman.installArgv( missing ) ] } );
         }
         out.steps.append( { id: "fetch", title: "check out HyprKwin " & pins().hyprkwin.tag & " (commit " & left( pins().hyprkwin.commit, 7 ) & ")", kind: "git", commands: fetchCommands( facts.workDir ) } );
         if ( opts.undoKeys ?: false ) {
@@ -133,9 +139,7 @@ class SetupPlan {
         if ( missing.len() && !facts.hasSudo ) out.errors.append( "sudo is required to install packages but was not found" );
         if ( out.errors.len() ) return out;
         if ( missing.len() ) {
-            var pac = [ "sudo", "pacman", "-S", "--needed", "--noconfirm" ];
-            for ( var m in missing ) pac.append( m );
-            out.steps.append( { id: "packages", title: "install " & missing.len() & " packages (" & missing.toList( " " ) & ")", kind: "pacman", commands: [ pac ] } );
+            out.steps.append( { id: "packages", title: "install " & missing.len() & " packages (" & missing.toList( " " ) & ")", kind: "pacman", commands: [ variables.pacman.installArgv( missing ) ] } );
             out.added = missing;
         } else out.notes.append( "Hyprland and Noctalia are already installed." );
         out.steps.append( { id: "images", title: "write the BxRig logo and wallpapers to ~/Pictures/BxRig (missing ones only)", kind: "assets", commands: [] } );
@@ -162,9 +166,7 @@ class SetupPlan {
         if ( ( missing.len() || needLogin ) && !arguments.facts.hasSudo ) out.errors.append( "sudo is required but was not found" );
         if ( out.errors.len() ) return out;
         if ( missing.len() ) {
-            var pac = [ "sudo", "pacman", "-S", "--needed", "--noconfirm" ];
-            for ( var m in missing ) pac.append( m );
-            out.steps.append( { id: "packages", title: "install " & missing.len() & " packages (" & missing.toList( " " ) & ")", kind: "pacman", commands: [ pac ] } );
+            out.steps.append( { id: "packages", title: "install " & missing.len() & " packages (" & missing.toList( " " ) & ")", kind: "pacman", commands: [ variables.pacman.installArgv( missing ) ] } );
             out.added = missing;
         } else out.notes.append( "The " & sh & " packages and Starship are already installed." );
         out.steps.append( { id: "config", title: "write the Starship config (once) and the " & sh & " setup with Starship, fzf and zoxide" & ( sh == "zsh" ? ", autosuggestions and syntax highlighting" : "" ) & " (your rc file keeps its content, one block is added)", kind: "shell", shell: sh, commands: [] } );
@@ -190,9 +192,7 @@ class SetupPlan {
         if ( missing.len() && !arguments.facts.hasSudo ) out.errors.append( "sudo is required to install packages but was not found" );
         if ( out.errors.len() ) return out;
         if ( missing.len() ) {
-            var pac = [ "sudo", "pacman", "-S", "--needed", "--noconfirm" ];
-            for ( var m in missing ) pac.append( m );
-            out.steps.append( { id: "packages", title: "install " & missing.len() & " packages (" & missing.toList( " " ) & ")", kind: "pacman", commands: [ pac ] } );
+            out.steps.append( { id: "packages", title: "install " & missing.len() & " packages (" & missing.toList( " " ) & ")", kind: "pacman", commands: [ variables.pacman.installArgv( missing ) ] } );
             out.added = missing;
         } else out.notes.append( "The chosen terminals are already installed." );
         out.steps.append( { id: "config", title: "write a starter config with the Nerd Font for " & chosen.toList( ", " ) & " (existing files are kept)", kind: "terminal", terminals: chosen, commands: [] } );
@@ -212,7 +212,7 @@ class SetupPlan {
             var script = arguments.facts.workDir & "/nvm-install.sh";
             out.steps.append( { id: "nvm", title: "download and run " & pin.installer & " (external script, shown and run; it adds nvm " & pin.version & " to your shell startup files)", kind: "script", commands: [
                 [ "mkdir", "-p", arguments.facts.workDir ],
-                [ "curl", "-fsSL", "-m", "120", "-o", script, pin.installer ],
+                variables.http.downloadArgv( pin.installer, script, 120 ),
                 [ "env", "NVM_DIR=" & arguments.facts.nvmDir, "bash", script ] ] } );
         }
         if ( !len( arguments.facts.nodeVersion ) ) {
@@ -232,9 +232,7 @@ class SetupPlan {
         else if ( !still.len() ) out.errors.append( "The packages setup installed are already gone" );
         if ( still.len() && !facts.hasSudo ) out.errors.append( "sudo is required to remove packages but was not found" );
         if ( out.errors.len() ) return out;
-        var rm = [ "sudo", "pacman", "-Rs", "--noconfirm" ];
-        for ( var m in still ) rm.append( m );
-        out.steps.append( { id: "remove", title: "remove " & still.len() & " packages that setup installed (" & still.toList( " " ) & ")", kind: "pacman", commands: [ rm ] } );
+        out.steps.append( { id: "remove", title: "remove " & still.len() & " packages that setup installed (" & still.toList( " " ) & ")", kind: "pacman", commands: [ variables.pacman.removeArgv( still, "-Rs" ) ] } );
         out.notes.append( "pacman refuses to remove a package another package still needs; if that happens nothing is removed and its message is shown. KDE Plasma is untouched." );
         return out;
     }
@@ -286,7 +284,7 @@ class SetupPlan {
         if ( len( pkg ) && !havePkg && !facts.hasYay ) out.errors.append( "yay is required to install " & pkg & " from the AUR but was not found" );
         if ( out.errors.len() ) return out;
         if ( !havePkg ) {
-            out.steps.append( { id: "package", title: "install " & pkg & " (AUR)", kind: "aur", commands: [ [ "yay", "-S", "--needed", "--noconfirm", pkg ] ] } );
+            out.steps.append( { id: "package", title: "install " & pkg & " (AUR)", kind: "aur", commands: [ variables.aur.installArgv( [ pkg ] ) ] } );
             out.added.package = pkg;
         }
         if ( !facts.udevRule ) {
@@ -301,7 +299,7 @@ class SetupPlan {
             out.added.group = true;
         }
         out.steps.append( { id: "config", title: "write the shared shortcut files (xremap config, Hyprland binds, systemd user unit, Plasma Log Out)", kind: "keys", commands: [] } );
-        out.steps.append( { id: "service", title: "enable the xremap user service", kind: "systemd", commands: [ [ "systemctl", "--user", "daemon-reload" ], [ "systemctl", "--user", "enable", "xremap.service" ] ] } );
+        out.steps.append( { id: "service", title: "enable the xremap user service", kind: "systemd", commands: [ variables.systemd.reloadArgv( true ), variables.systemd.argv( "enable", "xremap.service", true ) ] } );
         out.notes.append( "Log out and back in once: the input group and the service take effect at the next login." );
         return out;
     }
@@ -313,8 +311,8 @@ class SetupPlan {
         if ( !structKeyExists( state, "package" ) ) out.errors.append( "setup xremap has not run on this machine, nothing to undo" );
         if ( !facts.hasSudo ) out.errors.append( "sudo is required but was not found" );
         if ( out.errors.len() ) return out;
-        out.steps.append( { id: "service", title: "stop and disable the xremap user service", kind: "systemd", commands: [ [ "systemctl", "--user", "disable", "--now", "xremap.service" ] ] } );
-        if ( len( state.package ) && structKeyExists( facts.installed, state.package ) ) out.steps.append( { id: "package", title: "remove " & state.package, kind: "pacman", commands: [ [ "sudo", "pacman", "-Rs", "--noconfirm", state.package ] ] } );
+        out.steps.append( { id: "service", title: "stop and disable the xremap user service", kind: "systemd", commands: [ variables.systemd.disableArgv( "xremap.service", true ) ] } );
+        if ( len( state.package ) && structKeyExists( facts.installed, state.package ) ) out.steps.append( { id: "package", title: "remove " & state.package, kind: "pacman", commands: [ variables.pacman.removeArgv( [ state.package ], "-Rs" ) ] } );
         if ( state.udev ) out.steps.append( { id: "udev", title: "remove the udev rule", kind: "sudo", commands: [ [ "sudo", "rm", "-f", udevRulePath() ], [ "sudo", "udevadm", "control", "--reload-rules" ] ] } );
         if ( state.group ) out.steps.append( { id: "group", title: "remove " & facts.user & " from the input group", kind: "sudo", commands: [ [ "sudo", "gpasswd", "-d", facts.user, "input" ] ] } );
         out.notes.append( "The shortcut files stay (restore them with `config restore`). Log out and back in for the group change." );

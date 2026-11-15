@@ -18,6 +18,8 @@ class Security {
         variables.cli = arguments.cli;
         variables.out = new bxrig.util.Out( variables.cli, "security" );
         variables.proc = new bxrig.util.Proc( arguments.runner );
+        variables.pacman = new bxrig.util.Pacman( variables.proc );
+        variables.systemd = new bxrig.util.Systemd( variables.proc );
         return this;
     }
 
@@ -73,7 +75,7 @@ class Security {
 
     function installFirst( pkg, yes, dry ) {
         if ( variables.proc.has( arguments.pkg == "fprintd" ? "fprintd-enroll" : "pamu2fcfg" ) ) return [];
-        return [ [ "sudo", "pacman", "-S", "--needed", "--noconfirm", arguments.pkg ] ];
+        return [ variables.pacman.installArgv( [ arguments.pkg ] ) ];
     }
 
     // The PAM change for fingerprint and fido2.
@@ -122,9 +124,9 @@ class Security {
         if ( v != "on" && v != "off" ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "security ssh-server" ), arguments.asJson );
         var cmds = [];
         if ( v == "on" ) {
-            if ( !variables.proc.has( "sshd" ) ) cmds.append( [ "sudo", "pacman", "-S", "--needed", "--noconfirm", "openssh" ] );
-            cmds.append( [ "sudo", "systemctl", "enable", "--now", "sshd.service" ] );
-        } else cmds.append( [ "sudo", "systemctl", "disable", "--now", "sshd.service" ] );
+            if ( !variables.proc.has( "sshd" ) ) cmds.append( variables.pacman.installArgv( [ "openssh" ] ) );
+            cmds.append( variables.systemd.enableArgv( "sshd.service", false, true ) );
+        } else cmds.append( variables.systemd.disableArgv( "sshd.service", false, true ) );
         return finish( "turn the SSH server " & v & ( v == "on" ? " (it listens on port 22: only password-less keys or strong passwords belong there)" : "" ), [], cmds, arguments.yes, arguments.dry, arguments.asJson, { ssh_server: v == "on" } );
     }
 
@@ -151,7 +153,7 @@ class Security {
         var data = {
             fingerprint: { installed: variables.proc.has( "fprintd-enroll" ), sudo: pamState( "fingerprint" ) },
             fido2: { installed: variables.proc.has( "pamu2fcfg" ), sudo: pamState( "fido2" ), key_registered: fileExists( u2fFile() ) },
-            ssh_server: variables.proc.exec( [ "systemctl", "is-active", "--quiet", "sshd.service" ], 10 ).exitCode == 0,
+            ssh_server: variables.systemd.active( "sshd.service" ),
             passwordless_sudo: fileExists( sudoersFile() )
         };
         var yn = function( b ) { return b ? "on" : "off"; };

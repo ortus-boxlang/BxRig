@@ -20,6 +20,7 @@ class BackupConfig {
         variables.fmt = new bxrig.util.Fmt();
         variables.out = new bxrig.util.Out( variables.cli, "backup" );
         variables.proc = new bxrig.util.Proc( arguments.runner );
+        variables.pacman = new bxrig.util.Pacman( variables.proc );
         variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }
@@ -97,10 +98,10 @@ class BackupConfig {
             var r = variables.proc.exec( argv, 300 );
             if ( r.exitCode != 0 ) { variables.proc.exec( [ "rm", "-rf", work ], 30 ); return { code: 6, error: "could not copy your files: " & trim( r.output ) }; }
         }
-        var pk = variables.proc.exec( [ "pacman", "-Qqe" ], 30 );
-        var fo = variables.proc.exec( [ "pacman", "-Qqm" ], 30 );
-        fileWrite( work & "/packages.txt", pk.exitCode == 0 ? trim( pk.output ) & chr( 10 ) : "" );
-        fileWrite( work & "/foreign.txt", fo.exitCode == 0 ? trim( fo.output ) & chr( 10 ) : "" );
+        var pk = variables.pacman.explicit();
+        var fo = variables.pacman.foreign();
+        fileWrite( work & "/packages.txt", pk.len() ? pk.toList( chr( 10 ) ) & chr( 10 ) : "" );
+        fileWrite( work & "/foreign.txt", fo.len() ? fo.toList( chr( 10 ) ) & chr( 10 ) : "" );
         var hasSecrets = false;
         if ( arguments.withSecrets ) {
             var sr = variables.proc.exec( [ variables.environ.self(), "secrets", "export", work & "/secrets.bxs", "--yes" ], 300 );
@@ -108,7 +109,7 @@ class BackupConfig {
             hasSecrets = true;
         }
         var count = variables.proc.exec( [ "sh", "-c", 'find "$1" -type f | wc -l', "_", files ], 30 );
-        var meta = { id: id, time: dateTimeFormat( now(), "yyyy-MM-dd'T'HH:mm:ss" ), reason: len( arguments.reason ) ? arguments.reason : "manual", files: int( val( trim( count.output ) ) ), packages: listToArray( trim( pk.output ), chr( 10 ) ).len(), foreign: listToArray( trim( fo.output ), chr( 10 ) ).len(), secrets: hasSecrets, host: trim( variables.proc.exec( [ "uname", "-n" ], 5 ).output ), paths: paths };
+        var meta = { id: id, time: dateTimeFormat( now(), "yyyy-MM-dd'T'HH:mm:ss" ), reason: len( arguments.reason ) ? arguments.reason : "manual", files: int( val( trim( count.output ) ) ), packages: pk.len(), foreign: fo.len(), secrets: hasSecrets, host: trim( variables.proc.exec( [ "uname", "-n" ], 5 ).output ), paths: paths };
         fileWrite( work & "/meta.json", jsonSerialize( meta ) );
         directoryCreate( storeDir(), true, true );
         var tr = variables.proc.exec( [ "tar", "-czf", archive( id ), "-C", work, "." ], 300 );
@@ -190,9 +191,8 @@ class BackupConfig {
         var dir = extract( arguments.id );
         var rows = [];
         for ( var rel in relFiles( dir ) ) rows.append( { file: rel, state: stateOf( dir, rel ) } );
-        var pk = variables.proc.exec( [ "pacman", "-Qqe" ], 30 );
         var have = {};
-        for ( var n in listToArray( trim( pk.output ), chr( 10 ) ) ) have[ n ] = true;
+        for ( var n in variables.pacman.explicit() ) have[ n ] = true;
         var missing = [];
         if ( fileExists( dir & "/packages.txt" ) ) for ( var p in listToArray( trim( fileRead( dir & "/packages.txt" ) ), chr( 10 ) ) ) if ( len( p ) && !structKeyExists( have, p ) ) missing.append( p );
         variables.proc.exec( [ "rm", "-rf", dir ], 30 );
@@ -219,8 +219,7 @@ class BackupConfig {
         var missingPk = [];
         var foreignPk = [];
         if ( wantPk ) {
-            var inst = {};
-            for ( var n in listToArray( trim( variables.proc.exec( [ "pacman", "-Qq" ], 30 ).output ), chr( 10 ) ) ) inst[ n ] = true;
+            var inst = variables.pacman.installed();
             for ( var p in listToArray( trim( fileRead( dir & "/packages.txt" ) ), chr( 10 ) ) ) if ( len( p ) && !structKeyExists( inst, p ) ) missingPk.append( p );
             var fo = {};
             for ( var f2 in listToArray( trim( fileRead( dir & "/foreign.txt" ) ), chr( 10 ) ) ) if ( len( f2 ) ) fo[ f2 ] = true;
@@ -249,9 +248,7 @@ class BackupConfig {
         variables.proc.exec( [ "rm", "-rf", dir ], 30 );
         var lines2 = [ "Restored " & restored.len() & " of " & todo.len() & " files. The state before is snapshot " & safety.id & "." ];
         if ( wantPk && missingPk.len() ) {
-            var pacArgv = [ "sudo", "pacman", "-S", "--needed", "--noconfirm" ];
-            for ( var mp in missingPk ) pacArgv.append( mp );
-            var pr = variables.proc.exec( pacArgv, 1800 );
+            var pr = variables.proc.exec( variables.pacman.installArgv( missingPk ), 1800 );
             lines2.append( pr.exitCode == 0 ? "Installed " & missingPk.len() & " packages." : "Some packages failed: " & trim( pr.output ) );
         }
         if ( foreignPk.len() ) lines2.append( "Install these with yay: " & foreignPk.toList( " " ) );

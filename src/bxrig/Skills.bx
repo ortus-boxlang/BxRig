@@ -13,6 +13,7 @@ class Skills {
         variables.cli = arguments.cli;
         variables.out = new bxrig.util.Out( variables.cli, "skills" );
         variables.proc = new bxrig.util.Proc( arguments.runner );
+        variables.http = new bxrig.util.Http( variables.proc );
         variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }
@@ -50,8 +51,8 @@ class Skills {
 
     // ---- the hub ----
     function get( path ) {
-        var r = variables.proc.exec( [ "curl", "-fsSL", "--max-time", "30", hub() & arguments.path ], 60 );
-        if ( r.exitCode != 0 ) return { ok: false, error: "the skills hub did not answer" };
+        var r = variables.http.get( hub() & arguments.path, 30 );
+        if ( !r.ok ) return { ok: false, error: "the skills hub did not answer" };
         try { return { ok: true, data: jsonDeserialize( r.output ) }; } catch ( any e ) { return { ok: false, error: "unexpected answer from the skills hub" }; }
     }
 
@@ -125,12 +126,12 @@ class Skills {
         }
         var p = parseRef( arguments.what );
         if ( structIsEmpty( p ) ) return { ok: false, error: "unknown skill or bad reference: " & arguments.what };
-        var rr = variables.proc.exec( [ "curl", "-sSL", "--max-time", "30", "-X", "POST", "-H", "Content-Type: application/json", "-d", serializeJSON( { owner: p.owner, repo: p.repo, skill: p.slug } ), "-w", chr( 10 ) & "%{http_code}", hub() & "/api/install" ], 60 );
-        if ( rr.exitCode != 0 ) return { ok: false, error: "the skills hub did not answer" };
-        var body = left( rr.output, len( rr.output ) - len( listLast( rr.output, chr( 10 ) ) ) - 1 );
-        var code = trim( listLast( rr.output, chr( 10 ) ) );
-        if ( code == "403" ) return { ok: false, error: arguments.what & " failed the hub's security audit and cannot be installed" };
-        if ( code == "404" ) return { ok: false, error: arguments.what & " was not found on the hub" };
+        var rr = variables.http.request( "POST", hub() & "/api/install", serializeJSON( { owner: p.owner, repo: p.repo, skill: p.slug } ), 30 );
+        if ( rr.status == 0 ) return { ok: false, error: "the skills hub did not answer" };
+        var body = rr.body;
+        var code = rr.status;
+        if ( code == 403 ) return { ok: false, error: arguments.what & " failed the hub's security audit and cannot be installed" };
+        if ( code == 404 ) return { ok: false, error: arguments.what & " was not found on the hub" };
         try {
             var j = jsonDeserialize( body );
             var d = j.data;

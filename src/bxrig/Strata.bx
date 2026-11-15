@@ -15,6 +15,7 @@ class Strata {
         variables.cli = arguments.cli;
         variables.out = new bxrig.util.Out( variables.cli, "strata integrations" );
         variables.inst = new bxrig.Installer( arguments.runner );
+        variables.http = new bxrig.util.Http( variables.inst.proc() );
         return this;
     }
 
@@ -50,8 +51,8 @@ class Strata {
             var tmp = dir & "/." & p.id & ".tmp" & left( createUUID(), 8 );
             directoryCreate( tmp, true );
             for ( var f in [ "provider.py", "messages.json", "LICENSE" ] ) {
-                var r = variables.inst.exec( [ "curl", "-fsSL", "-o", tmp & "/" & f, url( p.id, f ) ], 120 );
-                if ( r.exitCode != 0 ) {
+                var r = variables.http.download( url( p.id, f ), tmp & "/" & f, 120 );
+                if ( !r.ok ) {
                     try { directoryDelete( tmp, true ); } catch ( any e ) {}
                     return variables.out.say( "failed", { error: "download failed: " & p.id & "/" & f }, arguments.asJson, [ "error: could not download " & p.id & "/" & f ] );
                 }

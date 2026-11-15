@@ -1,0 +1,30 @@
+// The AUR through its helper (yay) and its web API. Repository packages are Pacman.bx. Argv arrays only.
+class Aur {
+    function init( proc = "" ) {
+        variables.proc = isSimpleValue( arguments.proc ) ? new bxrig.util.Proc( arguments.proc ) : arguments.proc;
+        variables.http = new bxrig.util.Http( variables.proc );
+        return this;
+    }
+
+    // The helper program that builds AUR packages.
+    function helper() { return "yay"; }
+
+    // True when the helper is installed.
+    function available() { return variables.proc.has( helper() ); }
+
+    // yay -S --needed --noconfirm PKG...
+    function installArgv( pkgs ) {
+        var argv = [ helper(), "-S", "--needed", "--noconfirm" ];
+        for ( var p in ( isArray( arguments.pkgs ) ? arguments.pkgs : [ arguments.pkgs ] ) ) argv.append( p );
+        return argv;
+    }
+
+    // yay -Sua --noconfirm (upgrade the AUR packages)
+    function upgradeArgv() { return [ helper(), "-Sua", "--noconfirm" ]; }
+
+    // The RPC base URL (BXRIG_AUR_URL for tests).
+    function baseUrl() { return getSystemSetting( "BXRIG_AUR_URL", "https://aur.archlinux.org/rpc/v5" ); }
+
+    // GET one RPC path: { ok, output, exitCode } (the raw text; no redirects followed, like the website's API).
+    function rpc( path ) { return variables.http.get( baseUrl() & arguments.path, 20, false ); }
+}

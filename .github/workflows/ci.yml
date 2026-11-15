@@ -164,6 +164,7 @@ jobs:
           (cd src && matchbox ../tests/fmt_test.bxs)
           (cd src && matchbox ../tests/command_spec_test.bxs)
           (cd src && matchbox ../tests/desktop_entry_test.bxs)
+          (cd src && matchbox ../tests/util_tools_test.bxs)
           bash tests/wizard-test.sh "$candidate"
           bash tests/init-test.sh "$candidate"
           bash tests/toolchain-test.sh "$candidate"

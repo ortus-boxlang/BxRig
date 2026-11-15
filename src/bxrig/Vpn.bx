@@ -7,6 +7,7 @@ class Vpn {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
         variables.inst = new bxrig.Installer( arguments.runner );
+        variables.systemd = new bxrig.util.Systemd( variables.inst.proc() );
         return this;
     }
 
@@ -16,7 +17,7 @@ class Vpn {
         try { found = variables.inst.exec( [ "sh", "-c", 'command -v nordvpn', "_" ], 10 ).exitCode == 0; } catch ( any e ) {}
         if ( !found ) return variables.cli.say( cmd, "precondition", { error: "NordVPN is not installed" }, arguments.asJson, [ "error: NordVPN is not installed. Install it: bxrig install nordvpn" ] );
         var user = getSystemSetting( "USER", "" );
-        var steps = [ [ "sudo", "systemctl", "enable", "--now", "nordvpnd" ], [ "sudo", "gpasswd", "-a", user, "nordvpn" ] ];
+        var steps = [ variables.systemd.enableArgv( "nordvpnd", false, true ), [ "sudo", "gpasswd", "-a", user, "nordvpn" ] ];
         var data = { steps: steps };
         if ( !len( user ) ) return variables.cli.say( cmd, "precondition", { error: "No USER" }, arguments.asJson, [ "error: could not tell which user to add to the nordvpn group" ] );
         if ( !arguments.yes ) return variables.cli.say( cmd, "plan", data, arguments.asJson, [ "Plan:", "  " & steps[ 1 ].toList( " " ), "  " & steps[ 2 ].toList( " " ), "Nothing was changed. Add --yes to apply." ] );

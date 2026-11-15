@@ -19,6 +19,7 @@ class Time {
         variables.out = new bxrig.util.Out( variables.cli, "time" );
         variables.inst = new bxrig.Installer( arguments.runner );
         variables.proc = variables.inst.proc();
+        variables.systemd = new bxrig.util.Systemd( variables.proc );
         return this;
     }
 
@@ -62,7 +63,7 @@ class Time {
         return r.exitCode == 0 ? listToArray( trim( r.output ), chr( 10 ) ) : [];
     }
 
-    function autoActive() { return variables.proc.exec( [ "systemctl", "is-active", "--quiet", "automatic-timezoned.service" ], 10 ).exitCode == 0; }
+    function autoActive() { return variables.systemd.active( "automatic-timezoned.service" ); }
 
     // ---- commands ----
     function statusCmd( asJson ) {
@@ -128,13 +129,13 @@ class Time {
         var d = { unit: unitFile(), geoclue: geoclueFile() };
         var privacy = "Privacy: GeoClue looks up your location online (the Wi-Fi networks around you or your IP address) through a location web service, each time you move.";
         if ( v == "off" ) {
-            return runPlan( "turn the automatic time zone off", [ [ "sudo", "systemctl", "disable", "--now", "automatic-timezoned.service" ], [ "sudo", "rm", "-f", unitFile(), geoclueFile() ], [ "sudo", "systemctl", "daemon-reload" ] ], arguments.yes, arguments.dry, arguments.asJson, d );
+            return runPlan( "turn the automatic time zone off", [ variables.systemd.disableArgv( "automatic-timezoned.service", false, true ), [ "sudo", "rm", "-f", unitFile(), geoclueFile() ], variables.systemd.reloadArgv( false, true ) ], arguments.yes, arguments.dry, arguments.asJson, d );
         }
         var apps = [ { id: "geoclue", source: "pacman", targets: [ "geoclue" ] } ];
         if ( !variables.proc.has( "automatic-timezoned" ) ) apps.append( { id: "automatic-timezoned", source: "aur", targets: [ "automatic-timezoned" ] } );
         var built = variables.inst.steps( apps, variables.inst.isRoot() );
         d.install = built.steps;
-        var after = [ [ "sudo", "install", "-Dm644", tmpU, unitFile() ], [ "sudo", "install", "-Dm644", tmpG, geoclueFile() ], [ "sudo", "systemctl", "daemon-reload" ], [ "sudo", "systemctl", "enable", "--now", "automatic-timezoned.service" ] ];
+        var after = [ [ "sudo", "install", "-Dm644", tmpU, unitFile() ], [ "sudo", "install", "-Dm644", tmpG, geoclueFile() ], variables.systemd.reloadArgv( false, true ), variables.systemd.enableArgv( "automatic-timezoned.service", false, true ) ];
         if ( !arguments.yes || arguments.dry ) {
             var lines = [ ( arguments.dry ? "Dry run" : "Plan" ) & ": follow your location with the time zone", privacy ];
             for ( var st in built.steps ) for ( var c in st.commands ) lines.append( "  " & st.kind & ": " & c.toList( " " ) );

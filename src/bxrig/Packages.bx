@@ -10,15 +10,7 @@ class Packages {
 
     // Names of all installed pacman packages as a set. Empty when pacman is missing or times out.
     function installedNames() {
-        var names = {};
-        try {
-            var r = systemExecute( "pacman", [ "-Qq" ], 15, true );
-            if ( !r.timeout && r.exitCode == 0 ) {
-                for ( var n in listToArray( r.output, chr( 10 ) ) ) if ( len( trim( n ) ) ) names[trim( n )] = true;
-            }
-        } catch ( any e ) {
-        }
-        return names;
+        return new bxrig.util.Pacman().installed();
     }
 
     // Where `install` puts the launcher of a web app (decided in COMMAND-CONTRACT section 11).
@@ -142,7 +134,7 @@ class Packages {
             println( "AUR and PKGBUILD builds never run as root. Nothing was changed." );
             return 4;
         }
-        if ( needsYay && !inst.hasCommand( "yay" ) ) {
+        if ( needsYay && !new bxrig.util.Aur( inst.proc() ).available() ) {
             println( "yay is not installed (bootstrap/install.sh installs it). Nothing was changed." );
             return 4;
         }

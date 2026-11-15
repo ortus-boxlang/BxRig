@@ -24,6 +24,11 @@ count 'fail() { echo "FAIL'        tests 4
 count 'function check( label, ok )' tests 2
 count 'jsonDeserialize( fileRead(' src/bxrig 37
 count 'getSystemSetting( "HOME"'   src/bxrig 12
+# external tools have one home each (src/bxrig/util): pacman, the AUR helper, systemctl and curl are only ever spelled there
+for pat in '"pacman", "-' '"yay", "-' '"curl", "-' '"systemctl", "[-a-z]'; do
+  n="$(grep -rnE "\[ *\"(sudo\", )?$pat" "$root/src" --include='*.bx' | grep -v '/util/' | grep -vE '^\S+:[0-9]+:\s*//' | wc -l)"
+  (( n == 0 )) || { echo "FAIL: $n argv lists start a command ($pat) outside src/bxrig/util (use Pacman, Aur, Systemd or Http)"; fails=$((fails+1)); }
+done
 # exit codes are named (src/bxrig/util/Exit.bx): no number as the code argument of say( ) / fail( ), and no CLIExit( N ) in Main.bx except 130 (Ctrl+C)
 bare="$(grep -rhoE '(out)\.(say|fail)\( *[0-9]+ *,|(cli)\.(say|fail)\( *[^,()]+, *[0-9]+ *,' "$root/src/bxrig" | wc -l)"
 (( bare == 0 )) || { echo "FAIL: $bare say/fail calls pass a bare number as the exit code (use a name from Exit.bx)"; fails=$((fails+1)); }

@@ -20,6 +20,7 @@ class Editor {
         variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
         variables.proc = new bxrig.util.Proc( arguments.runner );
+        variables.pacman = new bxrig.util.Pacman( variables.proc );
         variables.config = new bxrig.ConfigService().quiet( true );
         variables.td = new bxrig.TemplateData();
         return this;
@@ -104,13 +105,11 @@ class Editor {
         var dir = target();
         if ( directoryExists( dir ) || fileExists( dir ) ) return variables.cli.say( cmd, "precondition", { error: dir & " exists", target: dir }, arguments.asJson, [ "error: " & dir & " already exists, so it was left alone. Move it first (mv " & dir & " " & dir & ".bak) and run this again.", "To add only the BoxLang plugin to it: bxrig editor boxlang --yes" ] );
         var pkgs = [];
-        for ( var p in [ "neovim", "git", "ripgrep", "fd", "lazygit" ] ) if ( variables.proc.exec( [ "pacman", "-Q", p ], 15 ).exitCode != 0 ) pkgs.append( p );
+        for ( var p in [ "neovim", "git", "ripgrep", "fd", "lazygit" ] ) if ( !variables.pacman.isInstalled( p ) ) pkgs.append( p );
         var data = { target: dir, packages: pkgs, layer: layerFiles() };
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", data, arguments.asJson, [ "Plan:" & ( pkgs.len() ? " sudo pacman -S --needed " & pkgs.toList( " " ) & ";" : "" ) & " git clone https://github.com/LazyVim/starter " & dir & "; remove " & dir & "/.git; add the BxRig layer (" & layerFiles().len() & " files: transparency, BoxLang syntax, theme following, no news popups) and the neo-tree extra", "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", data, arguments.asJson, [ "Plan:" & ( pkgs.len() ? " " & variables.pacman.installLine( pkgs ) & ";" : "" ) & " git clone https://github.com/LazyVim/starter " & dir & "; remove " & dir & "/.git; add the BxRig layer (" & layerFiles().len() & " files: transparency, BoxLang syntax, theme following, no news popups) and the neo-tree extra", "Nothing was changed. Add --yes to apply." ] );
         if ( pkgs.len() ) {
-            var argv = [ "sudo", "pacman", "-S", "--needed", "--noconfirm" ];
-            for ( var q in pkgs ) argv.append( q );
-            var ins = variables.proc.exec( argv, 1800 );
+            var ins = variables.proc.exec( variables.pacman.installArgv( pkgs ), 1800 );
             if ( ins.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( ins.output ) }, arguments.asJson, [ "error: could not install " & pkgs.toList( ", " ) & ": " & trim( ins.output ) ] );
         }
         var clone = variables.proc.exec( [ "git", "clone", "https://github.com/LazyVim/starter", dir ], 300 );

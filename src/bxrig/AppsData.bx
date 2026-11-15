@@ -15,6 +15,7 @@ class AppsData {
     function init( cli = {}, demo = false ) {
         variables.desk = new bxrig.util.DesktopEntry();
         variables.proc = new bxrig.util.Proc();
+        variables.pacman = new bxrig.util.Pacman( variables.proc );
         variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
         variables.demo = arguments.demo;
@@ -38,13 +39,12 @@ class AppsData {
     // ---- desktop entries ----
 
     // ---- pacman ----
-    function pacman( args, timeout = 60 ) { return variables.proc.run( "pacman", arguments.args, arguments.timeout ); }
 
     // "repo pkg version [installed]" for every sync repo: pkg -> repo. One call, kept for the life of this object.
     function repoOf( pkg ) {
         if ( !variables.repoMapLoaded ) {
             variables.repoMapLoaded = true;
-            var r = pacman( [ "-Sl" ], 60 );
+            var r = variables.pacman.run( [ "-Sl" ], 60 );
             if ( r.exitCode == 0 ) for ( var line in listToArray( r.output, chr( 10 ) ) ) {
                 var p = listToArray( trim( line ), " " );
                 if ( p.len() >= 2 ) variables.repoMap[ p[ 2 ] ] = p[ 1 ];
@@ -117,23 +117,23 @@ class AppsData {
     function installed( all = false ) {
         if ( variables.demo ) return demoInstalled();
         var rows = [];
-        var pacmanOk = variables.proc.has( "pacman" );
+        var pacmanOk = variables.pacman.available();
         if ( !pacmanOk ) note( "pacman was not found, so installed apps cannot be listed here." );
         var entries = variables.desk.entries( variables.desk.dirs( false ) );
         var foreign = {};
-        var fr = pacmanOk ? pacman( [ "-Qm" ], 30 ) : { exitCode: 1, output: "" };
+        var fr = pacmanOk ? variables.pacman.run( [ "-Qm" ], 30 ) : { exitCode: 1, output: "" };
         if ( fr.exitCode == 0 ) for ( var l in listToArray( fr.output, chr( 10 ) ) ) { var fp = listToArray( trim( l ), " " ); if ( fp.len() ) foreign[ fp[ 1 ] ] = true; }
         var owner = {};
         if ( pacmanOk && entries.len() ) {
             var args = [ "-Qo" ];
             for ( var e in entries ) args.append( e.file );
-            var qo = pacman( args, 60 );
+            var qo = variables.pacman.run( args, 60 );
             owner = parseQo( qo.output );
         }
         var pkgs = [];
         for ( var e2 in entries ) if ( structKeyExists( owner, e2.file ) && !arrayFind( pkgs, owner[ e2.file ] ) ) pkgs.append( owner[ e2.file ] );
         var qi = {};
-        if ( pacmanOk && pkgs.len() ) { var qa = [ "-Qi" ]; for ( var p in pkgs ) qa.append( p ); qi = parseQi( pacman( qa, 60 ).output ); }
+        if ( pacmanOk && pkgs.len() ) { var qa = [ "-Qi" ]; for ( var p in pkgs ) qa.append( p ); qi = parseQi( variables.pacman.run( qa, 60 ).output ); }
         // one row per package: the launcher named after the package wins, otherwise the one with the shortest file name
         var best = {};
         var order = [];
@@ -158,7 +158,7 @@ class AppsData {
         if ( arguments.all && pacmanOk ) {
             var shown = {};
             for ( var r in rows ) if ( len( r.pkg ) ) shown[ r.pkg ] = true;
-            var all2 = pacman( [ "-Q" ], 30 );
+            var all2 = variables.pacman.run( [ "-Q" ], 30 );
             for ( var ln in listToArray( all2.output, chr( 10 ) ) ) {
                 var pp = listToArray( trim( ln ), " " );
                 if ( pp.len() < 2 || structKeyExists( shown, pp[ 1 ] ) ) continue;
@@ -173,9 +173,8 @@ class AppsData {
     function installedNames() {
         var out = {};
         if ( variables.demo ) { for ( var r in demoInstalled() ) out[ r.pkg ] = true; out.thunderbird = true; return out; }
-        if ( !variables.proc.has( "pacman" ) ) return out;
-        for ( var l in listToArray( pacman( [ "-Qq" ], 30 ).output, chr( 10 ) ) ) if ( len( trim( l ) ) ) out[ trim( l ) ] = true;
-        return out;
+        if ( !variables.pacman.available() ) return out;
+        return variables.pacman.installed();
     }
 
     // Flatpak apps, only when flatpak exists.
@@ -340,8 +339,8 @@ class AppsData {
         if ( variables.demo ) return demoDetails( arguments.row );
         var r = arguments.row;
         var pkg = r.pkg ?: "";
-        if ( !len( pkg ) || !reFind( "^[a-z0-9@._+-]{1,100}$", pkg ) || !variables.proc.has( "pacman" ) ) return {};
-        var q = pacman( [ r.kind == "installed" || r.kind == "update" ? "-Qi" : "-Si", pkg ], 20 );
+        if ( !len( pkg ) || !reFind( "^[a-z0-9@._+-]{1,100}$", pkg ) || !variables.pacman.available() ) return {};
+        var q = variables.pacman.run( [ r.kind == "installed" || r.kind == "update" ? "-Qi" : "-Si", pkg ], 20 );
         if ( q.exitCode != 0 ) return {};
         var parsed = parseQi( q.output );
         return structKeyExists( parsed, pkg ) ? parsed[ pkg ] : {};
@@ -356,10 +355,10 @@ class AppsData {
             out.lines = [ "This also removes 3 unused dependencies that only " & p & " needed.", "Your files and settings in your home folder stay." ];
             return out;
         }
-        if ( !reFind( "^[a-z0-9@._+-]{1,100}$", p ) || !variables.proc.has( "pacman" ) ) return out;
-        var qi = parseQi( pacman( [ "-Qi", p ], 20 ).output );
+        if ( !reFind( "^[a-z0-9@._+-]{1,100}$", p ) || !variables.pacman.available() ) return out;
+        var qi = parseQi( variables.pacman.run( [ "-Qi", p ], 20 ).output );
         if ( structKeyExists( qi, p ) && structKeyExists( qi[ p ], "requiredBy" ) ) out.dependents = qi[ p ].requiredBy.len();
-        var rp = pacman( [ "-Rns", "--print", "--print-format", "%n", p ], 20 );
+        var rp = variables.pacman.run( [ "-Rns", "--print", "--print-format", "%n", p ], 20 );
         if ( rp.exitCode == 0 ) {
             var names = [];
             for ( var l in listToArray( rp.output, chr( 10 ) ) ) if ( len( trim( l ) ) && trim( l ) != p ) names.append( trim( l ) );

@@ -10,6 +10,7 @@ class AiModels {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
         variables.proc = new bxrig.util.Proc( arguments.runner );
+        variables.systemd = new bxrig.util.Systemd( variables.proc );
         return this;
     }
 
@@ -54,7 +55,7 @@ class AiModels {
         return variables.cli.say( cmd, "ok", { model: arguments.name }, arguments.asJson, [ trim( r.output ) ] );
     }
 
-    function serviceActive() { return trim( variables.proc.exec( [ "systemctl", "is-active", "ollama" ], 10 ).output ) == "active"; }
+    function serviceActive() { return variables.systemd.isActive( "ollama" ); }
 
     // `ai models status`
     function status( asJson ) {
@@ -67,7 +68,7 @@ class AiModels {
     function enable( yes, dryRun, asJson ) {
         var cmd = "ai models enable";
         if ( !hasOllama() ) return missing( cmd, arguments.asJson );
-        var argv = [ "sudo", "systemctl", "enable", "--now", "ollama" ];
+        var argv = variables.systemd.enableArgv( "ollama", false, true );
         if ( !arguments.yes || arguments.dryRun ) return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", { command: argv }, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": " & argv.toList( " " ), "Nothing was changed." & ( arguments.dryRun ? "" : " Add --yes to apply." ) ] );
         var r = variables.proc.exec( argv, 120 );
         if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );

@@ -31,6 +31,7 @@ class BackupData {
         variables.cli = arguments.cli;
         variables.out = new bxrig.util.Out( variables.cli, "backup" );
         variables.proc = new bxrig.util.Proc( arguments.runner );
+        variables.systemd = new bxrig.util.Systemd( variables.proc );
         variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }
@@ -370,7 +371,7 @@ class BackupData {
         if ( !arrayFind( [ "hourly", "daily", "off" ], v ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "backup data schedule" ), arguments.asJson );
         var svcFile = unitDir() & "/bxrig-backup.service";
         var timFile = unitDir() & "/bxrig-backup.timer";
-        var cmds = v == "off" ? [ [ "systemctl", "--user", "disable", "--now", "bxrig-backup.timer" ] ] : [ [ "systemctl", "--user", "daemon-reload" ], [ "systemctl", "--user", "enable", "--now", "bxrig-backup.timer" ] ];
+        var cmds = v == "off" ? [ variables.systemd.disableArgv( "bxrig-backup.timer", true ) ] : [ variables.systemd.reloadArgv( true ), variables.systemd.enableArgv( "bxrig-backup.timer", true ) ];
         var p = plan( v == "off" ? "turn the automatic backup off" : "back up " & v & " (a user timer; it skips on battery power, catches up after the computer was off, and tells you when a backup fails)", v == "off" ? [ "removes the timer's files" ] : [ "writes " & svcFile, "writes " & timFile ], arguments.yes, arguments.dry, arguments.asJson, { schedule: v } );
         if ( !p.done ) return p.code;
         if ( v == "off" ) {

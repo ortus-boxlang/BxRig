@@ -26,9 +26,9 @@ Phases 0 to 5 are done and pushed to `development` (commits `a106a30` for phases
 | F06 entries, `SystemFile`, `SystemdUnit` | **deferred** (phase 9), depends on F05. | |
 | F07 `Names` | **deferred** (phase 12): changes exit codes of 5 classes (2 vs 4), needs the owner's decision (propose 2). | |
 | F08 `Text` / `Fmt` | **done** (`ba6e1c4`): `Text.merge` replaces the last 3 copies (Pkg, Update, Vm); the 4th, `SystemState.merge`, did a different job and is now `startingAnswers`. `Fmt` is the one home for sizes and ages: `bytes` (was TuiKit.size and BackupConfig.human), `kb` (was Vm.humanKb), `age` (BackupTimeline), `ageShort` (DashboardPage), `span` (was TuiSys). The callers keep their method name and forward to it. | `util/Text.bx`, `util/Fmt.bx`, `text_test.bxs`, `fmt_test.bxs` |
-| F09 `Pacman` | **deferred** (phase 8). | |
-| F10 `Systemd` | **deferred** (phase 8). | |
-| F11 `Http` | **deferred** (phase 8). | |
+| F09 `Pacman` and `Aur` | **done** (CR3 phase 2): `util/Pacman.bx` builds the argv (`installArgv`, `removeArgv`, `upgradeArgv`, `installLine`) and answers the queries (`installed`, `installedNames`, `explicit`, `foreign`, `isInstalled`, `known`, `info`, `search`, `searchNames`, `version`, `versions`); `util/Aur.bx` is the AUR helper (`installArgv`, `upgradeArgv`, `available`, `rpc`). 27 classes use them; the 70 spelled `pacman` and `yay` argv lists are gone. | `util/Pacman.bx`, `util/Aur.bx`, `util_tools_test.bxs` |
+| F10 `Systemd` | **done** (CR3 phase 2): `util/Systemd.bx` (`enableArgv`, `disableArgv`, `stopArgv`, `reloadArgv`, `powerArgv`, `active` for `is-active --quiet`, `state` and `isActive` for the printed text, `enable`, `disable`, `stop`, `reload`). 16 classes use it. | `util/Systemd.bx`, `util_tools_test.bxs` |
+| F11 `Http` | **done** (CR3 phase 2): `util/Http.bx` (`get`, `download`, `request` for a local service with its status code, `getArgv`, `downloadArgv`, `installerArgv` for vendor scripts). Mail, Skills, Update, Boxlang, Java, Sdk, Strata, Pkg (AUR RPC), Installer, SetupPlan use it. Two shell-script downloads stay on purpose: `ImageCache` (a detached background script with size and protocol limits). | `util/Http.bx`, `util_tools_test.bxs` |
 | F12 desktop and engine detection | **deferred** (phase 12). | |
 | F13 `CommandSpec` and `Options` | **done** (`cec1e56`): `cli.json` is the registry (93 commands, 246 flags with types). `CommandSpec` answers flags and usage; `Main.bx` checks every run's flags per command (unknown flag: exit 2, the usage line printed; `secrets run` passes through; the check only runs when there are flags) and the 122-entry global whitelist is gone. `gen-docs.sh` also writes `docs/reference/command-flags.md` for review and the small `CommandFlagData.bx` that the check reads, and fails when a usage line names a flag the command does not list. 117 of the 135 hand-written `"Usage: bxrig"` strings in `src/` now come from the registry (`new bxrig.CommandSpec().usage( "pkg remove" )`); 18 stay because they are built with `&` or carry an explanation in brackets. The nested usage lines of `backup`, `appearance`, `plasma` and `ai` were rewritten one variant per line so each carries its full prefix. | `CommandSpec.bx`, `CommandFlagData.bx`, `command_spec_test.bxs`, `command-spec-test.sh`, `tools/infer-command-flags.py`, `tools/use-command-spec-usage.py` |
 | F14 Main logic | **deferred** (phase 12). | |
@@ -49,6 +49,8 @@ Phases 0 to 5 are done and pushed to `development` (commits `a106a30` for phases
 ### The util package (CR3 phase 1)
 
 Shared helpers live in `src/bxrig/util/` and are reached as `bxrig.util.NAME`: `Cli`, `Out`, `Exit`, `Proc`, `Env`, `Text`, `Fmt`, `DesktopEntry`. A command class (`bxrig.Pkg`, `bxrig.Time`, ...) never holds a helper's job; a helper never holds a command's job. Every new shared helper (`Pacman`, `Aur`, `Systemd`, `Http`, `Names`, `JsonStore`, `Mutation`, ...) goes into this folder. The move changed no behaviour: only the class path (`new bxrig.util.Proc()`); nested packages build and load under MatchBox (checked before the move).
+
+Phase 2 (external tools) also adds a ratchet in `tests/dry-test.sh`: no argv list that starts `pacman`, `yay`, `curl` or `systemctl` outside `src/bxrig/util`.
 
 ### Behaviour changes made on purpose
 

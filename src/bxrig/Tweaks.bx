@@ -12,6 +12,7 @@ class Tweaks {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
         variables.proc = new bxrig.util.Proc( arguments.runner );
+        variables.pacman = new bxrig.util.Pacman( variables.proc );
         return this;
     }
 
@@ -106,10 +107,8 @@ class Tweaks {
     function kernelName( n ) { return reFind( "^linux(-[a-z0-9]+)*$", arguments.n ) > 0 && !reFind( "-headers$", arguments.n ); }
 
     function installedKernels() {
-        var r = variables.proc.exec( [ "pacman", "-Qq" ], 30 );
         var out = [];
-        if ( r.exitCode != 0 ) return out;
-        for ( var n in listToArray( trim( r.output ), chr( 10 ) ) ) if ( kernelName( n ) && !arrayFind( [ "linux-api-headers", "linux-firmware", "linux-firmware-whence", "linux-tools" ], n ) && !reFind( "^linux-(firmware|api|tools|atm|docs|lts-docs)", n ) ) out.append( n );
+        for ( var n in variables.pacman.installedNames() ) if ( kernelName( n ) && !arrayFind( [ "linux-api-headers", "linux-firmware", "linux-firmware-whence", "linux-tools" ], n ) && !reFind( "^linux-(firmware|api|tools|atm|docs|lts-docs)", n ) ) out.append( n );
         return out;
     }
 
@@ -127,8 +126,7 @@ class Tweaks {
             var running = trim( variables.proc.exec( [ "uname", "-r" ], 5 ).output );
             var inst = installedKernels();
             var avail = [];
-            var r = variables.proc.exec( [ "pacman", "-Ssq", "^linux-cachyos" ], 30 );
-            if ( r.exitCode == 0 ) for ( var n in listToArray( trim( r.output ), chr( 10 ) ) ) if ( kernelName( n ) && !arrayFind( inst, n ) && !reFind( "-(nvidia|zfs|headers|rc)", n ) ) avail.append( n );
+            for ( var n in variables.pacman.searchNames( "^linux-cachyos" ) ) if ( kernelName( n ) && !arrayFind( inst, n ) && !reFind( "-(nvidia|zfs|headers|rc)", n ) ) avail.append( n );
             var lines = [ "running: " & running, "installed: " & inst.toList( ", " ) ];
             lines.append( "available: " & ( avail.len() ? avail.toList( ", " ) : "none found" ) );
             return variables.cli.say( "kernel", "ok", { running: running, installed: inst, available: avail }, arguments.asJson, lines );
@@ -138,15 +136,15 @@ class Tweaks {
         if ( !kernelName( name ) ) return variables.cli.fail( "kernel", "usage", name & " is not a kernel package name (for example linux-cachyos-lts)", arguments.asJson );
         var pkgs = [ name, name & "-headers" ];
         if ( verb == "install" ) {
-            if ( variables.proc.exec( [ "pacman", "-Si", name ], 20 ).exitCode != 0 ) return variables.cli.fail( "kernel", "precondition", name & " is not in the repositories (bxrig kernel list)", arguments.asJson );
+            if ( !variables.pacman.known( name ) ) return variables.cli.fail( "kernel", "precondition", name & " is not in the repositories (bxrig kernel list)", arguments.asJson );
             if ( arrayFind( installedKernels(), name ) ) return variables.cli.say( "kernel", "ok", { installed: name }, arguments.asJson, [ name & " is already installed." ] );
-            return runPlan( "kernel", "install the " & name & " kernel and its headers (choose it in the boot menu afterwards)", [ [ "sudo", "pacman", "-S", "--needed", "--noconfirm", pkgs[ 1 ], pkgs[ 2 ] ] ], arguments.yes, arguments.dry, arguments.asJson, { kernel: name } );
+            return runPlan( "kernel", "install the " & name & " kernel and its headers (choose it in the boot menu afterwards)", [ variables.pacman.installArgv( pkgs ) ], arguments.yes, arguments.dry, arguments.asJson, { kernel: name } );
         }
         var inst2 = installedKernels();
         if ( !arrayFind( inst2, name ) ) return variables.cli.fail( "kernel", "precondition", name & " is not installed", arguments.asJson );
         if ( inst2.len() < 2 ) return variables.cli.fail( "kernel", "precondition", "it is the only kernel installed: add another one first", arguments.asJson );
         var run = trim( variables.proc.exec( [ "uname", "-r" ], 5 ).output );
         if ( runningKernelIs( name, run ) ) return variables.cli.fail( "kernel", "precondition", name & " is the running kernel (" & run & "): boot another one first", arguments.asJson );
-        return runPlan( "kernel", "remove the " & name & " kernel", [ [ "sudo", "pacman", "-Rns", "--noconfirm", pkgs[ 1 ], pkgs[ 2 ] ] ], arguments.yes, arguments.dry, arguments.asJson, { kernel: name } );
+        return runPlan( "kernel", "remove the " & name & " kernel", [ variables.pacman.removeArgv( pkgs ) ], arguments.yes, arguments.dry, arguments.asJson, { kernel: name } );
     }
 }

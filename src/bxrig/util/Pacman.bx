@@ -1,0 +1,111 @@
+// pacman: the one place that knows its arguments. Builders return argv arrays (plans show them, runners run them); queries run them through Proc.
+// The AUR is another tool and lives in Aur.bx. Never a shell string (COMMAND-CONTRACT rule 9).
+class Pacman {
+    function init( proc = "" ) {
+        variables.proc = isSimpleValue( arguments.proc ) ? new bxrig.util.Proc( arguments.proc ) : arguments.proc;
+        return this;
+    }
+
+    // True when pacman is on the PATH.
+    function available() { return variables.proc.has( "pacman" ); }
+
+    // ---- argv builders (pure) ----
+
+    // The start of a command that needs root: [ "pacman" ] as root, [ "sudo", "pacman" ] otherwise.
+    function base( asRoot = false ) { return arguments.asRoot ? [ "pacman" ] : [ "sudo", "pacman" ]; }
+
+    // sudo pacman -S --needed --noconfirm PKG...
+    function installArgv( pkgs, asRoot = false ) {
+        var argv = base( arguments.asRoot );
+        for ( var a in [ "-S", "--needed", "--noconfirm" ] ) argv.append( a );
+        for ( var p in ( isArray( arguments.pkgs ) ? arguments.pkgs : [ arguments.pkgs ] ) ) argv.append( p );
+        return argv;
+    }
+
+    // sudo pacman -Rns --noconfirm PKG... ; flags "-Rs" keeps the config files of the package.
+    function removeArgv( pkgs, flags = "-Rns", asRoot = false ) {
+        var argv = base( arguments.asRoot );
+        argv.append( arguments.flags );
+        argv.append( "--noconfirm" );
+        for ( var p in ( isArray( arguments.pkgs ) ? arguments.pkgs : [ arguments.pkgs ] ) ) argv.append( p );
+        return argv;
+    }
+
+    // sudo pacman -Syu --noconfirm
+    function upgradeArgv( asRoot = false ) {
+        var argv = base( arguments.asRoot );
+        argv.append( "-Syu" );
+        argv.append( "--noconfirm" );
+        return argv;
+    }
+
+    // The same install as a line for a plan: "sudo pacman -S --needed a b".
+    function installLine( pkgs ) {
+        return "sudo pacman -S --needed " & ( isArray( arguments.pkgs ) ? arguments.pkgs : [ arguments.pkgs ] ).toList( " " );
+    }
+
+    // ---- queries ----
+
+    // The installed package names as an array.
+    function installedNames() { return names( [ "-Qq" ], 30 ); }
+
+    // The installed package names as a set: { name: true }.
+    function installed() {
+        var s = {};
+        for ( var n in installedNames() ) s[ n ] = true;
+        return s;
+    }
+
+    // Installed packages with versions (pacman -Q, or -Qe for what you asked for): { ok, rows: [ { name, version } ] }.
+    function versions( explicit = false ) {
+        var r = run( [ arguments.explicit ? "-Qe" : "-Q" ], 30 );
+        var rows = [];
+        for ( var l in listToArray( r.output, chr( 10 ) ) ) { var parts = listToArray( trim( l ), " " ); if ( parts.len() >= 2 ) rows.append( { name: parts[ 1 ], version: parts[ 2 ] } ); }
+        return { ok: r.exitCode == 0, rows: rows };
+    }
+
+    // What you asked for (not dependencies), as an array (pacman -Qqe).
+    function explicit() { return names( [ "-Qqe" ], 30 ); }
+
+    // The AUR and local packages, as an array (pacman -Qqm).
+    function foreign() { return names( [ "-Qqm" ], 30 ); }
+
+    // True when the package is installed.
+    function isInstalled( pkg ) { return run( [ "-Q", arguments.pkg ], 15 ).exitCode == 0; }
+
+    // The installed version of a package ("6.6.2-1"), or "".
+    function version( pkg ) {
+        var r = run( [ "-Q", arguments.pkg ], 15 );
+        if ( r.exitCode != 0 ) return "";
+        var parts = listToArray( trim( r.output ), " " );
+        return parts.len() >= 2 ? parts[ 2 ] : "";
+    }
+
+    // True when a sync repository has the package.
+    function known( name ) { return run( [ "-Si", arguments.name ], 20 ).exitCode == 0; }
+
+    // The `pacman -Si` text of a repository package ("" when there is none).
+    function info( name ) { return trim( run( [ "-Si", arguments.name ], 20 ).output ); }
+
+    // The raw `pacman -Ss` output for a text: { ok, output }.
+    function search( text ) {
+        var r = run( [ "-Ss", "--color", "never", arguments.text ], 30 );
+        return { ok: r.exitCode == 0, output: r.output };
+    }
+
+    // Package names that match a pattern in the sync repositories (pacman -Ssq).
+    function searchNames( pattern ) { return names( [ "-Ssq", arguments.pattern ], 30 ); }
+
+    // ---- inner ----
+    function run( args, timeout = 30 ) {
+        var argv = [ "pacman" ];
+        for ( var a in arguments.args ) argv.append( a );
+        return variables.proc.exec( argv, arguments.timeout );
+    }
+
+    function names( args, timeout = 30 ) {
+        var r = run( arguments.args, arguments.timeout );
+        if ( r.exitCode != 0 ) return [];
+        return listToArray( trim( r.output ), chr( 10 ) ).map( function( n ) { return trim( n ); } ).filter( function( n ) { return len( n ) > 0; } );
+    }
+}

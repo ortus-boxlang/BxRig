@@ -1,0 +1,58 @@
+// systemctl: the one place that knows its arguments. Builders return argv arrays (plans show them); the other methods run them through Proc.
+// `user` means the user manager (`systemctl --user`), `sudo` puts sudo in front (system units). Never a shell string.
+class Systemd {
+    function init( proc = "" ) {
+        variables.proc = isSimpleValue( arguments.proc ) ? new bxrig.util.Proc( arguments.proc ) : arguments.proc;
+        return this;
+    }
+
+    // True when systemctl is on the PATH.
+    function available() { return variables.proc.has( "systemctl" ); }
+
+    // ---- argv builders (pure) ----
+    function argv( verb, units = [], user = false, sudo = false, flags = [] ) {
+        var a = arguments.sudo ? [ "sudo", "systemctl" ] : [ "systemctl" ];
+        if ( arguments.user ) a.append( "--user" );
+        a.append( arguments.verb );
+        for ( var f in arguments.flags ) a.append( f );
+        for ( var u in ( isArray( arguments.units ) ? arguments.units : [ arguments.units ] ) ) a.append( u );
+        return a;
+    }
+
+    // systemctl [--user] enable --now UNIT...
+    function enableArgv( units, user = false, sudo = false ) { return argv( "enable", arguments.units, arguments.user, arguments.sudo, [ "--now" ] ); }
+
+    // systemctl [--user] disable --now UNIT...
+    function disableArgv( units, user = false, sudo = false ) { return argv( "disable", arguments.units, arguments.user, arguments.sudo, [ "--now" ] ); }
+
+    // systemctl [--user] stop UNIT
+    function stopArgv( unit, user = false, sudo = false ) { return argv( "stop", arguments.unit, arguments.user, arguments.sudo ); }
+
+    // systemctl [--user] daemon-reload
+    function reloadArgv( user = false, sudo = false ) { return argv( "daemon-reload", [], arguments.user, arguments.sudo ); }
+
+    // systemctl poweroff|reboot|suspend|hibernate
+    function powerArgv( verb ) { return argv( arguments.verb == "shutdown" ? "poweroff" : arguments.verb ); }
+
+    // ---- queries and actions (they run) ----
+
+    // True when the unit is active (`is-active --quiet`, the exit code answers).
+    function active( unit, user = false ) {
+        var a = argv( "is-active", [ arguments.unit ], arguments.user, false, [ "--quiet" ] );
+        return variables.proc.exec( a, 10 ).exitCode == 0;
+    }
+
+    // What `is-active` prints ("active", "inactive", "failed", ...) or "".
+    function state( unit, user = false ) {
+        return trim( variables.proc.exec( argv( "is-active", [ arguments.unit ], arguments.user ), 10 ).output );
+    }
+
+    // True when state() is "active" (for tools whose fake or real output is the text, not the exit code).
+    function isActive( unit, user = false ) { return state( arguments.unit, arguments.user ) == "active"; }
+
+    // Runs enable --now / disable --now / stop / daemon-reload: { exitCode, output }.
+    function enable( units, user = false, timeout = 60 ) { return variables.proc.exec( enableArgv( arguments.units, arguments.user ), arguments.timeout ); }
+    function disable( units, user = false, timeout = 30 ) { return variables.proc.exec( disableArgv( arguments.units, arguments.user ), arguments.timeout ); }
+    function stop( unit, user = false, timeout = 20 ) { return variables.proc.exec( stopArgv( arguments.unit, arguments.user ), arguments.timeout ); }
+    function reload( user = false, timeout = 20 ) { return variables.proc.exec( reloadArgv( arguments.user ), arguments.timeout ); }
+}

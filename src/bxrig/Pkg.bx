@@ -15,21 +15,18 @@ class Pkg {
         variables.text = new bxrig.util.Text();
         variables.inst = new bxrig.Installer( arguments.runner );
         variables.proc = variables.inst.proc();
+        variables.pacman = new bxrig.util.Pacman( variables.proc );
+        variables.aur = new bxrig.util.Aur( variables.proc );
         return this;
     }
 
-    function aurBase() { return getSystemSetting( "BXRIG_AUR_URL", "https://aur.archlinux.org/rpc/v5" ); }
-
-    // Letters, digits and . _ + - and spaces: safe to put in a URL path and a pacman pattern.
+        // Letters, digits and . _ + - and spaces: safe to put in a URL path and a pacman pattern.
     function validText( t ) { return reFind( "^[A-Za-z0-9._+ -]{1,60}$", arguments.t ) > 0; }
     function validName( n ) { return reFind( "^[a-z0-9@._+-]{1,100}$", arguments.n ) > 0; }
 
     // Names pacman has installed, as a set.
     function installedSet() {
-        var s = {};
-        var r = variables.proc.exec( [ "pacman", "-Qq" ], 30 );
-        if ( r.exitCode == 0 ) for ( var n in listToArray( r.output, chr( 10 ) ) ) if ( len( trim( n ) ) ) s[ trim( n ) ] = true;
-        return s;
+        return variables.pacman.installed();
     }
 
     // Packages that are never removed here (the system would not boot, or BxRig would lose its own tools).
@@ -43,8 +40,8 @@ class Pkg {
     // pacman -Ss output: "repo/name version [group] [installed]" then an indented description line.
     function searchRepo( text, installed ) {
         var out = [];
-        var r = variables.proc.exec( [ "pacman", "-Ss", "--color", "never", arguments.text ], 30 );
-        if ( r.exitCode != 0 && !len( trim( r.output ) ) ) return out;
+        var r = variables.pacman.search( arguments.text );
+        if ( !r.ok && !len( trim( r.output ) ) ) return out;
         var cur = {};
         for ( var raw in listToArray( r.output, chr( 10 ), true ) ) {
             if ( !len( trim( raw ) ) ) continue;
@@ -60,8 +57,8 @@ class Pkg {
     }
 
     function aurGet( path ) {
-        var r = variables.proc.exec( [ "curl", "-fsS", "-m", "20", aurBase() & path ], 30 );
-        if ( r.exitCode != 0 ) return { ok: false, error: "the AUR did not answer (" & left( trim( r.output ), 80 ) & ")", results: [] };
+        var r = variables.aur.rpc( arguments.path );
+        if ( !r.ok ) return { ok: false, error: "the AUR did not answer (" & left( trim( r.output ), 80 ) & ")", results: [] };
         // The RPC's keys are capitalized (Name, Version, ...). MatchBox keeps one spelling per key name, so they are lower cased in the text
         // first; otherwise they leak into our own lower case keys when the rows are serialized.
         var txt = r.output;
@@ -120,7 +117,7 @@ class Pkg {
 
     // Where a name can be had: "repo" when pacman knows it, "aur" when the AUR does, "" otherwise.
     function origin( name ) {
-        if ( variables.proc.exec( [ "pacman", "-Si", arguments.name ], 20 ).exitCode == 0 ) return "repo";
+        if ( variables.pacman.known( arguments.name ) ) return "repo";
         var g = aurGet( "/info?arg[]=" & arguments.name );
         return g.ok && g.results.len() ? "aur" : "";
     }
@@ -132,17 +129,16 @@ class Pkg {
         var o = origin( arguments.name );
         if ( !len( o ) ) return variables.cli.fail( cmd, "precondition", arguments.name & " was not found in the repos or the AUR", arguments.asJson );
         var d = { name: arguments.name, source: o, installed: structKeyExists( inst, arguments.name ), details: "" };
-        if ( o == "repo" ) d.details = trim( variables.proc.exec( [ "pacman", "-Si", arguments.name ], 20 ).output );
+        if ( o == "repo" ) d.details = variables.pacman.info( arguments.name );
         else { var g = aurGet( "/info?arg[]=" & arguments.name ); var x = g.results[ 1 ]; d.details = "AUR " & x.name & " " & x.version & chr( 10 ) & ( x.description ?: "" ) & chr( 10 ) & "Maintainer: " & ( x.maintainer ?: "orphaned" ) & "  Votes: " & ( x.numvotes ?: 0 ) & "  URL: " & ( x.url ?: "" ); d.maintainer = x.maintainer ?: ""; }
         return variables.cli.say( cmd, "ok", d, arguments.asJson, [ d.details, d.installed ? "(installed)" : "(not installed)" ] );
     }
 
     function installed( explicit, asJson ) {
         var cmd = "pkg installed";
-        var r = variables.proc.exec( [ "pacman", arguments.explicit ? "-Qe" : "-Q" ], 30 );
-        var rows = [];
-        for ( var l in listToArray( r.output, chr( 10 ) ) ) { var parts = listToArray( trim( l ), " " ); if ( parts.len() >= 2 ) rows.append( { name: parts[ 1 ], version: parts[ 2 ] } ); }
-        return variables.cli.say( cmd, r.exitCode == 0 ? "ok" : "precondition", { packages: rows, explicit: arguments.explicit }, arguments.asJson, rows.map( function( p ) { return p.name & " " & p.version; } ) );
+        var r = variables.pacman.versions( arguments.explicit );
+        var rows = r.rows;
+        return variables.cli.say( cmd, r.ok ? "ok" : "precondition", { packages: rows, explicit: arguments.explicit }, arguments.asJson, rows.map( function( p ) { return p.name & " " & p.version; } ) );
     }
 
     // ---- install ----
@@ -174,7 +170,7 @@ class Pkg {
             return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", data, arguments.asJson, lines, arguments.dryRun );
         }
         if ( hasAur && variables.inst.isRoot() ) return variables.cli.fail( cmd, "precondition", "AUR packages are never built as root", arguments.asJson );
-        if ( hasAur && !variables.inst.hasCommand( "yay" ) ) return variables.cli.fail( cmd, "precondition", "yay is not installed (the BxRig installer adds it); AUR packages need it", arguments.asJson );
+        if ( hasAur && !variables.aur.available() ) return variables.cli.fail( cmd, "precondition", "yay is not installed (the BxRig installer adds it); AUR packages need it", arguments.asJson );
         var res = variables.inst.run( built.steps );
         var code = variables.inst.exitCode( res );
         var out = res.done.map( function( d ) { return "Installed: " & d.id; } );
@@ -196,8 +192,8 @@ class Pkg {
             if ( !structKeyExists( inst, n ) ) { skipped.append( { name: n, reason: "not installed" } ); continue; }
             if ( !arrayFind( todo, n ) ) todo.append( n );
         }
-        var pac = variables.inst.isRoot() ? [ "pacman" ] : [ "sudo", "pacman" ];
-        var data = variables.text.merge( { remove: todo, skipped: skipped, blocked: blocked, command: todo.len() ? pac.toList( " " ) & " -Rns --noconfirm " & todo.toList( " " ) : "" }, arguments.extra );
+        var root = variables.inst.isRoot();
+        var data = variables.text.merge( { remove: todo, skipped: skipped, blocked: blocked, command: todo.len() ? variables.pacman.removeArgv( todo, "-Rns", root ).toList( " " ) : "" }, arguments.extra );
         if ( !todo.len() ) {
             var why = blocked.map( function( b ) { return b.name & ": " & b.reason; } ).toList( "; " );
             var sk = skipped.map( function( s ) { return s.name & ": " & s.reason; } ).toList( "; " );
@@ -213,9 +209,7 @@ class Pkg {
         var done = [];
         var failed = [];
         for ( var t in todo ) {
-            var argv = duplicate( pac );
-            for ( var a in [ "-Rns", "--noconfirm", t ] ) argv.append( a );
-            var r = variables.proc.exec( argv, 600 );
+            var r = variables.proc.exec( variables.pacman.removeArgv( [ t ], "-Rns", root ), 600 );
             if ( r.exitCode == 0 ) done.append( t ); else failed.append( { name: t, error: trim( r.output ) } );
         }
         data.done = done; data.failed = failed;

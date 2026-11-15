@@ -14,6 +14,7 @@
 class Sdk {
     function init( cli, runner = "" ) {
         variables.proc = new bxrig.util.Proc();
+        variables.http = new bxrig.util.Http( variables.proc );
         variables.environ = new bxrig.util.Env();
         variables.cli = arguments.cli;
         variables.out = new bxrig.util.Out( variables.cli, "sdk" );
@@ -54,7 +55,8 @@ class Sdk {
 
     // ---- what SDKMAN offers ----
     function fetch( url ) {
-        try { var r = systemExecute( "curl", [ "-fsSL", "--max-time", "25", arguments.url ], 40, true ); return r.exitCode == 0 ? r.output : ""; } catch ( any e ) { return ""; }
+        var r = variables.http.get( arguments.url, 25 );
+        return r.ok ? r.output : "";
     }
 
     // `versions/list` text of Java -> [ { vendor, version, id } ]
@@ -152,7 +154,7 @@ class Sdk {
         if ( missing.len() ) { plan.append( "error: missing " & missing.toList( ", " ) & ". Install them: bxrig pkg install " & missing.toList( " " ) ); return variables.out.say( "precondition", { error: "missing " & missing.toList( ", " ) }, arguments.asJson, plan ); }
         if ( arguments.dry ) { plan.append( "Dry run: nothing was changed." ); return variables.out.say( "ok", data, arguments.asJson, plan, true ); }
         if ( !arguments.yes ) { plan.append( "Nothing was changed. Add --yes to install." ); return variables.out.say( "plan", data, arguments.asJson, plan ); }
-        var r = sh( [ "-c", "curl -fsSL " & chr( 34 ) & "$1" & chr( 34 ) & " | SDKMAN_DIR=" & chr( 34 ) & "$2" & chr( 34 ) & " bash", "_", installerUrl(), dir() ] );
+        var r = variables.proc.exec( variables.http.installerArgv( installerUrl(), "bash", [], { "SDKMAN_DIR": dir() } ), 1800 );
         if ( r.exitCode != 0 || !installed() ) return variables.out.fail( "failed", "the SDKMAN installer failed: " & trim( right( r.output, 300 ) ), arguments.asJson );
         writeEnv();
         return variables.out.say( "ok", { installed: true, dir: dir() }, arguments.asJson, [ "SDKMAN is installed in " & dir() & ".", "Next: bxrig java install 21 --yes, bxrig sdk install maven 3.9.9 --yes" ] );

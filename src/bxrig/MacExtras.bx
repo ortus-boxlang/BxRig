@@ -16,6 +16,8 @@ class MacExtras {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
         variables.proc = new bxrig.util.Proc( arguments.runner );
+        variables.pacman = new bxrig.util.Pacman( variables.proc );
+        variables.systemd = new bxrig.util.Systemd( variables.proc );
         variables.config = new bxrig.ConfigService().quiet( true );
         return this;
     }
@@ -123,16 +125,15 @@ class MacExtras {
             return variables.cli.say( cmd, "ok", { plasma_night_light: on }, arguments.asJson, [ "Plasma Night Light " & ( on ? "on (automatic sunrise and sunset)" : "off" ) & "." ] );
         }
         if ( arguments.action == "status" ) {
-            var s = variables.proc.exec( [ "systemctl", "--user", "is-active", "bxrig-wlsunset.service" ], 15 );
-            return variables.cli.say( cmd, "ok", { active: trim( s.output ) == "active" }, arguments.asJson, [ "Night shift: " & trim( s.output ) ] );
+            var s = variables.systemd.state( "bxrig-wlsunset.service", true );
+            return variables.cli.say( cmd, "ok", { active: s == "active" }, arguments.asJson, [ "Night shift: " & s ] );
         }
         if ( arguments.action == "off" ) {
-            variables.proc.exec( [ "systemctl", "--user", "disable", "--now", "bxrig-wlsunset.service" ], 30 );
+            variables.systemd.disable( "bxrig-wlsunset.service", true );
             return variables.cli.say( cmd, "ok", { active: false }, arguments.asJson, [ "Night shift is off." ] );
         }
         if ( arguments.action == "toggle" ) {
-            var cur = variables.proc.exec( [ "systemctl", "--user", "is-active", "bxrig-wlsunset.service" ], 15 );
-            return nightshift( trim( cur.output ) == "active" ? "off" : "on", arguments.location, arguments.asJson );
+            return nightshift( variables.systemd.isActive( "bxrig-wlsunset.service", true ) ? "off" : "on", arguments.location, arguments.asJson );
         }
         if ( !variables.proc.has( "wlsunset" ) ) return need( cmd, "wlsunset", "Install it: bxrig install wlsunset", arguments.asJson );
         var ll = [];
@@ -145,8 +146,8 @@ class MacExtras {
         var entry = { name: "wlsunset-unit", target: unitFile(), mode: "644", content: "[Unit]" & chr( 10 ) & "Description=BxRig night shift (wlsunset)" & chr( 10 ) & "After=graphical-session.target" & chr( 10 ) & chr( 10 ) & "[Service]" & chr( 10 ) & "ExecStart=wlsunset -l " & ll[ 1 ] & " -L " & ll[ 2 ] & " -t 3500 -T 6500" & chr( 10 ) & "Restart=on-failure" & chr( 10 ) & chr( 10 ) & "[Install]" & chr( 10 ) & "WantedBy=graphical-session.target" & chr( 10 ) };
         var st = variables.config.configState( entry );
         if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( entry, entry.content, "apply", true, false );
-        variables.proc.exec( [ "systemctl", "--user", "daemon-reload" ], 30 );
-        var r = variables.proc.exec( [ "systemctl", "--user", "enable", "--now", "bxrig-wlsunset.service" ], 60 );
+        variables.systemd.reload( true );
+        var r = variables.systemd.enable( "bxrig-wlsunset.service", true );
         if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: could not start the night shift service" ] );
         return variables.cli.say( cmd, "ok", { active: true, latitude: ll[ 1 ], longitude: ll[ 2 ] }, arguments.asJson, [ "Night shift on: warm at sunset, cool at sunrise (" & ll[ 1 ] & ", " & ll[ 2 ] & ")." ] );
     }
@@ -163,9 +164,7 @@ class MacExtras {
             else if ( reFindNoCase( "(^|[^A-Za-z])(AMD|ATI)([^A-Za-z]|$)|Radeon", c ) && !arrayFind( vendors, "amd" ) ) vendors.append( "amd" );
             else if ( reFindNoCase( "Intel", c ) && !arrayFind( vendors, "intel" ) ) vendors.append( "intel" );
         }
-        var have = {};
-        var pq = variables.proc.exec( [ "pacman", "-Qq" ], 60 );
-        for ( var p in listToArray( pq.output, chr( 10 ) ) ) have[ trim( p ) ] = true;
+        var have = variables.pacman.installed();
         var want = { nvidia: [ "nvidia-utils", "libva-nvidia-driver" ], amd: [ "mesa", "vulkan-radeon", "libva-mesa-driver" ], intel: [ "mesa", "vulkan-intel", "intel-media-driver" ] };
         var rows = []; var missing = [];
         for ( var v in vendors ) for ( var pkg in want[ v ] ) {
@@ -177,14 +176,14 @@ class MacExtras {
         for ( var r in rows ) lines.append( ( r.installed ? "ok    " : "FIX   " ) & r.vendor & ": " & r.package );
         if ( arrayFind( vendors, "nvidia" ) ) lines.append( "note: for local AI install ollama-cuda; CachyOS normally installs the NVIDIA driver itself (chwd)." );
         if ( arrayFind( vendors, "amd" ) ) lines.append( "note: for local AI install ollama-rocm." );
-        if ( missing.len() ) lines.append( "Install: sudo pacman -S --needed " & missing.toList( " " ) );
+        if ( missing.len() ) lines.append( "Install: " & variables.pacman.installLine( missing ) );
         return variables.cli.say( cmd, missing.len() ? "precondition" : "ok", { gpus: cards, vendors: vendors, packages: rows, missing: missing }, arguments.asJson, lines );
     }
 
     // ---- input devices and gestures ----
     function inputDoctor( asJson ) {
         var mods = variables.proc.exec( [ "sh", "-c", "lsmod 2>/dev/null | grep -c hid_magicmouse" ], 10 ).output;
-        var bt = variables.proc.exec( [ "systemctl", "is-active", "bluetooth" ], 15 ).output;
+        var bt = variables.systemd.state( "bluetooth" );
         var groups = variables.proc.exec( [ "id", "-nG" ], 10 ).output;
         var d = { magicmouse_driver: val( trim( mods ) ) > 0, bluetooth: trim( bt ) == "active", libinput_gestures: variables.proc.has( "libinput-gestures" ), in_input_group: find( "input", groups ) > 0 };
         var lines = [
@@ -225,11 +224,11 @@ class MacExtras {
     function airplay( action, asJson ) {
         var cmd = "airplay";
         if ( arguments.action == "status" ) {
-            var s = variables.proc.exec( [ "systemctl", "--user", "is-active", "bxrig-airplay.service" ], 15 );
-            return variables.cli.say( cmd, "ok", { active: trim( s.output ) == "active" }, arguments.asJson, [ "AirPlay receiver: " & trim( s.output ) ] );
+            var s = variables.systemd.state( "bxrig-airplay.service", true );
+            return variables.cli.say( cmd, "ok", { active: s == "active" }, arguments.asJson, [ "AirPlay receiver: " & s ] );
         }
         if ( arguments.action == "off" ) {
-            variables.proc.exec( [ "systemctl", "--user", "disable", "--now", "bxrig-airplay.service" ], 30 );
+            variables.systemd.disable( "bxrig-airplay.service", true );
             return variables.cli.say( cmd, "ok", { active: false }, arguments.asJson, [ "AirPlay receiver is off." ] );
         }
         if ( arguments.action != "on" ) return variables.cli.say( cmd, "usage", {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "airplay" ) ] );
@@ -237,8 +236,8 @@ class MacExtras {
         var entry = { name: "airplay-unit", target: airplayUnit(), mode: "644", content: "[Unit]" & chr( 10 ) & "Description=BxRig AirPlay receiver (UxPlay)" & chr( 10 ) & "After=graphical-session.target" & chr( 10 ) & chr( 10 ) & "[Service]" & chr( 10 ) & "ExecStart=uxplay -n BxRig" & chr( 10 ) & "Restart=on-failure" & chr( 10 ) & chr( 10 ) & "[Install]" & chr( 10 ) & "WantedBy=graphical-session.target" & chr( 10 ) };
         var st = variables.config.configState( entry );
         if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( entry, entry.content, "apply", true, false );
-        variables.proc.exec( [ "systemctl", "--user", "daemon-reload" ], 30 );
-        var r = variables.proc.exec( [ "systemctl", "--user", "enable", "--now", "bxrig-airplay.service" ], 60 );
+        variables.systemd.reload( true );
+        var r = variables.systemd.enable( "bxrig-airplay.service", true );
         if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: could not start the AirPlay receiver" ] );
         return variables.cli.say( cmd, "ok", { active: true }, arguments.asJson, [ "AirPlay receiver on as BxRig. It needs avahi: sudo systemctl enable --now avahi-daemon" ] );
     }

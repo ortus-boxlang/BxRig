@@ -1,0 +1,53 @@
+// Downloads and web requests: the one place that starts curl. Argv arrays through Proc, never a shell string (COMMAND-CONTRACT rule 9).
+class Http {
+    function init( proc = "" ) {
+        variables.proc = isSimpleValue( arguments.proc ) ? new bxrig.util.Proc( arguments.proc ) : arguments.proc;
+        return this;
+    }
+
+    // The argv of a GET: curl -fsSL --max-time N URL (follow = false drops the -L).
+    function getArgv( url, maxTime = 30, follow = true ) {
+        return [ "curl", arguments.follow ? "-fsSL" : "-fsS", "--max-time", arguments.maxTime, arguments.url ];
+    }
+
+    // The argv of a download to a file: curl -fsSL --max-time N -o FILE URL.
+    function downloadArgv( url, file, maxTime = 30 ) {
+        return [ "curl", "-fsSL", "--max-time", arguments.maxTime, "-o", arguments.file, arguments.url ];
+    }
+
+    // The argv that downloads a vendor installer and pipes it to a shell; the URL and the arguments travel as arguments, never in the script text.
+    function installerArgv( url, shell = "bash", args = [], env = {} ) {
+        var argv = [];
+        for ( var k in arguments.env ) { if ( !argv.len() ) argv.append( "env" ); argv.append( k & "=" & arguments.env[ k ] ); }
+        for ( var b in [ "bash", "-c", 'set -o pipefail; curl -fsSL "$1" | ' & arguments.shell & ' -s -- "${@:2}"', "bxrig-script", arguments.url ] ) argv.append( b );
+        for ( var a in arguments.args ) argv.append( a );
+        return argv;
+    }
+
+    // GET a URL: { ok, output, exitCode }. Never throws.
+    function get( url, maxTime = 30, follow = true ) {
+        return answer( variables.proc.exec( getArgv( arguments.url, arguments.maxTime, arguments.follow ), arguments.maxTime + 30 ) );
+    }
+
+    // Download a URL to a file: { ok, output, exitCode }. Never throws.
+    function download( url, file, maxTime = 30 ) {
+        return answer( variables.proc.exec( downloadArgv( arguments.url, arguments.file, arguments.maxTime ), arguments.maxTime + 30 ) );
+    }
+
+    // One request to a local service: method GET|POST|DELETE, body JSON text or "". Returns { ok, status, body }; ok is a 2xx status.
+    function request( method, url, body = "", maxTime = 10 ) {
+        var a = [ "curl", "-sS", "--max-time", arguments.maxTime, "-o", "-", "-w", chr( 10 ) & "%{http_code}", "-X", arguments.method, arguments.url ];
+        if ( len( arguments.body ) ) { a.append( "-H" ); a.append( "Content-Type: application/json" ); a.append( "-d" ); a.append( arguments.body ); }
+        var r = variables.proc.exec( a, arguments.maxTime + 10 );
+        if ( r.exitCode != 0 ) return { ok: false, status: 0, body: r.output };
+        var text = r.output;
+        var nl = chr( 10 );
+        var cut = len( text ) - len( listLast( text, nl ) );
+        var status = int( val( listLast( text, nl ) ) );
+        return { ok: status >= 200 && status < 300, status: status, body: cut > 1 ? left( text, cut - 1 ) : "" };
+    }
+
+    function answer( r ) {
+        return { ok: r.exitCode == 0, exitCode: r.exitCode, output: r.output };
+    }
+}
