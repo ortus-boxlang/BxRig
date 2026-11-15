@@ -412,7 +412,8 @@ if [[ "$mode" == --install-binary ]]; then
   else
     src="$root/src/Main.bx"
     [[ -n "$root" && -f "$src" ]] || { echo "Source not found ($src). Run this script from a BxRig checkout, or pass --binary PATH." >&2; exit 1; }
-    want="$(grep -m1 -oE 'BxRig [0-9][0-9A-Za-z.+-]*' "$src" || true)"
+    # the version is generated from box.json into src/bxrig/util/Version.bx; bxrig prints it as "BxRig VERSION"
+    want="$(sed -n 's/.*return "\([^"]*\)".*/BxRig \1/p' "$root/src/bxrig/util/Version.bx" 2>/dev/null | head -n 1 || true)"
     if (( ! force )) && [[ -x "$installed" && -n "$want" ]] && [[ "$(check_binary "$installed" 2>/dev/null || true)" == "$want" ]]; then
       echo "Nothing to do: $installed is already $want (use --force to rebuild)."; copy_wallpapers; exit 0
     fi

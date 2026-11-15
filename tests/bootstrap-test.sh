@@ -237,7 +237,7 @@ if out="$(MOCK_UID=0 irun bash "$repo/bootstrap/install.sh" packages --yes 2>&1)
 echo 'bootstrap install tests passed'
 
 # ---- B5: binary builds (or accepts) bxrig, verifies it first, installs atomically ----
-SRCVER="$(grep -m1 -oE 'BxRig [0-9][0-9A-Za-z.+-]*' "$root/src/Main.bx")"
+SRCVER="BxRig $(sed -n 's/.*return "\([^"]*\)".*/\1/p' "$root/src/bxrig/util/Version.bx")"   # the version lives in Version.bx (from box.json)
 fake_bin() { printf '#!/usr/bin/env bash\n[[ "$1" == version ]] && echo "%s" || echo "other"\n' "$1"; }
 b_mocks() {
   reset_mocks; fresh_home
@@ -373,7 +373,7 @@ echo 'bootstrap latest-BoxLang tests passed'
 for k in .name .version .toolchain.java.version .toolchain.java.package .toolchain.boxlang.version .toolchain.bvm.installer .toolchain.mvm.installer .toolchain.matchbox.version .toolchain.rust.channel; do
   jq -e "$k" "$root/box.json" >/dev/null || { echo "FAIL: real box.json lacks $k" >&2; exit 1; }
 done
-[[ "BxRig $(jq -r .version "$root/box.json")" == "$(grep -m1 -oE 'BxRig [0-9][0-9A-Za-z.+-]*' "$root/src/Main.bx")" ]] || { echo 'FAIL: box.json version differs from the version in src/Main.bx' >&2; exit 1; }
+[[ "BxRig $(jq -r .version "$root/box.json")" == "$SRCVER" ]] || { echo 'FAIL: box.json version differs from src/bxrig/util/Version.bx (run bootstrap/gen-version.sh)' >&2; exit 1; }
 # A different pin in box.json changes the plan (no copy of the version lives in the script).
 reset_mocks; MOCK_INSTALLED="jdk21-openjdk git curl unzip rustup base-devel jq"; mock sudo 'exit 9'
 jq '.toolchain.matchbox.version="0.13.0" | .toolchain.rust.channel="beta" | .toolchain.java.package="jdk-test-openjdk"' "$repo/box.json" > "$tmp/box-other.json"
