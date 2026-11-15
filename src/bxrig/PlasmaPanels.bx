@@ -65,6 +65,18 @@ class PlasmaPanels {
                 js.append( "colorizer.currentConfigGroup = [" & q & "General" & q & "];" );
                 js.append( "colorizer.writeConfig(" & q & "islandsEnabled" & q & ", true);" );
                 js.append( "colorizer.writeConfig(" & q & "islandSeparatorWidget" & q & ", " & q & "luisbocanegra.panel.colorizer.islands.separator" & q & ");" );
+            } else if ( w.id == "org.kde.plasma.digitalclock" ) {
+                // "Nov 5 - 15:44" (the date beside the time, 24-hour) and the world clock zones in its tooltip
+                var zones = [ q & "Local" & q ];
+                var wc = new bxrig.Time( variables.cli ).worldRead();
+                if ( wc.enabled ) for ( var z in wc.zones ) zones.append( q & z & q );
+                js.append( "var clock = top.addWidget(" & q & w.id & q & ");" );
+                js.append( "clock.currentConfigGroup = [" & q & "Appearance" & q & "];" );
+                js.append( "clock.writeConfig(" & q & "dateFormat" & q & ", " & q & "custom" & q & ");" );
+                js.append( "clock.writeConfig(" & q & "customDateFormat" & q & ", " & q & "MMM d -" & q & ");" );
+                js.append( "clock.writeConfig(" & q & "dateDisplayFormat" & q & ", 1);" );
+                js.append( "clock.writeConfig(" & q & "use24hFormat" & q & ", 2);" );
+                js.append( "clock.writeConfig(" & q & "selectedTimeZones" & q & ", [" & zones.toList( ", " ) & "]);" );
             } else js.append( "top.addWidget(" & q & w.id & q & ");" );
         }
         js.append( "var dock = new Panel();" );
