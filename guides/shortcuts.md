@@ -18,7 +18,8 @@ BxRig keeps one shortcut table and renders it for xremap (Cmd-style keys, on bot
 | Browser | `Super+B`, `Super+Shift+Return` | `Super+Shift+Return` |
 | Full screen | `Super+F` | `Super+Ctrl+F` |
 | Float or tile | `Super+T` | `Super+Alt+T` |
-| Close window | `Super+Q`, `Super+W` | `Super+Q` |
+| Window to workspace 3, 4, 5 | `Super+Shift+3/4/5` | `Super+Alt+Shift+3/4/5` |
+| Close window | `Super+Q`, `Super+W` | `Super+Q` (`Super+W` is Close tab) |
 | Input language | `Super+I`, `Super+Shift+I` | `Super+Alt+I`, `Super+Alt+Shift+I` |
 
 On a PC keyboard the Mac style swaps Alt and Win (Alt acts as Cmd, Win as Option; the left keys only, Right Alt stays AltGr). An Apple keyboard never swaps. The choice is saved in `~/.config/bxrig/keystyle.json`. Keys in the table are what Hyprland sees after the swap. See `docs/architecture/SHORTCUTS-DECISIONS.md` for every decision.
@@ -32,7 +33,7 @@ bxrig keys reset menu --yes
 bxrig keys conflicts                    # the table, the remaps of the style that is on, and your own hl.bind lines
 ```
 
-Your changes live in `~/.config/bxrig/shortcuts.json` and apply to both styles. Remaps (the Cmd keys) are xremap's and cannot be changed this way. `keys set` refuses a key another binding uses or xremap rewrites. A `hyprland.lua` written by an older BxRig still holds the starter binds that now live in `bxrig.lua`; both fire until you delete the old lines, and `bxrig keys conflicts` lists them.
+Your changes live in `~/.config/bxrig/shortcuts.json` and apply to both styles. Remaps (the Cmd keys) are xremap's and cannot be changed this way. `keys set` refuses a key another binding uses or xremap rewrites.
 
 ## From the runner
 
@@ -45,12 +46,15 @@ Your changes live in `~/.config/bxrig/shortcuts.json` and apply to both styles. 
 | `Super+Space` | BxRig menu (the runner) |
 | `Super+Alt+Space` | Launch apps |
 | `Super+K` | Shortcut cheat sheet |
-| `Super+Shift+3` / `4` / `5`, `Print` | Screenshot: screen / region / menu, region |
+| `Print` (Mac style also `Super+Shift+3` / `4` / `5`) | Screenshot: region (Mac style: screen / region / menu) |
 | `Super+Print` | Color picker |
 | `Super+Shift+R` | Screen recording (`Super+Alt+Shift+R`: a region) |
 | `Super+Ctrl+V` | Clipboard history |
 | `Super+Ctrl+E` | Emoji |
-| `Alt+Space` | Dictation on or off |
+| `Alt+Space` | Dictation on or off (the logical Alt key: with the Mac swap on a PC keyboard it is the Win key, where Option sits on a Mac) |
+| `Super+Alt+D` | Show or hide the dock |
+| `Super+Ctrl+Alt+F` | Hide or show the bar |
+| `Super+Ctrl+A` `B` `N` `P` `D` | The control center panel |
 | `Super+Ctrl+Alt+Comma` | Do Not Disturb |
 | `Super+Ctrl+Alt+T` / `B` / `W` | Show the time / battery / weather |
 | `Super+Ctrl+L` | Lock |
