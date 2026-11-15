@@ -489,6 +489,7 @@ Set up a desktop: Hyprland with Noctalia, Plasma with HyprKwin tiling, terminals
 
 ```text
 bxrig setup plasma [--keys | --undo-keys] | hyprland [--terminal=ghostty|kitty|alacritty|foot|konsole] [--layout=dwindle|master|scrolling|floating] [--workspaces=N] [--natural-scroll] [--layouts=us-intl,es] [--theme=dark|light|auto] [--wallpaper=box|grid|aurora|minimal] | terminal [--default=ghostty] [--also=a,b] | shell [--shell=zsh|fish|bash] | keyboard [--layouts=us-intl,es] | xremap [--build=hypr|kde] | undo plasma|hyprland|xremap | status [--yes] [--dry-run] [--json]
+bxrig setup boot [status] | setup undo boot [--yes] [--dry-run] [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
@@ -496,6 +497,7 @@ Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-
 ```bash
 bxrig setup hyprland --yes
 bxrig setup terminal --default=ghostty --also=kitty --yes
+bxrig setup boot --yes
 ```
 
 ### `bxrig session` {#bxrig-session}

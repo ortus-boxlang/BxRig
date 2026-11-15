@@ -6,7 +6,7 @@
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 out="$root/src/bxrig/AssetData.bx"
-files=(logo.png icons/16.png icons/24.png icons/32.png icons/48.png icons/64.png icons/128.png icons/256.png icons/bxrig.svg)
+files=(logo.png icons/16.png icons/24.png icons/32.png icons/48.png icons/64.png icons/128.png icons/256.png icons/bxrig.svg plymouth/logo.png plymouth/glow.png plymouth/dot.png)
 # The wallpapers (assets/wallpapers/<theme>.jpg, ~6 MB) are NOT embedded: compiling them in as base64 needs over 13 GB of memory.
 # They travel in the signed install bundle and next to each release; the binary carries only their SHA-256 (WallpaperData) to check them.
 wout="$root/src/bxrig/WallpaperData.bx"

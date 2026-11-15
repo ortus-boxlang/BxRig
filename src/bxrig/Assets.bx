@@ -25,6 +25,9 @@ class Assets {
         return home & "/.local/share/bxrig/" & name;
     }
 
+    // The images `assets install` writes: all but the boot splash's (those go to /usr/share/plymouth, by `setup boot`).
+    function userNames() { return variables.data.names().filter( function( n ) { return left( n, 9 ) != "plymouth/"; } ); }
+
     // The app icon files (every size and the scalable SVG), as embedded names.
     function iconNames() { return variables.data.names().filter( function( n ) { return left( n, 6 ) == "icons/"; } ); }
 
@@ -39,8 +42,8 @@ class Assets {
 
     // Writes the images that are missing (never overwrites) and returns { written, present }. No output.
     function writeMissing() {
-        var missing = variables.data.names().filter( function( n ) { return !fileExists( target( n ) ); } );
-        var kept = variables.data.names().filter( function( n ) { return fileExists( target( n ) ); } );
+        var missing = userNames().filter( function( n ) { return !fileExists( target( n ) ); } );
+        var kept = userNames().filter( function( n ) { return fileExists( target( n ) ); } );
         for ( var n in missing ) decode( n, target( n ) );
         // the theme wallpapers are not embedded: fetched from the install bundle's copy or the release downloads, each checked
         var w = new bxrig.Wallpapers( variables.inst.runner() ).ensureAll();
@@ -51,7 +54,7 @@ class Assets {
 
     // `assets list`
     function list( asJson ) {
-        var rows = variables.data.names().map( function( n ) { return { name: n, target: target( n ), present: fileExists( target( n ) ) }; } );
+        var rows = userNames().map( function( n ) { return { name: n, target: target( n ), present: fileExists( target( n ) ) }; } );
         if ( asJson ) { println( variables.cli.envelope( "assets list", 0, { assets: rows } ) ); return 0; }
         for ( var r in rows ) println( r.name & " -> " & r.target & ( r.present ? " (present)" : "" ) );
         return 0;
@@ -64,8 +67,8 @@ class Assets {
             if ( asJson ) println( variables.cli.envelope( "assets install", 4, { errors: [ msg ] } ) ); else println( "error: " & msg );
             return 4;
         }
-        var plan = variables.data.names().filter( function( n ) { return !fileExists( target( n ) ); } );
-        var kept = variables.data.names().filter( function( n ) { return fileExists( target( n ) ); } );
+        var plan = userNames().filter( function( n ) { return !fileExists( target( n ) ); } );
+        var kept = userNames().filter( function( n ) { return fileExists( target( n ) ); } );
         if ( !yes || dryRun ) {
             var code = dryRun ? 0 : 2;
             if ( asJson ) { println( variables.cli.envelope( "assets install", code, { write: plan, present: kept }, dryRun ) ); return code; }

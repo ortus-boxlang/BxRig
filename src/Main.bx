@@ -269,6 +269,12 @@ class {
           if ( setupSub == "undo" && p.len() == 3 && p[3] == "xremap" ) {
            CLIExit( st.undoXremap( setupYes, setupDry, asJson ) );
           }
+          if ( setupSub == "boot" && p.len() <= 3 ) {
+           CLIExit( new bxrig.BootSplash( cli ).run( p.len() == 3 ? p[3] : "", setupYes, setupDry, asJson ) );
+          }
+          if ( setupSub == "undo" && p.len() == 3 && p[3] == "boot" ) {
+           CLIExit( new bxrig.BootSplash( cli ).run( "undo", setupYes, setupDry, asJson ) );
+          }
           println( new bxrig.CommandSpec().usage( "setup" ) );
           CLIExit( xit.usage() );
           break;
