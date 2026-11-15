@@ -54,6 +54,20 @@ bxrig install vlc heidisql --yes
 bxrig profile-install jvm --yes        # a ready-made set
 ```
 
+### Password managers
+
+The Security category of the catalog has these, and the wizard's "Password manager" question offers the same list (Bitwarden stays the default):
+
+| App | Source | Notes |
+|---|---|---|
+| Bitwarden, KeePassXC | official repo (`extra`) | desktop apps |
+| 1Password, Proton Pass, Enpass, NordPass, Keeper | AUR | desktop apps; NordPass is a repack of the vendor's Snap release |
+| Bitwarden CLI, pass, gopass | official repo (`extra`) | terminal tools, no window |
+
+Web only: use the browser extension. Dashlane has no Linux desktop app (only a browser extension) and LastPass has only its browser extension and an unofficial command line tool, so neither is in the catalog. Install their extension from your browser's add-on store.
+
+Checked on 2026-11-15 against the Arch package search and the AUR (package exists and is not flagged out of date), not by installing each one. Proton Pass and Enpass also exist on Flathub, but the catalog has no Flatpak source, so they use the AUR packages.
+
 In the wizard, **Basic** installs the recommended set; **Customize** lets you tick apps per category. Some entries only apply to one desktop (they say so).
 
 ## Web apps

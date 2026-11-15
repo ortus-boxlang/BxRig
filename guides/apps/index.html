@@ -235,7 +235,7 @@
 		
 		
 		
-			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#the-apps-manager">The Apps manager</a></li><li class="toc-level-2"><a href="#the-catalog">The catalog</a></li><li class="toc-level-2"><a href="#web-apps">Web apps</a></li><li class="toc-level-2"><a href="#defaults">Defaults</a></li><li class="toc-level-2"><a href="#files-and-sharing">Files and sharing</a></li><li class="toc-level-2"><a href="#more">More</a></li></ul></details>
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#the-apps-manager">The Apps manager</a></li><li class="toc-level-2"><a href="#the-catalog">The catalog</a></li><li class="toc-level-3"><a href="#password-managers">Password managers</a></li><li class="toc-level-2"><a href="#web-apps">Web apps</a></li><li class="toc-level-2"><a href="#defaults">Defaults</a></li><li class="toc-level-2"><a href="#files-and-sharing">Files and sharing</a></li><li class="toc-level-2"><a href="#more">More</a></li></ul></details>
 		
 
 		
@@ -273,6 +273,20 @@ bxrig catalog show strata
 bxrig install vlc heidisql --yes
 bxrig profile-install jvm --yes        # a ready-made set
 </code></pre>
+<h3 id="password-managers"><a href="#password-managers" id="password-managers" name="password-managers" class="anchor"></a>Password managers</h3>
+<p>The Security category of the catalog has these, and the wizard's &quot;Password manager&quot; question offers the same list (Bitwarden stays the default):</p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>App</th><th>Source</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>Bitwarden, KeePassXC</td><td>official repo (<code>extra</code>)</td><td>desktop apps</td></tr>
+<tr><td>1Password, Proton Pass, Enpass, NordPass, Keeper</td><td>AUR</td><td>desktop apps; NordPass is a repack of the vendor's Snap release</td></tr>
+<tr><td>Bitwarden CLI, pass, gopass</td><td>official repo (<code>extra</code>)</td><td>terminal tools, no window</td></tr>
+</tbody>
+</table></div>
+<p>Web only: use the browser extension. Dashlane has no Linux desktop app (only a browser extension) and LastPass has only its browser extension and an unofficial command line tool, so neither is in the catalog. Install their extension from your browser's add-on store.</p>
+<p>Checked on 2026-11-15 against the Arch package search and the AUR (package exists and is not flagged out of date), not by installing each one. Proton Pass and Enpass also exist on Flathub, but the catalog has no Flatpak source, so they use the AUR packages.</p>
 <p>In the wizard, <strong>Basic</strong> installs the recommended set; <strong>Customize</strong> lets you tick apps per category. Some entries only apply to one desktop (they say so).</p>
 <h2 id="web-apps"><a href="#web-apps" id="web-apps" name="web-apps" class="anchor"></a>Web apps</h2>
 <p>A web app is a frameless window with its own launcher entry.</p>
@@ -311,7 +325,7 @@ bxrig default filemanager strata --yes
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/apps.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/apps.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 15, 2026, 9&#x3a;29&#x3a;10 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Apps%20and%20web%20apps&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fapps%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/apps.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/apps.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 15, 2026, 10&#x3a;04&#x3a;27 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Apps%20and%20web%20apps&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fapps%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
@@ -355,7 +369,7 @@ bxrig default filemanager strata --yes
 			
 			
 				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
-					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#the-apps-manager">The Apps manager</a></li><li class="toc-level-2"><a href="#the-catalog">The catalog</a></li><li class="toc-level-2"><a href="#web-apps">Web apps</a></li><li class="toc-level-2"><a href="#defaults">Defaults</a></li><li class="toc-level-2"><a href="#files-and-sharing">Files and sharing</a></li><li class="toc-level-2"><a href="#more">More</a></li></ul></nav>
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#the-apps-manager">The Apps manager</a></li><li class="toc-level-2"><a href="#the-catalog">The catalog</a></li><li class="toc-level-3"><a href="#password-managers">Password managers</a></li><li class="toc-level-2"><a href="#web-apps">Web apps</a></li><li class="toc-level-2"><a href="#defaults">Defaults</a></li><li class="toc-level-2"><a href="#files-and-sharing">Files and sharing</a></li><li class="toc-level-2"><a href="#more">More</a></li></ul></nav>
 				</aside>
 			
 		</div>
