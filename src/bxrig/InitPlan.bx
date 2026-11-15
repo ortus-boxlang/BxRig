@@ -253,6 +253,11 @@ class InitPlan {
 		if ( len( fileManager ) ) out.steps.append( { id: "default-filemanager", title: "make " & fileManager & " your default file manager", argv: [ "bxrig", "default", "filemanager", fileManager ] } );
 		if ( fileManager == "strata" ) out.steps.append( { id: "strata-integrations", title: "add Strata's LocalSend and KDE Connect Send to providers", argv: [ "bxrig", "strata", "integrations" ], optional: true } );
 		if ( len( browser ) ) out.steps.append( { id: "default-browser", title: "make " & browser & " your default browser", argv: [ "bxrig", "default", "browser", browser ] } );
+		// file types: Gwenview opens images and Okular opens PDFs (both are default-tier apps; with Customize only when ticked). The desktop
+		// ids org.kde.gwenview.desktop and org.kde.okular.desktop were read from the Arch package file lists. One xdg-mime call each, optional so a
+		// failed install never stops the plan; nothing is undone (xdg-mime has no undo and the old default is not recorded).
+		if ( mode == "defaults" || arrayFind( chosenApps, "gwenview" ) ) out.steps.append( { id: "default-images", title: "open images with Gwenview", argv: [ "xdg-mime", "default", "org.kde.gwenview.desktop", "image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp", "image/tiff", "image/svg+xml", "image/avif", "image/heif", "image/jxl" ], optional: true } );
+		if ( mode == "defaults" || arrayFind( chosenApps, "okular" ) ) out.steps.append( { id: "default-pdf", title: "open PDFs with Okular", argv: [ "xdg-mime", "default", "org.kde.okular.desktop", "application/pdf" ], optional: true } );
 		if ( len( terminal ) ) out.steps.append( { id: "default-terminal", title: "make " & terminal & " your default terminal", argv: [ "bxrig", "default", "terminal", terminal ] } );
 		// databases: remember the container engine, then start each chosen service (nothing is started unless it was picked)
 		var dbs = pick( a, "databases", [] );

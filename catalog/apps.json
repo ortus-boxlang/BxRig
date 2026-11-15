@@ -4117,6 +4117,78 @@
 			"verified_on": "2026-11-09"
 		},
 		{
+			"id": "gwenview",
+			"name": "Gwenview",
+			"description": "A fast and easy to use image viewer (view, crop, rotate, annotate)",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "desktop",
+			"category": "File Management",
+			"tier": "default",
+			"source": "pacman",
+			"targets": [
+				"gwenview"
+			],
+			"repo": "extra",
+			"homepage": "https://apps.kde.org/gwenview/",
+			"macos": "Preview",
+			"origin": [
+				"owner-pick"
+			],
+			"verified_on": "2026-11-15",
+			"profiles": {
+				"files": "default"
+			}
+		},
+		{
+			"id": "okular",
+			"name": "Okular",
+			"description": "Document viewer for PDF and other formats",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "everyday",
+			"category": "Documents",
+			"tier": "default",
+			"source": "pacman",
+			"targets": [
+				"okular"
+			],
+			"repo": "extra",
+			"homepage": "https://apps.kde.org/okular/",
+			"macos": "Preview",
+			"origin": [
+				"owner-pick"
+			],
+			"verified_on": "2026-11-15",
+			"profiles": {
+				"productivity": "default"
+			}
+		},
+		{
+			"id": "satty",
+			"name": "Satty",
+			"description": "Modern screenshot annotation tool, inspired by Swappy and Flameshot",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "media",
+			"category": "Screenshots and recording",
+			"tier": "default",
+			"source": "pacman",
+			"targets": [
+				"satty"
+			],
+			"repo": "extra",
+			"homepage": "https://github.com/gabm/satty",
+			"macos": "Preview (Markup)",
+			"origin": [
+				"owner-pick"
+			],
+			"verified_on": "2026-11-15",
+			"profiles": {
+				"media": "default"
+			}
+		},
+		{
 			"id": "signed",
 			"name": "Signed",
 			"description": "Sign PDFs and fill them in with text and dates, in a window or from the command line",
@@ -4135,7 +4207,7 @@
 				"omarchy-desktop"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-09"
+			"verified_on": "2026-11-15"
 		},
 		{
 			"id": "hey",

@@ -113,6 +113,10 @@ p = ip.plan( { app_mode: "custom", default_browser: "brave", apps_everyday_brows
 testkit.check( "the default browser is installed too (even when not ticked) and set as default, after the install", cmd( p, "apps" ) == "bxrig install firefox brave" && cmd( p, "default-browser" ) == "bxrig default browser brave" && ids( p ) == "apps,default-browser" );
 p = ip.plan( { app_mode: "defaults", file_manager: "strata", toolchains: [ "rust" ] } );
 testkit.check( "file manager: installed, then set as default; rust: rustup stable, optional", cmd( p, "apps" ) == "bxrig install strata" && cmd( p, "default-filemanager" ) == "bxrig default filemanager strata" && cmd( p, "toolchain-rust" ) == "rustup default stable" && cmd( p, "strata-integrations" ) == "bxrig strata integrations" );
+p = ip.plan( { app_mode: "defaults" } );
+testkit.check( "Basic sets Gwenview for images and Okular for PDFs, after the install, optional", find( "apps-basic", ids( p ) ) < find( "default-images", ids( p ) ) && left( cmd( p, "default-images" ), 62 ) == "xdg-mime default org.kde.gwenview.desktop image/png image/jpeg" && cmd( p, "default-pdf" ) == "xdg-mime default org.kde.okular.desktop application/pdf" );
+p = ip.plan( { app_mode: "custom", apps_everyday_documents: [ "okular" ] } );
+testkit.check( "Customize sets only the viewers that were ticked", find( "default-pdf", ids( p ) ) > 0 && find( "default-images", ids( p ) ) == 0 );
 p = ip.plan( { app_mode: "defaults", dictation: "voxtype" } );
 testkit.check( "dictation voxtype installs voxtype and wtype", cmd( p, "apps" ) == "bxrig install voxtype wtype" );
 p = ip.plan( { app_mode: "defaults", web_bundles: [ "google", "apple" ] } );

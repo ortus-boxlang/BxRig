@@ -404,10 +404,11 @@ Tested against real git repositories and fake tools (`stow`, `chezmoi`, `yadm`, 
 
 The wizard's Apps page asks **how you want your apps**: **Basic** (the default: an opinionated, recommended set) or **Customize**.
 
-- **Basic** runs `bxrig install --shell=hyprland|plasma|all` for the desktop(s) you chose: the catalog's **default tier** (64 apps), desktop-specific ones only for their desktop. Nothing is asked.
+- **Basic** runs `bxrig install --shell=hyprland|plasma|all` for the desktop(s) you chose: the catalog's **default tier** (about 87 apps), desktop-specific ones only for their desktop. Nothing is asked.
 - **Customize** shows one extra page per catalog group (11, built from the catalog by `AppPages`, after the Apps page): a multi-choice list per category with the default apps ticked, each option showing its description and the macOS equivalent. Only what is ticked is installed (`bxrig install ID...`, one command), minus apps that belong to a desktop you did not choose. Categories the wizard asks about itself are not repeated: AI "Coding orchestration", Desktop "Launchers", Terminal "Terminal" and Development "Shell". Answer keys: `apps_<group>_<category>` (a list of app ids). Web apps are one of the groups, like any other.
 - **Default browser** (`default_browser`, asked in both modes, default Brave): installed if needed, then set with `bxrig default browser ID`.
 - **Default terminal:** the terminal you picked is set with `bxrig default terminal ID`.
+- **Default viewers:** no question. With Basic (or when ticked in Customize) the plan adds two optional steps after the install: `xdg-mime default org.kde.gwenview.desktop image/png ...` (png, jpeg, gif, webp, bmp, tiff, svg, avif, heif, jxl) and `xdg-mime default org.kde.okular.desktop application/pdf`. They are plain argv steps (no `bxrig default` subcommand, so the CLI is unchanged), they are not undone, and a failure never stops the plan.
 
 ```
 bxrig default show | browser ID | terminal ID [--yes] [--dry-run] [--json]
