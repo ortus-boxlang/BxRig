@@ -145,7 +145,7 @@ class SetupPlan {
         out.steps.append( { id: "images", title: "write the BxRig logo and wallpapers to ~/Pictures/BxRig (missing ones only)", kind: "assets", commands: [] } );
         out.steps.append( { id: "starter", title: "write the starter Noctalia config and palette, and hyprland.lua (" & term & " on Super+Enter, " & lay & " layout) if you have none (existing files are kept)", kind: "starter", opts: parsed.value, commands: [] } );
         out.steps.append( { id: "keys", title: "write the shared shortcut files (xremap config and service unit, Hyprland module, Plasma Log Out)", kind: "keys", commands: [] } );
-        out.notes.append( "Log out and pick Hyprland at the login screen. KDE Plasma is untouched. Run `bxrig setup xremap` for the Cmd-style keys." );
+        out.notes.append( "Log out and pick Hyprland at the login screen. KDE Plasma is untouched. Run `bxrig setup xremap` for copy, paste, cut, select all and the Mac keys." );
         return out;
     }
 

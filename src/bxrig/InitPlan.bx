@@ -93,7 +93,8 @@ class InitPlan {
         }
         var shell = pick( a, "shell" );
         if ( len( shell ) ) out.steps.append( { id: "shell", title: "set up " & shell & " with the Starship prompt", argv: [ "bxrig", "setup", "shell", "--shell=" & shell ] } );
-        if ( isSet( pick( a, "mac_keys", false ) ) ) {
+        // xremap is always set up: copy, paste, cut and select all are remaps in both styles
+        if ( wantsHypr || wantsPlasma ) {
             var build = desktops == "plasma" ? "kde" : "hypr";
             out.steps.append( { id: "xremap", title: "Cmd-style keys (xremap, " & build & ")", argv: [ "bxrig", "setup", "xremap", "--build=" & build ] } );
         }
