@@ -51,7 +51,7 @@ Settings that only touch your own config (a theme, the bar, the font) act at onc
 
 **Desktop setup**: [`setup`](#bxrig-setup), [`session`](#bxrig-session), [`tiling`](#bxrig-tiling), [`plasma`](#bxrig-plasma), [`keys`](#bxrig-keys), [`runner`](#bxrig-runner), [`default`](#bxrig-default), [`layout`](#bxrig-layout), [`assets`](#bxrig-assets), [`launchers`](#bxrig-launchers), [`config`](#bxrig-config)
 
-**Look and feel**: [`theme`](#bxrig-theme), [`appearance`](#bxrig-appearance), [`display`](#bxrig-display), [`power`](#bxrig-power), [`time`](#bxrig-time), [`toggle`](#bxrig-toggle), [`nightshift`](#bxrig-nightshift), [`notify`](#bxrig-notify)
+**Look and feel**: [`theme`](#bxrig-theme), [`appearance`](#bxrig-appearance), [`hotcorners`](#bxrig-hotcorners), [`display`](#bxrig-display), [`power`](#bxrig-power), [`time`](#bxrig-time), [`toggle`](#bxrig-toggle), [`nightshift`](#bxrig-nightshift), [`notify`](#bxrig-notify)
 
 **System and security**: [`system`](#bxrig-system), [`security`](#bxrig-security), [`dns`](#bxrig-dns), [`kernel`](#bxrig-kernel), [`ssh`](#bxrig-ssh), [`secrets`](#bxrig-secrets), [`vpn`](#bxrig-vpn), [`cloud`](#bxrig-cloud), [`settings`](#bxrig-settings), [`dotfiles`](#bxrig-dotfiles), [`nas`](#bxrig-nas), [`backup`](#bxrig-backup), [`timemachine`](#bxrig-timemachine), [`java`](#bxrig-java), [`sdk`](#bxrig-sdk), [`mail`](#bxrig-mail), [`tui`](#bxrig-tui), [`bxtimemachine`](#bxrig-bxtimemachine)
 
@@ -490,6 +490,7 @@ Set up a desktop: Hyprland with Noctalia, Plasma with HyprKwin tiling, terminals
 
 ```text
 bxrig setup plasma [--keys | --undo-keys] | hyprland [--terminal=ghostty|kitty|alacritty|foot|konsole] [--layout=dwindle|master|scrolling|floating] [--workspaces=N] [--natural-scroll] [--layouts=us-intl,es] [--theme=dark|light|auto] [--wallpaper=box|grid|aurora|minimal] | terminal [--default=ghostty] [--also=a,b] | shell [--shell=zsh|fish|bash] | keyboard [--layouts=us-intl,es] | xremap [--build=hypr|kde] | undo plasma|hyprland|xremap | status [--yes] [--dry-run] [--json]
+bxrig setup boot [status] | setup undo boot [--yes] [--dry-run] [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
@@ -497,6 +498,7 @@ Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-
 ```bash
 bxrig setup hyprland --yes
 bxrig setup terminal --default=ghostty --also=kitty --yes
+bxrig setup boot --yes
 ```
 
 ### `bxrig session` {#bxrig-session}
@@ -716,6 +718,25 @@ bxrig appearance background random
 
 > Settings act at once (no --yes); --dry-run shows the commands. What you choose is remembered, and `appearance apply` pushes it again.
 
+### `bxrig hotcorners` {#bxrig-hotcorners}
+
+Hot corners: an action for each screen corner (overview, notifications, show desktop, lock, launcher, agents, themes).
+
+```text
+bxrig hotcorners [status] [--json]
+bxrig hotcorners set CORNER=ACTION... [--yes]
+bxrig hotcorners off [--yes]
+```
+
+Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
+
+```bash
+bxrig hotcorners set top-left=overview bottom-right=lock --yes
+bxrig hotcorners off --yes
+```
+
+> CORNER is top-left, top-right, bottom-left or bottom-right. Hyprland uses Noctalia's hot corners; Plasma uses KWin screen edges (notifications, agents and themes have no Plasma edge action).
+
 ### `bxrig display` {#bxrig-display}
 
 Monitors: scale, rotation, mode, position, mirroring the laptop panel, turning it off, brightness.
@@ -765,7 +786,7 @@ bxrig power doctor
 
 ### `bxrig time` {#bxrig-time}
 
-The time zone: show, set, set from your IP after travelling, follow your location, network time.
+The time zone: show, set, set from your IP after travelling, follow your location, network time, and the world clock.
 
 ```text
 bxrig time status [--json]
@@ -773,6 +794,7 @@ bxrig time zone [--list | ZONE] [--yes]
 bxrig time sync [--yes]
 bxrig time auto on|off|status [--yes]
 bxrig time ntp on|off [--yes]
+bxrig time world [status | set ZONE,ZONE... | add ZONE | remove ZONE | on | off] [--yes] [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
@@ -781,6 +803,7 @@ Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-
 bxrig time zone Europe/Madrid --yes
 bxrig time sync --yes
 bxrig time auto on --yes
+bxrig time world set Europe/Madrid,America/New_York --yes
 ```
 
 > `time auto on` sends your Wi-Fi networks or IP address to a location web service; the plan says so first.
@@ -1287,6 +1310,11 @@ bxrig ai models enable [--yes] [--json]
 bxrig ai list
 bxrig ai default [ID] [--yes]
 bxrig ai launch [ID] [--dry-run]
+bxrig ai panel [--json]
+bxrig ai panel list [--json]
+bxrig ai panel add ID... [--yes]
+bxrig ai panel remove ID... [--yes]
+bxrig ai panel reset [--yes]
 bxrig ai shell [toggle|status] [--backend=hyprland|yakuake] [--dry-run] [--json]
 ```
 
