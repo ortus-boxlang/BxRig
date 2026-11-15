@@ -38,6 +38,13 @@ class Proc {
         return exec( [ arguments.name, "--version" ], 10 ).exitCode == 0;
     }
 
+    // Starts one argv in the background, detached from this process (setsid, output discarded). Returns the result of the starter, not of the program.
+    function detach( argv ) {
+        var run = [ "sh", "-c", 'setsid "$@" >/dev/null 2>&1 &', "_" ];
+        for ( var p in arguments.argv ) run.append( p );
+        return exec( run, 10 );
+    }
+
     // True when the effective user is root (uid 0).
     function isRoot() {
         var r = exec( [ "id", "-u" ], 10 );

@@ -1,0 +1,91 @@
+// browser private, files here, webcam toggle, record --audio, window quake: argv built, nothing started (a recording runner).
+// Run from src/: (cd src && matchbox ../tests/launchers_programs_test.bxs)
+testkit = new lib.Check( "programs" );
+cli = new bxrig.util.Cli( "0.0.0" );
+calls = [];
+answers = {};
+runner = function( argv, timeout ) {
+    line = argv.toList( " " );
+    calls.append( line );
+    for ( k in answers ) if ( find( k, line ) ) return { exitCode: answers[ k ].code, timeout: false, output: answers[ k ].out };
+    return { exitCode: 0, timeout: false, output: "" };
+};
+function said( cmd ) { for ( c in calls ) if ( find( cmd, c ) ) return true; return false; }
+
+// ---- browser private ----
+pg = new bxrig.Programs( cli, runner );
+testkit.check( "firefox opens with --private-window", pg.privateArgv( "firefox.desktop" ).toList( " " ) == "firefox --private-window" );
+testkit.check( "brave and chrome use --incognito, edge --inprivate", pg.privateArgv( "brave-browser.desktop" )[ 2 ] == "--incognito" && pg.privateArgv( "google-chrome.desktop" )[ 2 ] == "--incognito" && pg.privateArgv( "microsoft-edge.desktop" )[ 2 ] == "--inprivate" );
+testkit.check( "a URL is the last word", pg.privateArgv( "chromium.desktop", "https://example.com" ).toList( " " ) == "chromium --incognito https://example.com" );
+testkit.check( "an unknown browser has no argv", pg.privateArgv( "lynx.desktop" ).len() == 0 );
+answers = { "xdg-settings get": { code: 0, out: "brave-browser.desktop" & chr( 10 ) } };
+calls = [];
+testkit.check( "the default browser comes from xdg-settings", pg.defaultBrowser() == "brave-browser.desktop" && said( "xdg-settings get default-web-browser" ) );
+calls = [];
+testkit.check( "dry run builds the argv and starts nothing (exit 0)", pg.browserPrivate( "", true, false ) == 0 && !said( "setsid" ) );
+calls = [];
+testkit.check( "a real run detaches the browser through setsid", pg.browserPrivate( "", false, false ) == 0 && said( "setsid" ) );
+answers = { "xdg-settings get": { code: 0, out: "lynx.desktop" } };
+testkit.check( "an unknown default browser exits 4", pg.browserPrivate( "", true, false ) == 4 );
+answers = { "xdg-settings get": { code: 1, out: "" } };
+testkit.check( "no default browser exits 4", pg.browserPrivate( "", true, false ) == 4 );
+
+// ---- files here ----
+answers = {
+    "hyprctl activewindow": { code: 0, out: '{"pid": 100, "class": "kitty"}' },
+    "pgrep -P 100": { code: 0, out: "101" & chr( 10 ) & "102" & chr( 10 ) },
+    "pgrep -P 102": { code: 0, out: "103" & chr( 10 ) },
+    "pgrep -P 103": { code: 1, out: "" },
+    "readlink /proc/103/cwd": { code: 0, out: "/home/me/code" & chr( 10 ) }
+};
+calls = [];
+testkit.check( "the folder is the newest descendant's working directory", pg.focusedFolder() == "/home/me/code" );
+answers = { "hyprctl activewindow": { code: 1, out: "" } };
+testkit.check( "no focused window: the home folder", pg.focusedFolder() == new bxrig.util.Env().named( "home", "" ) );
+dir = testkit.tmp();
+calls = [];
+testkit.check( "files here DIR dry run (exit 0)", pg.filesHere( dir, true, false ) == 0 && !said( "setsid" ) );
+testkit.check( "files here DIR runs xdg-open detached", pg.filesHere( dir, false, false ) == 0 && said( "_ xdg-open " & dir ) );
+testkit.check( "a missing folder exits 4", pg.filesHere( dir & "/nope", false, false ) == 4 );
+
+// ---- webcam ----
+dev = dir & "/video0";
+fileWrite( dev, "" );
+answers = { "pgrep -f": { code: 1, out: "" } };
+wc = new bxrig.Webcam( cli, runner, dev );
+testkit.check( "the preview is mpv on the device with its own class", wc.argv()[ 1 ] == "mpv" && wc.argv()[ 2 ] == "--wayland-app-id=bxrig-webcam" && wc.argv()[ wc.argv().len() ] == "av://v4l2:" & dev );
+calls = [];
+testkit.check( "toggle when off starts the preview detached", wc.toggle( false, false ) == 0 && said( "_ mpv --wayland-app-id" ) && !said( "pkill" ) );
+answers = { "pgrep -f": { code: 0, out: "4242" } };
+calls = [];
+testkit.check( "toggle when on ends it with pkill", wc.toggle( false, false ) == 0 && said( "pkill -f" ) && !said( "setsid" ) );
+testkit.check( "status is exit 0 either way", wc.status( false ) == 0 );
+testkit.check( "no webcam device exits 4", new bxrig.Webcam( cli, function( a, t ) { return { exitCode: a[ 1 ] == "pgrep" ? 1 : 0, timeout: false, output: "" }; }, dir & "/none" ).toggle( false, false ) == 4 );
+testkit.check( "no mpv exits 4", new bxrig.Webcam( cli, function( a, t ) { return { exitCode: 1, timeout: false, output: "" }; }, dev ).toggle( false, false ) == 4 );
+
+// ---- record --audio ----
+answers = { "pactl get-default-sink": { code: 0, out: "alsa_output.pci" & chr( 10 ) }, "pactl get-default-source": { code: 0, out: "alsa_input.usb" & chr( 10 ) } };
+rc = new bxrig.Record( cli, runner );
+testkit.check( "desktop audio is the monitor of the default sink", rc.audioSource( "desktop" ) == "alsa_output.pci.monitor" );
+testkit.check( "mic audio is the default source", rc.audioSource( "mic" ) == "alsa_input.usb" );
+testkit.check( "an unknown audio value exits 2", rc.start( false, true, false, "both" ) == 2 );
+answers = { "pgrep -x wf-recorder": { code: 1, out: "" }, "pactl get-default-sink": { code: 0, out: "spk" & chr( 10 ) } };
+calls = [];
+testkit.check( "record --audio=desktop dry run exits 0 and starts nothing", rc.start( false, true, false, "desktop" ) == 0 && !said( "setsid" ) );
+calls = [];
+testkit.check( "record --audio=desktop starts wf-recorder with -a and the source as an argument", rc.start( true, false, false, "desktop" ) == 0 && said( "wf-recorder -a" ) && said( "-g" ) && said( "spk.monitor" ) );
+calls = [];
+rc.start( false, false, false );
+testkit.check( "without audio the command is the old one (no -a)", said( "exec wf-recorder -f" ) && !said( "wf-recorder -a" ) );
+
+// ---- window quake ----
+me = new bxrig.MacExtras( cli, runner );
+answers = { "hyprctl workspaces": { code: 0, out: '[{"name":"special:qconsole","windows":1},{"name":"1","windows":2}]' } };
+testkit.check( "the console has a window: the workspace is toggled, no terminal started", me.quakeHasWindow() );
+calls = [];
+testkit.check( "quake toggles special:qconsole", me.window( "quake", false ) == 0 && said( "hyprctl dispatch togglespecialworkspace qconsole" ) && !said( "dispatch exec" ) );
+answers = { "hyprctl workspaces": { code: 0, out: '[{"name":"1","windows":2}]' } };
+testkit.check( "an empty console has no window", !me.quakeHasWindow() );
+calls = [];
+testkit.check( "quake send moves the window silently", me.window( "quake-send", false ) == 0 && said( "hyprctl dispatch movetoworkspacesilent special:qconsole" ) );
+testkit.done();

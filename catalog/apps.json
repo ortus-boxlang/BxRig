@@ -1814,7 +1814,7 @@
     {
       "id": "claude-desktop",
       "name": "Claude Desktop",
-      "description": "Official Claude AI desktop app from Anthropic — Chat, Cowork, and Claude Code",
+      "description": "Official Claude AI desktop app from Anthropic: Chat, Cowork, and Claude Code",
       "description_source": "aur",
       "kind": "desktop",
       "group": "ai",

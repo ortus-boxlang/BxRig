@@ -251,7 +251,7 @@
       "bxrig menu open capture"
      ],
      "mutates": false,
-     "note": "Bind it to a key; the first entry, Search, lists every entry as one flat list. `menu open ROUTE` opens one submenu (system, capture, toggle, agent, shortcuts, trigger > capture); `menu open` lists the routes.",
+     "note": "Bind it to a key; the first entry, Search, lists every entry as one flat list. `menu open ROUTE` opens one submenu (system, capture, toggle, hardware, agent, shortcuts, trigger > capture); `menu open` lists the routes.",
      "flags": []
     },
     {
@@ -2296,21 +2296,69 @@
     },
     {
      "name": "record",
-     "summary": "Screen recording: start, stop, toggle.",
+     "summary": "Screen recording: start, stop, toggle, with desktop or microphone audio if you like.",
      "usage": [
-      "record [toggle|start|stop|status] [--region] [--dry-run] [--json]"
+      "record [toggle|start|stop|status] [--region] [--audio=desktop|mic] [--dry-run] [--json]"
      ],
      "examples": [
       "bxrig record toggle",
-      "bxrig record start --region"
+      "bxrig record start --region",
+      "bxrig record toggle --audio=desktop"
      ],
      "mutates": false,
      "flags": [
       {
        "name": "region",
        "type": "bool"
+      },
+      {
+       "name": "audio",
+       "type": "value"
       }
-     ]
+     ],
+     "note": "--audio=desktop adds what the speakers play, --audio=mic the default microphone (both through pactl). Desktop and microphone together are not offered: wf-recorder takes one audio source. Exit 2 for another audio value."
+    },
+    {
+     "name": "browser",
+     "summary": "Your default browser in a private window.",
+     "usage": [
+      "browser private [URL] [--dry-run] [--json]"
+     ],
+     "examples": [
+      "bxrig browser private",
+      "bxrig browser private https://example.com --dry-run"
+     ],
+     "mutates": false,
+     "flags": [],
+     "note": "Reads the default web browser (set by `default browser` or the wizard) and starts it with its private flag: Firefox --private-window, Chromium, Brave and Chrome --incognito, Edge --inprivate. Another browser exits 4."
+    },
+    {
+     "name": "files",
+     "summary": "Your default file manager in the folder of the focused window.",
+     "usage": [
+      "files here [DIR] [--dry-run] [--json]"
+     ],
+     "examples": [
+      "bxrig files here",
+      "bxrig files here ~/Documents"
+     ],
+     "mutates": false,
+     "flags": [],
+     "note": "Without DIR it uses the working directory of the focused window's newest child process (Hyprland), else your home folder, and opens it with xdg-open, so `default filemanager` decides which file manager."
+    },
+    {
+     "name": "webcam",
+     "summary": "A small live webcam preview, on or off with one key.",
+     "usage": [
+      "webcam toggle|status [--dry-run] [--json]"
+     ],
+     "examples": [
+      "bxrig webcam toggle",
+      "bxrig webcam status"
+     ],
+     "mutates": false,
+     "flags": [],
+     "note": "mpv on /dev/video0 in a window of class bxrig-webcam, which the Hyprland module floats and sizes. Exit 4 without mpv or a webcam."
     },
     {
      "name": "clipboard",
@@ -2351,16 +2399,20 @@
     },
     {
      "name": "window",
-     "summary": "Minimize and restore windows.",
+     "summary": "Minimize and restore windows, and the quake console.",
      "usage": [
-      "window minimize|restore"
+      "window minimize|restore|quake [--json]",
+      "window quake send [--json]"
      ],
      "examples": [
       "bxrig window minimize",
-      "bxrig window restore"
+      "bxrig window restore",
+      "bxrig window quake",
+      "bxrig window quake send"
      ],
      "mutates": false,
-     "flags": []
+     "flags": [],
+     "note": "quake shows or hides the special workspace qconsole (the default terminal starts there the first time); quake send moves the focused window onto it. Hyprland only."
     },
     {
      "name": "overview",

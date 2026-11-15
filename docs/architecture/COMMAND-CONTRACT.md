@@ -4,24 +4,22 @@ order: 1
 summary: Developer reference.
 ---
 
-# BxRig command contract (A5 draft, v3)
+# BxRig command contract
 
 Target (2026-11-09): Hyprland + Noctalia on CachyOS, KDE kept side by side; see plan.md section 19. `setup` is the headline command.
 
-Status: **proposal, no code written.** Note 2026-11-09: the legacy tree in `artifacts/legacy/original/` is the real v0.10.0 source. It is kept as is and never copied, backed up or modified. Decisions here are inputs to M0 hardening (tasks 1.2 to 1.5) and M1 catalog work. Legacy v0.10.0 is a feature reference only (`artifacts/legacy/original/`).
+Status (2026-11-15): **built.** This file started as the proposal and became the design record; sections 1 to 12 are the rules and the first build, section 13 onward holds one decision section per feature, 14 the installer and the wizard. Where a sentence here and the code disagree, the code wins: `docs/reference/cli.json` is the command registry (96 commands and their flags, usage and examples), `docs/reference/commands.md` is generated from it, and `bxrig help NAME` prints the same text. The legacy tree in `artifacts/legacy/original/` is the v0.10.0 source, kept as a feature reference and never modified.
 
 ## 1. Grammar
 
 ```
-bxrig <group> <verb> [args...] [--yes] [--dry-run] [--json] [--quiet]
+bxrig <command> [subcommand] [args...] [--yes] [--dry-run] [--json] [--quiet] [--force]
 ```
 
-- Groups mirror the legacy dispatcher so users keep their muscle memory: `setup apps app-manager catalog profile base extras dev web podman ai vector db db-center vm network cloud cloud-center cloud-services files quicklook dictation integrations desktop desktop-keys mac-keys omarchy-base layout themes icons runner menu shortcuts system config first-run doctor setup`.
-- Global verbs on every group: `plan` (read-only), `status` (read-only), `doctor` (read-only checks), `help`.
-- Mutating verbs: `install`, `apply`, `remove`, `restore`, `enable`, `disable`. All require `--yes`.
-- Existing flat commands (`install`, `optional-install`, `profile-install`, `package-status`, `package-source`, ...) stay as aliases until the grouped form ships, then print a deprecation note.
-- Unknown flags, duplicate flags, empty arguments and extra positionals are usage errors (exit 2). Nothing runs.
-- Note from M0 history: BoxLang `CLIGetArgs()` puts flags in `args.options`, not `args.positionals`. The parser is one shared function, tested once.
+- A command is one word from `docs/reference/cli.json` (`setup`, `keys`, `menu`, `record`, `browser`, ...); its subcommands and positional arguments are in its usage lines. Groups in the reference (Start here, Install, Desktop, Look, System, Develop, Tools) only organise the page.
+- Mutating verbs (`install`, `apply`, `remove`, `restore`, `enable`, `disable`, `set`, ...) need `--yes`; read-only ones (`list`, `show`, `status`, `plan`, `doctor`) never do.
+- Flags are checked against the registry before anything runs: a flag the command does not list is a usage error (exit 2, the usage line is printed); `secrets run` passes everything after its own flags through. An unknown command is exit 2 too.
+- `CLIGetArgs()` puts flags in `args.options` and the words in `args.positionals`; a flag with a value is written `--name=value` (the form `--name value` is a flag plus a positional on MatchBox).
 
 ## 2. Mutation rules (apply to every mutating verb)
 
@@ -33,7 +31,9 @@ bxrig <group> <verb> [args...] [--yes] [--dry-run] [--json] [--quiet]
 6. Every config file touched goes through the config service (backup, atomic replace, journal). No direct writes.
 7. Output lists succeeded and failed items separately. No rollback is promised across pacman and yay.
 8. External installer scripts (bvm, mvm, `toolchain node`'s nvm, catalog `source: script`) are downloaded to a temp file, their url and sha256 are printed, and they run as the normal user (never root) with no confirmation gate and no flag: the typed `EXECUTE` and `--allow-external-scripts` were removed on 2026-11-10 (owner: running them is the point of the command). Decision 2026-11-09: no checksum pinning for these scripts.
-9. Subprocesses are launched with argument arrays, never through a shell string.
+9. Subprocesses are launched with argument arrays, never through a shell string. The one place that starts a process is `util/Proc`; the few `sh -c` wrappers pass every value as a positional argument (`detach`, recording, the pull-down shells).
+10. The plan, dry-run and run protocol is one class, `util/Mutation`, reached through `Out.plan( ... )`: no `--yes` prints "Plan: TITLE", the extra lines and "Nothing was changed. Add --yes to apply." (exit 2); `--dry-run` prints "Dry run: TITLE" and the same lines (exit 0); the first failing step ends the run (exit 6). A ratchet in `tests/dry-test.sh` forbids hand-written plan footers.
+11. Documented exceptions to `--yes`: a command that changes only your own settings or starts or stops a program acts at once and takes `--dry-run` (themes, `appearance`, `display`, `notify`, `tiling`, `runner set`, `layout`, `record`, `webcam`, `window`, `browser private`, `files here`, `dictation toggle`). Anything that installs packages, writes system files or changes login behaviour always needs `--yes`.
 
 ## 3. Exit codes
 
@@ -48,15 +48,16 @@ bxrig <group> <verb> [args...] [--yes] [--dry-run] [--json] [--quiet]
 | 6 | AUR (yay) phase failed | |
 | 7 | Partial success | some items done, some failed; `--json` lists both |
 | 8 | Config conflict | drift detected, symlink or special file at target, concurrent run lock |
-| 9 | Internal error | bug, unexpected exception |
+| 9 | Internal error | bug, unexpected exception (`Application.bx` `onError` prints it and exits 9) |
+| 10 | An update is available | `update check` only |
 
-Codes 0 to 6 match what the native CLI returns today (2, 3, 4, 5, 6 are already used). 1 is already used for check-negative. 7 to 9 are new. Codes are frozen once published and covered by a contract snapshot test.
+The codes are frozen. `tests/cli-contract-test.sh` and the per-command tests check them; a bad name is exit 2 everywhere (it was 4 in some commands before the `Names` helper); an unknown command or flag is exit 2.
 
 **Names in code.** `src/bxrig/util/Exit.bx` names every code: `ok` 0, `negative` 1, `usage` and `plan` 2, `timeout` 3, `precondition` 4, `official` 5, `failed` 6, `partial` 7, `conflict` 8, `internal` 9, `update` 10. `Cli.say`, `Cli.fail`, `Out.say` and `Out.fail` take a name or a number; an unknown name throws. Command classes write the name (`variables.out.say( "precondition", ... )`, `CLIExit( xit.usage() )`, `return new bxrig.Exit().ok();`), so a typo cannot turn into a wrong exit code. The numbers on the wire are the table above. `tests/dry-test.sh` fails on a bare number as the code argument of `say`/`fail` and on `CLIExit( N )` in `Main.bx` (130, Ctrl+C, is the exception).
 
 ## 4. `--json`
 
-One JSON object on stdout, nothing else on stdout. Human text goes to stderr.
+With `--json` a command prints one JSON object on stdout and no human text (`Cli.envelope`):
 
 ```json
 {
@@ -66,19 +67,16 @@ One JSON object on stdout, nothing else on stdout. Human text goes to stderr.
   "ok": false,
   "exit": 7,
   "dry_run": false,
-  "plan":    [{"id": "jq", "source": "pacman", "action": "install"}],
-  "done":    [{"id": "jq", "source": "pacman"}],
-  "failed":  [{"id": "x", "source": "aur", "reason": "yay exited 1"}],
-  "skipped": [{"id": "git", "reason": "already installed"}],
+  "data": { "done": [], "failed": [], "skipped": [] },
   "warnings": []
 }
 ```
 
-Read-only commands use the same envelope with a `data` field.
+`data` is different for every command (the package commands put `would_install`, `done`, `failed` and `skipped` there, section 11); `ok` is true when `exit` is 0. A plan is `exit` 2 with the plan in `data`; a dry run is `exit` 0 with `dry_run` true.
 
 ## 5. Catalog (single source of truth)
 
-Decision already made: import legacy `catalog/apps.json` (482 entries) as canonical, keeping its 61 default flags. It replaces the hardcoded lists in `src/bxrig.bxs` and `scripts/package-manager.sh`.
+The catalog is `catalog/apps.json` (schema 3, 289 apps today, version in `catalog_version`), embedded in the binary by `bootstrap/gen-catalog.sh`. It started as the legacy `apps.json` (482 entries) and replaced the hardcoded lists. The findings below are the 2026-11-09 audit of that legacy data and are kept as the record of why the catalog looks as it does.
 
 Entry schema (legacy fields kept, new fields marked):
 
@@ -95,7 +93,7 @@ Entry schema (legacy fields kept, new fields marked):
 | `check` (new) | optional post-install check, argv array |
 | `verified_on` (new) | date the target was confirmed against real repos |
 
-Findings from the legacy data (decisions recorded 2026-11-09):
+Findings from the legacy data (historical, decisions recorded 2026-11-09):
 
 - **Unverified sources.** 176 entries are `source: manual` (95 tui, 81 desktop). Their package names are unverified. Proposal: a CI job that checks every `pacman`/`aur` target against real repos (Arch container, AUR RPC) and fails on unknown names. `manual` entries stay installable only by explicit user action.
 - **Default list mismatch.** 61 flagged default (29 pacman, 18 aur, 14 web). `app-profile.json` `base` lists 46. 20 defaults are not in that base list (for example `ark dolphin dolphin-plugins kio-extras rclone fuse3 sshfs nfs-utils cifs-utils podman-desktop tabby beekeeper-studio google-docs google-sheets google-slides kompare filelight ffmpegthumbs kdegraphics-thumbnailers kimageformats`). 5 base entries are not flagged default (`dbeaver filezilla krdc podman-tui rustdesk`). The 61 flags win. The 5 dropped base entries are `dbeaver` (pacman), `filezilla` (pacman), `krdc` (pacman), `rustdesk` (aur) and `podman-tui` (manual). Pending: keep them as curated (not default), or re-flag any as default.
@@ -157,7 +155,7 @@ The check must also run against the CachyOS repos on a real CachyOS machine befo
 
 - `config list|diff|apply|restore|history` (section 6 design; lock is a file created with `fileWriteExclusive`, temp files and journal records are created exclusive with their mode).
 - Global flag check and the `--json` envelope (sections 1 and 4) for the read-only commands.
-- `catalog list|show|groups|check|version`: the catalog is schema 3 (`catalog/README.md`) and is embedded in the binary by `bootstrap/gen-catalog.sh` (CI fails if `src/bxrig.bxs` is stale). Filters use the `--name=value` form (`--tier=default --group=infra`), because MatchBox `CLIGetArgs` takes `--name value` as a flag plus a positional. `catalog check` is offline: errors exit 1, warnings (unpinned `pkgbuild` refs, default entries without a package) do not. The user override file is deliberately last (extensibility phase).
+- `catalog list|show|groups|check|version`: the catalog is schema 3 (`catalog/README.md`) and is embedded in the binary by `bootstrap/gen-catalog.sh` (CI fails if `src/bxrig/CatalogData.bx` is stale). Filters use the `--name=value` form (`--tier=default --group=infra`), because MatchBox `CLIGetArgs` takes `--name value` as a flag plus a positional. `catalog check` is offline: errors exit 1, warnings (unpinned `pkgbuild` refs, default entries without a package) do not. The user override file is deliberately last (extensibility phase).
 
 ## 11. Package commands on the catalog (B2, decided 2026-11-09)
 
@@ -241,7 +239,7 @@ bxrig setup xremap [--build=hypr|kde] [--yes]        Cmd-style keys: AUR package
 bxrig setup undo hyprland|plasma|xremap [--yes]      remove only what setup added
 bxrig setup status [--json]
 bxrig tiling on|off|status                           HyprKwin inside Plasma, no logout
-bxrig keys show | render xremap|hyprland|plasma | check | apply [--yes] [--dry-run] [--force]
+bxrig keys show | search TEXT | run ID | style [traditional|mac] | set ID KEYS | reset ID | conflicts | sheet | render xremap|hyprland|plasma | check | apply [--yes] [--dry-run] [--force]   (the full usage is in cli.json)
 bxrig assets list | install [--yes] [--dry-run]
 bxrig session show | set hyprland|plasma [--yes] [--dry-run]
 bxrig runner list | show | doctor | launch | select JSON | set P | menu-set P | launcher-command P JSON | menu-command P JSON   the launcher abstraction (13.9)
@@ -270,13 +268,14 @@ One embedded table (`Shortcuts.bx`) holds the shortcuts and is rendered per targ
 | Part | Hyprland | Plasma |
 |---|---|---|
 | Tiling and workspace keys | Hyprland's own keys | HyprKwin (same defaults) |
-| Cmd-style keys: Super+C, Super+V, Super+Tab | xremap | xremap |
+| Cmd-style keys: Super+C, V, X, A in both styles; the rest and Super+Tab in the Mac style | xremap | xremap |
 | Logout to the login screen, Super+Shift+Q | `hl.bind(... "uwsm stop")` | `kglobalshortcutsrc` `[ksmserver] Log Out` via kwriteconfig6 |
 
 Two key styles share the table (decided with the owner 2026-11-14, `SHORTCUTS-DECISIONS.md`): **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys). Every row has a key per style; every Hyprland bind (the starter file's and the module's) is a row, so `keys show`, `keys sheet`, `keys set` and `keys conflicts` see all of them. The style, the keyboard (`pc` or `apple`) and the Alt/Win swap are in `~/.config/bxrig/keystyle.json`, set with `keys style` (the wizard asks for the keyboard when Mac keys are on). The swap is a `modmap` in the xremap config (left Alt and left Win exchanged); it is active only for the Mac style on a PC keyboard. `keys conflicts` reports bindings that share a combo, bindings on a key xremap rewrites (only the remaps of the style that is on count) and clashes with the user's own `hl.bind` lines.
 
 - xremap, one shared YAML: Super+C/V send Ctrl+C/V, and Ctrl+Shift+C/V in terminals (a class list in the table); Super+Tab is a plain Alt+Tab remap [owner], answered on Hyprland by Noctalia's window switcher (`noctalia msg window-switcher hold`).
 - `keys render` prints a target's text (pure). `keys apply` writes `~/.config/xremap/config.yml`, `~/.config/hypr/bxrig.lua` and `~/.config/systemd/user/xremap.service` through the config service (backup, journal; `config list|diff|apply|restore` cover them) and sets Plasma's Log Out with kwriteconfig6 when present. `keys check` reports clean / missing / outdated / drifted per piece (exit 0 or 1); a changed file is never overwritten without `--force`.
+- Since 2026-11-15 the table has 131 rows (19 xremap remaps, 17 unbound Control Center page rows, 95 bindings) and `keys conflicts` is clean in both styles. xremap is always installed and enabled: copy, paste, cut and select all are remaps in both styles, so the wizard no longer ties it to the Mac question. The Mac style on a PC keyboard also swaps Alt and Win in the same xremap file (`modmap`, left keys only). The second round (SHORTCUTS-DECISIONS.md) added private browser window, file manager here, quake console, webcam, the Hardware menu and recording with audio: section 13.54.
 - Hyprland 0.55+ (Arch has 0.57) reads `hyprland.lua`; hyprlang `.conf` is deprecated, so bxrig targets **Lua only** [owner]. `bxrig.lua` holds the Noctalia autostart and panel binds, the Alt+Tab switcher, the logout bind and the window and layer rules, taken from Noctalia's v5 Hyprland docs. bxrig **never edits the user's `hyprland.lua`**: `keys check` reports `not-loaded` and `keys apply` prints the `require("bxrig")` line to add (the starter file already has it).
 - `setup xremap` installs `xremap-hypr-bin` or `xremap-kde-bin` with `yay` (build from `--build`, else the running desktop), adds the udev rule for `/dev/uinput` and the user to the `input` group (both remembered in `setup-xremap.json`, mode 600), writes the shortcut files and enables the user service; `setup undo xremap` reverses only what it added. It needs one logout.
 
@@ -285,7 +284,7 @@ Two key styles share the table (decided with the owner 2026-11-14, `SHORTCUTS-DE
 Ortus Brand Book 2025 palette (main `#00FF78`, second `#00DBFF`, accent `#FFF500`, dark `#303446`, which is also Catppuccin Frappé's base) on Frappé neutrals [owner]. `Starter.bx` writes, through the config service and only what is missing (a Noctalia file the user changed is kept; `hyprland.lua` is written only when none exists):
 
 - `~/.config/noctalia/config.toml` and `palettes/BxRig.json` (`NoctaliaConfig.bx`): dark theme with the custom palette; a top bar with launcher, workspaces and active window on the left; the clock, four world clocks (LAX, NYC, LON, MAD, editable `clock` widgets with a `timezone`) and the media player in the centre; tray, network, bluetooth, volume, battery, notifications and control center on the right; the wallpaper folder.
-- `~/.config/hypr/hyprland.lua` from `templates/hyprland.lua` (embedded by `bootstrap/gen-templates.sh`), based on Hyprland's own example: brand-gradient borders, rounded corners, blur, Hyprland's default animations, two persistent workspaces, natural scrolling **off** [owner, "inverse"], Super+Q closes a window (Cmd+Q habit), Super+Return terminal, Super+B browser, Super+E files, Super+F fullscreen, Super+Shift+3/4 screenshots, Super+Ctrl+Q lock, media keys, and `require("bxrig")`.
+- `~/.config/hypr/hyprland.lua` from `templates/hyprland.lua` (embedded by `bootstrap/gen-templates.sh`), based on Hyprland's own example: brand-gradient borders, rounded corners, blur, Hyprland's default animations, two persistent workspaces, natural scrolling **off** [owner, "inverse"], the programs (terminal, browser, file manager) that the shortcut table starts, and `require("bxrig")`. It holds no key binding: every bind is a row of the table and lives in `bxrig.lua`.
 
 ### 13.5b Shell and terminal (decided 2026-11-10)
 
@@ -311,7 +310,7 @@ Runner.launch()                      open or toggle the launcher
 Runner.select( prompt, entries )     show [ { label, icon } ] in a menu, return the chosen position (0 = cancelled)
 ```
 
-**Super+Space (Hyprland)** is bound once, in the managed `bxrig.lua`, to `bxrig runner launch` (falling back to `noctalia msg panel-toggle launcher` when the chosen launcher cannot run), so `runner set` changes what Super+Space opens without ever editing a keybinding. Which launcher answers is a setting, recorded in `~/.config/bxrig/runner.json` (written atomically); the launcher and the menu provider are chosen separately. **The runner never changes a keybinding or a desktop file** (`doctor` ends with `Shortcut ownership: unchanged`). `set` and `menu-set` are user settings that act at once (no `--yes`), like `tiling`.
+**Super+Alt+Space (Hyprland, both key styles)** is bound once, in the managed `bxrig.lua`, to `bxrig runner launch` (falling back to `noctalia msg panel-toggle launcher` when the chosen launcher cannot run), so `runner set` changes what it opens without ever editing a keybinding. `Super+Space` opens the BxRig menu (`bxrig menu`, 13.16). Which launcher answers is a setting, recorded in `~/.config/bxrig/runner.json` (written atomically); the launcher and the menu provider are chosen separately. **The runner never changes a keybinding or a desktop file** (`doctor` ends with `Shortcut ownership: unchanged`). `set` and `menu-set` are user settings that act at once (no `--yes`), like `tiling`.
 
 Providers are data in `RunnerProviders` (one descriptor each: `id`, `title`, `package`, `launch` argv, and `menu`: dmenu argv with `{prompt}`, `icons`, `returns`). Adding a launcher is adding one descriptor.
 
@@ -497,7 +496,7 @@ Init rules for this page: a default agent that was not ticked is installed too; 
 - **Settings:** defaults, shortcuts, launcher check, setup status, dotfiles status (read-only views in a terminal).
 - Every entry is started without `--yes`, so nothing is changed by the menu itself; the commands keep their own plan/`--yes` rules. Back and Exit are the last entry of each level; cancelling the provider (empty answer) leaves the menu with exit 0.
 - Terminals for `run` entries: the first installed of ghostty, kitty, foot, alacritty, konsole (`-e` for ghostty, alacritty, konsole). Exit 4 when there is no menu program, or no terminal for a `run` entry.
-- Hyprland binds it to `Super+Alt+M` in the shortcut table (`Super+Alt+Space` is the all-apps window, 13.22). Tests: `tests/menu-test.sh` (fake Rofi and terminal).
+- Hyprland binds it to `Super+Space` in the shortcut table; `Super+Alt+Space` runs the launcher you chose (`runner launch`). `menu open ROUTE` opens one section (`system`, `capture`, `toggle`, `hardware`, `agent`, `shortcuts`, or a path such as `trigger > capture`; no ROUTE lists them); `Super+Escape`, `XF86PowerOff`, `Super+Ctrl+C`, `Super+Ctrl+O`, `Super+Ctrl+H` and `Super+Shift+Ctrl+A` use it. The top level is Apps, Setup wizard, Install, Remove, Appearance, Trigger, Shortcuts, Hardware, Setup, Update, Develop, Agent, Learn, About, System, Control Center. Tests: `tests/menu-test.sh` (fake Rofi and terminal).
 
 ### 13.17 Podman helpers, docker compatibility and the LazyVim starter (decided with the owner 2026-11-12)
 
@@ -511,8 +510,8 @@ Init rules for this page: a default agent that was not ticked is installed too; 
 
 Packages are catalog entries (all `extra`, checked 2026-11-12): `cliphist`, `wf-recorder`, `pavucontrol`, `wiremix`, `nwg-displays`, `playerctl`. `grim`, `slurp`, `wl-clipboard`, `brightnessctl` and `hyprpicker` already come with `setup hyprland`. The wizard's Extras page asks `desktop_utilities` (Hyprland and Both only; `cliphist` and `wf-recorder` preselected); the answers go into the single `install` step.
 - `clipboard pick` lists the history with your menu provider, decodes the chosen entry (`cliphist decode`, entry line on standard input) and copies it with `wl-copy`. Text entries only (binary entries are left out of the menu). `clipboard clear [--yes]` runs `cliphist wipe` (plan without `--yes`); `clipboard status` shows the tools and the entry count. Exit 4 when `cliphist`, `wl-clipboard` or the menu program is missing.
-- The Hyprland module (`keys apply`) starts the history at login: `wl-paste --type text --watch cliphist store` and the same for images, and binds `Super+Shift+V` to `clipboard pick`.
-- `record [toggle|start|stop|status] [--region] [--dry-run]` (default toggle) runs `wf-recorder -f ~/Videos/bxrig-YYYYMMDD-HHMMSS.mp4` detached (`BXRIG_VIDEOS` changes the folder); `--region` adds `-g "$(slurp)"`. Stop sends SIGINT (`pkill -INT -x wf-recorder`) so the file is finished. Hyprland binds `Super+Shift+R` (toggle) and `Super+Alt+Shift+R` (a region). Exit 4 when `wf-recorder` or, for a region, `slurp` is missing. `wf-recorder` has no GPU encoding by default; `gpu-screen-recorder` (already in the catalog) is the faster option and is not wired here.
+- The Hyprland module (`keys apply`) starts the history at login: `wl-paste --type text --watch cliphist store` and the same for images, and binds `Super+Ctrl+V` to `clipboard pick`.
+- `record [toggle|start|stop|status] [--region] [--dry-run]` (default toggle) runs `wf-recorder -f ~/Videos/bxrig-YYYYMMDD-HHMMSS.mp4` detached (`BXRIG_VIDEOS` changes the folder); `--region` adds `-g "$(slurp)"`. Stop sends SIGINT (`pkill -INT -x wf-recorder`) so the file is finished. Hyprland binds `Super+Shift+R` (toggle), `Super+Alt+Shift+R` (a region) and `Alt+Print` (toggle with desktop audio, `--audio=desktop`; `--audio=mic` is in the menu). Exit 4 when `wf-recorder` or, for a region, `slurp` is missing. `wf-recorder` has no GPU encoding by default; `gpu-screen-recorder` (already in the catalog) is the faster option and is not wired here.
 - Tests: `tests/utilities-test.sh`. The `wl-paste --watch` autostart and the shortcuts are not verified on a real Hyprland session.
 
 ### 13.19 Shortcut editor (decided with the owner 2026-11-12)
@@ -533,14 +532,14 @@ Bindings are built from their key combo (`Shortcuts.bindLine`), so changing the 
 ### 13.21 Runtime controls and cloud storage (decided with the owner 2026-11-12)
 
 - `layout [toggle|float|tile|status] [--dry-run]` (default toggle). **Hyprland:** the windows of the active workspace come from `hyprctl activeworkspace -j` and `hyprctl clients -j`; each one that is not already there gets `hyprctl dispatch setfloating address:ADDR` or `settiled address:ADDR`. `toggle` floats everything when at least one window is tiled, otherwise tiles everything. **Plasma:** HyprKwin is a session-wide switch, so toggle flips `tiling on|off` (float = off, tile = on). Exit 4 without a Hyprland or Plasma session. The dispatchers are the documented legacy ones and are not verified on a Hyprland 0.55+ Lua session; there is no keyboard shortcut yet (bind it with the editor or by hand).
-- `keys mac [on|off|status] [--yes]` enables or disables the user service `xremap` that `setup xremap` wrote (`systemctl --user enable|disable --now xremap`), so Super+C, Super+V and Super+Tab go back to plain Super shortcuts without uninstalling anything. Exit 4 when the unit is not set up.
+- `keys mac [on|off|status] [--yes]` enables or disables the user service `xremap` that `setup xremap` wrote (`systemctl --user enable|disable --now xremap`), so the Cmd-style keys go back to plain Super shortcuts without uninstalling anything. Exit 4 when the unit is not set up. `keys style traditional|mac [--keyboard=pc|apple] [--swap=on|off] [--yes]` is the newer, fuller switch (it also rewrites the Hyprland module and the Alt/Win swap); `keys mac` stays as the xremap service switch.
 - **Not done:** a theme manager (Omarchy themes to Noctalia palettes). It needs Noctalia's runtime theme interface, which has not been verified; `setup hyprland --theme=dark|light|auto` still picks the theme of the starter.
 - `cloud remotes | configure | mount NAME [--path=DIR] [--yes] | unmount NAME [--yes] | status`: rclone remotes as folders. `configure` hands your terminal to `rclone config` (BxRig never sees the logins). `mount` writes `~/.config/systemd/user/bxrig-cloud-NAME.service` through the config service (`Type=notify`, `rclone mount NAME: DIR --vfs-cache-mode writes`, `ExecStop=fusermount3 -u DIR`, `WantedBy=default.target`), reloads systemd and runs `enable --now`; DIR is `~/Cloud/NAME`, absolute, without spaces or quotes. An edited unit is never overwritten (exit 4). `unmount` disables and stops it and deletes the unit only while it is still the text BxRig wrote. Exit 4: rclone or fuse3 missing, unknown remote. The wizard's `cloud_storage` (default no) installs `rclone` and `fuse3`. Package facts checked on archlinux.org 2026-11-12. Not run against a real remote here. Tests: `tests/runtime-cloud-test.sh`.
 
 ### 13.22 All apps window, answers to take to another machine, snapshot GUIs (decided with the owner 2026-11-12)
 
-- `apps` shows every installed application in one window with your menu provider and starts the choice; `apps list [--json]` prints them. This is Omarchy 4.5's app grid, which opens on `Super+Alt+Space` (source: the Omarchy 4.5 release write-up on starryhope.com: type to filter, arrows to move, Esc closes). The list is the `*.desktop` entries of `/usr/share/applications`, `~/.local/share/applications` and the Flatpak exports (`BXRIG_APPS_DIRS` overrides, colon separated). A later folder wins for the same file name, so `Hidden=true` in your own folder removes an app. Only `Type=Application` entries without `NoDisplay` or `Hidden` are listed, sorted by name; icons are passed to providers that take them. An entry starts with its `Exec` line, field codes (`%U` and the like) removed, detached. Exit 4 when no menu program or no application is found. There is no press-again-to-close: Esc cancels. Omarchy's dock is not part of this.
-- **Shortcut change:** `Super+Alt+Space` is now `all-apps`. The control center moved to `Super+Alt+M` (change either with `keys set`). `menu` has an "All apps" entry. Plasma has its own menu on the Meta key, so nothing is added there. Tests: `tests/apps-test.sh`.
+- `apps` shows every installed application in one window with your menu provider and starts the choice; `apps list [--json]` prints them. This is Omarchy 4.5's app grid (`Super+Alt+Space` there; here that key is `runner launch`, and `apps` is reached from the menu). The list is the `*.desktop` entries of `/usr/share/applications`, `~/.local/share/applications` and the Flatpak exports (`BXRIG_APPS_DIRS` overrides, colon separated). A later folder wins for the same file name, so `Hidden=true` in your own folder removes an app. Only `Type=Application` entries without `NoDisplay` or `Hidden` are listed, sorted by name; icons are passed to providers that take them. An entry starts with its `Exec` line, field codes (`%U` and the like) removed, detached. Exit 4 when no menu program or no application is found. There is no press-again-to-close: Esc cancels. Omarchy's dock is not part of this.
+- **Keys:** `Super+Alt+Space` launches apps with your launcher (`runner launch`) and `Super+Space` opens the control center (owner, 2026-11-15); change either with `keys set`. The `Apps` entry of the menu runs `apps`. Plasma has its own menu on the Meta key, so nothing is added there. Tests: `tests/apps-test.sh`.
 - The wizard's answers live in `~/.config/bxrig/answers.json` (mode 600, no secrets) and fill the wizard on the next run. `init --export=FILE [--force]` copies them (mode 600); on another machine `init --from=FILE` fills the wizard with them, and `init --answers=FILE --yes` runs them without asking.
 - Catalog: `btrfs-assistant` and `timeshift` (both `extra`, verified 2026-11-12) are in the default tier, so a plain `install` and Basic mode install them. **Btrfs Assistant is in the default set only when `/` is Btrfs**: the catalog entry has `filesystems: ["btrfs"]`, the resolver skips it elsewhere as `wrong_filesystem` (an unreadable filesystem counts as not Btrfs; `BXRIG_ROOT_FS` overrides the detection, which is `findmnt -n -o FSTYPE /`), and naming it (`install btrfs-assistant`) still installs it. Timeshift has no such condition (it also works with rsync). Omarchy's base package list has none of restic, borg, snapper, snap-pac, timeshift or btrfs-assistant (checked in `install/omarchy-base.packages`, 2026-11-12).
 
@@ -573,7 +572,7 @@ The wizard asks the window layout once per desktop you set up: Hyprland (`layout
 - **Noctalia has its own commands** (Noctalia docs, v5.4, `noctalia msg ...`): `screenshot-region|fullscreen|window|annotate` (with built-in annotation), `notification-dnd-set on|off`, `notification-dnd-toggle`, `notification-dnd-status`, `notification-clear-active`, `notification-clear-history`, plus clipboard, wallpaper (`wallpaper-set`) and theme (`theme-mode-set`, `color-scheme-set`, `templates-apply`) commands. BxRig wraps them; this also removes the Noctalia theme blocker for the theme manager.
 - **`keys sheet [--json]`:** the shortcut cheat sheet (Hyprland `Super+K`, like Omarchy), every row of the shared table with its action and how it is bound, in your menu program (searchable); without one it prints the list. Read-only.
 - **`screenshot screen|region|window [--edit] [--dry-run]`:** Hyprland with Noctalia: `noctalia msg screenshot-fullscreen|region|window` (`--edit` adds `--annotate`); Hyprland without Noctalia: grim and slurp into the clipboard; Plasma: Spectacle (`-f`, `-r`, `-a`). The desktop is read from `XDG_CURRENT_DESKTOP` (`BXRIG_DESKTOP` overrides). `screenshot ocr` drags a region and copies its text (tesseract); `screenshot qr` reads a QR code from a region (zbarimg) and copies it; `screenshot menu` is the Cmd+Shift+5 style picker (Screen, Region, Window, OCR, QR, Record). `qr TEXT [--out=FILE.png]` makes a QR code (qrencode). Exit 0, 4 tool missing, 6 failed.
-- **Mac shortcuts (Hyprland):** `Super+Shift+3` screen, `Super+Shift+4` region, `Super+Shift+5` menu (the starter no longer binds the first two itself). On Plasma Spectacle's own shortcuts apply; BxRig does not rebind them (the `kglobalshortcutsrc` keys are not verified). Flameshot is now optional; Spectacle (Plasma only), grim, slurp, tesseract, zbar and qrencode are catalog apps; VLC is optional.
+- **Screenshot keys (Hyprland):** `Print` is the region screenshot in both styles; the Mac style also has `Super+Shift+3` screen, `Super+Shift+4` region, `Super+Shift+5` menu (rows of the table, not of the starter file). `Super+Print` is the color picker (`screenshot color`, hyprpicker). On Plasma Spectacle's own shortcuts apply; BxRig does not rebind them (the `kglobalshortcutsrc` keys are not verified). Flameshot is now optional; Spectacle (Plasma only), grim, slurp, tesseract, zbar and qrencode are catalog apps; VLC is optional.
 - **`notify dnd on|off|toggle|status`, `notify snooze [30m|2h|90s|MINUTES|off]`, `notify clear [--history]`:** Do Not Disturb through Noctalia. Snooze turns Do Not Disturb on and starts a transient user timer (`systemd-run --user --unit=bxrig-snooze --on-active=Ns noctalia msg notification-dnd-set off`); `snooze off` stops the timer and turns it off; the default is 30 minutes. Noctalia has no command that opens its history panel, so there is none here. Shortcut `Super+Alt+N` toggles Do Not Disturb; the menu has a Notifications submenu and a Screenshot entry. Exit 0, 4 no noctalia or systemd-run or a bad duration, 6 failed.
 - Tests: `tests/capture-notify-test.sh` (fake tools), `shortcuts_test.bxs` (15 rows), `menu-test.sh`, `keys-test.sh`.
 
@@ -595,7 +594,7 @@ The wizard asks the window layout once per desktop you set up: Hyprland (`layout
 
 ### 13.29 Mac-style extras (decided with the owner 2026-11-13)
 
-- **Cmd keys:** the shared shortcut table now remaps `Super+Z X A S F T N O P R W L B I U Comma` to their Ctrl versions in apps (undo, cut, select all, save, find, new tab, new window, open, print, reload, close tab, address bar, bold, italic, underline, preferences). In terminals `Super+T N W F` become `Ctrl+Shift+T N W F` and `Z X A S ...` pass through unchanged so shell shortcuts keep working. `Super+Q` closes the window (starter), `Super+M` minimizes and `Super+Shift+M` shows minimized windows (`window minimize|restore`: `hyprctl dispatch movetoworkspacesilent special:minimized` and `togglespecialworkspace minimized`). `Super+Ctrl+E` emoji picker, `Super+Alt+Escape` force quit, `Super+Ctrl+Up` overview, `Super+Ctrl+X` dictation toggle (`voxtype record toggle`, from the Voxtype README), `Super+Alt+Shift+N` night shift toggle.
+- **Cmd keys:** the shared shortcut table now remaps `Super+Z X A S F T N O P R W L B I U Comma` to their Ctrl versions in apps (undo, cut, select all, save, find, new tab, new window, open, print, reload, close tab, address bar, bold, italic, underline, preferences). In terminals `Super+T N W F` become `Ctrl+Shift+T N W F` and `Z X A S ...` pass through unchanged so shell shortcuts keep working. `Super+Q` closes the window, `Super+H` minimizes and `Super+Shift+H` shows minimized windows (`window minimize|restore`: `hyprctl dispatch movetoworkspacesilent special:minimized` and `togglespecialworkspace minimized`). `Super+Ctrl+E` emoji picker, `Super+Alt+Escape` force quit, `Super+Ctrl+Up` overview, `Alt+Space` dictation toggle (`dictation toggle`, `voxtype record toggle`), night shift has no key (menu only). Since 2026-11-15 only copy, paste, cut and select all are remaps in both styles; the rest of this list is the Mac style.
 - **`emoji`:** `rofimoji` (Omarchy uses Walker's symbols mode on `Super+Ctrl+E`). **`forcequit`:** Hyprland `hyprctl kill` (click the window); Plasma `qdbus6 org.kde.KWin /KWin org.kde.KWin.killWindow`. **`overview [setup]`:** Hyprland `hyprctl dispatch hyprexpo:expo toggle` (`setup` runs `hyprpm update`, `hyprpm add https://github.com/hyprwm/hyprland-plugins`, `hyprpm enable hyprexpo`); Plasma `org.kde.kglobalaccel /component/kwin invokeShortcut Overview`. Hot corners are not built: KWin's `[Effect-overview] BorderActivate` values could not be verified (set them in System Settings > Screen Edges).
 - **`nightshift [on|off|toggle|status] [--location=LAT,LON]`:** Hyprland: a user service `bxrig-wlsunset.service` running `wlsunset -l LAT -L LON -t 3500 -T 6500`; the coordinates come offline from your time zone in `/usr/share/zoneinfo/zone.tab` or `zone1970.tab` (`BXRIG_ZONEINFO` overrides the folder); an edited unit is kept. Plasma: `kwinrc [NightColor] Active=true, Mode=Automatic` (the Mode value is unverified). The wizard (Input page) asks `night_shift`, default on.
 - **`gpu doctor`:** `lspci` vendors (NVIDIA, AMD, Intel) and the driver packages that are missing (`nvidia-utils`, `libva-nvidia-driver`; `mesa`, `vulkan-radeon`, `libva-mesa-driver`; `mesa`, `vulkan-intel`, `intel-media-driver`), with `ollama-cuda` or `ollama-rocm` for local AI. Exit 4 when something is missing. CachyOS normally installs the driver itself.
@@ -894,6 +893,20 @@ One home per concept; command classes hold small collaborators in `variables.*` 
 - **Paths: `Env`.** `BXRIG_*_HOME`, then `XDG_*_HOME`, then `$HOME` for every folder: `xdgConfig( sub )`, `xdgData`, `xdgState`, `xdgCache` (shared with other programs) and BxRig's own `config`, `data` (`BXRIG_DATA_HOME` is the folder itself), `state`, `cache`. A user with `XDG_CONFIG_HOME` set now gets every BxRig file under it (`bxrig/`, `menus/`, `nvim/`, `strata/`); `tests/paths-test.sh` guards it. `new bxrig.Env( { HOME: "/h" } )` replaces the real environment in unit tests.
 - **Text: `Text`** (`merge`, `pad`, `padLeft`, `lines`, `nl`).
 - **Desktop entries: `DesktopEntry`.** `parse` (exact-case keys, only the `[Desktop Entry]` group, `launcher` for BxRig's own `X-BxRig-Launcher` entries), `dirs( withFlatpak )` (`BXRIG_APPS_DIRS`, older `BXRIG_DESKTOP_DIRS`), `entries( dirs, launchers, needExec )`, `iconName`, `cleanExec`, `render( lines )`. The Apps page leaves BxRig's launchers out; the `apps` launcher grid keeps them.
+- **Package layout.** `src/bxrig/` has one class per command or feature (152 classes, 4,982 lines of generated `*Data.bx` among them); `src/bxrig/util/` has the 23 shared helpers, reached as `bxrig.util.NAME`: `Cli`, `Out`, `Exit`, `Mutation` (plans and dry runs), `Proc`, `Env`, `Text`, `Fmt`, `Names`, `JsonStore`, `SystemFile`, `SystemdUnit`, `Systemd`, `Pacman`, `Aur`, `Http`, `Urls`, `Desktop`, `DesktopEntry`, `Ini`, `Props`, `Lua` and the generated `Version`. A helper never holds a command's job and a command never holds a helper's; `tests/dry-test.sh` keeps the copies from coming back.
+- **Command registry.** `docs/reference/cli.json` holds every command (name, group, summary, usage, examples, flags with types, note). `bootstrap/gen-docs.sh` writes `commands.md`, `command-flags.md`, `HelpData.bx` (`bxrig help`) and `CommandFlagData.bx` from it and fails when `Main.bx` has a command the file lacks (or the reverse), an example names no command, or a usage line uses a flag the command does not list. `CommandSpec` answers flags and usage at run time.
 - **Unknown command exit.** A command that is not in `Main.bx` prints "Unsupported command" and exits 2 (it exited 0 before); the flag whitelist has no duplicates.
 - **Tests.** `tests/lib/harness.sh` (binary, tmp, `fail`, `stub`, `code`), `tests/run-all.sh` (discovery, parallel), `tests/dry-test.sh` (ratchet of copied helpers and of tests missing from CI).
 
+
+### 13.54 The second shortcut round: browser, files, webcam, quake console, recording with audio, Hardware menu (decided with the owner 2026-11-15)
+
+Keys and the reasons for each choice are in `SHORTCUTS-DECISIONS.md` (second round). All of these act at once, take `--dry-run` and `--json`, build argv arrays only, and exit 0 done, 4 precondition, 6 the program failed to start or stop (2 for a bad `--audio` value or unknown subcommand).
+
+- **`browser private [URL]`** (`Programs`): the default web browser (`xdg-settings get default-web-browser`, set by `default browser` and the wizard) started in its private mode, detached with `Proc.detach`. Known: Firefox `--private-window`; Chromium, Brave and Chrome `--incognito`; Edge `--inprivate`. No default or an unknown browser: exit 4. Keys: `Super+Alt+Shift+B` (Traditional), `Super+Shift+N` (Mac).
+- **`files here [DIR]`** (`Programs`): `xdg-open` on DIR, else on the working directory of the focused window (`hyprctl activewindow -j` for the pid, the newest child by `pgrep -P` down at most 8 levels, `readlink /proc/PID/cwd`), else the home folder. `default filemanager` decides which program opens. Key: `Super+Alt+Shift+F`.
+- **`webcam toggle|status`** (`Webcam`): `mpv --wayland-app-id=bxrig-webcam --title=bxrig-webcam --profile=low-latency --untimed --no-audio --no-osc av://v4l2:/dev/video0`; a second `toggle` ends it (`pkill -f`). The Hyprland module floats the window class `bxrig-webcam` at 360x270. Exit 4 without `mpv` or `/dev/video0`. Key: `Super+Ctrl+Alt+V`.
+- **`window quake` and `window quake send`** (`MacExtras`): the special workspace `qconsole`. `quake` runs `hyprctl dispatch togglespecialworkspace qconsole` (the Lua form as a fallback) and, when nothing is on that workspace (`hyprctl workspaces -j`), first starts the default terminal there with `hyprctl dispatch exec "[workspace special:qconsole] TERMINAL"`. `quake send` is `movetoworkspacesilent special:qconsole`. Keys: `Super+Shift+Grave`, `Super+Ctrl+Grave`; `Super+Grave` stays the AI shell.
+- **`record ... --audio=desktop|mic`** (`Record`): adds `-a"DEVICE"` to `wf-recorder`: the monitor of the default sink (`pactl get-default-sink` plus `.monitor`) or the default source (`pactl get-default-source`). Both at once is not offered (`wf-recorder` takes one device). Exit 2 for another value, 4 without `pactl`. Key: `Alt+Print` (desktop audio).
+- **Hardware menu:** a top-level section of the menu tree (Monitors, Laptop panel, Mirror, Brightness, Webcam, GPU check, Input devices, AirPlay); `menu open hardware`, key `Super+Ctrl+H`. It replaces `Setup > Hardware`. There is no bxrig command for audio or Bluetooth, so there is no entry for them.
+- **Tests:** `tests/launchers_programs_test.bxs` (argv, toggles, quake, audio with a recording runner), `shortcuts_test.bxs` (rows and both styles), `shortcuts_runner_test.bxs` (runner entries and the route), `utilities-test.sh`, `macextras-test.sh` and `menu-test.sh` (fake tools). Not verified on a real Hyprland session: the quake workspace, the focused window's folder, the webcam window rule and `mpv`'s `--wayland-app-id`.

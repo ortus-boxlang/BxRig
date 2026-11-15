@@ -6,23 +6,21 @@ hidden: true
 
 # Native migration inventory (v0.10.0)
 
-The legacy archive contains 45+ executable entrypoints and 20+ test files. The new BoxLang CLI currently does **not** provide feature parity.
+The legacy archive has 44 executables and 20 test files (`artifacts/legacy/original/`). The native program covers its areas with 96 commands; see [Port status](PORT-STATUS.md) for what is built and what has not run on a real machine.
 
-## Required workstreams
+## Workstreams and where they live now
 
-1. Installer, provisioning, first-run, menus and profiles.
-2. App catalog, package manager, developer tools and extras.
-3. KDE Plasma desktop, themes, icons, keyboard shortcuts and Omarchy-style tools.
-4. AI, vector DB, database, VM, Podman and networking.
-5. Cloud storage, cloud services and cloud center (rclone/FUSE).
-6. Quick Look (Dolphin integration), dictation and system integration.
-7. Native MatchBox build, Rust/Cargo fusion where necessary, TestBox and Arch integration CI.
+1. Installer, provisioning, first run, menus and profiles: `bootstrap/install.sh`, `init` (the wizard), `menu`, `profile-*`, `install`.
+2. App catalog, package manager, developer tools and extras: `catalog`, `install`, `pkg`, `apps`, `java`, `sdk`, `boxlang`, `toolchain`.
+3. Desktop, themes, icons, keyboard shortcuts and Omarchy-style tools: `setup`, `keys`, `theme`, `appearance`, `display`, `runner`, `layout`, `assets`.
+4. AI, databases, VMs, Podman and networking: `ai`, `secrets`, `db`, `vm`, `containers`, `dns`, `vpn`.
+5. Cloud storage and backups: `cloud`, `backup`, `nas`, `timemachine`.
+6. Quick Look, dictation and system integration: `quicklook`, `dolphin`, `dictation`, `system`, `security`, `power`, `time`.
+7. Native MatchBox build, TestBox-style unit tests and Arch integration CI: `scripts/dev-build.sh`, `tests/`, `tests/arch/`.
 
 ## Acceptance gates
 
-- Every existing v0.10.0 command has an equivalent native implementation or an explicitly documented replacement.
-- No Python runtime is required for production commands.
-- Java 21, BVM, MVM are installed by the workstation bootstrap; versions are pinned.
-- MatchBox produces an executable artifact and smoke tests run against that artifact.
-- CI validates package operations safely in Arch, and desktop integration in a compatible environment.
-- The migration is **not complete** until those checks pass.
+- No Python runtime is needed by any production command.
+- Java 21, bvm, mvm and MatchBox are installed by the bootstrap; versions are named in `box.json`.
+- CI compiles the executable, runs the tests against it and publishes it.
+- A real clean CachyOS run is still the open gate.

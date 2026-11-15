@@ -205,11 +205,32 @@ class {
           rcSub = p.len() >= 2 ? p[2] : "toggle";
           rc = new bxrig.Record( cli );
           rcRegion = structKeyExists( args.options, "region" );
-          if ( rcSub == "toggle" && p.len() <= 2 ) CLIExit( rc.toggle( rcRegion, structKeyExists( args.options, "dry-run" ), asJson ) );
-          if ( rcSub == "start" && p.len() == 2 ) CLIExit( rc.start( rcRegion, structKeyExists( args.options, "dry-run" ), asJson ) );
+          rcAudio = args.options.audio ?: "";
+          if ( rcSub == "toggle" && p.len() <= 2 ) CLIExit( rc.toggle( rcRegion, structKeyExists( args.options, "dry-run" ), asJson, rcAudio ) );
+          if ( rcSub == "start" && p.len() == 2 ) CLIExit( rc.start( rcRegion, structKeyExists( args.options, "dry-run" ), asJson, rcAudio ) );
           if ( rcSub == "stop" && p.len() == 2 ) CLIExit( rc.stop( asJson ) );
           if ( rcSub == "status" && p.len() == 2 ) CLIExit( rc.status( asJson ) );
           println( new bxrig.CommandSpec().usage( "record" ) );
+          CLIExit( xit.usage() );
+          break;
+         case "browser":
+          // The default browser in a private window. See COMMAND-CONTRACT.md 13.18.
+          if ( p.len() >= 2 && p[2] == "private" && p.len() <= 3 ) CLIExit( new bxrig.Programs( cli ).browserPrivate( p.len() == 3 ? p[3] : "", structKeyExists( args.options, "dry-run" ), asJson ) );
+          println( new bxrig.CommandSpec().usage( "browser" ) );
+          CLIExit( xit.usage() );
+          break;
+         case "files":
+          // The default file manager in the folder of the focused window.
+          if ( p.len() >= 2 && p[2] == "here" && p.len() <= 3 ) CLIExit( new bxrig.Programs( cli ).filesHere( p.len() == 3 ? p[3] : "", structKeyExists( args.options, "dry-run" ), asJson ) );
+          println( new bxrig.CommandSpec().usage( "files" ) );
+          CLIExit( xit.usage() );
+          break;
+         case "webcam":
+          // A live webcam preview on one key.
+          wcSub = p.len() >= 2 ? p[2] : "";
+          if ( wcSub == "toggle" && p.len() == 2 ) CLIExit( new bxrig.Webcam( cli ).toggle( structKeyExists( args.options, "dry-run" ), asJson ) );
+          if ( wcSub == "status" && p.len() == 2 ) CLIExit( new bxrig.Webcam( cli ).status( asJson ) );
+          println( new bxrig.CommandSpec().usage( "webcam" ) );
           CLIExit( xit.usage() );
           break;
          case "containers":
@@ -269,6 +290,7 @@ class {
          case "forcequit": CLIExit( new bxrig.MacExtras( cli ).forcequit( asJson ) ); break;
          case "window":
           if ( p.len() == 2 ) CLIExit( new bxrig.MacExtras( cli ).window( p[2], asJson ) );
+          if ( p.len() == 3 && p[2] == "quake" && p[3] == "send" ) CLIExit( new bxrig.MacExtras( cli ).window( "quake-send", asJson ) );
           println( new bxrig.CommandSpec().usage( "window" ) ); CLIExit( xit.usage() ); break;
          case "overview": CLIExit( new bxrig.MacExtras( cli ).overview( p.len() == 2 && p[2] == "setup", asJson ) ); break;
          case "nightshift":

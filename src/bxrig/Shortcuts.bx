@@ -150,6 +150,7 @@ class Shortcuts {
                  'hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; bxrig runner launch || noctalia msg panel-toggle launcher'']])', "runner launch" ),
             bx( "key-sheet", G.menu, "Shortcut cheat sheet", "Super+K", "Super+K", "keys sheet" ),
             bx( "menu-system", G.menu, "System menu", "Super+Escape", "Super+Escape", "menu open system" ),
+            bx( "menu-hardware", G.menu, "Hardware menu", "Super+Ctrl+H", "Super+Ctrl+H", "menu open hardware" ),
             bx( "menu-capture", G.menu, "Capture menu", "Super+Ctrl+C", "Super+Ctrl+C", "menu open capture" ),
             bx( "menu-toggle", G.menu, "Toggle menu", "Super+Ctrl+O", "Super+Ctrl+O", "menu open toggle" ),
             bx( "agent-picker", G.menu, "Agent picker", "Super+Shift+Ctrl+A", "Super+Shift+Ctrl+A", "menu open agent" ),
@@ -158,7 +159,9 @@ class Shortcuts {
             row( "terminal", G.apps, "Terminal", "Super+Return", "Super+Return", "hypr-bind", "hl.dsp.exec_cmd(terminal)" ),
             row( "browser", G.apps, "Browser", "Super+B", "Super+Shift+Return", "hypr-bind", "hl.dsp.exec_cmd(browser)" ),
             row( "browser-alt", G.apps, "Browser (Omarchy's key)", "Super+Shift+Return", "", "hypr-bind", "hl.dsp.exec_cmd(browser)" ),
+            bx( "browser-private", G.apps, "Private browser window (your default browser)", "Super+Alt+Shift+B", "Super+Shift+N", "browser private" ),
             row( "file-manager", G.apps, "File manager", "Super+Shift+F", "Super+E", "hypr-bind", "hl.dsp.exec_cmd(fileManager)" ),
+            bx( "files-here", G.apps, "File manager in the current folder (of the focused window)", "Super+Alt+Shift+F", "Super+Alt+Shift+F", "files here" ),
             bx( "ai-shell", G.apps, "Pull-down AI shell", "Super+Grave", "Super+Grave", "ai shell" ),
             // capture and recording
             bx( "emoji", G.cap, "Emoji picker", "Super+Ctrl+E", "Super+Ctrl+E", "emoji" ),
@@ -170,6 +173,8 @@ class Shortcuts {
             bx( "color-picker", G.cap, "Color picker", "Super+Print", "Super+Print", "screenshot color" ),
             bx( "screen-record", G.cap, "Start or stop a screen recording", "Super+Shift+R", "Super+Shift+R", "record toggle" ),
             bx( "screen-record-region", G.cap, "Record a region of the screen", "Super+Alt+Shift+R", "Super+Alt+Shift+R", "record toggle --region" ),
+            bx( "screen-record-audio", G.cap, "Start or stop a screen recording with desktop audio", "Alt+Print", "Alt+Print", "record toggle --audio=desktop" ),
+            bx( "webcam", G.cap, "Webcam preview on or off", "Super+Ctrl+Alt+V", "Super+Ctrl+Alt+V", "webcam toggle" ),
             bx( "dictation-toggle", G.cap, "Dictation on or off", "Alt+Space", "Alt+Space", "dictation toggle" ),
             // notifications and panels
             bx( "dnd", G.note, "Do Not Disturb on or off", "Super+Ctrl+Alt+Comma", "Super+Ctrl+Alt+Comma", "notify dnd toggle" ),
@@ -199,6 +204,8 @@ class Shortcuts {
             row( "toggle-split", G.win, "Toggle split", "Super+J", "Super+J", "hypr-bind", 'hl.dsp.layout("togglesplit")' ),
             bx( "minimize", G.win, "Minimize the window", "Super+H", "Super+H", "window minimize" ),
             bx( "unminimize", G.win, "Show the minimized windows", "Super+Shift+H", "Super+Shift+H", "window restore" ),
+            bx( "quake-toggle", G.win, "Quake console (show or hide)", "Super+Shift+Grave", "Super+Shift+Grave", "window quake" ),
+            bx( "quake-send", G.win, "Send the window to the quake console", "Super+Ctrl+Grave", "Super+Ctrl+Grave", "window quake send" ),
             bx( "force-quit", G.win, "Force quit a window", "Super+Alt+Escape", "Super+Alt+Escape", "forcequit" ),
             bx( "overview", G.win, "Overview of all windows (Mission Control)", "Super+Ctrl+Up", "Super+Ctrl+Up", "overview" ),
             row( "window-switcher", G.win, "Window switcher (Noctalia; Super+Tab sends Alt+Tab in the Mac style)", "Alt+Tab", "Alt+Tab", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "window-switcher hold")' ),
@@ -383,6 +390,9 @@ class Shortcuts {
         out.append( '' );
         out.append( '-- The pull-down AI shell (bxrig ai shell) lives on the special workspace "ai"; its window class is set by the terminal it starts' );
         out.append( 'hl.window_rule({ name = "bxrig-ai", match = { class = "^com.bxrig.ai$" }, workspace = "special:ai", float = true })' );
+        out.append( '' );
+        out.append( '-- The webcam preview (bxrig webcam toggle) floats at a small size' );
+        out.append( 'hl.window_rule({ name = "bxrig-webcam", match = { class = "^bxrig-webcam$" }, float = true, size = { 360, 270 } })' );
         out.append( '' );
         out.append( '-- Noctalia settings window floats; its panels get blur and no layer animation' );
         out.append( 'hl.window_rule({ match = { class = "dev.noctalia.Noctalia" }, float = true, size = { 1080, 920 } })' );

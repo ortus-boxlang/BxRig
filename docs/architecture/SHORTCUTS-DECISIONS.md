@@ -24,20 +24,20 @@ Two styles: **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys for 
 | r36 | Night light | no key (menu only) | no key (menu only) | Omarchy has none; `Super+Alt+Shift+N` goes |
 | r39 | Close window | `Super+W`, `Super+Q` | `Super+Q` | `Super+W` is the Close tab remap in Mac mode |
 | r43 | Float or tile | `Super+T` | `Super+Alt+T` | `Super+T` is New tab in Mac mode |
-| r52 | Quake console | `Super+Shift+Grave` | `Super+Shift+Grave` | Not built here yet; the key is reserved |
+| r52 | Quake console | `Super+Shift+Grave` | `Super+Shift+Grave` | Built in the second round (`window quake`); sending a window there is `Super+Ctrl+Grave` |
 | r53 | Minimize | `Super+H` | `Super+H` | Replaces `Super+M`; restore is `Super+Shift+H` (assumed) |
 
 ## Not touched by the owner: the page proposal applies
 
 | Row | Action | Traditional | Mac | Note |
 |---|---|---|---|---|
-| r3 | System menu | `Super+Escape`, `XF86PowerOff` | same | P1, needs `menu ROUTE` |
-| r4 | Capture, Toggle menus | `Super+Ctrl+C`, `Super+Ctrl+O` | same | P1, same dependency. No Hardware section exists in the BxRig menu, so no `Super+Ctrl+H` |
+| r3 | System menu | `Super+Escape`, `XF86PowerOff` | same | `menu open system` |
+| r4 | Capture, Toggle, Hardware menus | `Super+Ctrl+C`, `Super+Ctrl+O`, `Super+Ctrl+H` | same | The Hardware section was added in the second round (below) |
 | r5, x3 | Shortcut cheat sheet | `Super+K` | `Super+K` | |
-| r11, x2 | Screen recording | `Super+Shift+R`; region `Super+Alt+Shift+R` | same | Omarchy's `Alt+Print` is not added |
+| r11, x2 | Screen recording | `Super+Shift+R`; region `Super+Alt+Shift+R`; with desktop audio `Alt+Print` | same | `Alt+Print` was added in the second round |
 | r44 | Full screen | `Super+F` | `Super+Ctrl+F` | `Super+F` is Find in Mac mode |
-| r71 | Browser; private | `Super+B`, `Super+Shift+Return`; private `Super+Shift+Alt+B` | `Super+Shift+Return`; private `Super+Shift+Alt+B` | `Super+B` is Bold in Mac mode |
-| r72 | File manager | `Super+Shift+F`; in cwd `Super+Alt+Shift+F` | `Super+E`; in cwd `Super+Alt+Shift+F` | in cwd is not built, so not bound |
+| r71 | Browser; private | `Super+B`, `Super+Shift+Return`; private `Super+Alt+Shift+B` | `Super+Shift+Return`; private `Super+Shift+N` | `Super+B` is Bold in Mac mode. The Mac private key changed in the second round (Cmd+Shift+N) |
+| r72 | File manager | `Super+Shift+F`; in cwd `Super+Alt+Shift+F` | `Super+E`; in cwd `Super+Alt+Shift+F` | in cwd is `files here` (second round) |
 | r76 | Log out | System menu | `Super+Shift+Q` | Omarchy uses it for the calculator. Kept on both styles (Plasma needs it) |
 | r77, r78 | Force quit, Overview | `Super+Alt+Escape`, `Super+Ctrl+Up` | same | |
 | r81 | Noctalia settings window | `Super+Ctrl+Comma` | `Super+Ctrl+Comma` | `Super+Comma` is Preferences in Mac mode |
@@ -48,7 +48,7 @@ Two styles: **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys for 
 
 - Every hand-written bind (starter `hyprland.lua` and `bxrig.lua`) moves into the one shortcut table, which has a key set per style.
 - Mac mode also swaps Alt and Win on PC keyboards (asked in the wizard; Apple keyboard: no swap).
-- New runner entries: region record, dictation toggle, color picker, time, battery and weather notices, a Shortcuts section (list, search, rebind, run).
+- New runner entries: region record, dictation toggle, color picker, time, battery and weather notices, a Shortcuts section (list, search, rebind, run); second round: recording with audio, quake console, private browser window, file manager here, webcam, and a top-level Hardware section.
 
 ## Owner answers to the open questions (2026-11-15)
 
@@ -66,9 +66,28 @@ Two styles: **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys for 
 
 `Super+Alt+D` shows or hides the dock in both styles (macOS Cmd+Option+D; with the Alt/Win swap on a PC keyboard it lands on the same physical keys). It runs `bxrig appearance dock toggle`, which is Noctalia's `dock-toggle` IPC command. No Omarchy 4.5 key uses `Super+Alt+D` (Omarchy has `Super+Ctrl+Alt+D` for the calendar), and `keys conflicts` is clean. It is also in the runner under Trigger > Toggle. macOS's "focus the dock" key (Ctrl+F3) is not possible: Noctalia has no IPC command to focus its dock.
 
-## Still open
+## Second round: the shortcuts that were missing (owner request, 2026-11-15)
 
-- Not built, so not bound: private browser window, file manager in the current directory, quake console, webcam, `Super+Ctrl+H` (no Hardware section), screen recording with audio (no decision row).
+Omarchy 4.5.0 keys were read again from `default/hypr/bindings/{tiling,utilities,media,clipboard,applications}.lua` at the tag `v4.5.0`.
+
+| Action | Omarchy 4.5 | Traditional | Mac | Command | Choice |
+|---|---|---|---|---|---|
+| Private browser window | `Super+Alt+Shift+B` | `Super+Alt+Shift+B` | `Super+Shift+N` | `browser private` | Mac is Cmd+Shift+N as in Safari and Chrome; it does not clash (the Mac `Super+N` remap needs no Shift) |
+| File manager in the current directory | `Super+Alt+Shift+F` | `Super+Alt+Shift+F` | `Super+Alt+Shift+F` | `files here` | Same key in both styles, no Mac equivalent exists |
+| Quake console, show or hide | `Super+Grave` | `Super+Shift+Grave` | `Super+Shift+Grave` | `window quake` | `Super+Grave` stays the AI shell. `Super+Shift+Grave` was reserved for it in r52 and is the nearest free key |
+| Quake console, send the window there | `Super+Shift+Grave` | `Super+Ctrl+Grave` | `Super+Ctrl+Grave` | `window quake send` | Omarchy's key is taken by the toggle above; `Super+Ctrl+Grave` is the next free one |
+| Webcam preview, on or off | none (Omarchy 4.5 only has `Super+Alt+[` and `Super+Alt+]` to resize its overlay) | `Super+Ctrl+Alt+V` | `Super+Ctrl+Alt+V` | `webcam toggle` | The owner asked for Omarchy's key but 4.5 has no toggle key; V for video, next to the `Super+Ctrl+Alt+T/B/W` notice keys. The resize keys are not added |
+| Hardware menu | `Super+Ctrl+H` | `Super+Ctrl+H` | `Super+Ctrl+H` | `menu open hardware` | |
+| Screen recording with audio | `Alt+Print` (stops, or opens the screenrecord menu that offers the audio choices) | `Alt+Print` | `Alt+Print` | `record toggle --audio=desktop` | Omarchy's key picks the audio in a menu; BxRig binds the desktop audio case directly. `--audio=mic` is in the Capture menu |
+
+Decisions made while building:
+
+- The private browser is the default web browser (`xdg-settings get default-web-browser`, which `default browser` and the wizard set) started with its private flag: Firefox `--private-window`, Chromium, Brave and Chrome `--incognito`, Edge `--inprivate`. Another browser exits 4 with the list of known ones.
+- "Current directory" is the working directory of the focused window's deepest child process (`hyprctl activewindow -j` for the pid, `pgrep -P` down the tree, `/proc/PID/cwd`), else the home folder. The folder opens with `xdg-open`, so the default file manager (`default filemanager`) is used.
+- The quake console is the special workspace `qconsole`. `window quake` toggles it, and starts the default terminal there the first time. `window quake send` moves the focused window onto it, silently.
+- The webcam preview is `mpv` on `/dev/video0` in its own window class `bxrig-webcam`, which a Hyprland window rule floats at a small size. `webcam toggle` starts it, or ends it when it runs.
+- Recording audio: `--audio=desktop` records the monitor of the default sink, `--audio=mic` the default input, both with `wf-recorder -a`. Omarchy's "both at once" is not built: `wf-recorder` takes one audio source.
+- The Hardware section is new and top level. It holds what `Setup > Hardware` held (GPU check, input devices, AirPlay), plus the laptop panel, mirror, brightness, a monitor list and the webcam. There is no BxRig command for audio or bluetooth, so the section has no entry for them (the panels stay on `Super+Ctrl+A` and `Super+Ctrl+B`).
 
 ## Class API (written before the code)
 
@@ -92,4 +111,25 @@ Shortcuts( overrides = "", style = "" )   // style: "traditional" | "mac" | a Ke
 
 CLI additions (cli.json): keys style [traditional|mac] [--keyboard=pc|apple] [--swap=on|off] [--yes] | keys search TEXT | keys run ID
                           notify time|battery|weather | screenshot color | dictation toggle | menu open ROUTE
+```
+
+Second round, written before the code. Every new command acts at once (no `--yes`: it changes no file), takes `--dry-run` (prints the argv, exit 0) and `--json`, builds argv arrays only, and exits 0 done, 4 precondition (tool or browser missing), 6 the tool failed.
+
+```
+Programs( cli, runner = "" )
+  privateArgv( desktopId, url ) -> [ program, flag, url? ]   // [] for a browser it does not know
+  browserPrivate( url, dryRun, asJson ) -> exit code           // `browser private [URL]`
+  cwdOf( pid ) -> path                                        // the deepest child's /proc/PID/cwd
+  filesHere( dir, dryRun, asJson ) -> exit code                // `files here [DIR]`
+
+Webcam( cli, runner = "" )
+  argv() -> the mpv argv       running() -> bool
+  toggle( dryRun, asJson )     status( asJson )                // `webcam toggle|status`
+
+Record.start( region, dryRun, asJson, audio = "" )            // audio: "" | desktop | mic
+  audioSource( audio ) -> the wf-recorder device name or ""
+
+MacExtras.window( action, asJson )                            // adds quake and quake-send (`window quake [send]`)
+MenuTree                                                      // a top-level Hardware section (route: hardware)
+Shortcuts rows                                                // browser-private, files-here, quake-toggle, quake-send, webcam, menu-hardware, screen-record-audio
 ```

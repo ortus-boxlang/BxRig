@@ -37,8 +37,8 @@ Add `--channel beta` for the bleeding-edge snapshots. Update later with `bxrig u
 | Area | What |
 |---|---|
 | Toolchains | Java 21, bvm, mvm, BoxLang, MatchBox, Rust. Optional: PHP, Python, Go, JavaScript runtimes |
-| Desktop | Hyprland and Noctalia, KDE Plasma with HyprKwin tiling, one shared shortcut table (including Mac-style Cmd remaps), key cheat sheet |
-| Control center | `bxrig menu`: every command as one searchable menu on your launcher (Rofi, Walker, Wofi, Fuzzel, Vicinae) |
+| Desktop | Hyprland and Noctalia, KDE Plasma with HyprKwin tiling, one shortcut table in two styles (Traditional, Omarchy-like keys, or Mac, Cmd-style keys with the Alt and Win swap on a PC keyboard), xremap for the Cmd remaps, key cheat sheet |
+| Control center | `bxrig menu` (`Super+Space`): every command as one searchable menu on your launcher (Rofi, Walker, Wofi, Fuzzel, Vicinae), with Shortcuts and Hardware sections; `bxrig menu open ROUTE` opens one section |
 | Appearance and hardware | Bar, dock, windows, fonts, backgrounds, monitors, laptop power, time zone and DNS, each one command (`appearance`, `display`, `power`, `time`, `dns`) |
 | Backups | BxRig setup snapshots, system snapshots (snapper), encrypted file backups (restic) to a NAS, a disk or the cloud, and **BxTimeMachine**, one screen for all of them (`bxrig timemachine`) |
 | NAS | Synology or any SMB or NFS share: discover, mount, automatic mounts, mirror (`bxrig nas`) |
@@ -55,6 +55,9 @@ Add `--channel beta` for the bleeding-edge snapshots. Update later with `bxrig u
 ```bash
 bxrig init                    # the wizard
 bxrig menu                    # the control center
+bxrig keys search screenshot  # find a shortcut by words or keys
+bxrig record toggle --audio=desktop   # a screen recording with desktop audio
+bxrig browser private         # your default browser in a private window
 bxrig status                  # what is set up on this machine
 bxrig theme set tokyo-night   # change the look
 bxrig appearance bar position bottom
@@ -73,35 +76,38 @@ bxrig skills install --yes    # BxRig, BoxLang and MatchBox skills for your agen
 bxrig update check
 ```
 
-The full list is in the [command reference](https://bxcachy.boxlang.io/reference/commands/). Every command supports `--json`, and mutating commands support `--dry-run`.
+The full list (96 commands) is in the [command reference](https://bxcachy.boxlang.io/reference/commands/). Every command supports `--json`, and mutating commands support `--dry-run`. A command that only touches your own settings or starts a program (themes, the bar, `window quake`, `webcam toggle`) acts at once and needs no `--yes`.
 
 ## Exit codes
 
-`0` ok, `2` a plan was shown (no `--yes`) or bad usage, `4` a precondition failed, `5`, `6`, `7` failures, `9` internal error, `10` an update is available.
+`0` ok, `1` a check came out negative, `2` a plan was shown (no `--yes`) or bad usage (an unknown command or flag too), `3` timeout or not available, `4` a precondition failed (a tool is missing, an unknown name), `5` the official (pacman) phase failed, `6` the AUR phase or the command you asked for failed, `7` partial success, `8` a config conflict, `9` internal error, `10` an update is available. The names are in `src/bxrig/util/Exit.bx`.
 
 ## Development
 
 ```bash
 scripts/dev-build.sh                         # builds dist/bxrig with a local MatchBox (see the script)
+tests/run-all.sh                             # every test by discovery: *-test.sh with the binary, *_test.bxs with matchbox
 bash tests/theme-test.sh dist/bxrig        # script tests, one per area (fake tools, no root needed)
-(cd src && matchbox ../tests/init_plan_test.bxs)   # unit tests
+(cd src && matchbox ../tests/init_plan_test.bxs)   # unit tests (35 `.bxs` files; they need no native build)
+bash tests/dry-test.sh                       # ratchet: patterns that must not come back
 ```
 
 Layout:
 
 | Path | Contents |
 |---|---|
-| `src/Main.bx` | The CLI and its routes |
-| `src/bxrig/` | One class per feature (`Vm`, `Theme`, `Db`, `Skills`, ...) |
+| `src/Main.bx` | The CLI and its routes (the flags and usage of each command come from `docs/reference/cli.json`, the command registry) |
+| `src/bxrig/` | One class per feature (`Vm`, `Theme`, `Db`, `Shortcuts`, `Skills`, ...) |
+| `src/bxrig/util/` | The shared helpers: `Cli` and `Out` (output and the `--json` envelope), `Exit` (exit code names), `Mutation` (plan, dry run, run), `Proc`, `Env`, `JsonStore`, `Pacman`, `Aur`, `Systemd`, `Http`, ... |
 | `catalog/apps.json` | The app catalog |
 | `templates/`, `themes/`, `assets/`, `skills/` | Starter configs, themes, the wizard definition, images, and the agent skills that ship with BxRig |
 | `bootstrap/` | The one-line installer and the `gen-*.sh` scripts that embed data into generated classes |
 | `docs/` | The documentation site; `docs/architecture/COMMAND-CONTRACT.md` is the design record |
-| `tests/` | Script and unit tests |
+| `tests/` | 75 script tests (`*-test.sh`, with fake tools) and 35 unit tests (`*_test.bxs`); `tests/lib/` holds the shared harness |
 
-Generated classes (`CatalogData`, `TemplateData`, `ThemeData`, `SkillData`, `WizardData`, `AssetData`, `ReleaseKey`) and `docs/reference/commands.md` are rebuilt by the matching `bootstrap/gen-*.sh`; CI runs each with `--check`.
+Generated classes (`CatalogData`, `TemplateData`, `ThemeData`, `SkillData`, `WizardData`, `AssetData`, `ReleaseKey`, `Version`, `HelpData`, `CommandFlagData`) and `docs/reference/commands.md` and `command-flags.md` are rebuilt by the matching `bootstrap/gen-*.sh`; CI runs each with `--check`.
 
-Changes follow the contract in `docs/architecture/COMMAND-CONTRACT.md`: plan before `--yes`, `--dry-run`, the `--json` envelope, and the exit codes above.
+Changes follow the contract in `docs/architecture/COMMAND-CONTRACT.md`: plan before `--yes`, `--dry-run`, the `--json` envelope, argument arrays instead of shell strings, and the exit codes above.
 
 ## Status
 

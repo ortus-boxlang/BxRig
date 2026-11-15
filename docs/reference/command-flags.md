@@ -259,4 +259,5 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `screenshot` | `--edit` | bool |  |
 | `qr` | `--out` | value | `wifi.png` |
 | `record` | `--region` | bool |  |
+| `record` | `--audio` | value | `desktop` |
 | `dolphin` | `--fix` | bool |  |

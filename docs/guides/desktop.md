@@ -24,20 +24,32 @@ Look and hardware have their own pages: [Appearance](appearance.md) for the bar,
 
 | Do | Command | Shortcut |
 |---|---|---|
-| Control center | `bxrig menu` | `Super+Alt+M` |
-| All apps window | `bxrig apps` | `Super+Alt+Space` |
-| Screenshot | `bxrig screenshot screen\|region\|window` | `Super+Shift+3` / `4` / `5` (menu) |
-| Text from the screen | `bxrig screenshot ocr` | in the `5` menu |
+| Control center | `bxrig menu` | `Super+Space` |
+| Launch apps | `bxrig runner launch` (the launcher you chose); `bxrig apps` is the All apps window | `Super+Alt+Space` |
+| Hardware menu | `bxrig menu open hardware` | `Super+Ctrl+H` |
+| Screenshot | `bxrig screenshot screen\|region\|window` | `Print` (region); Mac style also `Super+Shift+3` / `4` / `5` (the `5` menu) |
+| Text from the screen | `bxrig screenshot ocr` | in the Capture menu |
 | QR codes | `bxrig screenshot qr`, `bxrig qr TEXT` | |
-| Record the screen | `bxrig record toggle [--region]` | `Super+Shift+R` |
-| Clipboard history | `bxrig clipboard pick` | `Super+Shift+V` |
-| Do Not Disturb | `bxrig notify dnd toggle`, `notify snooze 30m` | `Super+Alt+N` |
-| Night shift | `bxrig nightshift on\|off\|toggle` | `Super+Alt+Shift+N` |
+| Color picker | `bxrig screenshot color` | `Super+Print` |
+| Record the screen | `bxrig record toggle [--region] [--audio=desktop\|mic]` | `Super+Shift+R` (`Super+Alt+Shift+R` a region, `Alt+Print` with desktop audio) |
+| Webcam preview | `bxrig webcam toggle` | `Super+Ctrl+Alt+V` |
+| Clipboard history | `bxrig clipboard pick` | `Super+Ctrl+V` |
+| Dictation | `bxrig dictation toggle` | `Alt+Space` |
+| Do Not Disturb | `bxrig notify dnd toggle`, `notify snooze 30m` | `Super+Ctrl+Alt+Comma` |
+| Time, battery, weather | `bxrig notify time\|battery\|weather` | `Super+Ctrl+Alt+T` / `B` / `W` |
+| Night shift | `bxrig nightshift on\|off\|toggle` | menu only |
+| Hide or show the bar, the dock | `bxrig appearance bar toggle`, `appearance dock toggle` | `Super+Ctrl+Alt+F`, `Super+Alt+D` |
 | Emoji | `bxrig emoji` | `Super+Ctrl+E` |
 | Force quit | `bxrig forcequit` | `Super+Alt+Escape` |
 | Overview | `bxrig overview` | `Super+Ctrl+Up` |
-| Minimize / restore | `bxrig window minimize\|restore` | `Super+M` / `Super+Shift+M` |
+| Minimize / restore | `bxrig window minimize\|restore` | `Super+H` / `Super+Shift+H` |
+| Quake console | `bxrig window quake`, `window quake send` | `Super+Shift+Grave` / `Super+Ctrl+Grave` |
+| Private browser window | `bxrig browser private [URL]` | `Super+Alt+Shift+B` (Mac style `Super+Shift+N`) |
+| File manager in this folder | `bxrig files here [DIR]` | `Super+Alt+Shift+F` |
+| Lock | `bxrig system lock` | `Super+Ctrl+L` |
 | Pull-down AI shell | `bxrig ai shell` | ``Super+` `` |
+
+Every key is a row of the [shortcut table](shortcuts.md), in the style you chose. The quake console is the special workspace `qconsole`: the first press starts your default terminal on it. The private window uses the default browser (`bxrig default browser`). The webcam preview needs `mpv`, and recording with audio needs `pactl`.
 
 Night shift on Hyprland runs `wlsunset` with your time zone's sunrise and sunset (no network lookup); on Plasma it turns on Plasma's own Night Light.
 

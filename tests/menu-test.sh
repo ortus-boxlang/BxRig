@@ -24,7 +24,7 @@ play() { rm -f "$FAKE/n" "$FAKE/spawn.log" "$FAKE/terminal.log" "$FAKE/open.log"
 flatidx() { run "$binary" menu items --json | jq -r --arg p "$1" 'def f($pre): if .kind == "sub" then (.label as $l | .children[] | f($pre + $l + " > ")) else $pre + .label end; [.data.menu[] | f("")] | index($p)'; }
 
 # ---- the tree as data (Omarchy's skeleton plus Develop) ----
-run "$binary" menu items --json | jq -e '(.data.menu | map(.label)) == ["Apps","Setup wizard (re-run, prefilled)","Install","Remove","Appearance","Trigger","Shortcuts","Setup","Update","Develop","Agent","Learn","About","System","Control Center"] and .data.entries >= 200' >/dev/null || fail "menu sections: $(run "$binary" menu items --json | jq -c '.data.menu | map(.label)')"
+run "$binary" menu items --json | jq -e '(.data.menu | map(.label)) == ["Apps","Setup wizard (re-run, prefilled)","Install","Remove","Appearance","Trigger","Shortcuts","Hardware","Setup","Update","Develop","Agent","Learn","About","System","Control Center"] and .data.entries >= 200' >/dev/null || fail "menu sections: $(run "$binary" menu items --json | jq -c '.data.menu | map(.label)')"
 run "$binary" menu items --json | jq -e '[.data.menu[] | select(.label == "Install") | .children[] | .label] | index("Package (repos and AUR)") == 0 and index("Catalog") == 2' >/dev/null || fail 'Install starts with package search and the catalog'
 run "$binary" menu items | grep -q 'Next theme   (opens: bxrig theme next)' || fail 'menu items text, nested'
 run "$binary" menu items | grep -q '    Development   (lists the Development apps' || fail 'catalog groups are in the tree'
@@ -51,7 +51,7 @@ grep -q "terminal -e sh -c .* _ $tmp/self ai models list" "$FAKE/terminal.log" |
 play 2 15; wait_for "$FAKE/terminal.log" || fail 'the wizard entry did not open a terminal'
 grep -q "terminal -e $tmp/self init$" "$FAKE/terminal.log" || fail "wizard entry: $(cat "$FAKE/terminal.log")"
 run "$binary" menu items --json | jq -e '.data.menu[1] | .kind == "term" and .argv == ["init"] and .themeIcon == "system-run"' >/dev/null || fail 'the wizard entry is the second section'
-run "$binary" menu items --json | jq -e '.data.menu as $m | ($m | map(select(.themeIcon == null)) | length) == 0 and ($m | map(.themeIcon) | unique | length) == 14' >/dev/null || fail 'every top-level section has its own icon'
+run "$binary" menu items --json | jq -e '.data.menu as $m | ($m | map(select(.themeIcon == null)) | length) == 0 and ($m | map(.themeIcon) | unique | length) == 16' >/dev/null || fail 'every top-level section has its own icon'
 play 1 15; wait_for "$FAKE/spawn.log"; grep -q 'bxrig apps' "$FAKE/spawn.log" || fail "apps: $(cat "$FAKE/spawn.log")"
 # cancelling at the top leaves without running anything
 rm -f "$FAKE/n" "$FAKE/spawn.log" "$FAKE/terminal.log"; : > "$FAKE/answers"; run "$binary" menu || fail 'cancel exits 0'; sleep 0.3

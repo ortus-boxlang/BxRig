@@ -18,6 +18,8 @@ run "$binary" forcequit; grep -q '^hyprctl kill' "$LOG" || fail 'forcequit on Hy
 BXRIG_DESKTOP=KDE run "$binary" forcequit; grep -q 'qdbus6 org.kde.KWin /KWin org.kde.KWin.killWindow' "$LOG" || fail 'forcequit on Plasma'
 run "$binary" window minimize; grep -q 'hyprctl dispatch movetoworkspacesilent special:minimized' "$LOG" || fail 'minimize'
 run "$binary" window restore; grep -q 'hyprctl dispatch togglespecialworkspace minimized' "$LOG" || fail 'restore'
+run "$binary" window quake send; grep -q 'hyprctl dispatch movetoworkspacesilent special:qconsole' "$LOG" || fail 'quake send'
+[[ "$(code "$binary" window quake nope)" == 2 ]] || fail 'window quake with an unknown word exits 2'
 run "$binary" overview; grep -q 'hyprctl dispatch hyprexpo:expo toggle' "$LOG" || fail 'overview'
 BXRIG_DESKTOP=KDE run "$binary" overview; grep -q 'invokeShortcut Overview' "$LOG" || fail 'plasma overview'
 run "$binary" overview setup >/dev/null; grep -q 'hyprpm enable hyprexpo' "$LOG" || fail 'overview setup'
