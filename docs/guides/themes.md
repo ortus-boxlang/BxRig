@@ -1,12 +1,14 @@
 ---
 title: Themes
 order: 3
-summary: Fifteen color themes that follow you into the shell, terminals, btop, window borders and Neovim.
+summary: Twenty color themes, each with its own wallpaper, that follow you into the shell, terminals, btop, window borders and Neovim.
 ---
 
 # Themes
 
-BxRig ships 15 color themes in the Omarchy theme format: five of ours and ten taken from Omarchy.
+BxRig ships 20 color themes in the Omarchy theme format, each with its own wallpaper: ten of ours (five dark, five light) and ten taken from Omarchy.
+
+![The BxRig theme: its wallpaper, the bar and a themed terminal](../assets/screenshots/themes/bxrig.webp)
 
 ```bash
 bxrig theme list                  # all themes, the current one marked
@@ -40,7 +42,28 @@ Bar, dock, windows, fonts and backgrounds are in [Appearance](appearance.md).
 
 ## The themes
 
-BxRig, BxRig Light, BxRig Midnight, BxRig Cyan and BxRig Forest are ours. From Omarchy: catppuccin, catppuccin-latte, tokyo-night, gruvbox, nord, rose-pine, kanagawa, everforest, matte-black and flexoki-light (MIT, credited in `themes/NOTICE.md`).
+Ours: BxRig, BxRig Cyan, BxRig Forest, BxRig Midnight and BxRig Ember (dark), BxRig Light, BxRig Dawn, BxRig Paper, BxRig Mint and BxRig Sky (light). From Omarchy: catppuccin, catppuccin-latte, tokyo-night, gruvbox, nord, rose-pine, kanagawa, everforest, matte-black and flexoki-light (MIT, credited in `themes/NOTICE.md`). Each one below is shown with its wallpaper and `btop` in a themed terminal.
+
+| | |
+| --- | --- |
+| ![BxRig](../assets/screenshots/themes/bxrig.webp)<br>**BxRig** · `bxrig` · dark | ![BxRig Cyan](../assets/screenshots/themes/bxrig-cyan.webp)<br>**BxRig Cyan** · `bxrig-cyan` · dark |
+| ![BxRig Forest](../assets/screenshots/themes/bxrig-forest.webp)<br>**BxRig Forest** · `bxrig-forest` · dark | ![BxRig Midnight](../assets/screenshots/themes/bxrig-midnight.webp)<br>**BxRig Midnight** · `bxrig-midnight` · dark |
+| ![BxRig Ember](../assets/screenshots/themes/bxrig-ember.webp)<br>**BxRig Ember** · `bxrig-ember` · dark | ![BxRig Light](../assets/screenshots/themes/bxrig-light.webp)<br>**BxRig Light** · `bxrig-light` · light |
+| ![BxRig Dawn](../assets/screenshots/themes/bxrig-dawn.webp)<br>**BxRig Dawn** · `bxrig-dawn` · light | ![BxRig Paper](../assets/screenshots/themes/bxrig-paper.webp)<br>**BxRig Paper** · `bxrig-paper` · light |
+| ![BxRig Mint](../assets/screenshots/themes/bxrig-mint.webp)<br>**BxRig Mint** · `bxrig-mint` · light | ![BxRig Sky](../assets/screenshots/themes/bxrig-sky.webp)<br>**BxRig Sky** · `bxrig-sky` · light |
+| ![Catppuccin](../assets/screenshots/themes/catppuccin.webp)<br>**Catppuccin** · `catppuccin` · dark | ![Catppuccin Latte](../assets/screenshots/themes/catppuccin-latte.webp)<br>**Catppuccin Latte** · `catppuccin-latte` · light |
+| ![Tokyo Night](../assets/screenshots/themes/tokyo-night.webp)<br>**Tokyo Night** · `tokyo-night` · dark | ![Gruvbox](../assets/screenshots/themes/gruvbox.webp)<br>**Gruvbox** · `gruvbox` · dark |
+| ![Nord](../assets/screenshots/themes/nord.webp)<br>**Nord** · `nord` · dark | ![Rosé Pine](../assets/screenshots/themes/rose-pine.webp)<br>**Rosé Pine** · `rose-pine` · light |
+| ![Kanagawa](../assets/screenshots/themes/kanagawa.webp)<br>**Kanagawa** · `kanagawa` · dark | ![Everforest](../assets/screenshots/themes/everforest.webp)<br>**Everforest** · `everforest` · dark |
+| ![Matte Black](../assets/screenshots/themes/matte-black.webp)<br>**Matte Black** · `matte-black` · dark | ![Flexoki Light](../assets/screenshots/themes/flexoki-light.webp)<br>**Flexoki Light** · `flexoki-light` · light |
+
+## The theme switcher
+
+On Hyprland the bar's palette button, or <kbd>Super</kbd>+<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>, opens the theme switcher: type to filter, see the theme's wallpaper, <kbd>Enter</kbd> applies it everywhere at once.
+
+<video src="../assets/clips/theme-switcher.webm" poster="../assets/screenshots/panel-theme-switcher.webp" autoplay loop muted playsinline width="100%"></video>
+
+![The theme switcher, filtered to Kanagawa](../assets/screenshots/panel-theme-search.webp)
 
 ## More themes, and your own
 
