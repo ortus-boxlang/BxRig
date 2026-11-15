@@ -112,9 +112,7 @@ class Vm {
 
     // ---- records ----
     function readRecord( name ) {
-        var f = recordFile( arguments.name );
-        if ( !fileExists( f ) ) return {};
-        try { return jsonDeserialize( fileRead( f ) ); } catch ( any e ) { return {}; }
+        return new bxrig.util.JsonStore().load( recordFile( arguments.name ) );
     }
 
     function writeRecord( rec ) {

@@ -31,16 +31,11 @@ class Display {
 
     // ---- state ----
     function readState() {
-        var s = { monitors: {}, mirror: {}, laptop: "on" };
-        if ( fileExists( stateFile() ) ) {
-            try { var j = jsonDeserialize( fileRead( stateFile() ) ); for ( var k in j ) s[ k ] = j[ k ]; } catch ( any e ) {}
-        }
-        return s;
+        return new bxrig.util.JsonStore().read( stateFile(), { monitors: {}, mirror: {}, laptop: "on" } );
     }
 
     function writeState( s ) {
-        directoryCreate( getDirectoryFromPath( stateFile() ), true, true );
-        fileWrite( stateFile(), jsonSerialize( arguments.s ) & chr( 10 ) );
+        new bxrig.util.JsonStore().write( "display-state", stateFile(), arguments.s );
     }
 
     // ---- what is connected ----

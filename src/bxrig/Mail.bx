@@ -31,7 +31,7 @@ class Mail {
     function metaFile() { return dir() & "/meta.json"; }
 
     function meta() {
-        try { return fileExists( metaFile() ) ? jsonDeserialize( fileRead( metaFile() ) ) : {}; } catch ( any e ) { return {}; }
+        return new bxrig.util.JsonStore().load( metaFile() );
     }
 
     function smtpPort() { var m = meta(); return structKeyExists( m, "smtp" ) ? m.smtp : 1025; }

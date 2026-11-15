@@ -15,8 +15,7 @@ class Init {
 
     // The saved answers ({} when there are none or the file is unreadable).
     function loadSaved() {
-        if ( !fileExists( answersFile() ) ) return {};
-        try { return jsonDeserialize( fileRead( answersFile() ) ); } catch ( any e ) { return {}; }
+        return new bxrig.util.JsonStore().load( answersFile() );
     }
 
     function save( answers ) {

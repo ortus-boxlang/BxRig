@@ -336,8 +336,7 @@ class Dotfiles {
 
     // ---- status and undo ----
     function journal() {
-        if ( !fileExists( journalFile() ) ) return {};
-        try { return jsonDeserialize( fileRead( journalFile() ) ); } catch ( any e ) { return {}; }
+        return new bxrig.util.JsonStore().load( journalFile() );
     }
 
     function status( asJson ) {

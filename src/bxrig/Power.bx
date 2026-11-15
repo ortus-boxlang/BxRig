@@ -103,8 +103,8 @@ class Power {
     function lidCmd( args, yes, dry, asJson ) {
         var want = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
         if ( !arrayFind( [ "suspend", "lock", "ignore" ], want ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "power lid" ), arguments.asJson );
-        var tmp = getTempDirectory() & "/bxrig-lid-" & createUUID() & ".conf";
-        var cmds = [ [ "sudo", "install", "-Dm644", tmp, lidFile() ] ];
+        var tmp = new bxrig.util.SystemFile().tempPath( "lid" );
+        var cmds = [ new bxrig.util.SystemFile().installArgv( tmp, lidFile() ) ];
         var plan = [ "Plan: closing the lid will " & want, "  write " & lidFile(), "  sudo install ...", "  note: logind reads it on the next login or reboot (it is not restarted here, that would end your session)" ];
         var data = { action: want, file: lidFile(), commands: cmds.map( function( c ) { return c.toList( " " ); } ) };
         if ( !arguments.yes || arguments.dry ) {

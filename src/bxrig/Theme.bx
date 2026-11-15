@@ -87,20 +87,13 @@ class Theme {
     }
 
     function readState() {
-        var st = { name: "", mode: "theme" };
-        if ( fileExists( stateFile() ) ) {
-            try {
-                var j = jsonDeserialize( fileRead( stateFile() ) );
-                if ( structKeyExists( j, "name" ) ) st.name = j.name;
-                if ( structKeyExists( j, "mode" ) && arrayFind( modes(), j.mode ) ) st.mode = j.mode;
-            } catch ( any e ) {}
-        }
-        return st;
+        var j = new bxrig.util.JsonStore().read( stateFile(), { name: "", mode: "theme" } );
+        if ( !arrayFind( modes(), j.mode ) ) j.mode = "theme";
+        return { name: j.name, mode: j.mode };
     }
 
     function writeState( name, mode ) {
-        directoryCreate( getDirectoryFromPath( stateFile() ), true, true );
-        fileWrite( stateFile(), jsonSerialize( { name: arguments.name, mode: arguments.mode } ) & chr( 10 ) );
+        new bxrig.util.JsonStore().write( "theme-state", stateFile(), { name: arguments.name, mode: arguments.mode } );
     }
 
     // The mode Noctalia and Plasma are set to: the theme's own unless pinned (or auto).

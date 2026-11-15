@@ -39,14 +39,11 @@ class Skills {
     }
 
     function loadManifest() {
-        if ( !fileExists( manifestFile() ) ) return { skills: {} };
-        try { var m = jsonDeserialize( fileRead( manifestFile() ) ); if ( !structKeyExists( m, "skills" ) ) m.skills = {}; return m; } catch ( any e ) { return { skills: {} }; }
+        return new bxrig.util.JsonStore().read( manifestFile(), { skills: {} } );
     }
 
     function saveManifest( m ) {
-        var dir = getDirectoryFromPath( manifestFile() );
-        if ( !directoryExists( dir ) ) directoryCreate( dir, true );
-        fileWrite( manifestFile(), serializeJSON( arguments.m ) & chr( 10 ) );
+        new bxrig.util.JsonStore().write( "skills-manifest", manifestFile(), arguments.m );
     }
 
     // ---- the hub ----

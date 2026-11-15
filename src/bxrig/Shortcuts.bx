@@ -13,9 +13,7 @@ class Shortcuts {
     function overridesFile() { return new bxrig.util.Env().config( "shortcuts.json" ); }
 
     function loadOverrides() {
-        var f = overridesFile();
-        if ( !fileExists( f ) ) return {};
-        try { var d = jsonDeserialize( fileRead( f ) ); return isStruct( d ) ? d : {}; } catch ( any e ) { return {}; }
+        return new bxrig.util.JsonStore().read( overridesFile() );
     }
 
     // ---- key combos ----
@@ -271,8 +269,10 @@ class Shortcuts {
 
     // The systemd user unit that runs xremap with the shared config. Enabled by `setup xremap`.
     function xremapService() {
-        return [ "# Written by bxrig (keys).", "[Unit]", "Description=xremap key remapper (bxrig)", "PartOf=graphical-session.target", "After=graphical-session.target",
-                 "", "[Service]", "ExecStart=/usr/bin/xremap %h/.config/xremap/config.yml", "Restart=on-failure",
-                 "", "[Install]", "WantedBy=graphical-session.target" ].toList( chr( 10 ) ) & chr( 10 );
+        return new bxrig.util.SystemdUnit().render( [
+            { name: "Unit", lines: [ "Description=xremap key remapper (bxrig)", "PartOf=graphical-session.target", "After=graphical-session.target" ] },
+            { name: "Service", lines: [ "ExecStart=/usr/bin/xremap %h/.config/xremap/config.yml", "Restart=on-failure" ] },
+            { name: "Install", lines: [ "WantedBy=graphical-session.target" ] }
+        ], "Written by bxrig (keys)." );
     }
 }

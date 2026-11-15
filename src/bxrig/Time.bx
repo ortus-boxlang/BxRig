@@ -27,11 +27,11 @@ class Time {
     function geoclueFile() { return variables.environ.get( "BXRIG_GEOCLUE_DIR", "/etc/geoclue/conf.d" ) & "/90-bxrig-timezone.conf"; }
 
     function unitText() {
-        return "# Written by `bxrig time auto on`. Remove with `bxrig time auto off`." & chr( 10 )
-            & "[Unit]" & chr( 10 ) & "Description=Automatically update system timezone based on location" & chr( 10 )
-            & "Requires=geoclue.service" & chr( 10 ) & "After=geoclue.service" & chr( 10 ) & chr( 10 )
-            & "[Service]" & chr( 10 ) & "ExecStart=/usr/bin/automatic-timezoned" & chr( 10 ) & chr( 10 )
-            & "[Install]" & chr( 10 ) & "WantedBy=multi-user.target" & chr( 10 );
+        return new bxrig.util.SystemdUnit().render( [
+            { name: "Unit", lines: [ "Description=Automatically update system timezone based on location", "Requires=geoclue.service", "After=geoclue.service" ] },
+            { name: "Service", lines: [ "ExecStart=/usr/bin/automatic-timezoned" ] },
+            { name: "Install", lines: [ "WantedBy=multi-user.target" ] }
+        ], "Written by `bxrig time auto on`. Remove with `bxrig time auto off`." );
     }
 
     function geoclueText() {
@@ -78,19 +78,7 @@ class Time {
 
     // Shows the plan, or runs the commands. cmds: [ argv ], title for the plan.
     function runPlan( title, cmds, yes, dry, asJson, data = {} ) {
-        var d = arguments.data;
-        d.commands = arguments.cmds.map( function( c ) { return c.toList( " " ); } );
-        if ( !arguments.yes || arguments.dry ) {
-            var lines = [ ( arguments.dry ? "Dry run: " : "Plan: " ) & arguments.title ];
-            for ( var c in arguments.cmds ) lines.append( "  " & c.toList( " " ) );
-            lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return variables.out.say( arguments.dry ? "ok" : "plan", d, arguments.asJson, lines, arguments.dry );
-        }
-        for ( var cmd in arguments.cmds ) {
-            var r = variables.proc.exec( cmd, 600 );
-            if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ), step: cmd.toList( " " ) }, arguments.asJson, [ "error: " & cmd.toList( " " ) & ": " & trim( r.output ) ] );
-        }
-        return variables.out.say( "ok", d, arguments.asJson, [ arguments.title & ": done" ] );
+        return new bxrig.util.Mutation( variables.out, variables.proc ).run( arguments.title, arguments.cmds, arguments.yes, arguments.dry, arguments.asJson, arguments.data );
     }
 
     function zoneCmd( args, yes, dry, asJson ) {
@@ -124,8 +112,8 @@ class Time {
         var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
         if ( v == "status" ) return variables.out.say( "ok", { automatic_zone: autoActive() }, arguments.asJson, [ "automatic zone: " & ( autoActive() ? "on" : "off" ) ] );
         if ( v != "on" && v != "off" ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "time auto" ), arguments.asJson );
-        var tmpU = getTempDirectory() & "/bxrig-tz-unit-" & createUUID();
-        var tmpG = getTempDirectory() & "/bxrig-tz-geoclue-" & createUUID();
+        var tmpU = new bxrig.util.SystemFile().tempPath( "tz-unit" );
+        var tmpG = new bxrig.util.SystemFile().tempPath( "tz-geoclue" );
         var d = { unit: unitFile(), geoclue: geoclueFile() };
         var privacy = "Privacy: GeoClue looks up your location online (the Wi-Fi networks around you or your IP address) through a location web service, each time you move.";
         if ( v == "off" ) {
@@ -135,7 +123,7 @@ class Time {
         if ( !variables.proc.has( "automatic-timezoned" ) ) apps.append( { id: "automatic-timezoned", source: "aur", targets: [ "automatic-timezoned" ] } );
         var built = variables.inst.steps( apps, variables.inst.isRoot() );
         d.install = built.steps;
-        var after = [ [ "sudo", "install", "-Dm644", tmpU, unitFile() ], [ "sudo", "install", "-Dm644", tmpG, geoclueFile() ], variables.systemd.reloadArgv( false, true ), variables.systemd.enableArgv( "automatic-timezoned.service", false, true ) ];
+        var after = [ new bxrig.util.SystemFile().installArgv( tmpU, unitFile() ), new bxrig.util.SystemFile().installArgv( tmpG, geoclueFile() ), variables.systemd.reloadArgv( false, true ), variables.systemd.enableArgv( "automatic-timezoned.service", false, true ) ];
         if ( !arguments.yes || arguments.dry ) {
             var lines = [ ( arguments.dry ? "Dry run" : "Plan" ) & ": follow your location with the time zone", privacy ];
             for ( var st in built.steps ) for ( var c in st.commands ) lines.append( "  " & st.kind & ": " & c.toList( " " ) );

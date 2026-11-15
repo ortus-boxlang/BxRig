@@ -143,7 +143,7 @@ class MacExtras {
             ll = [ parts[ 1 ], parts[ 2 ] ];
         } else ll = zoneCoords( tz() );
         if ( ll.len() != 2 ) return variables.cli.say( cmd, "precondition", { error: "no coordinates for your time zone" }, arguments.asJson, [ "error: no coordinates found for your time zone; pass --location=LAT,LON" ] );
-        var entry = { name: "wlsunset-unit", target: unitFile(), mode: "644", content: "[Unit]" & chr( 10 ) & "Description=BxRig night shift (wlsunset)" & chr( 10 ) & "After=graphical-session.target" & chr( 10 ) & chr( 10 ) & "[Service]" & chr( 10 ) & "ExecStart=wlsunset -l " & ll[ 1 ] & " -L " & ll[ 2 ] & " -t 3500 -T 6500" & chr( 10 ) & "Restart=on-failure" & chr( 10 ) & chr( 10 ) & "[Install]" & chr( 10 ) & "WantedBy=graphical-session.target" & chr( 10 ) };
+        var entry = { name: "wlsunset-unit", target: unitFile(), mode: "644", content: new bxrig.util.SystemdUnit().render( [ { name: "Unit", lines: [ "Description=BxRig night shift (wlsunset)", "After=graphical-session.target" ] }, { name: "Service", lines: [ "ExecStart=wlsunset -l " & ll[ 1 ] & " -L " & ll[ 2 ] & " -t 3500 -T 6500", "Restart=on-failure" ] }, { name: "Install", lines: [ "WantedBy=graphical-session.target" ] } ] ) };
         var st = variables.config.configState( entry );
         if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( entry, entry.content, "apply", true, false );
         variables.systemd.reload( true );
@@ -233,7 +233,7 @@ class MacExtras {
         }
         if ( arguments.action != "on" ) return variables.cli.say( cmd, "usage", {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "airplay" ) ] );
         if ( !variables.proc.has( "uxplay" ) ) return need( cmd, "uxplay", "Install it: bxrig install uxplay", arguments.asJson );
-        var entry = { name: "airplay-unit", target: airplayUnit(), mode: "644", content: "[Unit]" & chr( 10 ) & "Description=BxRig AirPlay receiver (UxPlay)" & chr( 10 ) & "After=graphical-session.target" & chr( 10 ) & chr( 10 ) & "[Service]" & chr( 10 ) & "ExecStart=uxplay -n BxRig" & chr( 10 ) & "Restart=on-failure" & chr( 10 ) & chr( 10 ) & "[Install]" & chr( 10 ) & "WantedBy=graphical-session.target" & chr( 10 ) };
+        var entry = { name: "airplay-unit", target: airplayUnit(), mode: "644", content: new bxrig.util.SystemdUnit().render( [ { name: "Unit", lines: [ "Description=BxRig AirPlay receiver (UxPlay)", "After=graphical-session.target" ] }, { name: "Service", lines: [ "ExecStart=uxplay -n BxRig", "Restart=on-failure" ] }, { name: "Install", lines: [ "WantedBy=graphical-session.target" ] } ] ) };
         var st = variables.config.configState( entry );
         if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( entry, entry.content, "apply", true, false );
         variables.systemd.reload( true );

@@ -37,8 +37,7 @@ class SystemState {
     }
 
     function readJson( file ) {
-        if ( !fileExists( arguments.file ) ) return {};
-        try { var d = jsonDeserialize( fileRead( arguments.file ) ); return isStruct( d ) ? d : {}; } catch ( any e ) { return {}; }
+        return new bxrig.util.JsonStore().read( arguments.file );
     }
 
     // The first line of xdg-terminals.list that names a terminal BxRig knows.

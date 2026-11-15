@@ -30,15 +30,11 @@ class Update {
     function file() { return variables.config.cfgHome() & "/bxrig/update.json"; }
 
     function load() {
-        var d = { channel: "stable", notify: false };
-        if ( fileExists( file() ) ) try { var j = jsonDeserialize( fileRead( file() ) ); for ( var k in structKeyArray( j ) ) d[ k ] = j[ k ]; } catch ( any e ) {}
-        return d;
+        return new bxrig.util.JsonStore().read( file(), { channel: "stable", notify: false } );
     }
 
     function save( d ) {
-        var dir = getDirectoryFromPath( file() );
-        if ( !directoryExists( dir ) ) directoryCreate( dir, true );
-        fileWrite( file(), serializeJSON( arguments.d ) & chr( 10 ) );
+        new bxrig.util.JsonStore().write( "update-settings", file(), arguments.d );
     }
 
     function base() { return getSystemSetting( "BXRIG_BASE_URL", new bxrig.util.Urls().downloads() ); }
@@ -166,8 +162,8 @@ class Update {
             return variables.out.say( "ok", { enabled: false }, arguments.asJson, [ "Update notifications are off." ] );
         }
         if ( arguments.action != "on" ) return variables.out.say( "usage", {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "update notifications" ) ] );
-        var svc = { name: "update-service", target: unit( "service" ), mode: "644", content: "[Unit]" & chr( 10 ) & "Description=BxRig update check" & chr( 10 ) & chr( 10 ) & "[Service]" & chr( 10 ) & "Type=oneshot" & chr( 10 ) & "ExecStart=sh -c 'PATH=$HOME/.local/bin:$PATH bxrig update check --notify; true'" & chr( 10 ) };
-        var tim = { name: "update-timer", target: unit( "timer" ), mode: "644", content: "[Unit]" & chr( 10 ) & "Description=BxRig daily update check" & chr( 10 ) & chr( 10 ) & "[Timer]" & chr( 10 ) & "OnCalendar=daily" & chr( 10 ) & "RandomizedDelaySec=1h" & chr( 10 ) & "Persistent=true" & chr( 10 ) & chr( 10 ) & "[Install]" & chr( 10 ) & "WantedBy=timers.target" & chr( 10 ) };
+        var svc = { name: "update-service", target: unit( "service" ), mode: "644", content: new bxrig.util.SystemdUnit().render( [ { name: "Unit", lines: [ "Description=BxRig update check" ] }, { name: "Service", lines: [ "Type=oneshot", "ExecStart=sh -c 'PATH=$HOME/.local/bin:$PATH bxrig update check --notify; true'" ] } ] ) };
+        var tim = { name: "update-timer", target: unit( "timer" ), mode: "644", content: new bxrig.util.SystemdUnit().render( [ { name: "Unit", lines: [ "Description=BxRig daily update check" ] }, { name: "Timer", lines: [ "OnCalendar=daily", "RandomizedDelaySec=1h", "Persistent=true" ] }, { name: "Install", lines: [ "WantedBy=timers.target" ] } ] ) };
         for ( var e in [ svc, tim ] ) { var st = variables.config.configState( e ); if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( e, e.content, "apply", true, false ); }
         variables.systemd.reload( true );
         var r = variables.systemd.enable( "bxrig-update-check.timer", true );

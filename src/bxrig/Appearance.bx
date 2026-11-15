@@ -65,19 +65,11 @@ class Appearance {
 
     // ---- state ----
     function readState() {
-        var s = { font: "", bar: {}, dock: {}, windows: {}, animations: "", layout: "" };
-        if ( fileExists( stateFile() ) ) {
-            try {
-                var j = jsonDeserialize( fileRead( stateFile() ) );
-                for ( var k in j ) s[ k ] = j[ k ];
-            } catch ( any e ) {}
-        }
-        return s;
+        return new bxrig.util.JsonStore().read( stateFile(), { font: "", bar: {}, dock: {}, windows: {}, animations: "", layout: "" } );
     }
 
     function writeState( s ) {
-        directoryCreate( getDirectoryFromPath( stateFile() ), true, true );
-        fileWrite( stateFile(), jsonSerialize( arguments.s ) & chr( 10 ) );
+        new bxrig.util.JsonStore().write( "appearance-state", stateFile(), arguments.s );
     }
 
     // ---- appliers ----

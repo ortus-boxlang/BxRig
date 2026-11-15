@@ -139,9 +139,7 @@ class Db {
     }
 
     function readMeta( container ) {
-        var f = stateDir( arguments.container ) & "/meta.json";
-        if ( !fileExists( f ) ) return {};
-        try { return jsonDeserialize( fileRead( f ) ); } catch ( any e ) { return {}; }
+        return new bxrig.util.JsonStore().load( stateDir( arguments.container ) & "/meta.json" );
     }
 
     // The container run command for an engine (argv after the engine program). secretEnvFile is "" for engines without a password.

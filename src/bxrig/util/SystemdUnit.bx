@@ -1,0 +1,17 @@
+// systemd unit text: the one place that renders [Section] / Key=value. Sections are an ordered array (a struct would not keep the order):
+//   render( [ { name: "Unit", lines: [ "Description=x" ] }, { name: "Service", lines: [ "ExecStart=/bin/true" ] } ], "Written by bxrig" )
+class SystemdUnit {
+    function render( sections, header = "" ) {
+        var nl = chr( 10 );
+        var out = [];
+        if ( len( arguments.header ) ) out.append( "## " & arguments.header );
+        var first = true;
+        for ( var s in arguments.sections ) {
+            if ( !first ) out.append( "" );
+            first = false;
+            out.append( "[" & s.name & "]" );
+            for ( var l in s.lines ) out.append( l );
+        }
+        return out.toList( nl ) & nl;
+    }
+}

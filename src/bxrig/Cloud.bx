@@ -49,12 +49,12 @@ class Cloud {
 
     function unitText( name, dir ) {
         var nl = chr( 10 );
-        return "# Written by bxrig (cloud mount). Edit it freely: BxRig will not overwrite a changed file." & nl & "[Unit]" & nl
-            & "Description=rclone mount of " & arguments.name & " (bxrig)" & nl & "After=network-online.target" & nl & "Wants=network-online.target" & nl & nl
-            & "[Service]" & nl & "Type=notify" & nl & "ExecStartPre=/usr/bin/mkdir -p " & arguments.dir & nl
-            & "ExecStart=/usr/bin/rclone mount " & arguments.name & ": " & arguments.dir & " --vfs-cache-mode writes" & nl
-            & "ExecStop=/usr/bin/fusermount3 -u " & arguments.dir & nl & "Restart=on-failure" & nl & "RestartSec=10" & nl & nl
-            & "[Install]" & nl & "WantedBy=default.target" & nl;
+        return new bxrig.util.SystemdUnit().render( [
+            { name: "Unit", lines: [ "Description=rclone mount of " & arguments.name & " (bxrig)", "After=network-online.target", "Wants=network-online.target" ] },
+            { name: "Service", lines: [ "Type=notify", "ExecStartPre=/usr/bin/mkdir -p " & arguments.dir, "ExecStart=/usr/bin/rclone mount " & arguments.name & ": " & arguments.dir & " --vfs-cache-mode writes",
+                "ExecStop=/usr/bin/fusermount3 -u " & arguments.dir, "Restart=on-failure", "RestartSec=10" ] },
+            { name: "Install", lines: [ "WantedBy=default.target" ] }
+        ], "Written by bxrig (cloud mount). Edit it freely: BxRig will not overwrite a changed file." );
     }
 
     // `cloud mount NAME [--path=DIR] [--yes]`

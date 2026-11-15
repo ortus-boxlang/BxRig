@@ -183,8 +183,11 @@ def pump(t):
                 if not d: return
                 seen += d
             except OSError: return
-pump(2.5)
-os.write(fd, b'Pty-Typed-Pass7\r'); pump(0.8)
+def wait_for(text, limit):
+    end = time.time() + limit
+    while text not in seen and time.time() < end: pump(0.1)
+wait_for(b'Password:', 20); pump(0.3)
+os.write(fd, b'Pty-Typed-Pass7\r'); wait_for(b'Repeat password:', 20); pump(0.3)
 os.write(fd, b'Pty-Typed-Pass7\r'); pump(2.5)
 _, status = os.waitpid(pid, 0)
 assert os.WIFEXITED(status) and os.WEXITSTATUS(status) == 0, ('exit', status, seen)
