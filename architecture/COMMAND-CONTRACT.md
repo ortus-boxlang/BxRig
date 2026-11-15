@@ -76,7 +76,7 @@ With `--json` a command prints one JSON object on stdout and no human text (`Cli
 
 ## 5. Catalog (single source of truth)
 
-The catalog is `catalog/apps.json` (schema 3, 289 apps today, version in `catalog_version`), embedded in the binary by `bootstrap/gen-catalog.sh`. It started as the legacy `apps.json` (482 entries) and replaced the hardcoded lists. The findings below are the 2026-11-09 audit of that legacy data and are kept as the record of why the catalog looks as it does.
+The catalog is `catalog/apps.json` (schema 3, 289 apps today, version in `catalog_version`), packed into the binary as a resource (`src/resources/catalog`). It started as the legacy `apps.json` (482 entries) and replaced the hardcoded lists. The findings below are the 2026-11-09 audit of that legacy data and are kept as the record of why the catalog looks as it does.
 
 Entry schema (legacy fields kept, new fields marked):
 
@@ -155,7 +155,7 @@ The check must also run against the CachyOS repos on a real CachyOS machine befo
 
 - `config list|diff|apply|restore|history` (section 6 design; lock is a file created with `fileWriteExclusive`, temp files and journal records are created exclusive with their mode).
 - Global flag check and the `--json` envelope (sections 1 and 4) for the read-only commands.
-- `catalog list|show|groups|check|version`: the catalog is schema 3 (`catalog/README.md`) and is embedded in the binary by `bootstrap/gen-catalog.sh` (CI fails if `src/bxrig/CatalogData.bx` is stale). Filters use the `--name=value` form (`--tier=default --group=infra`), because MatchBox `CLIGetArgs` takes `--name value` as a flag plus a positional. `catalog check` is offline: errors exit 1, warnings (unpinned `pkgbuild` refs, default entries without a package) do not. The user override file is deliberately last (extensibility phase).
+- `catalog list|show|groups|check|version`: the catalog is schema 3 (`catalog/README.md`) and is packed into the binary as a resource (`src/resources/catalog`, read by `src/bxrig/CatalogData.bx`). Filters use the `--name=value` form (`--tier=default --group=infra`), because MatchBox `CLIGetArgs` takes `--name value` as a flag plus a positional. `catalog check` is offline: errors exit 1, warnings (unpinned `pkgbuild` refs, default entries without a package) do not. The user override file is deliberately last (extensibility phase).
 
 ## 11. Package commands on the catalog (B2, decided 2026-11-09)
 
@@ -284,7 +284,7 @@ Two key styles share the table (decided with the owner 2026-11-14, `SHORTCUTS-DE
 Ortus Brand Book 2025 palette (main `#00FF78`, second `#00DBFF`, accent `#FFF500`, dark `#303446`, which is also Catppuccin Frappé's base) on Frappé neutrals [owner]. `Starter.bx` writes, through the config service and only what is missing (a Noctalia file the user changed is kept; `hyprland.lua` is written only when none exists):
 
 - `~/.config/noctalia/config.toml` and `palettes/BxRig.json` (`NoctaliaConfig.bx`): dark theme with the custom palette; a top bar with launcher, workspaces and active window on the left; the clock, four world clocks (LAX, NYC, LON, MAD, editable `clock` widgets with a `timezone`) and the media player in the centre; tray, network, bluetooth, volume, battery, notifications and control center on the right; the wallpaper folder.
-- `~/.config/hypr/hyprland.lua` from `templates/hyprland.lua` (embedded by `bootstrap/gen-templates.sh`), based on Hyprland's own example: brand-gradient borders, rounded corners, blur, Hyprland's default animations, two persistent workspaces, natural scrolling **off** [owner, "inverse"], the programs (terminal, browser, file manager) that the shortcut table starts, and `require("bxrig")`. It holds no key binding: every bind is a row of the table and lives in `bxrig.lua`.
+- `~/.config/hypr/hyprland.lua` from `templates/hyprland.lua` (packed into the binary as a resource), based on Hyprland's own example: brand-gradient borders, rounded corners, blur, Hyprland's default animations, two persistent workspaces, natural scrolling **off** [owner, "inverse"], the programs (terminal, browser, file manager) that the shortcut table starts, and `require("bxrig")`. It holds no key binding: every bind is a row of the table and lives in `bxrig.lua`.
 
 ### 13.5b Shell and terminal (decided 2026-11-10)
 

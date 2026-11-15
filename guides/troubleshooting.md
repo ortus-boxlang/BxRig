@@ -32,4 +32,3 @@ Start with `bxrig status` and the doctors; each prints a fix next to every faile
 | 10 | `update check`: an update is available |
 
 Add `--json` to any command for machine-readable output.
-
