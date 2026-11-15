@@ -6,7 +6,7 @@ hidden: true
 
 # BxRig port status
 
-State on 2026-11-15 (version 0.11.0-dev, MatchBox 0.14.0 from the `bxcachy` branch). The legacy v0.10.0 (Python and shell) tree is kept in `artifacts/legacy/` as a feature reference only.
+State on 2026-11-15 (version 0.11.0-dev, MatchBox 0.14.0 from the `bxrig` branch). The legacy v0.10.0 (Python and shell) tree is kept in `artifacts/legacy/` as a feature reference only.
 
 ## Built on `development`
 

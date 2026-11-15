@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Provides the MatchBox that compiles BxRig (box.json toolchain.matchbox): the build of the MatchBox
-# `bxcachy` branch that CI publishes to S3, or, when it is not published yet or --from-source is given, a
+# `bxrig` branch that CI publishes to S3, or, when it is not published yet or --from-source is given, a
 # release build of that branch made here.
 #   get-matchbox.sh DEST_FILE [--from-source]
 # Writes DEST_FILE (executable) and DEST_FILE.info (version, ref, commit, source) and prints one summary line.

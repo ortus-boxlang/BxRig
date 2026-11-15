@@ -70,7 +70,7 @@ load_manifest() {
   JAVA_MAJOR="$(jq -r .toolchain.java.version "$MANIFEST")"
   JAVA_PKG="$(jq -r .toolchain.java.package "$MANIFEST")"
   MATCHBOX_VERSION="$(jq -r .toolchain.matchbox.version "$MANIFEST")"
-  # With "downloads" set, MatchBox is not installed by mvm: it is the build of the MatchBox `bxcachy` branch
+  # With "downloads" set, MatchBox is not installed by mvm: it is the build of the MatchBox `bxrig` branch
   # that CI publishes to S3 (see .github/workflows/matchbox.yml), checked against its sha256 and kept in
   # $MATCHBOX_HOME so it never replaces the `matchbox` that mvm manages.
   MATCHBOX_DOWNLOADS="$(jq -r '.toolchain.matchbox.downloads // empty' "$MANIFEST")"
@@ -120,7 +120,7 @@ step_retry() {
   done
   echo "Failed after 3 attempts: $what (if GitHub reports HTTP 403, wait a while and rerun; this is a rate limit)" >&2; exit 1
 }
-# MatchBox from the published bxcachy-branch build: download, verify the sha256, replace atomically.
+# MatchBox from the published bxrig-branch build: download, verify the sha256, replace atomically.
 # BXRIG_MATCHBOX_FILE=PATH installs a local build instead (CI builds it from source before it is published).
 # The evergreen file can be served stale by the CDN, so the build is taken from its immutable folder
 # (<version>-<commit>/) named in version-latest.properties; without that file the evergreen folder is used.
@@ -207,7 +207,7 @@ build_steps() {
   fi
   if [[ "$mb_ver" != "$MATCHBOX_VERSION" ]]; then
     if [[ -n "$MATCHBOX_DOWNLOADS" ]]; then
-      steps+=("matchbox|download $MATCHBOX_DOWNLOADS/matchbox-linux-x86_64 and check its sha256|MatchBox $MATCHBOX_VERSION from the bxcachy branch, installed under $MATCHBOX_HOME")
+      steps+=("matchbox|download $MATCHBOX_DOWNLOADS/matchbox-linux-x86_64 and check its sha256|MatchBox $MATCHBOX_VERSION from the bxrig branch, installed under $MATCHBOX_HOME")
     else
       steps+=("matchbox|mvm install $MATCHBOX_VERSION && mvm use $MATCHBOX_VERSION|pinned MatchBox compiler")
     fi

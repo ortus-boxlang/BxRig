@@ -425,7 +425,7 @@ if out="$(MVM_FAKE="$FLAKY_MVM" trun env BXRIG_RETRY_WAITS="0 0 0" MVM_FAIL_TIME
 need "$out" 'Failed after 3 attempts'; need "$out" 'HTTP 403'
 echo 'bootstrap retry tests passed'
 
-# ---- MatchBox from the published bxcachy-branch build (box.json "downloads"): download, sha256, no mvm ----
+# ---- MatchBox from the published bxrig-branch build (box.json "downloads"): download, sha256, no mvm ----
 jq '.toolchain.matchbox = { "version": "0.13.0", "downloads": "https://downloads.example.test/bxrig/matchbox" }' "$repo/box.json" > "$tmp/box-dl.json"
 MB_BIN='#!/usr/bin/env bash
 [[ "$1" == --version ]] && echo "matchbox version 0.13.0" || echo "matchbox"'

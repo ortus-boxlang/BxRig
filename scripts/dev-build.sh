@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build bxrig with the local MatchBox integration branch (branch `bxcachy` in /home/user/matchbox,
+# Build bxrig with the local MatchBox integration branch (branch `bxrig` in /home/user/matchbox,
 # pushed to ortus-boxlang/matchbox) instead of the pinned release, so fixes that are still in review
 # can be used now. Output: ./dist/bxrig
 #   MATCHBOX=/path/to/matchbox  override the compiler (default: the local debug build)

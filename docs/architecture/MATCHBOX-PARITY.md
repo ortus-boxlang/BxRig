@@ -6,7 +6,7 @@ summary: Developer reference.
 
 # MatchBox parity work: class entry, mappings, Application.bx
 
-Source of truth: BoxLang JVM (`ortus-boxlang/boxlang`, read 2026-11-09 at b8ea0f0) and the BoxLang docs (CLI Scripting, Application.bx). The `bxcachy` branch of MatchBox (0.14.0 in `box.json`) has all three and BxRig builds on them: `src/Main.bx` is the entry class (`main( args )`), `src/Application.bx` sets `this.mappings` (`/bxrig` to `src/bxrig`, so `new bxrig.util.Proc()` resolves) and `onError` (exit 9). Sections 1 to 3 are the JVM behaviour that was copied.
+Source of truth: BoxLang JVM (`ortus-boxlang/boxlang`, read 2026-11-09 at b8ea0f0) and the BoxLang docs (CLI Scripting, Application.bx). The `bxrig` branch of MatchBox (0.14.0 in `box.json`) has all three and BxRig builds on them: `src/Main.bx` is the entry class (`main( args )`), `src/Application.bx` sets `this.mappings` (`/bxrig` to `src/bxrig`, so `new bxrig.util.Proc()` resolves) and `onError` (exit 9). Sections 1 to 3 are the JVM behaviour that was copied.
 
 ## 1. Class as entry point (`boxlang Task.bx a b`)
 
@@ -47,6 +47,6 @@ Lifecycle for a script or class run (no web scopes): application defined on firs
 
 Native builds resolve classes at compile time, so the mapped directories must exist when `matchbox --target native` runs; the lifecycle runs inside the binary. A native build of the whole program does not fit in a 14 GB machine (see `CODE-REVIEW.md`, "Startup of the native binary"); the `.bxs` tests and the interpreter do.
 
-## MatchBox VM fixes (PRs 156 to 160, in the `bxcachy` branch)
+## MatchBox VM fixes (PRs 156 to 160, in the `bxrig` branch)
 
 Found while building the installer, fixed upstream, and BxRig no longer works around them: `break` in nested for-in loops (#156), a broken pipe on stdout (#157), calling a function stored in `variables` (#158), `switch` with `var` slots and the default jump (#159), and the panic message that was hidden (#160). Behaviour change in #159: a `var` declared in one `case` is not visible in another case.

@@ -1,17 +1,17 @@
 name: MatchBox toolchain
-# Builds the MatchBox `bxcachy` branch (develop plus the open BxRig pull requests, see box.json
+# Builds the MatchBox `bxrig` branch (develop plus the open BxRig pull requests, see box.json
 # toolchain.matchbox) and publishes it to S3, laid out like BoxLang's downloads:
 #
-#   https://downloads.ortussolutions.com/ortussolutions/bxcachy/matchbox/matchbox-linux-x86_64            evergreen
-#   https://downloads.ortussolutions.com/ortussolutions/bxcachy/matchbox/matchbox-linux-x86_64.sha256
-#   https://downloads.ortussolutions.com/ortussolutions/bxcachy/matchbox/version-latest.properties
-#   https://downloads.ortussolutions.com/ortussolutions/bxcachy/matchbox/<version>-<commit>/...           per build
+#   https://downloads.ortussolutions.com/ortussolutions/bxrig/matchbox/matchbox-linux-x86_64            evergreen
+#   https://downloads.ortussolutions.com/ortussolutions/bxrig/matchbox/matchbox-linux-x86_64.sha256
+#   https://downloads.ortussolutions.com/ortussolutions/bxrig/matchbox/version-latest.properties
+#   https://downloads.ortussolutions.com/ortussolutions/bxrig/matchbox/<version>-<commit>/...           per build
 #
 # bootstrap/install.sh and CI download the evergreen build and check its sha256.
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 5 * * *" # picks up new commits on the MatchBox bxcachy branch
+    - cron: "17 5 * * *" # picks up new commits on the MatchBox bxrig branch
   push:
     branches: [development]
     paths:
@@ -25,7 +25,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    name: Build MatchBox from the bxcachy branch and publish to S3
+    name: Build MatchBox from the bxrig branch and publish to S3
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -94,7 +94,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_ACCESS_SECRET }}
           SOURCE_DIR: "build/s3"
-          DEST_DIR: "ortussolutions/bxcachy/matchbox"
+          DEST_DIR: "ortussolutions/bxrig/matchbox"
 
       - name: Upload the evergreen build to S3
         if: env.HAS_S3 == 'true'
@@ -106,4 +106,4 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_ACCESS_SECRET }}
           SOURCE_DIR: "build/evergreen"
-          DEST_DIR: "ortussolutions/bxcachy/matchbox/"
+          DEST_DIR: "ortussolutions/bxrig/matchbox/"
