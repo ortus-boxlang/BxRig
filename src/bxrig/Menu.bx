@@ -49,6 +49,8 @@ class Menu {
 			case "run": return "shows in a terminal: " & c;
 			case "term": return "opens in a terminal: " & c;
 			case "tui": return "opens in a terminal: " & c & ( structKeyExists( e, "icon" ) ? " (icon: " & e.icon & ")" : "" );
+			case "tool": return "opens in a terminal: " & e.argv.toList( " " );
+			case "exec": return "starts: " & e.argv.toList( " " );
 			case "open": return "opens " & e.url;
 			case "pick": return "choose from " & e.source & ", then: " & c;
 			case "ask": return "asks for text, then: " & c;
@@ -234,6 +236,27 @@ class Menu {
 		return new bxrig.util.Exit().ok();
 	}
 
+	// A program (not bxrig) in its own terminal window that closes when it ends: the terminal UIs wiremix and bluetui.
+	function startTool( entry ) {
+		var prog = arguments.entry.argv[ 1 ];
+		if ( !variables.proc.has( prog ) ) { println( "error: " & prog & " is not installed (bxrig install " & prog & ")" ); return new bxrig.util.Exit().precondition(); }
+		var term = terminalArgv();
+		if ( !term.len() ) { println( "error: this entry needs a terminal program (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.util.Exit().precondition(); }
+		var argv = [];
+		for ( var t in term ) argv.append( t );
+		for ( var a in arguments.entry.argv ) argv.append( a );
+		detach( argv );
+		return new bxrig.util.Exit().ok();
+	}
+
+	// A program (not bxrig) started detached, no window: the Noctalia control center panel.
+	function startExec( entry ) {
+		var prog = arguments.entry.argv[ 1 ];
+		if ( !variables.proc.has( prog ) ) { println( "error: " & prog & " is not installed" ); return new bxrig.util.Exit().precondition(); }
+		detach( arguments.entry.argv );
+		return new bxrig.util.Exit().ok();
+	}
+
 	function sub( argv, value ) {
 		return arguments.argv.map( function( a ) { return replace( a, "{}", value, "all" ); } );
 	}
@@ -349,6 +372,8 @@ class Menu {
 			case "open": detach( [ "xdg-open", e.url ] ); return new bxrig.util.Exit().ok();
 			case "tui": return startTui( e );
 			case "term": return startTerm( e );
+			case "tool": return startTool( e );
+			case "exec": return startExec( e );
 		}
 		if ( structKeyExists( e, "confirm" ) && !confirm( arguments.runner, e.confirm ) ) return new bxrig.util.Exit().ok();
 		return start( e );

@@ -7,6 +7,8 @@
 //   run        runs `bxrig ARGV` in a terminal window and waits for Enter (for output and for sudo prompts)
 //   tui        runs `bxrig tui ARGV` in a terminal window that closes when you leave it (`icon` names the page's icon)
 //   term       runs `bxrig ARGV` in a terminal window that closes when the command ends (a TUI that is not a Control Center page, the wizard)
+//   tool       runs a program itself (not `bxrig`) in a terminal window that closes when it ends: argv[1] is the program (wiremix, bluetui)
+//   exec       starts a program itself detached, no window: argv[1] is the program (`noctalia msg panel-toggle control-center`)
 //   open       opens a URL with xdg-open
 //   pick       asks you to choose from `source` (see Menu.choices), then runs argv with {} replaced by the choice (mode spawn or run)
 //   pkgsearch  asks for text, lists matching packages (source all, repo or aur), asks, then runs `pkg install`
@@ -31,6 +33,8 @@ class MenuTree {
 	function run( label, argv ) { return { label: arguments.label, kind: "run", argv: arguments.argv }; }
 	function tui( label, argv, icon = "" ) { var e = { label: arguments.label, kind: "tui", argv: [ "tui" ] }; for ( var a in arguments.argv ) e.argv.append( a ); if ( len( arguments.icon ) ) e.icon = arguments.icon; return e; }
 	function term( label, argv ) { return { label: arguments.label, kind: "term", argv: arguments.argv }; }
+	function tool( label, argv ) { return { label: arguments.label, kind: "tool", argv: arguments.argv }; }
+	function exec( label, argv ) { return { label: arguments.label, kind: "exec", argv: arguments.argv }; }
 	function link( label, url ) { return { label: arguments.label, kind: "open", url: arguments.url }; }
 	function sub( label, children ) { return { label: arguments.label, kind: "sub", children: arguments.children }; }
 
@@ -50,6 +54,7 @@ class MenuTree {
 	// catalogGroups: [ { id, title } ] from the catalog, in order.
 	function sections( catalogGroups = [] ) {
 		var groupEntries = arguments.catalogGroups.map( function( g ) { return { label: g.title, kind: "catalog", group: g.id }; } );
+		var panel = [ "noctalia", "msg", "panel-toggle", "control-center" ];   // the action of Super+Alt+C (Shortcuts: control-center-panel)
 		var top = [
 			{ label: "Apps", kind: "spawn", argv: [ "apps" ] },
 			term( "Setup wizard (re-run, prefilled)", [ "init" ] ),
@@ -195,6 +200,14 @@ class MenuTree {
 					spawn( "Webcam preview on or off", [ "webcam", "toggle" ] ),
 					run( "GPU check", [ "gpu", "doctor" ] ),
 					run( "Input devices and gestures", [ "input", "doctor" ] ),
+					exec( "Audio", panel ),
+					exec( "Bluetooth", panel ),
+					exec( "Wi-Fi", panel ),
+					tool( "Audio mixer (terminal)", [ "wiremix" ] ),
+					tool( "Bluetooth devices (terminal)", [ "bluetui" ] ),
+					run( "Audio status", [ "audio", "status" ] ),
+					run( "Bluetooth status", [ "bluetooth", "status" ] ),
+					run( "Wi-Fi status", [ "wifi", "status" ] ),
 					spawn( "AirPlay receiver on", [ "airplay", "on" ] ),
 					spawn( "AirPlay receiver off", [ "airplay", "off" ] )
 				] ),
