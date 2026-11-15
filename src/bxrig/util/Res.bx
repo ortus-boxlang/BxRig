@@ -6,7 +6,8 @@ class Res {
     // The file's text without its trailing newlines.
     function trimmed( path ) {
         var s = resourceRead( arguments.path );
-        while ( len( s ) && ( right( s, 1 ) == chr( 10 ) || right( s, 1 ) == chr( 13 ) ) ) s = left( s, len( s ) - 1 );
+        // left( s, 0 ) is an error in MatchBox, so a text of newlines only ends as ""
+        while ( len( s ) && ( right( s, 1 ) == chr( 10 ) || right( s, 1 ) == chr( 13 ) ) ) s = len( s ) > 1 ? left( s, len( s ) - 1 ) : "";
         return s;
     }
     function binary( path ) { return resourceReadBinary( arguments.path ); }
