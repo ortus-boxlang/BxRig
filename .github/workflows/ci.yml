@@ -142,6 +142,7 @@ jobs:
           (cd src && matchbox ../tests/installer_test.bxs)
           (cd src && matchbox ../tests/setup_plan_test.bxs)
           (cd src && matchbox ../tests/shortcuts_test.bxs)
+          (cd src && matchbox ../tests/keystyle_test.bxs)
           (cd src && matchbox ../tests/noctalia_config_test.bxs)
           (cd src && matchbox ../tests/catalog_check.bxs)
           (cd src && matchbox ../tests/wizard_app_test.bxs)

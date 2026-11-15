@@ -138,6 +138,8 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `plasma` | `--desktops` | value |  |
 | `plasma` | `--preset` | value | `islands` |
 | `plasma` | `--without-weather` | bool |  |
+| `keys` | `--keyboard` | value | `pc` |
+| `keys` | `--swap` | value |  |
 | `runner` | `--prompt` | value |  |
 | `config` | `--theme` | any |  |
 | `config` | `--wallpaper` | any |  |

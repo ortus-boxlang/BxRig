@@ -545,20 +545,23 @@ bxrig plasma desktops 4 --yes
 
 ### `bxrig keys` {#bxrig-keys}
 
-The shortcut table: show, check conflicts, apply to Hyprland and Plasma, Mac-style keys.
+The shortcut table: show, rebind, check conflicts, apply to Hyprland and Plasma, Traditional or Mac style.
 
 ```text
-bxrig keys show | mac [on|off|status] [--yes] | set ID KEYS [--yes] [--force] | reset ID [--yes] | conflicts | render xremap|hyprland|plasma | check | apply [--yes] [--dry-run] [--force] [--json]
+bxrig keys show | style [traditional|mac] [--keyboard=pc|apple] [--swap=on|off] [--yes] | mac [on|off|status] [--yes] | set ID KEYS [--yes] [--force] | reset ID [--yes] | conflicts | sheet | render xremap|hyprland|plasma | check | apply [--yes] [--dry-run] [--force] [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
 
 ```bash
 bxrig keys show
+bxrig keys style mac --keyboard=pc --yes
 bxrig keys set emoji Super+Ctrl+E --yes
 bxrig keys mac on --yes
 bxrig keys conflicts
 ```
+
+> Two styles share one table: Traditional (Omarchy-like keys) and Mac (Cmd-style keys through xremap). The Mac style on a PC keyboard swaps Alt and Win; an Apple keyboard never swaps. `keys conflicts` checks the table, the remaps of the style that is on and your own hl.bind lines.
 
 ### `bxrig runner` {#bxrig-runner}
 

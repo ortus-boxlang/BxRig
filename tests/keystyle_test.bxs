@@ -1,0 +1,26 @@
+// KeyStyle and `keys style`: the style, the keyboard and the Alt/Win swap. Run from src/: (cd src && matchbox ../tests/keystyle_test.bxs)
+testkit = new lib.Check( "keystyle" );
+dir = testkit.tmp();
+file = dir & "/keystyle.json";
+ks = new bxrig.KeyStyle( file );
+d = ks.read();
+testkit.check( "no file: a PC keyboard with the swap on, and a style that exists", d.keyboard == "pc" && d.swap && arrayFind( ks.styles(), d.style ) > 0 );
+testkit.check( "write then read", ks.write( { style: "mac", keyboard: "pc", swap: true } ) == 0 && ks.read().style == "mac" );
+testkit.check( "swap is active for the Mac style on a PC keyboard", ks.swapActive( { style: "mac", keyboard: "pc", swap: true } ) );
+testkit.check( "no swap for an Apple keyboard", !ks.swapActive( { style: "mac", keyboard: "apple", swap: true } ) );
+testkit.check( "no swap with the swap off, or in the Traditional style", !ks.swapActive( { style: "mac", keyboard: "pc", swap: false } ) && !ks.swapActive( { style: "traditional", keyboard: "pc", swap: true } ) );
+fileWrite( file, '{"style":"bogus","keyboard":"tablet","swap":"maybe"}' );
+testkit.check( "bad values are ignored", ks.read().keyboard == "pc" && arrayFind( ks.styles(), ks.read().style ) > 0 && ks.read().swap );
+
+cli = new bxrig.util.Cli( "0.0.0" );
+fileDelete( file );
+mk = new bxrig.MacKeys( cli, "", ks );
+testkit.check( "keys style without --yes is a plan (exit 2) and writes nothing", mk.style( "mac", "pc", "", false, false ) == 2 && !fileExists( file ) );
+testkit.check( "keys style mac --keyboard=pc --yes saves the style with the swap on", mk.style( "mac", "pc", "", true, false ) == 0 && ks.read().style == "mac" && ks.read().swap && ks.swapActive() );
+testkit.check( "choosing an Apple keyboard turns the swap off", mk.style( "", "apple", "", true, false ) == 0 && ks.read().keyboard == "apple" && !ks.read().swap && !ks.swapActive() );
+testkit.check( "--swap=on after that on an Apple keyboard still never swaps", mk.style( "", "", "on", true, false ) == 0 && !ks.swapActive() );
+testkit.check( "back to a PC keyboard turns the swap on again", mk.style( "", "pc", "", true, false ) == 0 && ks.swapActive() );
+testkit.check( "traditional ends the swap", mk.style( "traditional", "", "", true, false ) == 0 && !ks.swapActive() );
+testkit.check( "an unknown style, keyboard or swap value exits 4", mk.style( "bogus", "", "", true, false ) == 4 && mk.style( "", "tablet", "", true, false ) == 4 && mk.style( "", "", "maybe", true, false ) == 4 );
+testkit.check( "no arguments shows the style (exit 0)", mk.style( "", "", "", false, false ) == 0 );
+testkit.done();

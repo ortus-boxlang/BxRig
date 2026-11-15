@@ -43,8 +43,10 @@ run "$binary" keys mac status --json | jq -e '.data.installed == false and .data
 touch "$tmp/cfg/systemd/user/xremap.service"
 [[ "$(code "$binary" keys mac off)" == 2 ]] || fail 'mac off without --yes exits 2'
 : > "$LOG"; run "$binary" keys mac off --yes | grep -q 'off' || fail 'mac off --yes'
-grep -q 'systemctl --user disable --now xremap' "$LOG" || fail 'disable command'
+! grep -q 'disable --now xremap' "$LOG" || fail 'mac off leaves xremap running (copy and paste stay)'
+[[ "$(jq -r .style "$tmp/cfg/bxrig/keystyle.json")" == traditional ]] || fail 'mac off writes the traditional style'
 run "$binary" keys mac on --yes >/dev/null; grep -q 'systemctl --user enable --now xremap' "$LOG" || fail 'enable command'
+[[ "$(jq -r .style "$tmp/cfg/bxrig/keystyle.json")" == mac ]] || fail 'mac on writes the mac style'
 touch "$FAKE/active.xremap"; run "$binary" keys mac --json | jq -e '.data.active == true' >/dev/null || fail 'mac status: active'
 
 # ---- cloud ----

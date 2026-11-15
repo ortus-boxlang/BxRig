@@ -819,6 +819,7 @@ class {
           if ( keysSub == "set" && p.len() == 4 ) CLIExit( new bxrig.KeysEditor( cli ).setKeys( p[3], p[4], structKeyExists( args.options, "yes" ), structKeyExists( args.options, "force" ), asJson ) );
           if ( keysSub == "reset" && p.len() == 3 ) CLIExit( new bxrig.KeysEditor( cli ).reset( p[3], structKeyExists( args.options, "yes" ), asJson ) );
           if ( keysSub == "conflicts" && p.len() == 2 ) CLIExit( new bxrig.KeysEditor( cli ).conflicts( asJson ) );
+          if ( keysSub == "style" && p.len() <= 3 ) CLIExit( new bxrig.MacKeys( cli ).style( p.len() == 3 ? p[3] : "", args.options.keyboard ?: "", args.options.swap ?: "", structKeyExists( args.options, "yes" ), asJson ) );
           if ( keysSub == "mac" && p.len() <= 3 ) {
            macAct = p.len() == 3 ? p[3] : "status";
            macSvc = new bxrig.MacKeys( cli );

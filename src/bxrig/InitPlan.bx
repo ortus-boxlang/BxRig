@@ -55,6 +55,11 @@ class InitPlan {
         var layout = pick( a, "layout" );
         var wantsHypr = desktops == "hyprland" || desktops == "both";
         var wantsPlasma = desktops == "plasma" || desktops == "both";
+        // the key style goes first: the setup steps below write the shortcut files, which read it
+        if ( isSet( pick( a, "mac_keys", false ) ) ) {
+            var kb = pick( a, "keyboard_type" ) == "apple" ? "apple" : "pc";
+            out.steps.append( { id: "key-style", title: "Mac-style keys on a " & ( kb == "apple" ? "Apple keyboard (no Alt and Win swap)" : "PC keyboard (Alt acts as Cmd, Win as Option)" ), argv: [ "bxrig", "keys", "style", "mac", "--keyboard=" & kb ] } );
+        }
         if ( wantsHypr ) {
             var argv = [ "bxrig", "setup", "hyprland" ];
             if ( len( terminal ) ) argv.append( "--terminal=" & terminal );

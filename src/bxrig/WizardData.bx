@@ -424,7 +424,30 @@ class WizardData {
           "id": "mac_keys",
           "label": "Mac-style Super keys",
           "default": true,
-          "help": "Super+C, Super+V, Super+Tab behave like Cmd."
+          "help": "Super+C, Super+V, Super+Tab behave like Cmd. Off keeps the Traditional (Omarchy-like) keys."
+        },
+        {
+          "type": "choice",
+          "id": "keyboard_type",
+          "label": "Which keyboard do you type on?",
+          "default": "pc",
+          "help": "On a PC keyboard the Mac keys swap Alt and Win, so Alt acts as Cmd. An Apple keyboard already has Cmd there.",
+          "when": {
+            "id": "mac_keys",
+            "equals": "true"
+          },
+          "options": [
+            {
+              "value": "pc",
+              "label": "PC keyboard (swap Alt and Win)",
+              "description": "Alt acts as Cmd, Win as Option. The default for a PC."
+            },
+            {
+              "value": "apple",
+              "label": "Apple keyboard (no swap)",
+              "description": "Cmd and Option are already where the Mac keys expect them."
+            }
+          ]
         },
         {
           "type": "confirm",
