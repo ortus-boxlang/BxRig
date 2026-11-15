@@ -27,10 +27,8 @@ class HotCorners {
     function read() {
         var c = defaults();
         if ( fileExists( file() ) ) {
-            try {
-                var j = jsonDeserialize( fileRead( file() ) );
-                for ( var k in corners() ) if ( structKeyExists( j, k ) && arrayFind( actions(), j[ k ] ) ) c[ k ] = j[ k ];
-            } catch ( any e ) {}
+            var j = new bxrig.util.Json().read( file() );
+            if ( isStruct( j ) ) for ( var k in corners() ) if ( structKeyExists( j, k ) && arrayFind( actions(), j[ k ] ) ) c[ k ] = j[ k ];
         }
         return c;
     }

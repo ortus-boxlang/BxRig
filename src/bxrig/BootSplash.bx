@@ -133,7 +133,8 @@ class BootSplash {
 
     function undo( yes, dry, asJson ) {
         var prev = "";
-        if ( fileExists( stateFile() ) ) { try { prev = jsonDeserialize( fileRead( stateFile() ) ).previous ?: ""; } catch ( any e ) {} }
+        var st = new bxrig.util.Json().read( stateFile() );
+        if ( isStruct( st ) ) prev = st.previous ?: "";
         var cmds = [];
         cmds.append( len( prev ) ? [ "sudo", "plymouth-set-default-theme", "-R", prev ] : [ "sudo", "plymouth-set-default-theme", "-r", "-R" ] );
         cmds.append( [ "sudo", "rm", "-rf", themeDir() ] );

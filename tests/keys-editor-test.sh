@@ -6,23 +6,23 @@ run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp
 k() { run "$binary" keys "$@"; }
 
 # validation
-[[ "$(code "$binary" keys set nope Super+Alt+A --yes)" == 4 ]] || fail 'an unknown binding exits 4'
-[[ "$(code "$binary" keys set copy Super+Alt+A --yes)" == 4 ]] || fail 'a remap cannot be changed'
+[[ "$(code "$binary" keys set nope Super+Alt+Y --yes)" == 4 ]] || fail 'an unknown binding exits 4'
+[[ "$(code "$binary" keys set copy Super+Alt+Y --yes)" == 4 ]] || fail 'a remap cannot be changed'
 [[ "$(code "$binary" keys set ai-shell Super --yes)" == 4 ]] || fail 'a combo needs a key'
 [[ "$(code "$binary" keys set ai-shell Hyper+A --yes)" == 4 ]] || fail 'an unknown modifier'
 [[ "$(code "$binary" keys set ai-shell Super+Alt+Banana --yes)" == 4 ]] || fail 'an unknown key'
 # a combo another BxRig binding already uses is refused, even with --force
 [[ "$(code "$binary" keys set ai-shell 'Alt+Super+Space' --yes --force)" == 4 ]] || fail 'a clash with the control center (case and order do not matter)'
-{ k set ai-shell Super+Alt+A || true; } | grep -q 'Nothing was changed' || fail 'plan text'
-[[ "$(code "$binary" keys set ai-shell Super+Alt+A)" == 2 ]] || fail 'no --yes exits 2'
+{ k set ai-shell Super+Alt+Y || true; } | grep -q 'Nothing was changed' || fail 'plan text'
+[[ "$(code "$binary" keys set ai-shell Super+Alt+Y)" == 2 ]] || fail 'no --yes exits 2'
 [[ ! -e "$tmp/cfg/bxrig/shortcuts.json" ]] || fail 'the plan wrote the override'
 
 # set: the override is saved and reaches both targets
-k set ai-shell Super+Alt+A --yes | grep -q 'now Super+Alt+A' || fail 'set --yes'
-[[ "$(jq -r '."ai-shell"' "$tmp/cfg/bxrig/shortcuts.json")" == 'Super+Alt+A' ]] || fail 'override saved'
-k render hyprland | grep -q 'hl.bind(mainMod .. " + ALT + A", hl.dsp.exec_cmd(\[\[sh -c .PATH="$HOME/.local/bin:$PATH"; bxrig ai shell' || fail "hyprland uses the new keys: $(k render hyprland | grep 'ai shell')"
+k set ai-shell Super+Alt+Y --yes | grep -q 'now Super+Alt+Y' || fail 'set --yes'
+[[ "$(jq -r '."ai-shell"' "$tmp/cfg/bxrig/shortcuts.json")" == 'Super+Alt+Y' ]] || fail 'override saved'
+k render hyprland | grep -q 'hl.bind(mainMod .. " + ALT + Y", hl.dsp.exec_cmd(\[\[sh -c .PATH="$HOME/.local/bin:$PATH"; bxrig ai shell' || fail "hyprland uses the new keys: $(k render hyprland | grep 'ai shell')"
 ! k render hyprland | grep -q '" + grave"' || fail 'the old binding is gone'
-k show --json | jq -e '(.data.shortcuts[] | select(.id=="ai-shell") | .keys == "Super+Alt+A" and .custom == true) and (.data.shortcuts[] | select(.id=="logout") | .custom == false)' >/dev/null || fail 'show marks custom keys'
+k show --json | jq -e '(.data.shortcuts[] | select(.id=="ai-shell") | .keys == "Super+Alt+Y" and .custom == true) and (.data.shortcuts[] | select(.id=="logout") | .custom == false)' >/dev/null || fail 'show marks custom keys'
 # a Plasma-visible binding follows too (logout is in the kglobalshortcutsrc text)
 k set logout Ctrl+Alt+Q --yes >/dev/null
 k render plasma | grep -q '^Log Out=Ctrl+Alt+Q,Ctrl+Alt+Del,Log Out$' || fail "plasma text follows: $(k render plasma)"

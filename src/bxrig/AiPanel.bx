@@ -13,11 +13,10 @@ class AiPanel {
         return this;
     }
 
-    function home() { return variables.environ.home(); }
     function installed( command ) { return variables.proc.has( arguments.command ); }
     function readJson( file ) {
-        if ( !fileExists( arguments.file ) ) return {};
-        try { var j = jsonDeserialize( fileRead( arguments.file ) ); return isStruct( j ) ? j : {}; } catch ( any e ) { return {}; }
+        var j = new bxrig.util.Json().read( arguments.file );
+        return isStruct( j ) ? j : {};
     }
 
     // "3d 4h", "5h 12m", "40m"
@@ -42,14 +41,14 @@ class AiPanel {
     // Claude Code: tokens used today (input + output + cache) and the signed-in account.
     function claude() {
         var out = { accounts: [], tokens: 0 };
-        var cfg = readJson( home() & "/.claude.json" );
+        var cfg = readJson( variables.environ.home() & "/.claude.json" );
         var acct = { name: "Default", plan: "", active: true, meters: [] };
         if ( structKeyExists( cfg, "oauthAccount" ) && isStruct( cfg.oauthAccount ) ) {
             var o = cfg.oauthAccount;
             acct.name = len( o.organizationName ?: "" ) ? o.organizationName : ( o.emailAddress ?: "Default" );
         }
         out.accounts.append( acct );
-        var dir = home() & "/.claude/projects";
+        var dir = variables.environ.home() & "/.claude/projects";
         if ( !directoryExists( dir ) ) return out;
         var today = dateFormat( now(), "yyyy-MM-dd" );
         // only today's files, and only their usage lines
@@ -68,9 +67,9 @@ class AiPanel {
     // Codex: the newest rate_limits event of the newest session file, as meters.
     function codex() {
         var acct = { name: "Default", plan: "", active: true, meters: [] };
-        var auth = readJson( home() & "/.codex/auth.json" );
+        var auth = readJson( variables.environ.home() & "/.codex/auth.json" );
         if ( structKeyExists( auth, "tokens" ) && isStruct( auth.tokens ) && len( auth.tokens.account_id ?: "" ) ) acct.name = "ChatGPT";
-        var dir = home() & "/.codex/sessions";
+        var dir = variables.environ.home() & "/.codex/sessions";
         if ( !directoryExists( dir ) ) return [ acct ];
         var r = variables.proc.exec( [ "sh", "-c", 'f=$(find "$1" -name "*.jsonl" -printf "%T@ %p\n" 2>/dev/null | sort -n | tail -1 | cut -d" " -f2-); [ -n "$f" ] && grep -h "rate_limits" "$f" | tail -1', "_", dir ], 30 );
         if ( r.exitCode != 0 || !len( trim( r.output ) ) ) return [ acct ];

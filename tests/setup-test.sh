@@ -106,8 +106,8 @@ for p in $ALL; do grep -Fq " $p" <<<"$call" || fail "pacman call misses $p"; don
 for bad in cachyos-hypr-noctalia noctalia-shell noctalia-qs; do grep -Fq "$bad" <<<"$call" && fail "$bad must not be installed"; done
 [[ "$(jq -r '.packages|length' "$tmp/state-home/bxrig/setup-hyprland.json")" == "$(wc -w <<<"$ALL")" ]] || fail 'the added packages are remembered'
 [[ "$(stat -c %a "$tmp/state-home/bxrig/setup-hyprland.json")" == 600 ]] || fail 'the state file is private'
-# everything already there: nothing to do
-reset; MOCK_INSTALLED="git $ALL" run "$binary" setup hyprland --yes | grep -F 'already installed' >/dev/null || fail 'already installed is reported'
+# everything already there (packages, starter files and the Noctalia plugins of the run above): nothing to do
+: > "$SETUP_LOG"; rm -rf "$tmp/state-home"; MOCK_INSTALLED="git $ALL" run "$binary" setup hyprland --yes | grep -F 'already installed' >/dev/null || fail 'already installed is reported'
 [[ ! -s "$SETUP_LOG" && ! -e "$tmp/state-home" ]] || fail 'nothing to do must change nothing'
 # some there: only the rest is installed and remembered
 reset; MOCK_INSTALLED="git hyprland ghostty" run "$binary" setup hyprland --yes >/dev/null 2>&1 || fail 'partial install'

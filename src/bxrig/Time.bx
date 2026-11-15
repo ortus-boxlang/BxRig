@@ -170,11 +170,9 @@ class Time {
     function worldRead() {
         var w = worldDefaults();
         if ( fileExists( worldFile() ) ) {
-            try {
-                var j = jsonDeserialize( fileRead( worldFile() ) );
-                if ( structKeyExists( j, "enabled" ) ) w.enabled = j.enabled == true;
-                if ( structKeyExists( j, "zones" ) && isArray( j.zones ) ) w.zones = j.zones;
-            } catch ( any e ) {}
+            var j = new bxrig.util.Json().read( worldFile() );
+            if ( isStruct( j ) && structKeyExists( j, "enabled" ) ) w.enabled = j.enabled == true;
+            if ( isStruct( j ) && structKeyExists( j, "zones" ) && isArray( j.zones ) ) w.zones = j.zones;
         }
         return w;
     }
