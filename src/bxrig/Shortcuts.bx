@@ -163,9 +163,9 @@ class Shortcuts {
             // capture and recording
             bx( "emoji", G.cap, "Emoji picker", "Super+Ctrl+E", "Super+Ctrl+E", "emoji" ),
             bx( "clipboard-history", G.cap, "Clipboard history", "Super+Ctrl+V", "Super+Ctrl+V", "clipboard pick" ),
-            bx( "screenshot-screen", G.cap, "Screenshot: the whole screen", "Super+Shift+3", "Super+Shift+3", "screenshot screen" ),
-            bx( "screenshot-region", G.cap, "Screenshot: a region", "Super+Shift+4", "Super+Shift+4", "screenshot region" ),
-            bx( "screenshot-menu", G.cap, "Screenshot menu (region, window, OCR, QR, record)", "Super+Shift+5", "Super+Shift+5", "screenshot menu" ),
+            bx( "screenshot-screen", G.cap, "Screenshot: the whole screen", "", "Super+Shift+3", "screenshot screen" ),
+            bx( "screenshot-region", G.cap, "Screenshot: a region", "", "Super+Shift+4", "screenshot region" ),
+            bx( "screenshot-menu", G.cap, "Screenshot menu (region, window, OCR, QR, record)", "", "Super+Shift+5", "screenshot menu" ),
             bx( "screenshot-print", G.cap, "Screenshot: a region (Print key)", "Print", "Print", "screenshot region" ),
             bx( "color-picker", G.cap, "Color picker", "Super+Print", "Super+Print", "screenshot color" ),
             bx( "screen-record", G.cap, "Start or stop a screen recording", "Super+Shift+R", "Super+Shift+R", "record toggle" ),
@@ -177,6 +177,14 @@ class Shortcuts {
             bx( "notify-battery", G.note, "Show the battery", "Super+Ctrl+Alt+B", "Super+Ctrl+Alt+B", "notify battery" ),
             bx( "notify-weather", G.note, "Show the weather", "Super+Ctrl+Alt+W", "Super+Ctrl+Alt+W", "notify weather" ),
             row( "control-center-panel", G.note, "Noctalia control center panel", "Super+Alt+C", "Super+Alt+C", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle control-center")' ),
+            // Omarchy's panel keys all open the Noctalia control center panel (decision 1)
+            row( "panel-audio", G.note, "Audio panel (the control center panel)", "Super+Ctrl+A", "Super+Ctrl+A", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle control-center")' ),
+            row( "panel-bluetooth", G.note, "Bluetooth panel (the control center panel)", "Super+Ctrl+B", "Super+Ctrl+B", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle control-center")' ),
+            row( "panel-network", G.note, "Network panel (the control center panel)", "Super+Ctrl+N", "Super+Ctrl+N", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle control-center")' ),
+            row( "panel-power", G.note, "Power panel (the control center panel)", "Super+Ctrl+P", "Super+Ctrl+P", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle control-center")' ),
+            row( "panel-display", G.note, "Display panel (the control center panel)", "Super+Ctrl+D", "Super+Ctrl+D", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle control-center")' ),
+            bx( "fullscreen-desktop", G.win, "Full screen desktop (hide or show the bar)", "Super+Ctrl+Alt+F", "Super+Ctrl+Alt+F", "appearance bar toggle" ),
+            bx( "dock-toggle", G.win, "Toggle the dock (show or hide)", "Super+Alt+D", "Super+Alt+D", "appearance dock toggle" ),
             row( "noctalia-settings", G.note, "Noctalia settings window", "Super+Ctrl+Comma", "Super+Ctrl+Comma", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "settings-toggle")' ),
             // windows
             row( "close", G.win, "Close the window", "Super+Q", "Super+Q", "hypr-bind", "hl.dsp.window.close()" ),
@@ -214,9 +222,9 @@ class Shortcuts {
         for ( var i = 1; i <= 10; i++ ) {
             var k = i % 10;
             rows.append( row( "ws-" & i, G.ws, "Go to workspace " & i, "Super+" & k, "Super+" & k, "hypr-bind", "hl.dsp.focus({ workspace = " & i & " })" ) );
-            // Super+Shift+3, 4 and 5 are the screenshot keys (decision r10), so sending a window to workspaces 3 to 5 has no key until you pick one
-            var mk = i >= 3 && i <= 5 ? "" : "Super+Shift+" & k;
-            rows.append( row( "ws-move-" & i, G.ws, "Send the window to workspace " & i, mk, mk, "hypr-bind", "hl.dsp.window.move({ workspace = " & i & " })" ) );
+            // Mac style: Super+Shift+3, 4 and 5 are the screenshot keys, so sending a window to workspaces 3 to 5 is Super+Alt+Shift+N there
+            var mm = i >= 3 && i <= 5 ? "Super+Alt+Shift+" & k : "Super+Shift+" & k;
+            rows.append( row( "ws-move-" & i, G.ws, "Send the window to workspace " & i, "Super+Shift+" & k, mm, "hypr-bind", "hl.dsp.window.move({ workspace = " & i & " })" ) );
         }
         // one unbound row per Control Center page (bind it in the keys editor): it opens that page alone in a terminal
         for ( var pg in new bxrig.ControlCenterPages().list() ) rows.append( bx( "tui-" & pg.id, "Control Center pages", "BxRig " & pg.title & " (Control Center page)", "", "", "tui " & pg.id ) );
