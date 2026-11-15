@@ -1,0 +1,12 @@
+// Mutation.show and Out.plan (one wording for plans and dry runs), Ini, Props.env, Lua and Brand.show. Run from src/: (cd src && matchbox ../tests/util_plan_test.bxs)
+testkit = new lib.Check( "util plan" );
+cli = new bxrig.util.Cli( "9.9.9" );
+mu = new bxrig.util.Mutation( cli.scoped( "x y" ) );
+testkit.check( "banner and footer", mu.banner( false ) == "Plan: " && mu.banner( true ) == "Dry run: " && mu.footer( false ) == "Nothing was changed. Add --yes to apply." && mu.footer( true ) == "Nothing was changed." );
+testkit.check( "a custom hint", mu.footer( false, "Add --yes to install." ) == "Nothing was changed. Add --yes to install." );
+// the plan exits 2, the dry run 0, and the lines are the contract's
+o = cli.scoped( "x y" );
+testkit.check( "a plan exits 2", o.plan( "do it", { a: 1 }, true ) == 2 );
+testkit.check( "a dry run exits 0", o.plan( "do it", {}, true, true ) == 0 );
+testkit.check( "extra lines and hints go through", o.plan( "t", {}, true, false, [ "  more" ], "Add --yes to delete." ) == 2 );
+testkit.done( "util plan tests passed" );

@@ -151,8 +151,7 @@ class HotCorners {
         var summary = [];
         for ( var k in corners() ) summary.append( k & "=" & arguments.c[ k ] );
         var data = { corners: arguments.c, file: file() };
-        if ( arguments.dry ) return variables.out.say( "ok", data, arguments.asJson, [ "Plan: hot corners " & summary.toList( " " ), "Nothing was changed." ], true );
-        if ( !arguments.yes ) return variables.out.say( "plan", data, arguments.asJson, [ "Plan: hot corners " & summary.toList( " " ), "Nothing was changed. Add --yes to apply." ] );
+        if ( arguments.dry || !arguments.yes ) return new bxrig.util.Mutation( variables.out ).show( "hot corners " & summary.toList( " " ), data, arguments.asJson, arguments.dry );
         write( arguments.c );
         var r = apply( arguments.c );
         data.noctalia = r.noctalia; data.plasma = r.plasma; data.notes = r.notes;

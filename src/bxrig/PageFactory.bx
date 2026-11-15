@@ -1,0 +1,29 @@
+// Builds the page object of a Control Center page id. The ids, titles and icons are ControlCenterPages (data only: classes that just need the
+// list, such as Shortcuts, Launchers and MenuTree, must not pull in every page and provider, which this class does).
+class PageFactory {
+    // The page object for an id. `dashboard` is the dashboard data provider (the Dashboard, Machines and Databases pages share it).
+    // The order and the ids are ControlCenterPages.list(); a test checks that every id builds.
+    function make( id, demo, dashboard ) {
+        var d = arguments.demo;
+        switch ( arguments.id ) {
+            case "dashboard": return new bxrig.DashboardPage( arguments.dashboard );
+            case "apps": return new bxrig.AppsPage( d );
+            case "boxlang": return new bxrig.ListPage( new bxrig.BoxlangProvider( d ) );
+            case "java": return new bxrig.ListPage( new bxrig.JavaProvider( d ) );
+            case "maven": return new bxrig.ListPage( new bxrig.SdkProvider( "maven", d ) );
+            case "gradle": return new bxrig.ListPage( new bxrig.SdkProvider( "gradle", d ) );
+            case "versions": return new bxrig.ListPage( new bxrig.VersionsProvider( d ) );
+            case "ports": return new bxrig.ListPage( new bxrig.PortsProvider( d ) );
+            case "packages": return new bxrig.ListPage( new bxrig.PackagesProvider( d ) );
+            case "shortcuts": return new bxrig.ListPage( new bxrig.ShortcutsProvider( d ) );
+            case "machines": return new bxrig.ListPage( new bxrig.MachinesProvider( d, arguments.dashboard ) );
+            case "databases": return new bxrig.ListPage( new bxrig.DatabasesProvider( d, arguments.dashboard ) );
+            case "mail": return new bxrig.ListPage( new bxrig.MailProvider( d ) );
+            case "storage": return new bxrig.ListPage( new bxrig.StorageProvider( d ) );
+            case "secrets": return new bxrig.ListPage( new bxrig.SecretsProvider( d ) );
+            case "themes": return new bxrig.ListPage( new bxrig.ThemesProvider( d ) );
+            case "logs": return new bxrig.ListPage( new bxrig.LogsProvider( d ) );
+        }
+        throw( type = "bxrig.pages", message = "unknown page: " & arguments.id );
+    }
+}

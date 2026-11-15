@@ -1,0 +1,29 @@
+// BxRig's own JSON settings and state files: the one reader and the one writer.
+//   read( file, defaults )   the defaults with the file's top-level keys laid over them; a missing, unreadable or non-struct file gives the defaults
+//   load( file, fallback )   the parsed file as it is (any shape), or the fallback when it is missing or not JSON
+//   write( name, file, data) through the config service (backup, atomic replace, journal: COMMAND-CONTRACT section 2.6); returns its exit code
+// Never throws on a bad file. Keys are lower case by convention, so the case-insensitive struct keys are harmless here.
+class JsonStore {
+    function init( config = "" ) {
+        variables.config = isSimpleValue( arguments.config ) ? new bxrig.ConfigService() : arguments.config;
+        variables.config.quiet( true );
+        return this;
+    }
+
+    function load( file, fallback = {} ) {
+        if ( !fileExists( arguments.file ) ) return arguments.fallback;
+        try { return jsonDeserialize( fileRead( arguments.file ) ); } catch ( any e ) { return arguments.fallback; }
+    }
+
+    function read( file, defaults = {} ) {
+        var out = duplicate( arguments.defaults );
+        var j = load( arguments.file, {} );
+        if ( !isStruct( j ) ) return out;
+        for ( var k in j ) out[ k ] = j[ k ];
+        return out;
+    }
+
+    function write( name, file, data, mode = "644" ) {
+        return variables.config.writeText( arguments.name, arguments.file, jsonSerialize( arguments.data ) & chr( 10 ), arguments.mode );
+    }
+}

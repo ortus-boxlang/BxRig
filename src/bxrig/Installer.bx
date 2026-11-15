@@ -28,11 +28,6 @@ class Installer {
         return variables.custom;
     }
 
-    // Runs one command through the injected runner, or for real (argument array, timeout in seconds).
-    function exec( argv, timeout ) {
-        return variables.procs.raw( arguments.argv, arguments.timeout );
-    }
-
     // True when the effective user is root (uid 0).
     function isRoot() {
         return variables.procs.isRoot();
@@ -84,7 +79,7 @@ class Installer {
     function onCachyos() {
         if ( !structKeyExists( variables, "cachy" ) ) {
             variables.cachy = false;
-            var f = getSystemSetting( "BXRIG_OS_RELEASE", "/etc/os-release" );
+            var f = new bxrig.util.Env().named( "osRelease", "/etc/os-release" );
             if ( fileExists( f ) ) for ( var line in listToArray( fileRead( f ), chr( 10 ) ) ) {
                 if ( left( line, 3 ) == "ID=" ) variables.cachy = lCase( replace( mid( line, 4, len( line ) ), '"', "", "all" ) ) == "cachyos";
             }
@@ -96,7 +91,7 @@ class Installer {
     // The pacman step installs all its packages in one transaction; `pkgs` maps each app to its packages so a failed transaction
     // can be retried one app at a time (see run).
     function steps( selected, asRoot, home = "" ) {
-        var homeDir = len( home ) ? home : getSystemSetting( "HOME", "" );
+        var homeDir = len( home ) ? home : new bxrig.util.Env().named( "home", "" );
         var pacmanIds = []; var pacmanTargets = []; var pkgs = {};
         var aur = []; var builds = []; var webs = []; var scripts = []; var blocked = [];
         for ( var app in selected ) {
@@ -151,7 +146,7 @@ class Installer {
             }
             for ( var cmd in step.commands ) {
                 if ( len( problem ) ) break;
-                var r = exec( cmd, 1800 );
+                var r = variables.procs.exec( cmd, 1800 );
                 if ( r.timeout ) problem = step.kind & " timed out";
                 else if ( r.exitCode != 0 ) problem = step.kind & " failed (exit " & r.exitCode & ")";
             }
@@ -162,7 +157,7 @@ class Installer {
             // so only the apps that really cannot be installed are reported failed
             if ( len( problem ) && step.kind == "pacman" && step.ids.len() > 1 && structKeyExists( step, "pkgs" ) ) {
                 for ( var id in step.ids ) {
-                    var one = exec( variables.pacman.installArgv( step.pkgs[ id ], step.asRoot ), 1800 );
+                    var one = variables.procs.exec( variables.pacman.installArgv( step.pkgs[ id ], step.asRoot ), 1800 );
                     if ( one.timeout || one.exitCode != 0 ) failed.append( { id: id, source: "pacman", error: "pacman failed (exit " & ( one.timeout ? 124 : one.exitCode ) & ")" } );
                     else done.append( { id: id, source: "pacman" } );
                 }

@@ -17,7 +17,7 @@ exit 0
 F
 printf '#!/usr/bin/env bash\n[[ "$1" == --version ]] && { echo "Sudo version 1.9"; exit 0; }\necho "sudo $*" >> "$LOG"\nexit 0\n' > "$tmp/bin/sudo"
 printf '#!/usr/bin/env bash\necho "self $*" >> "$LOG"\nif [[ "$2" == export ]]; then echo "encrypted" > "$3"; fi\n' > "$tmp/self"
-printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo 1000; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
+stub_id
 chmod +x "$tmp/bin"/* "$tmp/self"
 run() { env HOME="$H" BXRIG_CONFIG_HOME="$H/.config" BXRIG_DATA_HOME="$tmp/data" BXRIG_SELF="$tmp/self" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
 has() { grep -qF -- "$1" "$LOG"; }

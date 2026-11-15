@@ -34,7 +34,7 @@ s status --json | jq -e '.data.backend == "keyring" and .data.keyring_available 
 printf 'sk-test-123\n' > "$tmp/tty"
 BXRIG_TTY_IN="$tmp/tty" s set ANTHROPIC_API_KEY | grep -q 'was saved (keyring)' || fail 'set via prompt'
 [[ "$(cat "$tmp/kr/ANTHROPIC_API_KEY")" == 'sk-test-123' ]] || fail "the keyring got the value: $(cat "$tmp/kr/ANTHROPIC_API_KEY")"
-[[ "$(code "$binary" secrets set lower_case)" == 4 ]] || fail 'a bad name exits 4'
+[[ "$(code "$binary" secrets set lower_case)" == 2 ]] || fail 'a bad name exits 2'
 printf '' > "$tmp/tty"; [[ "$(BXRIG_TTY_IN="$tmp/tty" code env -u GEMINI_API_KEY -u OPENAI_API_KEY -u ANTHROPIC_API_KEY -u GITHUB_TOKEN -u NOVITA_API_KEY -u MY_LLM_KEY HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" FAKE_KEYRING="$FAKE_KEYRING" PATH="$tmp/bin:$PATH" BXRIG_TTY_IN="$tmp/tty" "$binary" secrets set OPENAI_API_KEY)" == 4 ]] || fail 'an empty value exits 4'
 printf 'oa-key\n' > "$tmp/valfile"
 s set OPENAI_API_KEY --from-file="$tmp/valfile" | grep -q 'was saved' || fail 'set --from-file'

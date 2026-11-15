@@ -1,0 +1,31 @@
+// Names the user types (a secret, a remote, a package, a theme, ...): one rule per kind, one sentence per kind. A bad name is a usage error (exit 2).
+//   valid( kind, value ) -> true or false        rule( kind ) -> "letters, digits and dashes, starting with a letter (up to 31 characters)"
+// Kinds: slug (NAS and backup names), vm, theme, label (remote, web app, session), container, secret, package, model.
+class Names {
+    function table() {
+        var t = {};
+        t[ "slug" ] = { re: "^[a-z][a-z0-9-]{0,30}$", rule: "lower case letters, digits and dashes, starting with a letter (up to 31 characters)" };
+        t[ "vm" ] = { re: "^[a-z0-9][a-z0-9-]{0,30}$", rule: "lower case letters, digits and dashes (up to 31 characters)" };
+        t[ "theme" ] = { re: "^[a-z0-9][a-z0-9-]{0,40}$", rule: "lower case letters, digits and dashes (up to 41 characters)" };
+        t[ "label" ] = { re: "^[A-Za-z0-9_-]{1,40}$", rule: "letters, digits, - and _ (up to 40 characters)" };
+        t[ "container" ] = { re: "^[a-zA-Z0-9-]{1,40}$", rule: "letters, digits and hyphens (up to 40 characters)" };
+        t[ "secret" ] = { re: "^[A-Z_][A-Z0-9_]{0,63}$", rule: "capital letters, digits and underscores, like ANTHROPIC_API_KEY" };
+        t[ "package" ] = { re: "^[a-z0-9@._+-]{1,100}$", rule: "lower case letters, digits and @ . _ + - (up to 100 characters)" };
+        t[ "model" ] = { re: "^[A-Za-z0-9._:/-]{1,100}$", rule: "letters, digits and . _ : / - (for example qwen3:8b)" };
+        return t;
+    }
+
+    // True when the value follows the rule of its kind. An unknown kind throws.
+    function valid( kind, value ) {
+        var t = table();
+        if ( !structKeyExists( t, arguments.kind ) ) throw( type = "bxrig.names", message = "unknown name kind: " & arguments.kind );
+        return reFind( t[ arguments.kind ].re, arguments.value ?: "" ) > 0;
+    }
+
+    // The rule of a kind as a sentence part, for error messages.
+    function rule( kind ) {
+        var t = table();
+        if ( !structKeyExists( t, arguments.kind ) ) throw( type = "bxrig.names", message = "unknown name kind: " & arguments.kind );
+        return t[ arguments.kind ].rule;
+    }
+}

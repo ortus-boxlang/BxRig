@@ -15,7 +15,7 @@ class AppsPage {
 
     function id() { return "apps"; }
     function title() { return "Apps"; }
-    function icon() { return "cube"; }
+    function icon() { return new bxrig.ControlCenterPages().icon( "apps" ); }
     function model() { return variables.model; }
     // The search box takes letters, so every key goes to this page; the page asks for "quit" and "sidebar" itself.
     function usesLeft() { return true; }

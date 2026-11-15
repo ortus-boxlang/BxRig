@@ -50,7 +50,7 @@ class DashboardData {
     }
 
     function batteryInfo() {
-        var dir = getSystemSetting( "BXRIG_POWER_DIR", "/sys/class/power_supply" );
+        var dir = new bxrig.util.Env().named( "powerDir", "/sys/class/power_supply" );
         var out = { present: false, percent: 0, charging: false };
         try {
             for ( var d in directoryList( dir, false, "name" ) ) {
@@ -124,7 +124,7 @@ class DashboardData {
     }
 
     function collect() {
-        var forced = getSystemSetting( "BXRIG_DASHBOARD_FILE", "" );
+        var forced = new bxrig.util.Env().named( "dashboardFile", "" );
         if ( len( forced ) && fileExists( forced ) ) return jsonDeserialize( fileRead( forced ) );
         var out = {};
         var bk = backupRows();

@@ -21,15 +21,20 @@ class Db {
     // ---- settings and paths ----
     function settingsFile() { return variables.config.cfgHome() & "/bxrig/db.json"; }
 
-    // The container engine program: podman (default) or docker.
+    // The engine chosen with `bxrig db engine` ("podman" or "docker"), or "" when none was chosen. Everyone who asks which engine asks here.
+    function engineSetting() {
+        if ( !fileExists( settingsFile() ) ) return "";
+        try { var s = jsonDeserialize( fileRead( settingsFile() ) ); return arrayFind( [ "podman", "docker" ], s.engine ?: "" ) ? s.engine : ""; } catch ( any e ) { return ""; }
+    }
+
+    // The container engine program: the chosen one, podman by default.
     function engineCli() {
-        if ( !fileExists( settingsFile() ) ) return "podman";
-        try { var s = jsonDeserialize( fileRead( settingsFile() ) ); return arrayFind( [ "podman", "docker" ], s.engine ?: "" ) ? s.engine : "podman"; } catch ( any e ) { return "podman"; }
+        var chosen = engineSetting();
+        return len( chosen ) ? chosen : "podman";
     }
 
     function containerName( engine, name ) { return "bxrig-db-" & arguments.engine & "-" & arguments.name; }
     function stateDir( container ) { return variables.environ.data() & "/databases/" & arguments.container; }
-    function validName( name ) { return reFind( "^[a-zA-Z0-9-]{1,40}$", arguments.name ) > 0; }
 
     // ---- small helpers ----
 
@@ -39,7 +44,7 @@ class Db {
     function engineExec( args, timeout = 600 ) {
         var argv = [ engineCli() ];
         for ( var a in arguments.args ) argv.append( a );
-        return variables.inst.exec( argv, arguments.timeout );
+        return variables.inst.proc().exec( argv, arguments.timeout );
     }
 
     function engineAvailable() {
@@ -59,13 +64,13 @@ class Db {
     }
 
     function maxMapCount() {
-        var f = getSystemSetting( "BXRIG_MAX_MAP_COUNT_FILE", "/proc/sys/vm/max_map_count" );
+        var f = new bxrig.util.Env().named( "maxMapCountFile", "/proc/sys/vm/max_map_count" );
         try { return fileExists( f ) ? trim( fileRead( f ) ) + 0 : 0; } catch ( any e ) { return 0; }
     }
 
     // A random secret (hex, 24 random bytes) from the system's random source.
     function newSecret() {
-        var r = variables.inst.exec( [ "sh", "-c", 'head -c 24 /dev/urandom | od -An -tx1 | tr -d "[:space:]"' ], 10 );
+        var r = variables.inst.proc().exec( [ "sh", "-c", 'head -c 24 /dev/urandom | od -An -tx1 | tr -d "[:space:]"' ], 10 );
         return trim( r.output );
     }
 
@@ -74,7 +79,7 @@ class Db {
         var e = variables.engines.get( arguments.engineId );
         if ( structIsEmpty( e ) ) return { error: "Unknown engine: " & arguments.engineId & " (use " & variables.engines.ids().toList( ", " ) & ")", code: 2 };
         if ( structKeyExists( e, "unsupported" ) ) return { error: e.title & ": " & e.unsupported, code: 4 };
-        if ( !validName( arguments.name ) ) return { error: "The name may only contain letters, digits and hyphens (up to 40 characters)", code: 4 };
+        if ( !new bxrig.util.Names().valid( "container", arguments.name ) ) return { error: "The name may only contain letters, digits and hyphens (up to 40 characters)", code: 2 };
         return { error: "", code: 0, engine: e, name: arguments.name, container: containerName( e.id, arguments.name ) };
     }
 
@@ -96,7 +101,7 @@ class Db {
         var tmp = reReplace( getTempDirectory(), "/+$", "" ) & "/bxrig-pw-" & left( createUUID(), 8 );
         var script = 'in="${BXRIG_TTY_IN:-/dev/tty}"; exec 3< "$in"; ask() { if [ "$in" = /dev/tty ]; then printf "%s" "$1" > /dev/tty; stty -echo < /dev/tty; fi; IFS= read -r v <&3; if [ "$in" = /dev/tty ]; then stty echo < /dev/tty; echo > /dev/tty; fi; printf "%s" "$v"; }; ask "Password: " > "$1"; echo >> "$1"; ask "Repeat password: " >> "$1"';
         try {
-            variables.inst.exec( [ "sh", "-c", script, "_", tmp ], 300 );
+            variables.inst.proc().exec( [ "sh", "-c", script, "_", tmp ], 300 );
             var lines = fileExists( tmp ) ? listToArray( fileRead( tmp ), chr( 10 ), true ) : [];
         } finally {
             if ( fileExists( tmp ) ) fileDelete( tmp );
@@ -134,9 +139,7 @@ class Db {
     }
 
     function readMeta( container ) {
-        var f = stateDir( arguments.container ) & "/meta.json";
-        if ( !fileExists( f ) ) return {};
-        try { return jsonDeserialize( fileRead( f ) ); } catch ( any e ) { return {}; }
+        return new bxrig.util.JsonStore().load( stateDir( arguments.container ) & "/meta.json" );
     }
 
     // The container run command for an engine (argv after the engine program). secretEnvFile is "" for engines without a password.
@@ -193,7 +196,7 @@ class Db {
         var verb = len( state ) ? "start the stopped container " & res.container : "create " & res.container & " from " & e.image & " on 127.0.0.1:" & p & " (data in the volume " & res.container & ")" & ( wants ? " with a password you choose" : "" );
         if ( !arguments.yes || arguments.dryRun ) {
             var code = arguments.dryRun ? 0 : 2;
-            var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": " & cmd & " " & e.id, "  would " & verb, arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ];
+            var lines = [ new bxrig.util.Mutation().banner( arguments.dryRun ) & cmd & " " & e.id, "  would " & verb, new bxrig.util.Mutation().footer( arguments.dryRun ) ];
             return variables.cli.say( cmd, code, variables.text.merge( data, { would: verb } ), arguments.asJson, lines, arguments.dryRun );
         }
         if ( len( state ) ) {
@@ -264,10 +267,7 @@ class Db {
         try { hasVolume = engineExec( [ "volume", "inspect", res.container ], 30 ).exitCode == 0; } catch ( any e ) {}
         if ( !hasContainer && !hasFiles && !hasVolume ) return variables.cli.say( cmd, "precondition", { error: "There is nothing to remove for " & res.container }, arguments.asJson, [ "error: there is nothing to remove for " & res.container ] );
         var what = "remove the container " & res.container & ( arguments.keepData ? " (the data volume and password file are KEPT)" : " AND DELETE ITS DATA (the data volume and the password file)" );
-        if ( !arguments.yes || arguments.dryRun ) {
-            var code = arguments.dryRun ? 0 : 2;
-            return variables.cli.say( cmd, code, { container: res.container, would: what, deletes_data: !arguments.keepData }, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": would " & what, arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dryRun );
-        }
+        if ( !arguments.yes || arguments.dryRun ) return variables.cli.scoped( cmd ).plan( "would " & what, { container: res.container, would: what, deletes_data: !arguments.keepData }, arguments.asJson, arguments.dryRun );
         if ( hasContainer ) {
             var r = engineExec( [ "rm", "-f", res.container ], 120 );
             if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { container: res.container, error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
@@ -313,7 +313,7 @@ class Db {
     // The first installed terminal, "" when none (the menu runs each action in one so its output stays visible).
     function terminalProgram() {
         for ( var t in [ "ghostty", "kitty", "foot", "alacritty", "konsole" ] ) {
-            try { if ( variables.inst.exec( [ "sh", "-c", 'command -v "$1"', "_", t ], 10 ).exitCode == 0 ) return t; } catch ( any e ) {}
+            try { if ( variables.inst.proc().exec( [ "sh", "-c", 'command -v "$1"', "_", t ], 10 ).exitCode == 0 ) return t; } catch ( any e ) {}
         }
         return "";
     }
@@ -323,22 +323,22 @@ class Db {
             return runMenu();
         } catch ( any err ) {
             println( "error: " & err.message );
-            return 4;
+            return new bxrig.util.Exit().precondition();
         }
     }
 
     function runMenu() {
         var runner = new bxrig.Runner( variables.cli, variables.inst.runner() );
         var term = terminalProgram();
-        if ( !len( term ) ) { println( "error: the menu needs a terminal program to show results (ghostty, kitty, foot, alacritty or konsole)" ); return 4; }
+        if ( !len( term ) ) { println( "error: the menu needs a terminal program to show results (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.util.Exit().precondition(); }
         var supported = variables.engines.all().filter( function( e ) { return !structKeyExists( e, "unsupported" ); } );
         var actions = [ [ "Start", "start" ], [ "Stop", "stop" ], [ "Status", "status" ], [ "Connection info", "info" ], [ "Logs", "logs" ], [ "Remove (deletes the data)", "remove" ] ];
-        var self = getSystemSetting( "BXRIG_SELF", "bxrig" );
+        var self = new bxrig.util.Env().named( "self", "bxrig" );
         while ( true ) {
             var labels = supported.map( function( e ) { return e.title; } );
             labels.append( "Exit" );
             var pick = runner.select( "Databases", labels );
-            if ( pick == 0 || pick == labels.len() ) return 0;
+            if ( pick == 0 || pick == labels.len() ) return new bxrig.util.Exit().ok();
             var e = supported[ pick ];
             var al = actions.map( function( a ) { return a[ 1 ]; } );
             al.append( "Back" );
@@ -350,8 +350,8 @@ class Db {
             if ( arrayFind( [ "start", "remove" ], verb ) ) argv.append( "--yes" );
             var launch = [ "sh", "-c", 'setsid "$@" >/dev/null 2>&1 &', "_" ];
             for ( var part in argv ) launch.append( part );
-            variables.inst.exec( launch, 10 );
+            variables.inst.proc().exec( launch, 10 );
         }
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 }

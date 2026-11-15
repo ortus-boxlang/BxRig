@@ -1,0 +1,68 @@
+// `bxrig config list|diff|apply|restore|history`: the managed config files (the list comes from Managed, the work from ConfigService).
+// Every method returns the exit code.
+class ConfigCmd {
+    function init( config ) {
+        variables.config = arguments.config;
+        variables.proc = new bxrig.util.Proc();
+        return this;
+    }
+
+    // p: the positionals (config first), options: the parsed --flags.
+    function run( p, options, asJson ) {
+        var exit = new bxrig.util.Exit();
+        var verb = p.len() >= 2 ? p[ 2 ] : "";
+        var name = p.len() >= 3 ? p[ 3 ] : "";
+        var bad = !len( new bxrig.util.Env().home() ) || p.len() > 4 || ( p.len() == 4 && verb != "restore" ) || !arrayFind( [ "list", "diff", "apply", "restore", "history" ], verb );
+        if ( bad ) {
+            println( new bxrig.CommandSpec().usage( "config" ) );
+            return exit.usage();
+        }
+        var yes = structKeyExists( options, "yes" );
+        var dryRun = structKeyExists( options, "dry-run" );
+        var force = structKeyExists( options, "force" );
+        var managed = new bxrig.Managed().entries( variables.config.cfgHome() );
+        if ( verb == "list" || verb == "history" ) {
+            var rows = [];
+            if ( verb == "list" ) {
+                for ( var key in managed ) rows.append( { name: key, target: managed[ key ].target, state: variables.config.configState( managed[ key ] ) } );
+            } else {
+                rows = variables.config.journalEntries( name );
+            }
+            if ( asJson ) {
+                println( jsonSerialize( rows ) );
+            } else if ( verb == "list" ) {
+                for ( var r in rows ) println( r.name & ": " & r.state & " (" & r.target & ")" );
+            } else {
+                for ( var r in rows ) println( r.id & " " & r.action & " " & r.name & " " & r.time );
+                if ( !rows.len() ) println( "No history." );
+            }
+            return exit.ok();
+        }
+        if ( !structKeyExists( managed, name ) ) {
+            println( "Unknown managed config: " & name );
+            return exit.usage();
+        }
+        var entry = managed[ name ];
+        if ( verb == "diff" ) return diff( name, entry );
+        if ( verb == "apply" ) return variables.config.configApply( entry, yes, dryRun, force );
+        if ( p.len() != 4 ) {
+            println( new bxrig.CommandSpec().usage( "config restore" ) );
+            return exit.usage();
+        }
+        return variables.config.configRestore( entry, p[ 4 ], yes, dryRun );
+    }
+
+    // Prints the state and, when the file differs from what BxRig would write, a unified diff.
+    function diff( name, entry ) {
+        var st = variables.config.configState( arguments.entry );
+        println( arguments.name & ": " & st );
+        if ( st == "outdated" || st == "drifted" ) {
+            var tmpSrc = getTempDirectory() & "/bxrig-src-" & left( createUUID(), 8 );
+            fileWrite( tmpSrc, arguments.entry.content );
+            var d = variables.proc.exec( [ "diff", "-u", arguments.entry.target, tmpSrc ], 15 );
+            println( d.output );
+            fileDelete( tmpSrc );
+        }
+        return new bxrig.util.Exit().ok();
+    }
+}

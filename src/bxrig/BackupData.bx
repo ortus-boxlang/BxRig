@@ -37,7 +37,7 @@ class BackupData {
     }
 
     function settingsFile() { return variables.config.cfgHome() & "/bxrig/backup.json"; }
-    function unitDir() { return getSystemSetting( "BXRIG_USER_UNIT_DIR", variables.config.cfgHome() & "/systemd/user" ); }
+    function unitDir() { return new bxrig.util.Env().named( "userUnitDir", variables.config.cfgHome() & "/systemd/user" ); }
     function secrets() { return new bxrig.Secrets( variables.cli ); }
 
     // ---- settings ----
@@ -60,7 +60,6 @@ class BackupData {
         fileWrite( settingsFile(), jsonSerialize( arguments.s ) & chr( 10 ) );
     }
 
-    function validName( n ) { return reFind( "^[a-z][a-z0-9-]{0,30}$", arguments.n ) > 0; }
     function validPart( x ) { return reFind( "^[A-Za-z0-9._/:@+-]{1,200}$", arguments.x ) > 0 && find( "..", arguments.x ) == 0; }
     function validUrl( x ) { return reFind( "^https?://[A-Za-z0-9._:@/-]{1,200}$", arguments.x ) > 0; }
 
@@ -77,7 +76,7 @@ class BackupData {
         var ty = arguments.t.type;
         var path = arguments.t.path ?: "";
         if ( ty == "local" ) return path;
-        if ( ty == "nas" ) return getSystemSetting( "BXRIG_NAS_HOME", variables.environ.home() & "/NAS" ) & "/" & arguments.t.nas & "/" & listLast( arguments.t.share, "/" ) & "/" & ( len( path ) ? path : "bxrig-backup" );
+        if ( ty == "nas" ) return new bxrig.util.Env().named( "nasHome", variables.environ.home() & "/NAS" ) & "/" & arguments.t.nas & "/" & listLast( arguments.t.share, "/" ) & "/" & ( len( path ) ? path : "bxrig-backup" );
         if ( ty == "sftp" ) return "sftp:" & ( len( arguments.t.port ?: "" ) ? "-p " & arguments.t.port & " " : "" ) & arguments.t.user & "@" & arguments.t.host & ":" & path;
         if ( ty == "rest" ) return "rest:" & arguments.t.url;
         if ( ty == "s3" ) return "s3:" & ( len( arguments.t.endpoint ?: "" ) ? reReplace( arguments.t.endpoint, "/+$", "" ) & "/" : "s3.amazonaws.com/" ) & arguments.t.bucket & ( len( path ) ? "/" & path : "" );
@@ -116,9 +115,9 @@ class BackupData {
 
     function plan( title, lines, yes, dry, asJson, data = {} ) {
         if ( !arguments.yes || arguments.dry ) {
-            var out = [ ( arguments.dry ? "Dry run: " : "Plan: " ) & arguments.title ];
+            var out = [ new bxrig.util.Mutation().banner( arguments.dry ) & arguments.title ];
             for ( var l in arguments.lines ) out.append( "  " & l );
-            out.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+            out.append( new bxrig.util.Mutation().footer( arguments.dry ) );
             return { done: false, code: variables.out.say( arguments.dry ? "ok" : "plan", arguments.data, arguments.asJson, out, arguments.dry ) };
         }
         return { done: true, code: 0 };
@@ -137,7 +136,7 @@ class BackupData {
     }
 
     function targetAdd( name, opts, yes, dry, asJson ) {
-        if ( !validName( arguments.name ) ) return variables.out.fail( "usage", "NAME is lower case letters, digits and dashes, starting with a letter", arguments.asJson );
+        if ( !new bxrig.util.Names().valid( "slug", arguments.name ) ) return variables.out.fail( "usage", "NAME is lower case letters, digits and dashes, starting with a letter", arguments.asJson );
         var ty = lCase( arguments.opts.type ?: "" );
         if ( !arrayFind( [ "local", "sftp", "rest", "s3", "b2", "azure", "gs", "rclone" ], ty ) ) return variables.out.fail( "usage", "--type is local, sftp, rest, s3, b2, azure, gs or rclone (a NAS: bxrig nas use)", arguments.asJson );
         var t = { type: ty };
@@ -157,7 +156,7 @@ class BackupData {
         var given = {};
         if ( structKeyExists( arguments.opts, "keys-file" ) ) {
             if ( !fileExists( arguments.opts[ "keys-file" ] ) ) return variables.out.fail( "precondition", "the keys file was not found", arguments.asJson );
-            for ( var line in listToArray( fileRead( arguments.opts[ "keys-file" ] ), chr( 10 ) ) ) { var ln = trim( line ); if ( len( ln ) && find( "=", ln ) ) given[ trim( listFirst( ln, "=" ) ) ] = trim( listRest( ln, "=" ) ); }
+            for ( var kv in new bxrig.util.Props().pairs( fileRead( arguments.opts[ "keys-file" ] ) ) ) given[ kv.key ] = kv.value;
         }
         var s = readAll();
         var d = { name: arguments.name, type: ty, repository: repositoryOf( arguments.name, t ), keys: keys.map( function( k ) { return secretFor( name, k ); } ) };
@@ -359,8 +358,15 @@ class BackupData {
 
     // ---- schedule ----
     function unitTexts( when ) {
-        var svc = "## Written by `bxrig backup data schedule`." & chr( 10 ) & "[Unit]" & chr( 10 ) & "Description=BxRig backup of your files" & chr( 10 ) & "ConditionACPower=true" & chr( 10 ) & "After=network-online.target" & chr( 10 ) & chr( 10 ) & "[Service]" & chr( 10 ) & "Type=oneshot" & chr( 10 ) & "Nice=10" & chr( 10 ) & "IOSchedulingClass=idle" & chr( 10 ) & "ExecStart=" & variables.environ.self() & " backup data run --all --yes --scheduled" & chr( 10 );
-        var tim = "## Written by `bxrig backup data schedule`." & chr( 10 ) & "[Unit]" & chr( 10 ) & "Description=BxRig backup (" & arguments.when & ")" & chr( 10 ) & chr( 10 ) & "[Timer]" & chr( 10 ) & "OnCalendar=" & arguments.when & chr( 10 ) & "Persistent=true" & chr( 10 ) & "RandomizedDelaySec=15min" & chr( 10 ) & chr( 10 ) & "[Install]" & chr( 10 ) & "WantedBy=timers.target" & chr( 10 );
+        var svc = new bxrig.util.SystemdUnit().render( [
+            { name: "Unit", lines: [ "Description=BxRig backup of your files", "ConditionACPower=true", "After=network-online.target" ] },
+            { name: "Service", lines: [ "Type=oneshot", "Nice=10", "IOSchedulingClass=idle", "ExecStart=" & variables.environ.self() & " backup data run --all --yes --scheduled" ] }
+        ], "Written by `bxrig backup data schedule`." );
+        var tim = new bxrig.util.SystemdUnit().render( [
+            { name: "Unit", lines: [ "Description=BxRig backup (" & arguments.when & ")" ] },
+            { name: "Timer", lines: [ "OnCalendar=" & arguments.when, "Persistent=true", "RandomizedDelaySec=15min" ] },
+            { name: "Install", lines: [ "WantedBy=timers.target" ] }
+        ], "Written by `bxrig backup data schedule`." );
         return { service: svc, timer: tim };
     }
 

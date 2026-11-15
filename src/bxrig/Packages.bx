@@ -15,7 +15,7 @@ class Packages {
 
     // Where `install` puts the launcher of a web app (decided in COMMAND-CONTRACT section 11).
     function launcherPath( id ) {
-        return getSystemSetting( "HOME", "" ) & "/.local/share/applications/bxrig-" & id & ".desktop";
+        return new bxrig.util.Env().named( "home", "" ) & "/.local/share/applications/bxrig-" & id & ".desktop";
     }
 
     // True when the app is on the system: every target installed, or the launcher file for a web app.
@@ -28,7 +28,7 @@ class Packages {
 
     // The filesystem of / ("btrfs", "ext4", ...; "" when it cannot be read). BXRIG_ROOT_FS overrides it (tests).
     function rootFs() {
-        var forced = getSystemSetting( "BXRIG_ROOT_FS", "" );
+        var forced = new bxrig.util.Env().named( "rootFs", "" );
         if ( len( forced ) ) return forced;
         try {
             var r = systemExecute( "findmnt", [ "-n", "-o", "FSTYPE", "/" ], 10, true );
@@ -38,7 +38,7 @@ class Packages {
 
     // The running shell ("hyprland", "plasma" or "" when unknown) from XDG_CURRENT_DESKTOP.
     function defaultShell() {
-        return new bxrig.Resolver().detectShell( getSystemSetting( "XDG_CURRENT_DESKTOP", "" ) );
+        return new bxrig.util.Desktop().shell();
     }
 
     // desktop-list, tui-list, web-list, optional-list: the catalog filtered by kind or tier.
@@ -49,7 +49,7 @@ class Packages {
         } );
         if ( asJson ) println( variables.cli.envelope( command, 0, rows ) );
         else for ( var a in rows ) println( new bxrig.Catalog().row( a ) );
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 
     // profile-list: every catalog profile with how many default and optional apps it has.
@@ -99,13 +99,13 @@ class Packages {
         var res = new bxrig.Resolver().resolve( variables.cat, req );
         if ( res.errors.len() ) {
             for ( var e in res.errors ) println( "error: " & e );
-            return 2;
+            return new bxrig.util.Exit().usage();
         }
         var selection = { mode: res.mode, ids: req.ids, profile: req.profile, optional: req.optional, shell: req.shell };
         if ( res.failed.len() ) {
             for ( var f in res.failed ) println( "Failed: " & f.id & " (" & f.error & "). Nothing was changed." );
             if ( asJson ) println( variables.cli.envelope( cmd, 3, { selection: selection, would_install: [], done: [], failed: res.failed, skipped: res.skipped } ) );
-            return 3;
+            return new bxrig.util.Exit().timeout();
         }
         var inst = new bxrig.Installer( runner );
         var built = inst.steps( res.selected, inst.isRoot() );
@@ -116,13 +116,13 @@ class Packages {
                 println( variables.cli.envelope( cmd, code, { selection: selection, would_install: wouldInstall, steps: built.steps, done: [], failed: built.blocked, skipped: res.skipped }, dryRun ) );
                 return code;
             }
-            println( ( dryRun ? "Dry run" : "Plan" ) & ": " & wouldInstall.len() & " apps, " & built.steps.len() & " steps" );
+            println( new bxrig.util.Mutation().banner( dryRun ) & wouldInstall.len() & " apps, " & built.steps.len() & " steps" );
             for ( var step in built.steps ) {
                 for ( var c in step.commands ) println( "  " & step.kind & ": " & c.toList( " " ) );
                 if ( structKeyExists( step, "files" ) ) for ( var f in step.files ) println( "  " & step.kind & ": write " & f.path );
             }
             for ( var b in built.blocked ) println( "  cannot install " & b.id & ": " & b.error );
-            println( dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+            println( new bxrig.util.Mutation().footer( dryRun ) );
             return code;
         }
         var needsUser = false; var needsYay = false;
@@ -132,11 +132,11 @@ class Packages {
         }
         if ( needsUser && inst.isRoot() ) {
             println( "AUR and PKGBUILD builds never run as root. Nothing was changed." );
-            return 4;
+            return new bxrig.util.Exit().precondition();
         }
         if ( needsYay && !new bxrig.util.Aur( inst.proc() ).available() ) {
             println( "yay is not installed (bootstrap/install.sh installs it). Nothing was changed." );
-            return 4;
+            return new bxrig.util.Exit().precondition();
         }
         var result = inst.run( built.steps );
         for ( var b in built.blocked ) result.failed.append( b );
@@ -160,7 +160,7 @@ class Packages {
         var res = new bxrig.Resolver().resolve( variables.cat, req );
         if ( res.errors.len() ) {
             for ( var e in res.errors ) println( "error: " & e );
-            return 2;
+            return new bxrig.util.Exit().usage();
         }
         var wouldInstall = res.selected.map( function( a ) {
             return { id: a.id, source: a.source, targets: structKeyExists( a, "targets" ) ? a.targets : [] };
@@ -189,7 +189,7 @@ class Packages {
         var app = new bxrig.Catalog().find( variables.cat, id );
         if ( structIsEmpty( app ) ) {
             println( "Unknown catalog id: " & id );
-            return 3;
+            return new bxrig.util.Exit().timeout();
         }
         var installed = isInstalled( app, installedNames() );
         var code = installed ? 0 : 1;

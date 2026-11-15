@@ -3,7 +3,7 @@
 . "$(dirname "$0")/lib/harness.sh"
 export BXRIG_WALLPAPER_DIR="$root/assets/wallpapers" BXRIG_BASE_URL=http://127.0.0.1:9   # the theme wallpapers come from the checkout, never the network
 mkdir -p "$tmp/bin" "$tmp/home"
-printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo "${MOCK_UID:-1000}"; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"; chmod +x "$tmp/bin/id"
+stub_id
 run() { env HOME="$tmp/home" PATH="$tmp/bin:$PATH" "$@"; }
 run "$binary" assets list | grep -q 'logo.png -> ' || fail 'list shows the targets'
 run "$binary" assets list --json | jq -e '(.data.assets | length) == 9' >/dev/null || fail 'list --json'

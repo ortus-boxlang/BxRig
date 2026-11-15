@@ -10,7 +10,7 @@ echo "ENV repo=$RESTIC_REPOSITORY from=${RESTIC_FROM_REPOSITORY:-} fromcmd=${RES
 exit 0
 F
 printf '#!/usr/bin/env bash\ncase "$1" in -Qqe|-Qqm) echo git ;; esac\n' > "$tmp/bin/pacman"
-printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo 1000; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
+stub_id
 chmod +x "$tmp/bin"/*
 run() { env HOME="$H" USER=dev BXRIG_CONFIG_HOME="$H/.config" BXRIG_DATA_HOME="$tmp/data" BXRIG_SELF=/usr/bin/bxrig PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
 has() { grep -qF -- "$1" "$LOG"; }

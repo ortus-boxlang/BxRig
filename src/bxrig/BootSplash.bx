@@ -105,8 +105,7 @@ class BootSplash {
         var lines = [ "Plan: setup boot, " & p.steps.len() & " steps" ];
         for ( var s in p.steps ) { lines.append( "  " & s.id & ": " & s.title ); for ( var c in s.commands ) lines.append( "    " & c.toList( " " ) ); }
         for ( var n in p.notes ) lines.append( "  note: " & n );
-        if ( arguments.dry ) { lines.append( "Nothing was changed." ); return variables.out.say( "ok", data, arguments.asJson, lines, true ); }
-        if ( !arguments.yes ) { lines.append( "Nothing was changed. Add --yes to apply." ); return variables.out.say( "plan", data, arguments.asJson, lines ); }
+        if ( arguments.dry || !arguments.yes ) { lines.append( new bxrig.util.Mutation().footer( arguments.dry ) ); return variables.out.say( arguments.dry ? "ok" : "plan", data, arguments.asJson, lines, arguments.dry ); }
         var before = currentTheme();
         if ( len( before ) && before != "bxrig" ) {
             directoryCreate( getDirectoryFromPath( stateFile() ), true, true );
@@ -117,7 +116,7 @@ class BootSplash {
             if ( s.stage ?: false ) { try { stage( staging ); } catch ( any e ) { data.failed.append( { id: s.id, error: e.message } ); code = 6; break; } }
             var bad = "";
             for ( var c in s.commands ) {
-                var r = variables.inst.exec( c, 1800 );
+                var r = variables.proc.exec( c, 1800 );
                 if ( r.timeout || r.exitCode != 0 ) { bad = "exit " & ( r.timeout ? 124 : r.exitCode ) & ": " & trim( r.output ); break; }
             }
             if ( len( bad ) ) { data.failed.append( { id: s.id, error: bad } ); code = s.id == "package" ? 5 : 6; break; }
@@ -140,10 +139,9 @@ class BootSplash {
         cmds.append( [ "sudo", "rm", "-rf", themeDir() ] );
         var lines = [ "Plan: setup undo boot", "  " & ( len( prev ) ? "back to the " & prev & " theme" : "back to the default theme" ) & " and remove " & themeDir() ];
         var data = { previous: prev, commands: cmds };
-        if ( arguments.dry ) { lines.append( "Nothing was changed." ); return variables.out.say( "ok", data, arguments.asJson, lines, true ); }
-        if ( !arguments.yes ) { lines.append( "Nothing was changed. Add --yes to apply." ); return variables.out.say( "plan", data, arguments.asJson, lines ); }
+        if ( arguments.dry || !arguments.yes ) { lines.append( new bxrig.util.Mutation().footer( arguments.dry ) ); return variables.out.say( arguments.dry ? "ok" : "plan", data, arguments.asJson, lines, arguments.dry ); }
         for ( var c in cmds ) {
-            var r = variables.inst.exec( c, 1800 );
+            var r = variables.proc.exec( c, 1800 );
             if ( r.timeout || r.exitCode != 0 ) return variables.out.say( "failed", data, arguments.asJson, [ "error: " & c.toList( " " ) & " failed: " & trim( r.output ) ] );
         }
         if ( fileExists( stateFile() ) ) fileDelete( stateFile() );

@@ -12,6 +12,13 @@ class Runner {
         return this;
     }
 
+    // `runner show`: the saved choice, as the JSON envelope or as one JSON line. Returns the exit code.
+    function show( asJson ) {
+        var cfg = load();
+        if ( arguments.asJson ) println( variables.cli.envelope( "runner show", 0, cfg ) ); else println( jsonSerialize( cfg ) );
+        return new bxrig.util.Exit().ok();
+    }
+
     function registry() { return new bxrig.RunnerProviders(); }
     function launcherProviders() { return registry().ids(); }
     function menuProviders() { return registry().menuIds(); }
@@ -38,7 +45,7 @@ class Runner {
 
     // The defaults: Noctalia's launcher on Hyprland, the desktop's own runner elsewhere; Rofi for menus.
     function defaults( desktop = "" ) {
-        var d = len( arguments.desktop ) ? arguments.desktop : getSystemSetting( "XDG_CURRENT_DESKTOP", "" );
+        var d = len( arguments.desktop ) ? arguments.desktop : new bxrig.util.Desktop().raw();
         return { provider: findNoCase( "hyprland", d ) ? "noctalia" : "system", menu_provider: "rofi", launcher_commands: {}, menu_commands: {}, custom_command: [] };
     }
 
@@ -86,7 +93,7 @@ class Runner {
 
     // Whether a program is on PATH (no shell string: `sh -c 'command -v "$1"'`).
     function found( program ) {
-        try { return variables.inst.exec( [ "sh", "-c", 'command -v "$1"', "_", arguments.program ], 10 ).exitCode == 0; } catch ( any e ) { return false; }
+        try { return variables.inst.proc().exec( [ "sh", "-c", 'command -v "$1"', "_", arguments.program ], 10 ).exitCode == 0; } catch ( any e ) { return false; }
     }
 
     // `runner doctor`: what is configured and whether it can run. Changes nothing.
@@ -95,7 +102,7 @@ class Runner {
         var launcher = resolve( cfg.provider, cfg );
         var menu = menuCommand( cfg.menu_provider, cfg );
         return {
-            desktop: getSystemSetting( "XDG_CURRENT_DESKTOP", "unknown" ),
+            desktop: len( new bxrig.util.Desktop().raw() ) ? new bxrig.util.Desktop().raw() : "unknown",
             launcher: { provider: cfg.provider, command: launcher, owned_by_desktop: !launcher.len(), found: launcher.len() ? found( launcher[ 1 ] ) : true },
             menu: { provider: cfg.menu_provider, command: menu, found: found( menu[ 1 ] ) },
             shortcuts: "unchanged"
@@ -110,7 +117,7 @@ class Runner {
         if ( !found( cmd[ 1 ] ) ) return { ok: false, error: "Runner command not found: " & cmd[ 1 ] };
         var argv = [ "sh", "-c", 'setsid "$@" >/dev/null 2>&1 &', "_" ];
         for ( var part in cmd ) argv.append( part );
-        variables.inst.exec( argv, 10 );
+        variables.inst.proc().exec( argv, 10 );
         return { ok: true, error: "" };
     }
 
@@ -138,7 +145,7 @@ class Runner {
         try {
             var argv = [ "sh", "-c", 'f="$1"; shift; exec "$@" < "$f"', "_", tmp ];
             for ( var part in cmd ) argv.append( part );
-            var r = variables.inst.exec( argv, 600 );
+            var r = variables.inst.proc().exec( argv, 600 );
         } finally {
             if ( fileExists( tmp ) ) fileDelete( tmp );
         }
@@ -173,7 +180,7 @@ class Runner {
         if ( !found( cmd[ 1 ] ) ) throw( message = "Menu provider unavailable: " & cmd[ 1 ] );
         var argv = [ "sh", "-c", 'exec "$@" < /dev/null', "_" ];
         for ( var p2 in cmd ) argv.append( p2 );
-        var r = variables.inst.exec( argv, 600 );
+        var r = variables.inst.proc().exec( argv, 600 );
         if ( r.timeout || r.exitCode != 0 ) return "";
         return trim( replace( r.output, chr( 10 ), " ", "all" ) );
     }

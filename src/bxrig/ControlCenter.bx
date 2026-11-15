@@ -33,70 +33,11 @@ class ControlCenter {
     }
 
     function buildPages( demo ) {
-        var d = arguments.demo;
-        return [
-            new bxrig.DashboardPage( provider( d ) ),
-            new bxrig.AppsPage( d ),
-            new bxrig.ListPage( new bxrig.BoxlangProvider( d ) ),
-            new bxrig.ListPage( new bxrig.JavaProvider( d ) ),
-            new bxrig.ListPage( new bxrig.SdkProvider( "maven", d ) ),
-            new bxrig.ListPage( new bxrig.SdkProvider( "gradle", d ) ),
-            new bxrig.ListPage( new bxrig.VersionsProvider( d ) ),
-            new bxrig.ListPage( new bxrig.PortsProvider( d ) ),
-            new bxrig.ListPage( new bxrig.PackagesProvider( d ) ),
-            new bxrig.ListPage( new bxrig.ShortcutsProvider( d ) ),
-            new bxrig.ListPage( new bxrig.MachinesProvider( d, provider( d ) ) ),
-            new bxrig.ListPage( new bxrig.DatabasesProvider( d, provider( d ) ) ),
-            new bxrig.ListPage( new bxrig.MailProvider( d ) ),
-            new bxrig.ListPage( new bxrig.StorageProvider( d ) ),
-            new bxrig.ListPage( new bxrig.SecretsProvider( d ) ),
-            new bxrig.ListPage( new bxrig.ThemesProvider( d ) ),
-            new bxrig.ListPage( new bxrig.LogsProvider( d ) )
-        ];
-    }
-
-    function runCli( args ) {
-        return variables.proc.self( arguments.args, 1800 );
-    }
-
-    function withFlag( args, flag ) {
+        var registry = new bxrig.ControlCenterPages();
+        var factory = new bxrig.PageFactory();
         var out = [];
-        for ( var a in arguments.args ) out.append( a );
-        out.append( arguments.flag );
+        for ( var id in registry.ids() ) out.append( factory.make( id, arguments.demo, provider( arguments.demo ) ) );
         return out;
-    }
-
-    // Runs a program (argv array) and returns { exitCode, output }.
-    function runArgv( argv ) {
-        return variables.proc.exec( arguments.argv, 1800 );
-    }
-
-    function handle( app, intent ) {
-        if ( !structCount( arguments.intent ) ) return;
-        // exec: any program, with a plan written by the page (no --dry-run exists for it). readonly: run at once and show the output.
-        if ( arguments.intent.action == "exec" ) {
-            if ( !structKeyExists( arguments.intent, "confirmed" ) ) { arguments.app.showPlan( arguments.intent.title, arguments.intent.plan, arguments.intent ); return; }
-            var xr = runArgv( arguments.intent.argv );
-            arguments.app.showResult( arguments.intent.title & ( xr.exitCode == 0 ? ": done" : ": failed (exit " & xr.exitCode & ")" ), listToArray( trim( xr.output ), chr( 10 ) ) );
-            return;
-        }
-        if ( arguments.intent.action == "show" ) {
-            var sr = structKeyExists( arguments.intent, "argv" ) ? runArgv( arguments.intent.argv ) : runCli( arguments.intent.args );
-            arguments.app.showResult( arguments.intent.title, listToArray( trim( sr.output ), chr( 10 ) ) );
-            return;
-        }
-        if ( arguments.intent.action != "cli" ) return;
-        var args = arguments.intent.args;
-        if ( !structKeyExists( arguments.intent, "confirmed" ) ) {
-            var r = runCli( withFlag( args, "--dry-run" ) );
-            var shown = [];
-            if ( structKeyExists( arguments.intent, "preface" ) ) { for ( var pl in arguments.intent.preface ) shown.append( pl ); shown.append( "" ); }
-            for ( var ol in listToArray( trim( r.output ), chr( 10 ) ) ) shown.append( ol );
-            arguments.app.showPlan( arguments.intent.title, shown, arguments.intent );
-            return;
-        }
-        var res = runCli( withFlag( args, "--yes" ) );
-        arguments.app.showResult( arguments.intent.title & ( res.exitCode == 0 ? ": done" : ": failed (exit " & res.exitCode & ")" ), listToArray( trim( res.output ), chr( 10 ) ) );
     }
 
     // Prints the data of a page without a terminal.
@@ -115,7 +56,7 @@ class ControlCenter {
 
     // Icons are Nerd Font glyphs. "on" and "off" are explicit; "" follows BXRIG_ICONS, then looks for a Nerd Font on the machine.
     function iconsEnabled( opt = "" ) {
-        var o = len( arguments.opt ) ? arguments.opt : getSystemSetting( "BXRIG_ICONS", "" );
+        var o = len( arguments.opt ) ? arguments.opt : new bxrig.util.Env().named( "icons", "" );
         if ( o == "on" ) return true;
         if ( o == "off" ) return false;
         try { return systemExecute( "sh", [ "-c", "fc-list 2>/dev/null | grep -qi 'nerd'" ], 5, true ).exitCode == 0; } catch ( any e ) { return false; }
@@ -124,7 +65,7 @@ class ControlCenter {
     // sidebar: "" (open, collapsed when the terminal is narrow), "on" or "off".
     function run( pageId = "dashboard", demo = false, icons = "", sidebar = "" ) {
         var start = arguments.pageId;
-        var me = this;
+        var intents = new bxrig.IntentRunner();
         var iconsOn = iconsEnabled( arguments.icons );
         var sb = arguments.sidebar;
         while ( true ) {
@@ -132,7 +73,7 @@ class ControlCenter {
             new bxrig.TuiRunner().run(
                 app,
                 function( tui ) { return new bxrig.ControlCenterView( tui ).setIcons( iconsOn ); },
-                function( intent ) { me.handle( app, intent ); }
+                function( intent ) { intents.handle( app, intent ); }
             );
             start = app.page().id();
             sb = app.sidebarOpen() ? "on" : "off";
@@ -143,6 +84,6 @@ class ControlCenter {
             else if ( target == "wizard" ) new bxrig.Init( variables.cli ).wizard( false, false );
             else break;
         }
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 }

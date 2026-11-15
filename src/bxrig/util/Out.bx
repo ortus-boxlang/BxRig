@@ -22,6 +22,11 @@ class Out {
     // Exit 6: a write or a step failed.
     function failed( msg, asJson ) { return fail( "failed", arguments.msg, arguments.asJson ); }
 
+    // A mutating command's plan (exit 2) or dry run (exit 0): see Mutation.show.
+    function plan( title, data, asJson, dry = false, extra = [], hint = "Add --yes to apply." ) {
+        return new bxrig.util.Mutation( this ).show( arguments.title, arguments.data, arguments.asJson, arguments.dry, arguments.extra, arguments.hint );
+    }
+
     // The same output for another command string (`keys set` and `keys reset` in one class).
     function sub( command ) {
         return variables.cli.scoped( arguments.command );

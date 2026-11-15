@@ -1,0 +1,60 @@
+// Names, Props, Ini, Lua, Urls, Version and Desktop. Run from src/: (cd src && matchbox ../tests/util_misc_test.bxs)
+testkit = new lib.Check( "util misc" );
+n = new bxrig.util.Names();
+testkit.check( "slug: lower case, starts with a letter", n.valid( "slug", "synology" ) && !n.valid( "slug", "1nas" ) && !n.valid( "slug", "Nas" ) );
+testkit.check( "vm may start with a digit", n.valid( "vm", "9vm" ) && !n.valid( "vm", "a_b" ) );
+testkit.check( "label allows underscore and capitals", n.valid( "label", "My_Remote-1" ) && !n.valid( "label", "a b" ) && !n.valid( "label", "" ) );
+testkit.check( "secret looks like an env name", n.valid( "secret", "ANTHROPIC_API_KEY" ) && !n.valid( "secret", "anthropic" ) );
+testkit.check( "package allows @ . + _", n.valid( "package", "gcc-libs" ) && n.valid( "package", "c++utilities" ) && !n.valid( "package", "Bad Name" ) );
+testkit.check( "model allows : and /", n.valid( "model", "qwen3:8b" ) && n.valid( "model", "lib/model:1" ) );
+testkit.check( "container and theme", n.valid( "container", "Db-1" ) && n.valid( "theme", "bxrig-green" ) && !n.valid( "theme", "Bxrig" ) );
+testkit.check( "every kind has a rule sentence", len( n.rule( "slug" ) ) > 10 && len( n.rule( "secret" ) ) > 10 );
+caught = false;
+try { n.valid( "nonsense", "x" ); } catch ( any e ) { caught = true; }
+testkit.check( "an unknown kind throws", caught );
+pr = new bxrig.util.Props();
+text = "## comment" & chr( 10 ) & "a=1" & chr( 10 ) & " b = two = 2 " & chr( 10 ) & "=nokey" & chr( 10 ) & "empty=" & chr( 10 ) & "noequals" & chr( 10 ) & "a=3";
+pairs = pr.pairs( text );
+testkit.check( "pairs skip comments, keyless and equals-less lines", pairs.len() == 4 );
+testkit.check( "the first = splits and values are trimmed", pairs[ 2 ].key == "b" && pairs[ 2 ].value == "two = 2" );
+testkit.check( "an empty value is an empty string", pairs[ 3 ].key == "empty" && pairs[ 3 ].value == "" );
+testkit.check( "parse: the last repeat wins", pr.parse( text ).a == "3" );
+testkit.check( "unquote strips one pair of quotes", pr.unquote( '"x y"' ) == "x y" && pr.unquote( "'z'" ) == "z" && pr.unquote( "plain" ) == "plain" );
+u = new bxrig.util.Urls();
+testkit.check( "urls end where the callers expect", left( u.downloads(), 8 ) == "https://" && right( u.docs(), 1 ) == "/" && find( "reference/commands", u.commandsReference() ) > 0 );
+v = new bxrig.util.Version().current();
+box = deserializeJSON( fileRead( expandPath( "../box.json" ) ) );
+testkit.check( "the version is the one in box.json", v == box.version );
+testkit.check( "Cli reports it", new bxrig.util.Cli( v ).version() == v );
+d = new bxrig.util.Desktop();
+testkit.check( "desktop shell is one of the known names", arrayFind( [ "hyprland", "plasma", "" ], d.shell() ) > 0 );
+// Ini, Props.exports and Lua
+ini = new bxrig.util.Ini();
+text = "top=1" & chr( 10 ) & "# c" & chr( 10 ) & "[Last]" & chr( 10 ) & "Session = a.desktop" & chr( 10 ) & "[Autologin]" & chr( 10 ) & "Session=b" & chr( 10 ) & "session=c" & chr( 10 ) & "[Desktop Entry]" & chr( 10 ) & "Name=X" & chr( 10 ) & "name=y";
+testkit.check( "get reads a section and ignores case", ini.get( text, "last", "session" ) == "a.desktop" && ini.get( text, "Nope", "Session", "z" ) == "z" );
+testkit.check( "first and last value", ini.get( text, "Autologin", "Session" ) == "b" && ini.last( text, "Autologin", "Session" ) == "c" );
+testkit.check( "keys before a header belong to the section named empty", ini.get( text, "", "top" ) == "1" );
+testkit.check( "exact case tells Name from name", ini.values( text, "Desktop Entry", "Name", true ).len() == 1 && ini.values( text, "Desktop Entry", "Name" ).len() == 2 );
+l = ini.set( [ "[Other]", "x=1", "[Last]", "Session=old", "keep=1", "[Z]" ], "Last", "Session", "new.desktop" );
+testkit.check( "set replaces in place", l.len() == 6 && l[ 4 ] == "Session=new.desktop" && l[ 5 ] == "keep=1" );
+l = ini.set( [ "[Last]", "a=1", "[Z]", "b=2" ], "Last", "Session", "n" );
+testkit.check( "set adds the key at the end of the section", l.len() == 5 && l[ 3 ] == "Session=n" && l[ 4 ] == "[Z]" );
+l = ini.set( [ "[Z]", "b=2" ], "Last", "Session", "n" );
+testkit.check( "set adds a missing section at the end", l.len() == 4 && l[ 3 ] == "[Last]" && l[ 4 ] == "Session=n" );
+// Props.env
+pr = new bxrig.util.Props();
+q = chr( 39 );
+rows = pr.exports( "# c" & chr( 10 ) & "export A_B=" & q & "it" & q & chr( 92 ) & q & q & "s" & q & chr( 10 ) & "C=" & chr( 34 ) & "two words" & chr( 34 ) & chr( 10 ) & "EMPTY=" & chr( 10 ) & "D=plain" );
+testkit.check( "exports reads export lines, shell quotes and skips empty values", rows.len() == 3 && rows[ 1 ].name == "A_B" && rows[ 1 ].value == "it" & q & "s" && rows[ 2 ].value == "two words" && rows[ 3 ].name == "D" );
+// Lua
+lua = "local mainMod = 'SUPER'" & chr( 10 ) & "hl.bind(mainMod .. " & chr( 34 ) & "+Q" & chr( 34 ) & ", hl.dsp.exec_cmd(" & chr( 34 ) & "x" & chr( 34 ) & "))" & chr( 10 ) & "hl.bind(" & chr( 34 ) & "ALT + Tab" & chr( 34 ) & ", function() end)";
+b = new bxrig.util.Lua().binds( lua );
+testkit.check( "Lua finds hl.bind lines with their tokens", b.len() == 2 && b[ 1 ].line == 2 && b[ 1 ].tokens.toList( "," ) == "Super,Q" && b[ 2 ].tokens.toList( "," ) == "ALT,Tab" );
+testkit.check( "Brand.show prints the version and exits 0", new bxrig.Brand().show( new bxrig.util.Cli( "9.9.9" ), "9.9.9", true, false ) == 0 && new bxrig.Brand().show( new bxrig.util.Cli( "9.9.9" ), "9.9.9", false, false ) == 0 );
+mg = new bxrig.Managed();
+testkit.check( "Managed names the refresh components", mg.components().map( function( c ) { return c.id; } ).toList( "," ) == "hyprland,noctalia,terminals,shell,nvim,theme" );
+testkit.check( "Managed: a command-only component owns no files", mg.entriesFor( "nvim" ).len() == 0 && mg.entriesFor( "theme" ).len() == 0 && mg.entriesFor( "hyprland" ).len() == 0 );
+hy = mg.entriesFor( "hyprland", { starter: true } );
+no = mg.entriesFor( "noctalia", { starter: true } );
+testkit.check( "Managed: --starter adds the hyprland starter to hyprland and the others to noctalia", hy.len() == 1 && hy[ 1 ].name == "hyprland" && no.len() > 0 && no.filter( function( e ) { return e.name == "hyprland"; } ).len() == 0 );
+testkit.done( "util misc tests passed" );

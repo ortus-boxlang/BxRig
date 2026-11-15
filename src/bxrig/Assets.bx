@@ -35,7 +35,7 @@ class Assets {
     function decode( name, dest ) {
         directoryCreate( getDirectoryFromPath( dest ), true, true );
         fileWrite( dest & ".b64", variables.data.base64( name ) );
-        var r = variables.inst.exec( [ "sh", "-c", 'base64 -d "$1" > "$2"', "sh", dest & ".b64", dest ], 60 );
+        var r = variables.inst.proc().exec( [ "sh", "-c", 'base64 -d "$1" > "$2"', "sh", dest & ".b64", dest ], 60 );
         fileDelete( dest & ".b64" );
         if ( r.exitCode != 0 ) throw( type = "Assets.decode", message = "base64 -d failed for " & name );
     }
@@ -55,9 +55,9 @@ class Assets {
     // `assets list`
     function list( asJson ) {
         var rows = userNames().map( function( n ) { return { name: n, target: target( n ), present: fileExists( target( n ) ) }; } );
-        if ( asJson ) { println( variables.cli.envelope( "assets list", 0, { assets: rows } ) ); return 0; }
+        if ( asJson ) { println( variables.cli.envelope( "assets list", 0, { assets: rows } ) ); return new bxrig.util.Exit().ok(); }
         for ( var r in rows ) println( r.name & " -> " & r.target & ( r.present ? " (present)" : "" ) );
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 
     // `assets install [--yes] [--dry-run]`: writes the images that are missing; never overwrites a file the user changed.
@@ -65,7 +65,7 @@ class Assets {
         if ( variables.inst.isRoot() || !variables.inst.hasCommand( "base64" ) ) {
             var msg = variables.inst.isRoot() ? "Run as a regular user" : "base64 (coreutils) was not found";
             if ( asJson ) println( variables.cli.envelope( "assets install", 4, { errors: [ msg ] } ) ); else println( "error: " & msg );
-            return 4;
+            return new bxrig.util.Exit().precondition();
         }
         var plan = userNames().filter( function( n ) { return !fileExists( target( n ) ); } );
         var kept = userNames().filter( function( n ) { return fileExists( target( n ) ); } );
@@ -83,6 +83,6 @@ class Assets {
             println( "Wrote " & r.written.len() & " images, kept " & r.present.len() & "." );
             if ( r.failed.len() ) println( "note: " & r.failed.len() & " theme wallpapers could not be fetched (offline?); `bxrig theme set` fetches each when it is used." );
         }
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 }

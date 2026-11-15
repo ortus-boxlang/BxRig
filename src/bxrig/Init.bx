@@ -15,8 +15,7 @@ class Init {
 
     // The saved answers ({} when there are none or the file is unreadable).
     function loadSaved() {
-        if ( !fileExists( answersFile() ) ) return {};
-        try { return jsonDeserialize( fileRead( answersFile() ) ); } catch ( any e ) { return {}; }
+        return new bxrig.util.JsonStore().load( answersFile() );
     }
 
     function save( answers ) {
@@ -85,7 +84,7 @@ class Init {
     }
 
     // This program, to run the plan's own commands: BXRIG_SELF (tests, odd installs), else `bxrig` on PATH.
-    function selfPath() { return getSystemSetting( "BXRIG_SELF", "bxrig" ); }
+    function selfPath() { return new bxrig.util.Env().named( "self", "bxrig" ); }
 
     // The command line for a step: our own path, --yes on our own commands.
     function commandFor( step ) {
@@ -104,16 +103,16 @@ class Init {
         if ( plan.errors.len() ) {
             if ( arguments.asJson ) println( variables.cli.envelope( "init", 4, data ) );
             else for ( var e in plan.errors ) println( "error: " & e );
-            return 4;
+            return new bxrig.util.Exit().precondition();
         }
         if ( !arguments.yes || arguments.dryRun ) {
             var code = arguments.dryRun ? 0 : 2;
             if ( arguments.asJson ) { println( variables.cli.envelope( "init", code, data, arguments.dryRun ) ); return code; }
-            println( ( arguments.dryRun ? "Dry run" : "Plan" ) & ": init, " & plan.steps.len() & " steps" );
+            println( new bxrig.util.Mutation().banner( arguments.dryRun ) & "init, " & plan.steps.len() & " steps" );
             for ( var s in plan.steps ) println( "  " & s.id & ": " & s.title & "   (" & commandFor( s ).toList( " " ) & ")" );
             if ( data.apps.new.len() || data.apps.installed.len() ) println( "  apps: " & data.apps.new.len() & " to install" & ( data.apps.new.len() ? " (" & data.apps.new.toList( ", " ) & ")" : "" ) & ", " & data.apps.installed.len() & " already installed and left alone" & ( data.apps.installed.len() ? " (" & data.apps.installed.toList( ", " ) & ")" : "" ) );
             if ( plan.pending.len() ) println( "  not applied yet (saved, no command for them): " & plan.pending.toList( ", " ) );
-            println( arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+            println( new bxrig.util.Mutation().footer( arguments.dryRun ) );
             return code;
         }
         // A failed step is reported and the plan goes on: the steps are independent (one missing package or an optional desktop
@@ -122,7 +121,7 @@ class Init {
         for ( var step in plan.steps ) {
             var argv = commandFor( step );
             if ( !arguments.asJson ) println( "==> " & step.title );
-            var r = variables.inst.exec( argv, 3600 );
+            var r = variables.inst.proc().exec( argv, 3600 );
             if ( !arguments.asJson && len( r.output ) ) print( r.output );
             if ( ( r.timeout || r.exitCode != 0 ) && ( step.optional ?: false ) ) {
                 // an optional step (typing a key) that could not run is reported, and the plan goes on
@@ -150,7 +149,7 @@ class Init {
             // where the answers start: your saved ones, or a file you name (answers exported from another machine)
             var base = loadSaved();
             if ( len( arguments.from ) ) {
-                try { base = jsonDeserialize( fileRead( arguments.from ) ); } catch ( any e2 ) { println( "bxrig init: cannot read " & arguments.from & ": " & e2.message ); return 4; }
+                try { base = jsonDeserialize( fileRead( arguments.from ) ); } catch ( any e2 ) { println( "bxrig init: cannot read " & arguments.from & ": " & e2.message ); return new bxrig.util.Exit().precondition(); }
             }
             // tune (default): those answers plus what this machine already has, installed options marked; rerun: those answers only;
             // fresh: the defaults. Nothing the machine has is ever removed.
@@ -161,7 +160,7 @@ class Init {
             result = new bxrig.Wizard( spec, start ).run();
         } catch ( any e ) {
             println( "bxrig init needs a terminal (" & e.message & "). Use --answers FILE to run without one." );
-            return 4;
+            return new bxrig.util.Exit().precondition();
         }
         if ( result.outcome != "done" ) return 130;
         save( result.answers );

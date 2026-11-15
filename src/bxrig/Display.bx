@@ -24,23 +24,18 @@ class Display {
     function stateFile() { return cfg() & "/bxrig/display.json"; }
     function monitorsFile() { return cfg() & "/bxrig/theme/monitors.lua"; }
 
-    function inHyprland() { return len( getSystemSetting( "HYPRLAND_INSTANCE_SIGNATURE", "" ) ) > 0 && variables.proc.has( "hyprctl" ); }
-    function inPlasma() { return findNoCase( "KDE", getSystemSetting( "XDG_CURRENT_DESKTOP", "" ) ) > 0 && variables.proc.has( "kscreen-doctor" ); }
+    function inHyprland() { return new bxrig.util.Desktop().inHyprland() && variables.proc.has( "hyprctl" ); }
+    function inPlasma() { return new bxrig.util.Desktop().inPlasma() && variables.proc.has( "kscreen-doctor" ); }
     function internal( name ) { return reFind( "^(eDP|LVDS|DSI)-", arguments.name ) > 0; }
     function safeName( name ) { return reFind( "^[A-Za-z0-9._-]+$", arguments.name ) > 0; }
 
     // ---- state ----
     function readState() {
-        var s = { monitors: {}, mirror: {}, laptop: "on" };
-        if ( fileExists( stateFile() ) ) {
-            try { var j = jsonDeserialize( fileRead( stateFile() ) ); for ( var k in j ) s[ k ] = j[ k ]; } catch ( any e ) {}
-        }
-        return s;
+        return new bxrig.util.JsonStore().read( stateFile(), { monitors: {}, mirror: {}, laptop: "on" } );
     }
 
     function writeState( s ) {
-        directoryCreate( getDirectoryFromPath( stateFile() ), true, true );
-        fileWrite( stateFile(), jsonSerialize( arguments.s ) & chr( 10 ) );
+        new bxrig.util.JsonStore().write( "display-state", stateFile(), arguments.s );
     }
 
     // ---- what is connected ----

@@ -1,12 +1,16 @@
-// `bxrig keys mac [on|off|status] [--yes]`: the Mac-style Super keys (Super+C, Super+V, Super+Tab) are xremap's job; this turns that
-// service on or off without removing anything (`systemctl --user enable --now xremap` / `disable --now xremap`). The unit is the one
-// `setup xremap` wrote. Exit: 0 done, 2 plan without --yes, 4 precondition (the unit is not installed), 6 systemctl failed.
+// `bxrig keys mac [on|off|status] [--yes]` and `bxrig keys style [traditional|mac] [--keyboard=pc|apple] [--swap=on|off] [--yes]`.
+// Two key styles share one table (Shortcuts): Traditional (Omarchy-like keys) and Mac (Cmd-style keys, done by xremap). The style, the keyboard
+// you type on and the Alt/Win swap live in ~/.config/bxrig/keystyle.json (KeyStyle). On a PC keyboard the Mac style swaps Alt and Win (Alt acts
+// as Cmd); an Apple keyboard never swaps. xremap carries Super+C/V/X/A in both styles, so it stays on; `keys apply --yes` rewrites its config.
+//   keys mac on   style mac and `systemctl --user enable --now xremap`;  keys mac off   style traditional (xremap keeps running)
+// Exit: 0 done, 2 plan without --yes, 4 precondition (the unit is not installed, a name that does not exist), 6 systemctl or the write failed.
 class MacKeys {
-    function init( cli, runner = "" ) {
+    function init( cli, runner = "", style = "" ) {
         variables.cli = arguments.cli;
         variables.proc = new bxrig.util.Proc( arguments.runner );
         variables.systemd = new bxrig.util.Systemd( variables.proc );
         variables.config = new bxrig.ConfigService().quiet( true );
+        variables.keyStyle = isSimpleValue( arguments.style ) ? new bxrig.KeyStyle() : arguments.style;
         return this;
     }
 
@@ -14,17 +18,50 @@ class MacKeys {
     function active() { return variables.systemd.isActive( "xremap", true ); }
 
     function status( asJson ) {
-        var on = active();
-        return variables.cli.say( "keys mac status", "ok", { installed: fileExists( unitFile() ), active: on }, arguments.asJson, [ "Mac-style keys: " & ( on ? "on" : "off" ) & ( fileExists( unitFile() ) ? "" : " (not set up: bxrig setup xremap)" ) ] );
+        var st = variables.keyStyle.read();
+        var on = st.style == "mac";
+        var d = { installed: fileExists( unitFile() ), active: active(), mac: on, style: st.style, keyboard: st.keyboard, swap: variables.keyStyle.swapActive( st ) };
+        return variables.cli.say( "keys mac status", "ok", d, arguments.asJson, [ "Mac-style keys: " & ( on ? "on" : "off" ) & ( d.installed ? "" : " (xremap is not set up: bxrig setup xremap)" ) ] );
     }
 
     function set( on, yes, asJson ) {
         var cmd = "keys mac " & ( arguments.on ? "on" : "off" );
         if ( !fileExists( unitFile() ) ) return variables.cli.say( cmd, "precondition", { error: "xremap is not set up" }, arguments.asJson, [ "error: xremap is not set up. Run: bxrig setup xremap --yes" ] );
-        var argv = arguments.on ? variables.systemd.enableArgv( "xremap", true ) : variables.systemd.disableArgv( "xremap", true );
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", { command: argv }, arguments.asJson, [ "Plan: " & argv.toList( " " ), "Nothing was changed. Add --yes to apply." ] );
-        var r = variables.proc.exec( argv, 30 );
-        if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
-        return variables.cli.say( cmd, "ok", { active: arguments.on }, arguments.asJson, [ "Mac-style keys are " & ( arguments.on ? "on." : "off. Super+C and Super+V are plain Super shortcuts again." ) ] );
+        var argv = variables.systemd.enableArgv( "xremap", true );
+        var plan = [ "write the style: " & ( arguments.on ? "mac" : "traditional" ) ];
+        if ( arguments.on ) plan.append( argv.toList( " " ) );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( plan.toList( "; " ), { style: arguments.on ? "mac" : "traditional", command: arguments.on ? argv : [] }, arguments.asJson );
+        if ( arguments.on ) {
+            var r = variables.proc.exec( argv, 30 );
+            if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+        }
+        if ( variables.keyStyle.write( { style: arguments.on ? "mac" : "traditional" } ) != 0 ) return variables.cli.say( cmd, "failed", { error: "Could not write " & variables.keyStyle.file() }, arguments.asJson, [ "error: could not write " & variables.keyStyle.file() ] );
+        return variables.cli.say( cmd, "ok", { active: arguments.on, style: arguments.on ? "mac" : "traditional" }, arguments.asJson, [ "Mac-style keys are " & ( arguments.on ? "on." : "off (Traditional style). Super+C, V, X and A still copy, paste, cut and select all." ) & " Write the new keys: bxrig keys apply --yes" ] );
+    }
+
+    // `keys style [STYLE] [--keyboard=pc|apple] [--swap=on|off]`: show, or change, the style, the keyboard and the swap.
+    function style( target, keyboard, swap, yes, asJson ) {
+        var cmd = "keys style";
+        var cur = variables.keyStyle.read();
+        var want = {};
+        if ( len( arguments.target ) ) want.style = lcase( arguments.target );
+        if ( len( arguments.keyboard ) ) want.keyboard = lcase( arguments.keyboard );
+        if ( len( arguments.swap ) ) want.swap = lcase( arguments.swap ) == "on";
+        if ( structKeyExists( want, "style" ) && !arrayFind( variables.keyStyle.styles(), want.style ) ) return variables.cli.say( cmd, "precondition", { error: "Unknown style" }, arguments.asJson, [ "error: unknown style " & arguments.target & " (traditional or mac)" ] );
+        if ( structKeyExists( want, "keyboard" ) && !arrayFind( variables.keyStyle.keyboards(), want.keyboard ) ) return variables.cli.say( cmd, "precondition", { error: "Unknown keyboard" }, arguments.asJson, [ "error: unknown keyboard " & arguments.keyboard & " (pc or apple)" ] );
+        if ( len( arguments.swap ) && !arrayFind( [ "on", "off" ], lcase( arguments.swap ) ) ) return variables.cli.say( cmd, "precondition", { error: "Unknown swap value" }, arguments.asJson, [ "error: --swap is on or off" ] );
+        if ( structIsEmpty( want ) ) {
+            var d = { style: cur.style, keyboard: cur.keyboard, swap: cur.swap, swapActive: variables.keyStyle.swapActive( cur ) };
+            return variables.cli.say( cmd, "ok", d, arguments.asJson, [ "Style: " & cur.style & ", keyboard: " & cur.keyboard & ", Alt and Win swapped: " & ( d.swapActive ? "yes" : "no" ) ] );
+        }
+        // an Apple keyboard never swaps: choosing it turns the swap off, choosing a PC keyboard turns it on (unless you said otherwise)
+        if ( structKeyExists( want, "keyboard" ) && !structKeyExists( want, "swap" ) ) want.swap = want.keyboard == "pc";
+        var next = duplicate( cur );
+        for ( var k in want ) next[ k ] = want[ k ];
+        var data = { style: next.style, keyboard: next.keyboard, swap: next.swap, swapActive: variables.keyStyle.swapActive( next ) };
+        var text = "style " & next.style & ", keyboard " & next.keyboard & ", Alt and Win swapped " & ( data.swapActive ? "yes" : "no" );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "write " & text, data, arguments.asJson, false, [], "Add --yes to apply, then: bxrig keys apply --yes" );
+        if ( variables.keyStyle.write( want ) != 0 ) return variables.cli.say( cmd, "failed", { error: "Could not write " & variables.keyStyle.file() }, arguments.asJson, [ "error: could not write " & variables.keyStyle.file() ] );
+        return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Saved: " & text & ". Write the keys into xremap and Hyprland: bxrig keys apply --yes" ] );
     }
 }

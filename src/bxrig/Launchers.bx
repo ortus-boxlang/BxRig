@@ -120,7 +120,7 @@ class Launchers {
 
     // SHA-256 of a file (a PNG is not text, so fileRead cannot hash it).
     function sha( path ) {
-        var r = variables.inst.exec( [ "sha256sum", arguments.path ], 30 );
+        var r = variables.inst.proc().exec( [ "sha256sum", arguments.path ], 30 );
         if ( r.exitCode != 0 ) throw( type = "Launchers.sha", message = "sha256sum failed" );
         return listFirst( trim( r.output ), " " );
     }
@@ -167,13 +167,13 @@ class Launchers {
         var extraPlan = extras().filter( function( e ) { return !fileExists( e.target ) || mine( e.target ); } );
         var data = { submenu: extraPlan.map( function( e ) { return e.target; } ), terminal: term.id, write: plan.map( function( r ) { return r.file; } ), keep: kept.map( function( r ) { return r.file; } ), icon_write: iconPlan.map( function( i ) { return i.file; } ) };
         if ( !arguments.yes || arguments.dryRun ) {
-            var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": " & plan.len() & " launchers for the application menu, opening in " & term.id ];
+            var lines = [ new bxrig.util.Mutation().banner( arguments.dryRun ) & plan.len() & " launchers for the application menu, opening in " & term.id ];
             for ( var p in plan ) lines.append( "  write " & p.file );
             for ( var k in kept ) lines.append( "  keep  " & k.file & " (edited by you)" );
             for ( var x in extraPlan ) lines.append( "  write " & x.target & " (the BxRig submenu)" );
             for ( var ip in iconPlan ) lines.append( "  write " & ip.file );
             if ( !iconWrite ) lines.append( "  keep  the BxRig icons (already there)" );
-            lines.append( arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+            lines.append( new bxrig.util.Mutation().footer( arguments.dryRun ) );
             return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", data, arguments.asJson, lines );
         }
         for ( var r in plan ) {
@@ -212,12 +212,12 @@ class Launchers {
         var data = { submenu: extraGone.map( function( e ) { return e.target; } ), remove: gone.map( function( r ) { return r.file; } ), keep: kept.map( function( r ) { return r.file; } ), icon_remove: iconGone.map( function( i ) { return i.file; } ) };
         if ( !gone.len() && !kept.len() && !extraGone.len() ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "No launchers are in the application menu." ] );
         if ( !arguments.yes || arguments.dryRun ) {
-            var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": remove " & gone.len() & " launchers from the application menu" ];
+            var lines = [ new bxrig.util.Mutation().banner( arguments.dryRun ) & "remove " & gone.len() & " launchers from the application menu" ];
             for ( var g in gone ) lines.append( "  delete " & g.file );
             for ( var k in kept ) lines.append( "  keep   " & k.file & " (edited by you)" );
             for ( var x in extraGone ) lines.append( "  delete " & x.target );
             for ( var ig in iconGone ) lines.append( "  delete " & ig.file );
-            lines.append( arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+            lines.append( new bxrig.util.Mutation().footer( arguments.dryRun ) );
             return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", data, arguments.asJson, lines );
         }
         for ( var g in gone ) fileDelete( g.file );
@@ -234,6 +234,6 @@ class Launchers {
         if ( sub == "off" ) return off( arguments.yes, arguments.dryRun, arguments.asJson );
         if ( sub == "status" ) return status( arguments.asJson );
         println( new bxrig.CommandSpec().usage( "launchers" ) );
-        return 2;
+        return new bxrig.util.Exit().usage();
     }
 }

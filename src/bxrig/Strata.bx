@@ -42,9 +42,9 @@ class Strata {
             return variables.out.say( "ok", data, arguments.asJson, lines, arguments.dryRun );
         }
         for ( var tool in [ "curl", "python3" ] ) {
-            if ( variables.inst.exec( [ "sh", "-c", 'command -v "$1"', "_", tool ], 10 ).exitCode != 0 ) return variables.out.say( "precondition", { error: tool & " was not found" }, arguments.asJson, [ "error: " & tool & " was not found" ] );
+            if ( variables.inst.proc().exec( [ "sh", "-c", 'command -v "$1"', "_", tool ], 10 ).exitCode != 0 ) return variables.out.say( "precondition", { error: tool & " was not found" }, arguments.asJson, [ "error: " & tool & " was not found" ] );
         }
-        var py = trim( variables.inst.exec( [ "sh", "-c", "command -v python3" ], 10 ).output );
+        var py = trim( variables.inst.proc().exec( [ "sh", "-c", "command -v python3" ], 10 ).output );
         var done = [];
         for ( var p in todo ) {
             var target = dir & "/" & p.id;

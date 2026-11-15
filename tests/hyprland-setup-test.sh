@@ -14,8 +14,8 @@ case "$1" in
   *) exit 9 ;;
 esac
 MOCK
-printf '#!/usr/bin/env bash\n[[ "$1" == --version ]] && { echo "Sudo version 1.9"; exit 0; }\n"$@"\n' > "$tmp/bin/sudo"
-printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo "${MOCK_UID:-1000}"; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
+stub_sudo
+stub_id
 printf '#!/usr/bin/env bash\necho x86_64\n' > "$tmp/bin/uname"
 chmod +x "$tmp/bin/"*
 printf 'ID=cachyos\n' > "$tmp/os"
@@ -41,7 +41,8 @@ grep -q 'custom_palette = "BxRig"' "$tmp/cfg/noctalia/config.toml" || fail 'noct
 rm -rf "$tmp/cfg" "$tmp/home/Pictures" "$tmp/state"
 [[ "$(code "$binary" setup hyprland --yes)" == 0 ]] || fail 'fresh setup exits 0'
 grep -q 'require("bxrig")' "$tmp/cfg/hypr/hyprland.lua" || fail 'starter hyprland.lua loads the bxrig module'
-grep -q 'hl.dsp.window.close()' "$tmp/cfg/hypr/hyprland.lua" || fail 'starter has Super+Q close'
+grep -q 'hl.dsp.window.close()' "$tmp/cfg/hypr/bxrig.lua" || fail 'the module has Super+Q close (the starter keeps no binds)'
+! grep -q 'hl.bind(' "$tmp/cfg/hypr/hyprland.lua" || fail 'the starter file holds no hand-written bind'
 grep -q 'workspace = "2", persistent = true' "$tmp/cfg/hypr/hyprland.lua" || fail 'two persistent workspaces'
 grep -q 'natural_scroll = false' "$tmp/cfg/hypr/hyprland.lua" || fail 'natural scrolling is off'
 echo '# mine' >> "$tmp/cfg/noctalia/config.toml"; echo '-- also mine' >> "$tmp/cfg/hypr/hyprland.lua"

@@ -59,7 +59,7 @@ class ControlCenterView {
         arguments.app.page().paint( k, px, py, pw, ph, arguments.tick, phase );
         // key hints
         var hints = arguments.app.page().keys();
-        hints.append( [ "tab", "pages" ] ); hints.append( [ chr( 92 ), "sidebar" ] ); hints.append( [ "q", "quit" ] );
+        for ( var gh in arguments.app.keyMap().hints() ) hints.append( gh );
         k.keybar( 0, arguments.height - 1, arguments.width, hints );
         if ( len( arguments.app.message() ) ) k.toast( arguments.width, arguments.height - 2, arguments.app.message(), "info" );
         // plan box

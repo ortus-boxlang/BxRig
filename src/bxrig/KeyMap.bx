@@ -1,0 +1,31 @@
+// One table of keys for a screen: what each key does and what the footer shows for it, so the hints and the dispatch cannot drift apart.
+//   map = new bxrig.KeyMap().bind( "↑↓", [ "Up", "k" ], "move", "up" ).bind( "", [ "Down", "j" ], "", "down" )
+//   map.match( key )               the action name of the binding whose keys include `key` (compared with exact case: `==` would read r as R), or ""
+//   map.match( key, scopes )       only the bindings whose scope is in the list (default scope "any"; a screen names the others, such as "free" and "page")
+//   map.hints()                    [ [ cap, label ] ] of the bindings that have both, in the order they were bound: what the footer shows
+// A binding with an empty cap or label works but is not shown (the second key of a pair, a synonym).
+class KeyMap {
+    function init() {
+        variables.rows = [];
+        return this;
+    }
+
+    function bind( cap, keys, label, action, scope = "any" ) {
+        variables.rows.append( { cap: arguments.cap, keys: isArray( arguments.keys ) ? arguments.keys : [ arguments.keys ], label: arguments.label, action: arguments.action, scope: arguments.scope } );
+        return this;
+    }
+
+    function match( key, scopes = [ "any" ] ) {
+        for ( var r in variables.rows ) {
+            if ( !arrayFind( arguments.scopes, r.scope ) ) continue;
+            for ( var kk in r.keys ) if ( compare( kk, arguments.key ) == 0 ) return r.action;
+        }
+        return "";
+    }
+
+    function hints() {
+        var out = [];
+        for ( var r in variables.rows ) if ( len( r.cap ) && len( r.label ) ) out.append( [ r.cap, r.label ] );
+        return out;
+    }
+}

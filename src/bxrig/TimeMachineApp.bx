@@ -19,7 +19,7 @@ class TimeMachineApp {
         variables.zoomIdx = 3;
         variables.mode = "timeline";
         variables.browse = { files: [], filter: "", cursor: 1, top: 0, loading: false, typing: false, title: "", error: "" };
-        variables.modal = { title: "", lines: [], intent: {} };
+        variables.dialog = new bxrig.Modal();
         variables.pickList = [];
         variables.pickCursor = 1;
         variables.pickIntent = {};
@@ -35,7 +35,8 @@ class TimeMachineApp {
 
     // ---- reading the state ----
     function outcome() { return variables.outcome; }
-    function mode() { return variables.mode; }
+    // The screen: timeline, browse, pick, help, or the kind of the box that is open (confirm, result).
+    function mode() { return variables.dialog.open() ? variables.dialog.kind() : variables.mode; }
     function message() { return variables.message; }
     function timeline() { return variables.tl; }
     function rows() { return variables.tl.rows; }
@@ -44,7 +45,7 @@ class TimeMachineApp {
     function selIndex( rowId = "" ) { var id = len( arguments.rowId ) ? arguments.rowId : row().id; return structKeyExists( variables.sel, id ) ? variables.sel[ id ] : 1; }
     function point() { var r = row(); return r.points.len() ? r.points[ min( selIndex(), r.points.len() ) ] : {}; }
     function hasPoint() { return !structIsEmpty( point() ); }
-    function modal() { return variables.modal; }
+    function modal() { return variables.dialog.box(); }
     function browseState() { return variables.browse; }
     function pickState() { return { list: variables.pickList, cursor: variables.pickCursor }; }
     function now() { return variables.tl.now; }
@@ -112,7 +113,7 @@ class TimeMachineApp {
         ensureVisible();
     }
 
-    function onScroll( direction ) { if ( variables.mode == "timeline" ) moveTime( arguments.direction == "up" ? 1 : -1 ); else if ( variables.mode == "browse" ) moveFile( arguments.direction == "up" ? -3 : 3 ); }
+    function onScroll( direction ) { if ( mode() == "timeline" ) moveTime( arguments.direction == "up" ? 1 : -1 ); else if ( mode() == "browse" ) moveFile( arguments.direction == "up" ? -3 : 3 ); }
 
     // ---- browse ----
     function filteredFiles() {
@@ -140,11 +141,11 @@ class TimeMachineApp {
 
     // A click or tap on something the view drew (see TimeMachineView.hitAt).
     function act( h ) {
-        if ( variables.mode == "timeline" ) {
+        if ( mode() == "timeline" ) {
             if ( arguments.h.kind == "point" ) selectAt( arguments.h.n, arguments.h.m );
             else if ( arguments.h.kind == "row" ) { variables.rowIdx = arguments.h.n; ensureVisible(); }
             else if ( arguments.h.kind == "zoom" ) { variables.zoomIdx = arguments.h.n; ensureVisible(); }
-        } else if ( variables.mode == "browse" && arguments.h.kind == "file" ) variables.browse.cursor = arguments.h.n;
+        } else if ( mode() == "browse" && arguments.h.kind == "file" ) variables.browse.cursor = arguments.h.n;
     }
 
     // Takes a fresh timeline (after a backup was made) and keeps the place, the zoom and, where it still exists, the chosen backup.
@@ -166,18 +167,19 @@ class TimeMachineApp {
 
     // ---- the modal screens ----
     function showPlan( title, text, intent ) {
-        variables.modal = { title: arguments.title, lines: listToArray( arguments.text, chr( 10 ), true ), intent: arguments.intent };
-        variables.mode = "confirm";
+        variables.dialog.confirm( arguments.title, variables.dialog.split( arguments.text ), arguments.intent );
     }
 
     function showResult( title, text ) {
-        variables.modal = { title: arguments.title, lines: listToArray( arguments.text, chr( 10 ), true ), intent: {} };
-        variables.mode = "result";
+        variables.dialog.result( arguments.title, variables.dialog.split( arguments.text ) );
     }
 
     function flash( text ) { variables.message = arguments.text; }
 
-    function leave() { variables.mode = variables.browse.files.len() && variables.mode == "confirm" && structKeyExists( variables.modal.intent, "fromBrowse" ) ? "browse" : "timeline"; }
+    function leave() {
+        variables.mode = variables.browse.files.len() && variables.dialog.kind() == "confirm" && structKeyExists( variables.dialog.intent(), "fromBrowse" ) ? "browse" : "timeline";
+        variables.dialog.close();
+    }
 
     // Data targets other than this row's, for send.
     function sendChoices() {
@@ -193,10 +195,11 @@ class TimeMachineApp {
         if ( k == "Ctrl+c" ) { variables.outcome = "quit"; return {}; }
         variables.message = "";
         if ( variables.mode == "help" ) { variables.mode = "timeline"; return {}; }
-        if ( variables.mode == "result" ) { variables.mode = variables.browse.files.len() && structKeyExists( variables.modal, "back" ) ? "browse" : "timeline"; return {}; }
-        if ( variables.mode == "confirm" ) {
-            if ( k == "y" || k == "Y" || k == "Enter" ) { var it = variables.modal.intent; it.confirmed = true; return it; }
-            if ( k == "n" || k == "N" || k == "Escape" || k == "q" ) leaveConfirm();
+        if ( variables.dialog.open() ) {
+            var r = variables.dialog.key( k );
+            if ( r.answer == "yes" ) return r.intent;
+            if ( r.answer == "no" ) leaveConfirm();
+            else if ( r.answer == "ok" ) { variables.mode = "timeline"; variables.dialog.close(); }
             return {};
         }
         if ( variables.mode == "pick" ) return onPickKey( k );
@@ -205,7 +208,8 @@ class TimeMachineApp {
     }
 
     function leaveConfirm() {
-        variables.mode = structKeyExists( variables.modal.intent, "fromBrowse" ) ? "browse" : "timeline";
+        variables.mode = structKeyExists( variables.dialog.intent(), "fromBrowse" ) ? "browse" : "timeline";
+        variables.dialog.close();
     }
 
     function onTimelineKey( k ) {

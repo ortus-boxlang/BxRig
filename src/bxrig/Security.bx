@@ -23,10 +23,10 @@ class Security {
         return this;
     }
 
-    function pamFile() { return variables.environ.get( "BXRIG_PAM_DIR", "/etc/pam.d" ) & "/sudo"; }
-    function sudoersFile() { return variables.environ.get( "BXRIG_SUDOERS_DIR", "/etc/sudoers.d" ) & "/50-bxrig-nopasswd"; }
-    function u2fFile() { return variables.environ.get( "BXRIG_U2F_FILE", variables.environ.xdgConfig( "Yubico/u2f_keys" ) ); }
-    function user() { return getSystemSetting( "USER", "" ); }
+    function pamFile() { return variables.environ.named( "pamDir", "/etc/pam.d" ) & "/sudo"; }
+    function sudoersFile() { return variables.environ.named( "sudoersDir", "/etc/sudoers.d" ) & "/50-bxrig-nopasswd"; }
+    function u2fFile() { return variables.environ.named( "u2fFile", variables.environ.xdgConfig( "Yubico/u2f_keys" ) ); }
+    function user() { return new bxrig.util.Env().named( "user", "" ); }
 
     function pamLine( kind ) { return arguments.kind == "fingerprint" ? "auth sufficient pam_fprintd.so" : "auth sufficient pam_u2f.so cue"; }
     function pamMarker( kind ) { return " # bxrig " & arguments.kind; }
@@ -57,20 +57,7 @@ class Security {
 
     // ---- a plan, or the commands ----
     function finish( title, shown, cmds, yes, dry, asJson, data = {} ) {
-        var d = arguments.data;
-        d.commands = arguments.cmds.map( function( c ) { return c.toList( " " ); } );
-        if ( !arguments.yes || arguments.dry ) {
-            var lines = [ ( arguments.dry ? "Dry run: " : "Plan: " ) & arguments.title ];
-            for ( var s in arguments.shown ) lines.append( "  " & s );
-            for ( var c in arguments.cmds ) lines.append( "  " & c.toList( " " ) );
-            lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return variables.out.say( arguments.dry ? "ok" : "plan", d, arguments.asJson, lines, arguments.dry );
-        }
-        for ( var x in arguments.cmds ) {
-            var r = variables.proc.exec( x, 900 );
-            if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ), step: x.toList( " " ) }, arguments.asJson, [ "error: " & x.toList( " " ) & ": " & trim( r.output ) ] );
-        }
-        return variables.out.say( "ok", d, arguments.asJson, [ arguments.title & ": done" ] );
+        return new bxrig.util.Mutation( variables.out, variables.proc ).run( arguments.title, arguments.cmds, arguments.yes, arguments.dry, arguments.asJson, arguments.data, arguments.shown, 900 );
     }
 
     function installFirst( pkg, yes, dry ) {
@@ -91,7 +78,7 @@ class Security {
         }
         if ( !fileExists( pamFile() ) ) return variables.out.fail( "precondition", pamFile() & " was not found", arguments.asJson );
         var text = fileRead( pamFile() );
-        var tmp = getTempDirectory() & "/bxrig-pam-" & createUUID();
+        var tmp = new bxrig.util.SystemFile().tempPath( "pam" );
         var cmds = [];
         var shown = [];
         if ( v == "on" ) {
@@ -101,7 +88,7 @@ class Security {
             if ( next == text ) return variables.out.say( "ok", { already: true }, arguments.asJson, [ arguments.kind & " is already on for sudo." ] );
             for ( var ic in installFirst( pkg, arguments.yes, arguments.dry ) ) cmds.append( ic );
             if ( !fileExists( pamFile() & ".bxrig-backup" ) ) cmds.append( [ "sudo", "cp", "-p", pamFile(), pamFile() & ".bxrig-backup" ] );
-            cmds.append( [ "sudo", "install", "-Dm644", tmp, pamFile() ] );
+            cmds.append( new bxrig.util.SystemFile().installArgv( tmp, pamFile() ) );
             shown.append( "adds this line before the first auth line of " & pamFile() & ":" );
             shown.append( "    " & pamLine( arguments.kind ) );
             shown.append( "sufficient: your password still works if the " & ( arguments.kind == "fingerprint" ? "reader" : "key" ) & " is missing. Only sudo is changed." );
@@ -109,7 +96,7 @@ class Security {
         } else {
             var prev = pamRemove( text, arguments.kind );
             if ( prev == text ) return variables.out.say( "ok", { already: true }, arguments.asJson, [ arguments.kind & " is already off for sudo." ] );
-            cmds.append( [ "sudo", "install", "-Dm644", tmp, pamFile() ] );
+            cmds.append( new bxrig.util.SystemFile().installArgv( tmp, pamFile() ) );
             shown.append( "removes the bxrig " & arguments.kind & " line from " & pamFile() );
             if ( arguments.yes && !arguments.dry ) fileWrite( tmp, prev );
         }
@@ -136,7 +123,7 @@ class Security {
         var u = user();
         if ( !reFind( "^[a-z_][a-z0-9_-]*$", u ) ) return variables.out.fail( "precondition", "could not read a safe user name from $USER", arguments.asJson );
         if ( v == "off" ) return finish( "turn passwordless sudo off", [ "removes " & sudoersFile() ], [ [ "sudo", "rm", "-f", sudoersFile() ] ], arguments.yes, arguments.dry, arguments.asJson, { passwordless_sudo: false } );
-        var tmp = getTempDirectory() & "/bxrig-sudoers-" & createUUID();
+        var tmp = new bxrig.util.SystemFile().tempPath( "sudoers" );
         var text = "## Written by `bxrig security passwordless-sudo on`. Remove with `bxrig security passwordless-sudo off`." & chr( 10 ) & u & " ALL=(ALL:ALL) NOPASSWD: ALL" & chr( 10 );
         var shown = [ "writes " & sudoersFile() & ":", "    " & u & " ALL=(ALL:ALL) NOPASSWD: ALL", "Anyone who can run a command as you (a malicious script, a stolen session) gets root without a password." ];
         if ( arguments.yes && !arguments.dry ) {
@@ -144,7 +131,7 @@ class Security {
             var chk = variables.proc.exec( [ "visudo", "-cf", tmp ], 15 );
             if ( chk.exitCode != 0 ) { try { fileDelete( tmp ); } catch ( any e ) {} return variables.out.say( "failed", { error: "visudo rejected the file: " & trim( chk.output ) }, arguments.asJson, [ "error: visudo rejected the file, nothing was installed: " & trim( chk.output ) ] ); }
         }
-        var code = finish( "turn passwordless sudo on for " & u, shown, [ [ "visudo", "-cf", tmp ], [ "sudo", "install", "-Dm440", "-o", "root", "-g", "root", tmp, sudoersFile() ] ], arguments.yes, arguments.dry, arguments.asJson, { passwordless_sudo: true } );
+        var code = finish( "turn passwordless sudo on for " & u, shown, [ [ "visudo", "-cf", tmp ], new bxrig.util.SystemFile().installArgv( tmp, sudoersFile(), "440", true ) ], arguments.yes, arguments.dry, arguments.asJson, { passwordless_sudo: true } );
         try { if ( fileExists( tmp ) ) fileDelete( tmp ); } catch ( any e ) {}
         return code;
     }

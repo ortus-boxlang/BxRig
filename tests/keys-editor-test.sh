@@ -42,13 +42,13 @@ hl.bind(mainMod .. " + SHIFT + Y", hl.dsp.window.fullscreen())
 hl.bind("SUPER + ALT + K", function() end)
 hl.bind("XF86AudioMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"))
 LUA
-[[ "$(code "$binary" keys set control-center Super+Shift+Y --yes)" == 4 ]] || fail 'a clash with your hyprland.lua is refused'
-{ k set control-center Super+Shift+Y --yes 2>&1 || true; } | grep -q 'hyprland.lua line 2' || fail 'the message names your file and line'
-[[ "$(code "$binary" keys set control-center Super+Shift+Y --yes --force)" == 0 ]] || fail '--force allows a clash with your own line'
-k conflicts --json | jq -e '.data.ok == false and (.data.user | length) == 1 and .data.user[0].id == "control-center" and .data.user[0].line == 2' >/dev/null || fail "conflicts: $(k conflicts --json)"
-k reset control-center --yes >/dev/null
+[[ "$(code "$binary" keys set menu Super+Shift+Y --yes)" == 4 ]] || fail 'a clash with your hyprland.lua is refused'
+{ k set menu Super+Shift+Y --yes 2>&1 || true; } | grep -q 'hyprland.lua line 2' || fail 'the message names your file and line'
+[[ "$(code "$binary" keys set menu Super+Shift+Y --yes --force)" == 0 ]] || fail '--force allows a clash with your own line'
+k conflicts --json | jq -e '.data.ok == false and (.data.user | length) == 2 and .data.user[0].id == "menu" and .data.user[0].line == 2 and .data.user[1].id == "volume-mute"' >/dev/null || fail "conflicts: $(k conflicts --json)"
+k reset menu --yes >/dev/null
 k conflicts | grep -q 'No conflicts' || fail 'clean table and no clash'
 # two bindings can end up sharing a combo only by editing the file by hand: the scan still reports it
-echo '{"ai-shell":"Super+Alt+K","control-center":"super+alt+k"}' > "$tmp/cfg/bxrig/shortcuts.json"
+echo '{"ai-shell":"Super+Alt+K","menu":"super+alt+k"}' > "$tmp/cfg/bxrig/shortcuts.json"
 k conflicts --json | jq -e '.data.within | length == 1' >/dev/null || fail 'duplicates inside the table are reported'
 echo "keys-editor-test: ok"

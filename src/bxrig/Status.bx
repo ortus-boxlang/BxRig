@@ -23,12 +23,12 @@ class Status {
         var pk = new bxrig.Packages();
         var missing = new bxrig.Resolver().resolve( sys.catalogData(), { shell: pk.defaultShell(), rootFs: pk.rootFs(), installed: function( a ) { return sys.appInstalled( a.id ); } } ).selected.map( function( a ) { return a.id; } );
         var data = { detected: rows, installed_catalog_apps: installedApps, default_apps_missing: missing };
-        if ( arguments.asJson ) { println( variables.cli.envelope( "status", 0, data ) ); return 0; }
+        if ( arguments.asJson ) { println( variables.cli.envelope( "status", 0, data ) ); return new bxrig.util.Exit().ok(); }
         println( "This machine, in the wizard's terms:" );
         for ( var r in rows ) println( "  " & left( r.page & ": " & r.label & repeatString( " ", 60 ), 52 ) & ( isArray( r.value ) ? r.value.toList( ", " ) : r.value ) );
         if ( !rows.len() ) println( "  nothing BxRig knows about was found yet" );
         println( "Default apps not installed: " & missing.len() & ( missing.len() ? " (" & missing.toList( ", " ) & ")" : "" ) );
         println( "Run `bxrig init` to tune it (installed options are marked, nothing is removed), or `bxrig init --fresh` for the defaults." );
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 }

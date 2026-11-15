@@ -23,7 +23,7 @@ class Dotfiles {
 
     function methods() { return [ "chezmoi", "yadm", "stow", "links" ]; }
     function toolFor( method ) { return arguments.method == "links" ? "" : arguments.method; }
-    function dataHome() { return getSystemSetting( "BXRIG_DATA_HOME", variables.environ.home() & "/.local/share/bxrig" ); }
+    function dataHome() { return new bxrig.util.Env().named( "dataHome", variables.environ.home() & "/.local/share/bxrig" ); }
     function cloneDir() { return dataHome() & "/dotfiles/repo"; }
     function journalFile() { return variables.config.stateDir() & "/dotfiles.json"; }
 
@@ -127,14 +127,14 @@ class Dotfiles {
 
     // ---- state of the targets ----
     function isLinkTo( target, source ) {
-        var r = variables.inst.exec( [ "readlink", arguments.target ], 10 );
+        var r = variables.inst.proc().exec( [ "readlink", arguments.target ], 10 );
         return r.exitCode == 0 && trim( r.output ) == arguments.source;
     }
 
     function exists( path ) { return fileExists( arguments.path ) || directoryExists( arguments.path ) || isSymlink( arguments.path ); }
 
     function isSymlink( path ) {
-        try { return variables.inst.exec( [ "test", "-L", arguments.path ], 10 ).exitCode == 0; } catch ( any e ) { return false; }
+        try { return variables.inst.proc().exec( [ "test", "-L", arguments.path ], 10 ).exitCode == 0; } catch ( any e ) { return false; }
     }
 
     // Splits a mapping into what is already in place, what is new and what you already have (conflicts).
@@ -160,13 +160,13 @@ class Dotfiles {
     function fetch( repo ) {
         var dir = cloneDir();
         if ( directoryExists( dir & "/.git" ) ) {
-            var have = variables.inst.exec( [ "git", "-C", dir, "remote", "get-url", "origin" ], 20 );
+            var have = variables.inst.proc().exec( [ "git", "-C", dir, "remote", "get-url", "origin" ], 20 );
             if ( trim( have.output ) != arguments.repo ) return "A different dotfiles repository is already set up (" & trim( have.output ) & "). Run: bxrig dotfiles undo --yes first";
-            var pull = variables.inst.exec( [ "git", "-C", dir, "pull", "--ff-only" ], 300 );
+            var pull = variables.inst.proc().exec( [ "git", "-C", dir, "pull", "--ff-only" ], 300 );
             return pull.exitCode == 0 ? "" : "Could not update the repository: " & trim( pull.output );
         }
         directoryCreate( getDirectoryFromPath( dir ), true, true );
-        var r = variables.inst.exec( [ "git", "clone", arguments.repo, dir ], 600 );
+        var r = variables.inst.proc().exec( [ "git", "clone", arguments.repo, dir ], 600 );
         return r.exitCode == 0 ? "" : "Could not clone " & arguments.repo & ": " & trim( r.output );
     }
 
@@ -184,7 +184,7 @@ class Dotfiles {
         if ( !map.len() ) return { error: "There are no dotfiles to apply in " & arguments.repo, code: 4 };
         var cls = classify( map, m );
         var tool = toolFor( m );
-        var needInstall = len( tool ) && variables.inst.exec( [ "sh", "-c", 'command -v "$1"', "_", tool ], 10 ).exitCode != 0;
+        var needInstall = len( tool ) && variables.inst.proc().exec( [ "sh", "-c", 'command -v "$1"', "_", tool ], 10 ).exitCode != 0;
         return { error: "", code: 0, repo: arguments.repo, method: m, detected: detected, tool: tool, installTool: needInstall, clone: dir, conflicts: cls.conflicts, fresh: cls.fresh, same: cls.same, total: map.len() };
     }
 
@@ -192,7 +192,7 @@ class Dotfiles {
     function confirm( question ) {
         var tmp = reReplace( getTempDirectory(), "/+$", "" ) & "/bxrig-yn-" & left( createUUID(), 8 );
         var script = 'in="${BXRIG_TTY_IN:-/dev/tty}"; if [ "$in" = /dev/tty ]; then printf "%s [y/N] " "$1" > /dev/tty; fi; IFS= read -r v < "$in" || v=""; printf "%s" "$v" > "$2"';
-        try { variables.inst.exec( [ "sh", "-c", script, "_", arguments.question, tmp ], 300 ); var a = fileExists( tmp ) ? lcase( trim( fileRead( tmp ) ) ) : ""; } finally { if ( fileExists( tmp ) ) fileDelete( tmp ); }
+        try { variables.inst.proc().exec( [ "sh", "-c", script, "_", arguments.question, tmp ], 300 ); var a = fileExists( tmp ) ? lcase( trim( fileRead( tmp ) ) ) : ""; } finally { if ( fileExists( tmp ) ) fileDelete( tmp ); }
         return a == "y" || a == "yes";
     }
 
@@ -229,8 +229,8 @@ class Dotfiles {
         for ( var c in arguments.conflicts ) {
             var rel = mid( c.target, len( variables.environ.home() ) + 2, len( c.target ) );
             var dest = backupRoot() & "/" & arguments.stamp & "/" & rel;
-            variables.inst.exec( [ "mkdir", "-p", getDirectoryFromPath( dest ) ], 10 );
-            var r = variables.inst.exec( [ "mv", c.target, dest ], 60 );
+            variables.inst.proc().exec( [ "mkdir", "-p", getDirectoryFromPath( dest ) ], 10 );
+            var r = variables.inst.proc().exec( [ "mv", c.target, dest ], 60 );
             if ( r.exitCode != 0 ) throw( message = "Could not back up " & c.target & ": " & trim( r.output ) );
             done.append( { target: c.target, backup: dest } );
         }
@@ -243,8 +243,8 @@ class Dotfiles {
         for ( var b in arguments.backups ) {
             if ( exists( b.target ) ) continue;
             if ( !exists( b.backup ) ) continue;
-            variables.inst.exec( [ "mkdir", "-p", getDirectoryFromPath( b.target ) ], 10 );
-            if ( variables.inst.exec( [ "mv", b.backup, b.target ], 60 ).exitCode == 0 ) back++;
+            variables.inst.proc().exec( [ "mkdir", "-p", getDirectoryFromPath( b.target ) ], 10 );
+            if ( variables.inst.proc().exec( [ "mv", b.backup, b.target ], 60 ).exitCode == 0 ) back++;
         }
         return back;
     }
@@ -263,7 +263,7 @@ class Dotfiles {
         var lines = summary( p );
         if ( !arguments.yes || arguments.dryRun ) {
             var code = arguments.dryRun ? 0 : 2;
-            lines.append( arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply" & ( p.conflicts.len() ? " (you will be asked about the files you already have, or add --overwrite)" : "" ) & "." );
+            lines.append( new bxrig.util.Mutation().footer( arguments.dryRun, "Add --yes to apply" & ( p.conflicts.len() ? " (you will be asked about the files you already have, or add --overwrite)" : "" ) & "." ) );
             return variables.cli.say( cmd, code, data, arguments.asJson, lines, arguments.dryRun );
         }
         // your files win, but only with your say-so
@@ -276,10 +276,10 @@ class Dotfiles {
             lines = [];
         }
         if ( p.installTool ) {
-            var ins = variables.inst.exec( variables.pacman.installArgv( [ p.tool ] ), 1800 );
+            var ins = variables.inst.proc().exec( variables.pacman.installArgv( [ p.tool ] ), 1800 );
             if ( ins.exitCode != 0 ) return variables.cli.say( cmd, "precondition", variables.text.merge( data, { error: "Could not install " & p.tool } ), arguments.asJson, [ "error: could not install " & p.tool & " (" & trim( ins.output ) & ")" ] );
         }
-        var stamp = trim( variables.inst.exec( [ "date", "+%Y%m%d-%H%M%S" ], 10 ).output );
+        var stamp = trim( variables.inst.proc().exec( [ "date", "+%Y%m%d-%H%M%S" ], 10 ).output );
         var backups = [];
         try { backups = backUp( p.conflicts, stamp ); } catch ( any e ) {
             restoreBackups( backups );
@@ -313,8 +313,8 @@ class Dotfiles {
             for ( var a in p.fresh ) todo.append( a );
             for ( var b in p.conflicts ) todo.append( b );
             for ( var t in todo ) {
-                variables.inst.exec( [ "mkdir", "-p", getDirectoryFromPath( t.target ) ], 10 );
-                var r = variables.inst.exec( [ "ln", "-s", t.source, t.target ], 10 );
+                variables.inst.proc().exec( [ "mkdir", "-p", getDirectoryFromPath( t.target ) ], 10 );
+                var r = variables.inst.proc().exec( [ "ln", "-s", t.source, t.target ], 10 );
                 if ( r.exitCode != 0 ) return "Could not link " & t.target & ": " & trim( r.output );
             }
             return "";
@@ -322,22 +322,21 @@ class Dotfiles {
         if ( p.method == "stow" ) {
             var argv = [ "stow", "-d", p.clone, "-t", home, "-R" ];
             for ( var pk in stowPackages( p.clone ) ) argv.append( pk );
-            var s = variables.inst.exec( argv, 300 );
+            var s = variables.inst.proc().exec( argv, 300 );
             return s.exitCode == 0 ? "" : "stow failed: " & trim( s.output );
         }
         if ( p.method == "chezmoi" ) {
-            var c = variables.inst.exec( [ "chezmoi", "apply", "--source", p.clone, "--force" ], 600 );
+            var c = variables.inst.proc().exec( [ "chezmoi", "apply", "--source", p.clone, "--force" ], 600 );
             return c.exitCode == 0 ? "" : "chezmoi failed: " & trim( c.output );
         }
         var repoExists = directoryExists( home & "/.local/share/yadm/repo.git" );
-        var y = variables.inst.exec( repoExists ? [ "yadm", "pull" ] : [ "yadm", "clone", "-f", "--no-bootstrap", p.repo ], 600 );
+        var y = variables.inst.proc().exec( repoExists ? [ "yadm", "pull" ] : [ "yadm", "clone", "-f", "--no-bootstrap", p.repo ], 600 );
         return y.exitCode == 0 ? "" : "yadm failed: " & trim( y.output );
     }
 
     // ---- status and undo ----
     function journal() {
-        if ( !fileExists( journalFile() ) ) return {};
-        try { return jsonDeserialize( fileRead( journalFile() ) ); } catch ( any e ) { return {}; }
+        return new bxrig.util.JsonStore().load( journalFile() );
     }
 
     function status( asJson ) {
@@ -356,17 +355,17 @@ class Dotfiles {
         if ( j.method == "chezmoi" || j.method == "yadm" ) what = [ "put back " & j.backups.len() & " original files (files " & j.method & " created stay; use " & j.method & " itself to remove them)" ];
         if ( !arguments.yes || arguments.dryRun ) {
             var code = arguments.dryRun ? 0 : 2;
-            var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": would " & what.toList( " and " ), arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ];
+            var lines = [ new bxrig.util.Mutation().banner( arguments.dryRun ) & "would " & what.toList( " and " ), new bxrig.util.Mutation().footer( arguments.dryRun ) ];
             return variables.cli.say( cmd, code, { would: what }, arguments.asJson, lines, arguments.dryRun );
         }
         var removed = 0;
         if ( j.method == "stow" && structKeyExists( j, "stow" ) && j.stow.len() ) {
             var argv = [ "stow", "-d", j.clone, "-t", variables.environ.home(), "-D" ];
             for ( var pk in j.stow ) argv.append( pk );
-            variables.inst.exec( argv, 300 );
+            variables.inst.proc().exec( argv, 300 );
         }
         if ( j.method == "links" || j.method == "stow" ) for ( var l in j.links ) {
-            if ( isSymlink( l.target ) && isLinkTo( l.target, l.source ) ) { variables.inst.exec( [ "rm", l.target ], 10 ); removed++; }
+            if ( isSymlink( l.target ) && isLinkTo( l.target, l.source ) ) { variables.inst.proc().exec( [ "rm", l.target ], 10 ); removed++; }
         }
         var back = restoreBackups( j.backups );
         fileDelete( journalFile() );

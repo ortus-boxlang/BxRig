@@ -15,7 +15,7 @@ esac
 exit 0
 F
 printf '#!/usr/bin/env bash\necho "systemctl $*" >> "$LOG"\nexit 0\n' > "$tmp/bin/systemctl"
-printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo 1000; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
+stub_id
 printf '#!/usr/bin/env bash\necho "notify $*" >> "$LOG"\n' > "$tmp/bin/notify-send"
 chmod +x "$tmp/bin"/*
 echo '{"type":"service_account"}' > "$tmp/gcs.json"

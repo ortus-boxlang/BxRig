@@ -26,15 +26,15 @@ class Time {
         return this;
     }
 
-    function unitFile() { return variables.environ.get( "BXRIG_SYSTEMD_DIR", "/etc/systemd/system" ) & "/automatic-timezoned.service"; }
-    function geoclueFile() { return variables.environ.get( "BXRIG_GEOCLUE_DIR", "/etc/geoclue/conf.d" ) & "/90-bxrig-timezone.conf"; }
+    function unitFile() { return variables.environ.named( "systemdDir", "/etc/systemd/system" ) & "/automatic-timezoned.service"; }
+    function geoclueFile() { return variables.environ.named( "geoclueDir", "/etc/geoclue/conf.d" ) & "/90-bxrig-timezone.conf"; }
 
     function unitText() {
-        return "# Written by `bxrig time auto on`. Remove with `bxrig time auto off`." & chr( 10 )
-            & "[Unit]" & chr( 10 ) & "Description=Automatically update system timezone based on location" & chr( 10 )
-            & "Requires=geoclue.service" & chr( 10 ) & "After=geoclue.service" & chr( 10 ) & chr( 10 )
-            & "[Service]" & chr( 10 ) & "ExecStart=/usr/bin/automatic-timezoned" & chr( 10 ) & chr( 10 )
-            & "[Install]" & chr( 10 ) & "WantedBy=multi-user.target" & chr( 10 );
+        return new bxrig.util.SystemdUnit().render( [
+            { name: "Unit", lines: [ "Description=Automatically update system timezone based on location", "Requires=geoclue.service", "After=geoclue.service" ] },
+            { name: "Service", lines: [ "ExecStart=/usr/bin/automatic-timezoned" ] },
+            { name: "Install", lines: [ "WantedBy=multi-user.target" ] }
+        ], "Written by `bxrig time auto on`. Remove with `bxrig time auto off`." );
     }
 
     function geoclueText() {
@@ -48,9 +48,9 @@ class Time {
         var f = { timezone: "", ntp: false, synchronized: false, rtc_local: false, time: "" };
         var r = variables.proc.exec( [ "timedatectl", "show" ], 10 );
         if ( r.exitCode == 0 ) {
-            for ( var line in listToArray( r.output, chr( 10 ) ) ) {
-                var k = listFirst( line, "=" );
-                var v = trim( listRest( line, "=" ) );
+            for ( var kv in new bxrig.util.Props().pairs( r.output ) ) {
+                var k = kv.key;
+                var v = kv.value;
                 if ( k == "Timezone" ) f.timezone = v;
                 if ( k == "NTP" ) f.ntp = v == "yes";
                 if ( k == "NTPSynchronized" ) f.synchronized = v == "yes";
@@ -81,19 +81,7 @@ class Time {
 
     // Shows the plan, or runs the commands. cmds: [ argv ], title for the plan.
     function runPlan( title, cmds, yes, dry, asJson, data = {} ) {
-        var d = arguments.data;
-        d.commands = arguments.cmds.map( function( c ) { return c.toList( " " ); } );
-        if ( !arguments.yes || arguments.dry ) {
-            var lines = [ ( arguments.dry ? "Dry run: " : "Plan: " ) & arguments.title ];
-            for ( var c in arguments.cmds ) lines.append( "  " & c.toList( " " ) );
-            lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return variables.out.say( arguments.dry ? "ok" : "plan", d, arguments.asJson, lines, arguments.dry );
-        }
-        for ( var cmd in arguments.cmds ) {
-            var r = variables.proc.exec( cmd, 600 );
-            if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ), step: cmd.toList( " " ) }, arguments.asJson, [ "error: " & cmd.toList( " " ) & ": " & trim( r.output ) ] );
-        }
-        return variables.out.say( "ok", d, arguments.asJson, [ arguments.title & ": done" ] );
+        return new bxrig.util.Mutation( variables.out, variables.proc ).run( arguments.title, arguments.cmds, arguments.yes, arguments.dry, arguments.asJson, arguments.data );
     }
 
     function zoneCmd( args, yes, dry, asJson ) {
@@ -114,7 +102,7 @@ class Time {
         if ( !variables.proc.has( "tzupdate" ) ) {
             var built = variables.inst.steps( [ { id: "tzupdate", source: "aur", targets: [ "tzupdate" ] } ], variables.inst.isRoot() );
             d.install = built.steps;
-            if ( !arguments.yes || arguments.dry ) return variables.out.say( arguments.dry ? "ok" : "plan", d, arguments.asJson, [ ( arguments.dry ? "Dry run" : "Plan" ) & ": install tzupdate (AUR), then set the time zone from your IP address", "Nothing was changed." & ( arguments.dry ? "" : " Add --yes to apply." ) ], arguments.dry );
+            if ( !arguments.yes || arguments.dry ) return variables.out.plan( "install tzupdate (AUR), then set the time zone from your IP address", d, arguments.asJson, arguments.dry );
             var res = variables.inst.run( built.steps );
             if ( variables.inst.exitCode( res ) != 0 ) return variables.out.say( variables.inst.exitCode( res ), { failed: res.failed }, arguments.asJson, res.failed.map( function( f ) { return "Failed: " & f.id & ": " & f.error; } ) );
         }
@@ -127,8 +115,8 @@ class Time {
         var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
         if ( v == "status" ) return variables.out.say( "ok", { automatic_zone: autoActive() }, arguments.asJson, [ "automatic zone: " & ( autoActive() ? "on" : "off" ) ] );
         if ( v != "on" && v != "off" ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "time auto" ), arguments.asJson );
-        var tmpU = getTempDirectory() & "/bxrig-tz-unit-" & createUUID();
-        var tmpG = getTempDirectory() & "/bxrig-tz-geoclue-" & createUUID();
+        var tmpU = new bxrig.util.SystemFile().tempPath( "tz-unit" );
+        var tmpG = new bxrig.util.SystemFile().tempPath( "tz-geoclue" );
         var d = { unit: unitFile(), geoclue: geoclueFile() };
         var privacy = "Privacy: GeoClue looks up your location online (the Wi-Fi networks around you or your IP address) through a location web service, each time you move.";
         if ( v == "off" ) {
@@ -138,12 +126,12 @@ class Time {
         if ( !variables.proc.has( "automatic-timezoned" ) ) apps.append( { id: "automatic-timezoned", source: "aur", targets: [ "automatic-timezoned" ] } );
         var built = variables.inst.steps( apps, variables.inst.isRoot() );
         d.install = built.steps;
-        var after = [ [ "sudo", "install", "-Dm644", tmpU, unitFile() ], [ "sudo", "install", "-Dm644", tmpG, geoclueFile() ], variables.systemd.reloadArgv( false, true ), variables.systemd.enableArgv( "automatic-timezoned.service", false, true ) ];
+        var after = [ new bxrig.util.SystemFile().installArgv( tmpU, unitFile() ), new bxrig.util.SystemFile().installArgv( tmpG, geoclueFile() ), variables.systemd.reloadArgv( false, true ), variables.systemd.enableArgv( "automatic-timezoned.service", false, true ) ];
         if ( !arguments.yes || arguments.dry ) {
-            var lines = [ ( arguments.dry ? "Dry run" : "Plan" ) & ": follow your location with the time zone", privacy ];
+            var lines = [ new bxrig.util.Mutation().banner( arguments.dry ) & "follow your location with the time zone", privacy ];
             for ( var st in built.steps ) for ( var c in st.commands ) lines.append( "  " & st.kind & ": " & c.toList( " " ) );
             for ( var a in after ) lines.append( "  " & a.toList( " " ) );
-            lines.append( "Nothing was changed." & ( arguments.dry ? "" : " Add --yes to apply." ) );
+            lines.append( new bxrig.util.Mutation().footer( arguments.dry ) );
             d.commands = after.map( function( c ) { return c.toList( " " ); } );
             return variables.out.say( arguments.dry ? "ok" : "plan", d, arguments.asJson, lines, arguments.dry );
         }
@@ -250,8 +238,7 @@ class Time {
         } else return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "time world" ), arguments.asJson );
         var data = { enabled: w.enabled, zones: w.zones, file: worldFile() };
         var summary = "world clock " & ( w.enabled ? "on: " & ( w.zones.len() ? w.zones.toList( ", " ) : "no zones" ) : "off" );
-        if ( arguments.dry ) return variables.out.say( "ok", data, arguments.asJson, [ "Plan: " & summary, "Nothing was changed." ], true );
-        if ( !arguments.yes ) return variables.out.say( "plan", data, arguments.asJson, [ "Plan: " & summary, "Nothing was changed. Add --yes to apply." ] );
+        if ( arguments.dry || !arguments.yes ) return new bxrig.util.Mutation( variables.out ).show( summary, data, arguments.asJson, arguments.dry );
         worldWrite( w );
         return variables.out.say( "ok", data, arguments.asJson, [ summary ] );
     }

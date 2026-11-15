@@ -26,8 +26,8 @@ if [[ "$1" == clone ]]; then
 fi
 MOCK
 printf '#!/usr/bin/env bash\necho x86_64\n' > "$tmp/bin/uname"
-printf '#!/usr/bin/env bash\n[[ "$1" == --version ]] && { echo "Sudo version 1.9"; exit 0; }\n"$@"\n' > "$tmp/bin/sudo"
-printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo "${MOCK_UID:-1000}"; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
+stub_sudo
+stub_id
 chmod +x "$tmp/bin/"*
 export SETUP_LOG="$tmp/setup.log"
 printf 'NAME="CachyOS Linux"\nID=cachyos\nID_LIKE=arch\n' > "$tmp/os-cachyos"; printf 'ID=ubuntu\n' > "$tmp/os-ubuntu"

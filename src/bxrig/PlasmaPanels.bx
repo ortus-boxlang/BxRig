@@ -140,7 +140,7 @@ class PlasmaPanels {
         if ( count < 1 || count > 20 ) return variables.out.say( "precondition", { error: "desktops must be 1 to 20" }, arguments.asJson, [ "error: the number of desktops must be 1 to 20" ] );
         if ( !variables.proc.has( "kwriteconfig6" ) ) return variables.out.say( "precondition", { error: "kwriteconfig6 was not found" }, arguments.asJson, [ "error: kwriteconfig6 was not found (this needs KDE Plasma)" ] );
         var data = { desktops: count };
-        if ( !arguments.yes || arguments.dryRun ) return variables.out.say( arguments.dryRun ? "ok" : "plan", data, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": " & count & " virtual desktops in one row (kwinrc [Desktops] Number and Rows)", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dryRun );
+        if ( !arguments.yes || arguments.dryRun ) return variables.out.plan( count & " virtual desktops in one row (kwinrc [Desktops] Number and Rows)", data, arguments.asJson, arguments.dryRun );
         variables.proc.exec( [ "kwriteconfig6", "--file", "kwinrc", "--group", "Desktops", "--key", "Number", count ], 20 );
         variables.proc.exec( [ "kwriteconfig6", "--file", "kwinrc", "--group", "Desktops", "--key", "Rows", "1" ], 20 );
         if ( qdbus() != "" ) variables.proc.exec( [ qdbus(), "org.kde.KWin", "/KWin", "reconfigure" ], 20 );
@@ -157,7 +157,7 @@ class PlasmaPanels {
         var data = { desktops: op.desktops, agenda: op.agenda, weather: op.weather, preset: op.preset, widgets: topWidgets( op ).map( function( w ) { return w.id; } ), missing: gone, applied_now: live, script: scriptFile() };
         var missNote = gone.len() ? "Not installed, left out: " & gone.map( function( x ) { return listLast( x, "." ); } ).toList( ", " ) & ( apps.len() ? " (add them: bxrig install " & apps.toList( " " ) & ", then apply again)" : "" ) : "";
         if ( !arguments.yes || arguments.dryRun ) {
-            var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": replace your Plasma panels with a top status panel and a bottom dock", "  top: " & topWidgets( op ).map( function( w ) { return w.id == "sep" ? "|" : ( w.id == "flex" ? "<spacer>" : listLast( w.id, "." ) ); } ).toList( " " ), "  bottom: icons-only task manager", "  " & op.desktops & " virtual desktops, Colorizer preset " & op.preset, live ? "Plasma is running: the layout is applied now." : "Plasma is not running: the layout is applied at your next Plasma login.", len( missNote ) ? "note: " & missNote : "", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ];
+            var lines = [ new bxrig.util.Mutation().banner( arguments.dryRun ) & "replace your Plasma panels with a top status panel and a bottom dock", "  top: " & topWidgets( op ).map( function( w ) { return w.id == "sep" ? "|" : ( w.id == "flex" ? "<spacer>" : listLast( w.id, "." ) ); } ).toList( " " ), "  bottom: icons-only task manager", "  " & op.desktops & " virtual desktops, Colorizer preset " & op.preset, live ? "Plasma is running: the layout is applied now." : "Plasma is not running: the layout is applied at your next Plasma login.", len( missNote ) ? "note: " & missNote : "", new bxrig.util.Mutation().footer( arguments.dryRun ) ];
             return variables.out.say( arguments.dryRun ? "ok" : "plan", data, arguments.asJson, lines, arguments.dryRun );
         }
         var saved = backup();
@@ -182,7 +182,7 @@ class PlasmaPanels {
     function undo( yes, asJson ) {
         var saved = stateDir() & "/backup/plasma-org.kde.plasma.desktop-appletsrc";
         if ( !fileExists( saved ) ) return variables.out.say( "precondition", { error: "no backup" }, arguments.asJson, [ "error: there is no backup (the panels were never changed by BxRig)" ] );
-        if ( !arguments.yes ) return variables.out.say( "plan", { backup: saved }, arguments.asJson, [ "Plan: put back " & saved & " as your Plasma panel layout", "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.out.plan( "put back " & saved & " as your Plasma panel layout", { backup: saved }, arguments.asJson );
         fileCopy( saved, rcFile(), true );
         if ( fileExists( autostartFile() ) ) fileDelete( autostartFile() );
         return variables.out.say( "ok", { restored: saved }, arguments.asJson, [ "Your old panel layout is back. Log out and in (or restart the Plasma shell) to see it." ] );

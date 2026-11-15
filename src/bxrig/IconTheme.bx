@@ -15,9 +15,9 @@ class IconTheme {
         return this;
     }
 
-    function home() { return variables.opts.home ?: variables.environ.get( "HOME", "" ); }
-    function share() { return variables.opts.share ?: variables.environ.get( "BXRIG_SHARE_DIR", "/usr/share" ); }
-    function userShare() { return structKeyExists( variables.opts, "home" ) ? variables.opts.home & "/.local/share" : variables.environ.get( "XDG_DATA_HOME", home() & "/.local/share" ); }
+    function home() { return variables.opts.home ?: variables.environ.named( "home", "" ); }
+    function share() { return variables.opts.share ?: variables.environ.named( "shareDir", "/usr/share" ); }
+    function userShare() { return structKeyExists( variables.opts, "home" ) ? variables.opts.home & "/.local/share" : variables.environ.named( "xdgDataHome", home() & "/.local/share" ); }
     function cfgHome() { return structKeyExists( variables.opts, "home" ) ? variables.opts.home & "/.config" : variables.environ.xdgConfig(); }
     function roots() { return [ userShare() & "/icons", home() & "/.icons", share() & "/icons" ]; }
 
@@ -46,9 +46,8 @@ class IconTheme {
         for ( var f in [ cfgHome() & "/gtk-3.0/settings.ini", cfgHome() & "/gtk-4.0/settings.ini" ] ) {
             if ( !fileExists( f ) ) continue;
             try {
-                for ( var line in listToArray( fileRead( f ), chr( 10 ) ) ) {
-                    var l = trim( line );
-                    if ( left( l, 19 ) == "gtk-icon-theme-name" && find( "=", l ) ) return trim( replace( mid( l, find( "=", l ) + 1, 200 ), '"', "", "all" ) );
+                for ( var kv in new bxrig.util.Props().pairs( fileRead( f ) ) ) {
+                    if ( compare( kv.key, "gtk-icon-theme-name" ) == 0 ) return trim( replace( left( kv.value, 200 ), '"', "", "all" ) );
                 }
             } catch ( any e ) {}
         }
@@ -85,7 +84,7 @@ class IconTheme {
     // The theme to use. Cached for this object.
     function name() {
         if ( len( variables.picked ) ) return variables.picked;
-        var tries = [ variables.environ.get( "BXRIG_ICON_THEME", "" ), savedSetting(), gtkSetting() ];
+        var tries = [ variables.environ.named( "iconTheme", "" ), savedSetting(), gtkSetting() ];
         for ( var t in tries ) if ( installed( t ) ) { variables.picked = usable( t ); return variables.picked; }
         var g = gsettingsSetting();
         if ( installed( g ) ) { variables.picked = usable( g ); return variables.picked; }

@@ -15,7 +15,7 @@ class TimeMachine {
 
     // Runs bxrig with the arguments. Returns { exitCode, output }.
     function runCli( args ) {
-        return variables.proc.self( arguments.args, 1800 );
+        return new bxrig.IntentRunner( variables.proc ).runCli( arguments.args );
     }
 
     function filesFrom( intent, res ) {
@@ -91,6 +91,6 @@ class TimeMachine {
             function( tui ) { return new bxrig.TimeMachineView( tui ); },
             function( intent ) { me.handle( app, intent ); }
         );
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 }

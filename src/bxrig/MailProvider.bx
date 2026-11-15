@@ -4,12 +4,11 @@
 class MailProvider {
     function init( demo = false ) { variables.demo = arguments.demo; variables.mail = new bxrig.Mail( {} ); variables.up = true; variables.cacheId = ""; variables.cacheMsg = {}; return this; }
     function id() { return "mail"; }
-    function icon() { return "envelope"; }
+    function icon() { return new bxrig.ControlCenterPages().icon( "mail" ); }
     function title() { return "Mail"; }
     function hint() { return variables.up ? "your app's mail, newest first · refreshes every 3 s" : "the catcher is not running. Start it: bxrig mail start --yes"; }
-    function live() { return false; }
-    function refreshSeconds() { return new bxrig.util.Exit().timeout(); }
-    function detailLines() { return new bxrig.util.Exit().internal(); }
+    function refreshSeconds() { return 3; }
+    function detailLines() { return 9; }
     function emptyText() { return variables.up ? "The inbox is empty. Send mail to 127.0.0.1:1025 or press t for a test message." : "The mail catcher is not running. Start it with: bxrig mail start --yes"; }
     function columns() { return [ { key: "mark", label: "", w: 3 }, { key: "from", label: "from", w: 24 }, { key: "when", label: "received", w: 13 }, { key: "sizeText", label: "size", w: 9 }, { key: "att", label: "", w: 3 }, { key: "subject", label: "subject", w: 0 } ]; }
     function style( r ) { return r.read ? "dim" : ""; }

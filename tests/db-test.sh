@@ -38,7 +38,7 @@ run "$binary" db engines --json | jq -e '.data.engines | map(select(.id=="milvus
 # bad input
 [[ "$(code "$binary" db start milvus --yes)" == 4 ]] || fail 'Milvus exits 4'
 [[ "$(code "$binary" db start nope --yes)" == 2 ]] || fail 'an unknown engine exits 2'
-[[ "$(code "$binary" db start postgres --name='bad name' --yes)" == 4 ]] || fail 'a bad name exits 4'
+[[ "$(code "$binary" db start postgres --name='bad name' --yes)" == 2 ]] || fail 'a bad name exits 2'
 [[ "$(code "$binary" db start postgres --port=80 --yes)" == 4 && "$(code "$binary" db start postgres --port=abc --yes)" == 4 ]] || fail 'a bad port exits 4'
 [[ "$(code "$binary" db start couchbase --port=9000 --yes)" == 4 ]] || fail 'Couchbase has fixed ports'
 [[ "$(code "$binary" db)" == 2 && "$(code "$binary" db bogus)" == 2 && "$(code "$binary" db start)" == 2 ]] || fail 'usage exits 2'
@@ -183,12 +183,11 @@ def pump(t):
                 if not d: return
                 seen += d
             except OSError: return
-def wait_for(text, t=20):
-    end = time.time() + t
+def wait_for(text, limit):
+    end = time.time() + limit
     while text not in seen and time.time() < end: pump(0.1)
-# type only once the prompt is there (as a person would): the program has turned echo off by then
-wait_for(b'Password:')
-os.write(fd, b'Pty-Typed-Pass7\r'); wait_for(b'Repeat password:')
+wait_for(b'Password:', 20); pump(0.3)
+os.write(fd, b'Pty-Typed-Pass7\r'); wait_for(b'Repeat password:', 20); pump(0.3)
 os.write(fd, b'Pty-Typed-Pass7\r'); pump(2.5)
 _, status = os.waitpid(pid, 0)
 assert os.WIFEXITED(status) and os.WEXITSTATUS(status) == 0, ('exit', status, seen)

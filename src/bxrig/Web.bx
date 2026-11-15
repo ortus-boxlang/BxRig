@@ -20,7 +20,6 @@ class Web {
 
     function appsDir() { return variables.environ.xdgData( "applications" ); }
     function fileFor( name ) { return appsDir() & "/bxrig-web-" & arguments.name & ".desktop"; }
-    function validName( name ) { return reFind( "^[A-Za-z0-9_-]{1,40}$", arguments.name ) > 0; }
     function validUrl( url ) { return reFind( "^https?://[^ ""'<>]+$", arguments.url ) > 0; }
 
     // id -> { cmd, app }: the command and whether it has an app mode.
@@ -35,7 +34,7 @@ class Web {
     }
 
     function installed( cmd ) {
-        try { return variables.inst.exec( [ "sh", "-c", 'command -v "$1"', "_", arguments.cmd ], 10 ).exitCode == 0; } catch ( any e ) { return false; }
+        try { return variables.inst.proc().exec( [ "sh", "-c", 'command -v "$1"', "_", arguments.cmd ], 10 ).exitCode == 0; } catch ( any e ) { return false; }
     }
 
     // The browser id to use: the one asked for, else the default browser, else the first installed.
@@ -43,7 +42,7 @@ class Web {
         var all = browsers();
         if ( len( arguments.asked ) ) return structKeyExists( all, arguments.asked ) ? arguments.asked : "";
         var dflt = "";
-        try { dflt = trim( variables.inst.exec( [ "xdg-settings", "get", "default-web-browser" ], 10 ).output ); } catch ( any e ) {}
+        try { dflt = trim( variables.inst.proc().exec( [ "xdg-settings", "get", "default-web-browser" ], 10 ).output ); } catch ( any e ) {}
         for ( var id in structKeyArray( all ) ) if ( len( dflt ) && find( id, lcase( dflt ) ) > 0 && installed( all[ id ].cmd ) ) return id;
         for ( var id2 in [ "brave", "chromium", "google-chrome", "edge", "firefox" ] ) if ( installed( all[ id2 ].cmd ) ) return id2;
         return "";
@@ -61,7 +60,7 @@ class Web {
     function askDetails() {
         var script = 'in="${BXRIG_TTY_IN:-/dev/tty}"; exec 3< "$in"; for p in "Name: " "URL: " "Browser (brave, chromium, google-chrome, edge, firefox; Enter for the default): "; do [ "$in" = /dev/tty ] && printf "%s" "$p" > /dev/tty; IFS= read -r v <&3; printf "%s\n" "$v"; done';
         var out = "";
-        try { out = variables.inst.exec( [ "sh", "-c", script ], 600 ).output; } catch ( any e ) {}
+        try { out = variables.inst.proc().exec( [ "sh", "-c", script ], 600 ).output; } catch ( any e ) {}
         var lines = listToArray( out, chr( 10 ), true );
         while ( lines.len() < 3 ) lines.append( "" );
         return { name: trim( lines[ 1 ] ), url: trim( lines[ 2 ] ), browser: trim( lines[ 3 ] ) };
@@ -77,7 +76,7 @@ class Web {
     // `web add NAME URL`
     function add( name, url, browser, yes, asJson ) {
         var cmd = "web add";
-        if ( !validName( arguments.name ) ) return variables.cli.say( cmd, "precondition", { error: "Bad name" }, arguments.asJson, [ "error: a name is letters, digits, - and _ (up to 40)" ] );
+        if ( !new bxrig.util.Names().valid( "label", arguments.name ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: a name is letters, digits, - and _ (up to 40)" ] );
         if ( !validUrl( arguments.url ) ) return variables.cli.say( cmd, "precondition", { error: "Bad URL" }, arguments.asJson, [ "error: the URL must start with http:// or https:// and have no spaces or quotes" ] );
         var b = pickBrowser( arguments.browser );
         if ( !len( b ) ) return variables.cli.say( cmd, "precondition", { error: "No browser" }, arguments.asJson, [ len( arguments.browser ) ? "error: unknown browser " & arguments.browser & " (use brave, chromium, google-chrome, edge, firefox)" : "error: no supported browser is installed. Install one: bxrig install brave" ] );
@@ -85,7 +84,7 @@ class Web {
         var state = variables.config.configState( entry );
         var data = { name: arguments.name, url: arguments.url, browser: b, file: entry.target, app_mode: browsers()[ b ].app };
         if ( state == "drifted" || state == "blocked" ) return variables.cli.say( cmd, "precondition", variables.text.merge( data, { error: "Changed by you" } ), arguments.asJson, [ "error: " & entry.target & " was changed by you, so it was kept. Delete it (bxrig web rm " & arguments.name & " --yes) to start over." ] );
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", data, arguments.asJson, [ "Plan: add the web app " & arguments.name & " (" & arguments.url & ") with " & b & ( browsers()[ b ].app ? " in app mode" : " (no app mode: opens a new window)" ), "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "add the web app " & arguments.name & " (" & arguments.url & ") with " & b & ( browsers()[ b ].app ? " in app mode" : " (no app mode: opens a new window)" ), data, arguments.asJson );
         if ( variables.config.configWrite( entry, entry.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, "failed", variables.text.merge( data, { error: "Could not write the entry" } ), arguments.asJson, [ "error: could not write " & entry.target ] );
         return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Added " & arguments.name & ". Find it in your app launcher." ] );
     }
@@ -112,10 +111,10 @@ class Web {
     // `web rm NAME [--yes]`
     function remove( name, yes, asJson ) {
         var cmd = "web rm";
-        if ( !validName( arguments.name ) ) return variables.cli.say( cmd, "precondition", { error: "Bad name" }, arguments.asJson, [ "error: bad name" ] );
+        if ( !new bxrig.util.Names().valid( "label", arguments.name ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: bad name" ] );
         var f = fileFor( arguments.name );
         if ( !fileExists( f ) ) return variables.cli.say( cmd, "precondition", { error: "No such web app" }, arguments.asJson, [ "error: there is no web app " & arguments.name ] );
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", { name: arguments.name }, arguments.asJson, [ "Plan: delete " & f, "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "delete " & f, { name: arguments.name }, arguments.asJson );
         fileDelete( f );
         return variables.cli.say( cmd, "ok", { name: arguments.name }, arguments.asJson, [ arguments.name & " was removed." ] );
     }
@@ -131,7 +130,7 @@ class Web {
         var selected = cat.apps.filter( function( a ) { return a.source == "web" && structKeyExists( a, "bundle" ) && arrayFind( wanted, a.bundle ) > 0; } );
         var ids = selected.map( function( a ) { return a.id; } );
         var data = { bundle: arguments.name, apps: ids };
-        if ( !arguments.yes || arguments.dryRun ) return variables.cli.say( "web install", arguments.dryRun ? "ok" : "plan", data, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": add " & ids.len() & " web apps (" & ids.toList( ", " ) & ")", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes || arguments.dryRun ) return variables.cli.scoped( "web install" ).plan( "add " & ids.len() & " web apps (" & ids.toList( ", " ) & ")", data, arguments.asJson, arguments.dryRun );
         var built = new bxrig.Installer().steps( selected, false );
         var r = new bxrig.Installer().run( built.steps );
         if ( r.failed.len() ) return variables.cli.say( "web install", "failed", { failed: r.failed }, arguments.asJson, [ "error: " & r.failed.len() & " web apps could not be added" ] );

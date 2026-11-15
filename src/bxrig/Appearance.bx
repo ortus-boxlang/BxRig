@@ -65,19 +65,11 @@ class Appearance {
 
     // ---- state ----
     function readState() {
-        var s = { font: "", bar: {}, dock: {}, windows: {}, animations: "", layout: "" };
-        if ( fileExists( stateFile() ) ) {
-            try {
-                var j = jsonDeserialize( fileRead( stateFile() ) );
-                for ( var k in j ) s[ k ] = j[ k ];
-            } catch ( any e ) {}
-        }
-        return s;
+        return new bxrig.util.JsonStore().read( stateFile(), { font: "", bar: {}, dock: {}, windows: {}, animations: "", layout: "" } );
     }
 
     function writeState( s ) {
-        directoryCreate( getDirectoryFromPath( stateFile() ), true, true );
-        fileWrite( stateFile(), jsonSerialize( arguments.s ) & chr( 10 ) );
+        new bxrig.util.JsonStore().write( "appearance-state", stateFile(), arguments.s );
     }
 
     // ---- appliers ----
@@ -120,7 +112,7 @@ class Appearance {
     function applyLook( s ) {
         var e = { name: "appearance-look", target: lookFile(), mode: "644", content: lookLua( arguments.s ) };
         if ( variables.config.configState( e ) != "clean" && variables.config.configWrite( e, e.content, "appearance", true, false ) != 0 ) return "failed";
-        if ( len( getSystemSetting( "HYPRLAND_INSTANCE_SIGNATURE", "" ) ) && variables.proc.has( "hyprctl" ) ) return variables.proc.exec( [ "hyprctl", "reload" ], 20 ).exitCode == 0 ? "reloaded" : "failed";
+        if ( new bxrig.util.Desktop().inHyprland() && variables.proc.has( "hyprctl" ) ) return variables.proc.exec( [ "hyprctl", "reload" ], 20 ).exitCode == 0 ? "reloaded" : "failed";
         return "written";
     }
 
@@ -252,7 +244,7 @@ class Appearance {
         var l = arguments.args[ 1 ];
         var applied = {};
         if ( l == "floating" ) {
-            applied.windows = arguments.dry ? "would run: bxrig layout float" : ( variables.proc.exec( [ getSystemSetting( "BXRIG_SELF", "bxrig" ), "layout", "float" ], 30 ).exitCode == 0 ? "floated" : "failed" );
+            applied.windows = arguments.dry ? "would run: bxrig layout float" : ( variables.proc.exec( [ new bxrig.util.Env().named( "self", "bxrig" ), "layout", "float" ], 30 ).exitCode == 0 ? "floated" : "failed" );
             return result( "layout", l, applied, [ "floating floats the windows of the current workspace now; tiling comes back with `appearance layout dwindle`" ], arguments.asJson, arguments.dry );
         }
         var s = readState();

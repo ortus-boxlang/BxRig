@@ -99,20 +99,13 @@ class Theme {
     }
 
     function readState() {
-        var st = { name: "", mode: "theme" };
-        if ( fileExists( stateFile() ) ) {
-            try {
-                var j = jsonDeserialize( fileRead( stateFile() ) );
-                if ( structKeyExists( j, "name" ) ) st.name = j.name;
-                if ( structKeyExists( j, "mode" ) && arrayFind( modes(), j.mode ) ) st.mode = j.mode;
-            } catch ( any e ) {}
-        }
-        return st;
+        var j = new bxrig.util.JsonStore().read( stateFile(), { name: "", mode: "theme" } );
+        if ( !arrayFind( modes(), j.mode ) ) j.mode = "theme";
+        return { name: j.name, mode: j.mode };
     }
 
     function writeState( name, mode ) {
-        directoryCreate( getDirectoryFromPath( stateFile() ), true, true );
-        fileWrite( stateFile(), jsonSerialize( { name: arguments.name, mode: arguments.mode } ) & chr( 10 ) );
+        new bxrig.util.JsonStore().write( "theme-state", stateFile(), { name: arguments.name, mode: arguments.mode } );
     }
 
     // The mode Noctalia and Plasma are set to: the theme's own unless pinned (or auto).
@@ -265,7 +258,7 @@ class Theme {
                 out.notes.append( "Noctalia did not answer (" & trim( a.output & " " & b.output ) & "). The palette file is written; run `bxrig theme set` again from the session." );
             }
         }
-        if ( findNoCase( "KDE", getSystemSetting( "XDG_CURRENT_DESKTOP", "" ) ) && variables.proc.has( "plasma-apply-colorscheme" ) ) {
+        if ( new bxrig.util.Desktop().inPlasma() && variables.proc.has( "plasma-apply-colorscheme" ) ) {
             // the theme's own scheme (BxRig.colors); Plasma reloads a scheme only when the name changes, so it goes through Breeze first
             variables.proc.exec( [ "plasma-apply-colorscheme", arguments.mode == "light" ? "BreezeLight" : "BreezeDark" ], 30 );
             var kp = variables.proc.exec( [ "plasma-apply-colorscheme", "BxRig" ], 30 );
@@ -284,7 +277,7 @@ class Theme {
             out.gtk = gs.exitCode == 0 ? "applied" : "failed";
             if ( gs.exitCode == 0 && ( directoryExists( "/usr/share/themes/adw-gtk3" ) || directoryExists( variables.environ.home() & "/.local/share/themes/adw-gtk3" ) ) ) variables.proc.exec( [ "gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", arguments.mode == "light" ? "adw-gtk3" : "adw-gtk3-dark" ], 15 );
         }
-        if ( len( getSystemSetting( "HYPRLAND_INSTANCE_SIGNATURE", "" ) ) && variables.proc.has( "hyprctl" ) ) {
+        if ( new bxrig.util.Desktop().inHyprland() && variables.proc.has( "hyprctl" ) ) {
             out.hyprland = variables.proc.exec( [ "hyprctl", "reload" ], 20 ).exitCode == 0 ? "reloaded" : "failed";
         }
         return out;
@@ -302,7 +295,7 @@ class Theme {
         var wall = arguments.keepWallpaper ? "" : wallpaperFor( t );
         var entries = files( p.colors, t.neovimText );
         var data = { theme: t.name, origin: t.origin, light: variables.tc.isLight( p.colors ), mode: stateMode, applied_mode: m, wallpaper: wall, files: entries.map( function( e ) { return e.target; } ) };
-        if ( arguments.dry ) return variables.out.say( "ok", data, arguments.asJson, [ "Plan: theme " & t.name & " (" & ( data.light ? "light" : "dark" ) & ", mode " & m & ")", "Files: " & entries.map( function( e ) { return e.target; } ).toList( ", " ), "Nothing was changed." ], true );
+        if ( arguments.dry ) return variables.out.plan( "theme " & t.name & " (" & ( data.light ? "light" : "dark" ) & ", mode " & m & ")", data, arguments.asJson, true, [ "Files: " & entries.map( function( e ) { return e.target; } ).toList( ", " ) ] );
         data.written = []; data.unchanged = []; data.failed = [];
         for ( var e in entries ) {
             if ( variables.config.configState( e ) == "clean" ) { data.unchanged.append( e.name ); continue; }
@@ -344,11 +337,11 @@ class Theme {
         directoryCreate( outDir(), true, true );
         fileWrite( outDir() & "/vscode.json", jsonSerialize( colors ) & chr( 10 ) );
         if ( !arguments.yes || arguments.dry ) {
-            var lines = [ ( arguments.dry ? "Dry run: " : "Plan: " ) & "put the " & t.name & " colours into " & plan.len() & " VS Code settings file(s)" ];
+            var lines = [ new bxrig.util.Mutation().banner( arguments.dry ) & "put the " & t.name & " colours into " & plan.len() & " VS Code settings file(s)" ];
             for ( var pf in plan ) lines.append( "  " & pf.file );
             for ( var sk in skipped ) lines.append( "  note: " & sk );
             lines.append( "Your file is rewritten as plain JSON (a backup is kept; only workbench.colorCustomizations is changed)." );
-            lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+            lines.append( new bxrig.util.Mutation().footer( arguments.dry ) );
             return variables.out.say( arguments.dry ? "ok" : "plan", d, arguments.asJson, lines, arguments.dry );
         }
         for ( var u in plan ) {
@@ -369,7 +362,7 @@ class Theme {
         var t = len( st.name ) ? find( st.name ) : { found: false };
         var c = t.found ? variables.tc.parse( t.colorsText ) : { ok: false };
         var m = c.ok ? resolveMode( arguments.value, c.colors ) : ( arguments.value == "theme" ? "dark" : arguments.value );
-        if ( arguments.dry ) return variables.out.say( "ok", { mode: arguments.value, applied_mode: m }, arguments.asJson, [ "Plan: theme mode " & arguments.value & " (applies " & m & ")", "Nothing was changed." ], true );
+        if ( arguments.dry ) return variables.out.plan( "theme mode " & arguments.value & " (applies " & m & ")", { mode: arguments.value, applied_mode: m }, arguments.asJson, true );
         writeState( st.name, arguments.value );
         var n = notify( m, "" );
         return variables.out.say( "ok", { mode: arguments.value, applied_mode: m, noctalia: n.noctalia, plasma: n.plasma }, arguments.asJson, [ "Theme mode: " & arguments.value & " (applies " & m & "). Noctalia: " & n.noctalia & "  Plasma: " & n.plasma ] );
@@ -394,7 +387,6 @@ class Theme {
     function userDir() { return cfg() & "/bxrig/themes"; }
 
     // A theme name: lower case letters, digits and dashes (it becomes a folder name).
-    function validName( name ) { return reFind( "^[a-z0-9][a-z0-9-]{0,40}$", arguments.name ) > 0; }
 
     // omarchy-NAME-theme (the repository naming Omarchy asks for) becomes NAME.
     function nameFromSource( src ) {
@@ -408,7 +400,7 @@ class Theme {
 
     // Copies a theme folder (colors.toml and friends, no .git, no symlinks) into the user themes. Returns the exit code.
     function adopt( dir, name, force, asJson, via ) {
-        if ( !validName( arguments.name ) ) return variables.out.say( "usage", { error: "bad theme name " & arguments.name }, arguments.asJson, [ "error: the theme name must be lower case letters, digits and dashes (use --name=NAME)" ] );
+        if ( !new bxrig.util.Names().valid( "theme", arguments.name ) ) return variables.out.say( "usage", { error: "bad theme name " & arguments.name }, arguments.asJson, [ "error: the theme name must be lower case letters, digits and dashes (use --name=NAME)" ] );
         if ( !fileExists( arguments.dir & "/colors.toml" ) ) return variables.out.say( "precondition", { error: "no colors.toml" }, arguments.asJson, [ "error: " & arguments.dir & " has no colors.toml, so it is not a theme" ] );
         var p = variables.tc.parse( fileRead( arguments.dir & "/colors.toml" ) );
         if ( !p.ok ) return variables.out.say( "precondition", { error: "invalid theme", errors: p.errors }, arguments.asJson, [ "error: not a valid theme: " & p.errors.toList( ", " ) ] );
@@ -450,7 +442,7 @@ class Theme {
     // `remove NAME`: only a theme in your own folder; bundled and Omarchy ones cannot be removed, and neither can the current one.
     function remove( name, asJson ) {
         var all = discover();
-        if ( !validName( arguments.name ) || !structKeyExists( all, arguments.name ) ) return variables.out.say( "precondition", { error: "unknown theme" }, arguments.asJson, [ "error: unknown theme " & arguments.name ] );
+        if ( !new bxrig.util.Names().valid( "theme", arguments.name ) || !structKeyExists( all, arguments.name ) ) return variables.out.say( "precondition", { error: "unknown theme" }, arguments.asJson, [ "error: unknown theme " & arguments.name ] );
         if ( all[ arguments.name ].origin != "user" || all[ arguments.name ].dir != userDir() & "/" & arguments.name ) return variables.out.say( "precondition", { error: "not one of your themes" }, arguments.asJson, [ "error: " & arguments.name & " is " & all[ arguments.name ].origin & ", not one you installed, so it cannot be removed here" ] );
         if ( readState().name == arguments.name ) return variables.out.say( "precondition", { error: "current theme" }, arguments.asJson, [ "error: " & arguments.name & " is the current theme; set another one first" ] );
         variables.proc.exec( [ "rm", "-rf", userDir() & "/" & arguments.name ], 30 );

@@ -1,8 +1,10 @@
-// `bxrig notify dnd on|off|toggle|status | snooze [DURATION|off] | clear [--history]`: Noctalia's notifications from the command line.
+// `bxrig notify dnd on|off|toggle|status | snooze [DURATION|off] | clear [--history] | time | battery | weather`: Noctalia's notifications from the command line.
 //   dnd      Do Not Disturb: `noctalia msg notification-dnd-set on|off`, `notification-dnd-toggle`, `notification-dnd-status` (Noctalia docs, v5.4)
 //   snooze   Do Not Disturb now, off again after DURATION (30m, 2h, 90s, or minutes; default 30m): a transient user timer runs
 //            `noctalia msg notification-dnd-set off`; `snooze off` cancels it and turns Do Not Disturb off
 //   clear    dismisses the visible notifications (`notification-clear-active`); --history also empties the history
+//   time, battery, weather   show one notice (`notify-send`, which Noctalia displays): the date and time, the battery level and state, and the
+//            weather from wttr.in (a network request; it guesses your place from your address). Keys: Super+Ctrl+Alt+T, B, W.
 // Noctalia has no command that opens its history panel, so there is none here: open the control center. Exit: 0 done, 4 precondition
 // (no noctalia, no systemd-run for snooze, bad duration), 6 the command failed.
 class Notify {
@@ -63,5 +65,55 @@ class Notify {
         if ( r.exitCode == 0 && arguments.history ) r = msg( [ "notification-clear-history" ] );
         if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
         return variables.out.say( "ok", { cleared: arguments.history ? "active and history" : "active" }, arguments.asJson, [ "Cleared " & ( arguments.history ? "the visible notifications and the history." : "the visible notifications." ) ] );
+    }
+
+    // ---- notices ----
+    // [ { name, percent, state } ] for each battery under dir (default /sys/class/power_supply).
+    function batteries( dir = "/sys/class/power_supply" ) {
+        var out = [];
+        if ( !directoryExists( arguments.dir ) ) return out;
+        for ( var n in directoryList( arguments.dir, false, "name" ) ) {
+            if ( left( n, 3 ) != "BAT" ) continue;
+            var cap = arguments.dir & "/" & n & "/capacity";
+            if ( !fileExists( cap ) ) continue;
+            var st = arguments.dir & "/" & n & "/status";
+            out.append( { name: n, percent: int( val( trim( fileRead( cap ) ) ) ), state: fileExists( st ) ? trim( fileRead( st ) ) : "Unknown" } );
+        }
+        return out;
+    }
+
+    // The text of the battery notice, or "" when there is no battery.
+    function batteryText( dir = "/sys/class/power_supply" ) {
+        var rows = batteries( arguments.dir ).map( function( b ) { return b.percent & "% (" & lCase( b.state ) & ")"; } );
+        return rows.toList( ", " );
+    }
+
+    function notice( title, body ) {
+        return variables.proc.exec( [ "notify-send", "--app-name=bxrig", arguments.title, arguments.body ], 15 );
+    }
+
+    // `notify time|battery|weather`
+    function show( what, asJson ) {
+        var cmd = "notify " & arguments.what;
+        if ( !variables.proc.has( "notify-send" ) ) return variables.out.sub( cmd ).say( "precondition", { error: "notify-send was not found" }, arguments.asJson, [ "error: notify-send was not found (install libnotify)" ] );
+        var title = "";
+        var body = "";
+        if ( arguments.what == "time" ) {
+            var t = variables.proc.exec( [ "date", "+%A %d %B%n%H:%M" ], 10 );
+            title = "Time";
+            body = trim( t.output );
+        } else if ( arguments.what == "battery" ) {
+            body = batteryText();
+            if ( !len( body ) ) return variables.out.sub( cmd ).say( "precondition", { error: "no battery found" }, arguments.asJson, [ "error: no battery found (this is not a laptop)" ] );
+            title = "Battery";
+        } else if ( arguments.what == "weather" ) {
+            var w = new bxrig.util.Http( variables.proc ).get( "https://wttr.in/?format=3", 15 );
+            if ( !w.ok || !len( trim( w.output ) ) ) return variables.out.sub( cmd ).say( "failed", { error: "could not read the weather" }, arguments.asJson, [ "error: could not read the weather (no network?)" ] );
+            title = "Weather";
+            body = trim( w.output );
+        } else return variables.out.sub( cmd ).say( "usage", { error: "unknown notice" }, arguments.asJson, [ "error: notify time|battery|weather" ] );
+        var r = notice( title, body );
+        if ( r.exitCode != 0 ) return variables.out.sub( cmd ).say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+        return variables.out.sub( cmd ).say( "ok", { title: title, text: body }, arguments.asJson, [ title & ": " & body ] );
     }
 }

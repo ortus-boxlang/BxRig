@@ -22,9 +22,9 @@ class Sdk {
         return this;
     }
 
-    function dir() { return variables.environ.get( "BXRIG_SDKMAN_DIR", variables.environ.home() & "/.sdkman" ); }
-    function api() { return variables.environ.get( "BXRIG_SDKMAN_API", "https://api.sdkman.io/2" ); }
-    function installerUrl() { return variables.environ.get( "BXRIG_SDKMAN_INSTALLER", "https://get.sdkman.io?rcupdate=false" ); }
+    function dir() { return variables.environ.named( "sdkmanDir", variables.environ.home() & "/.sdkman" ); }
+    function api() { return variables.environ.named( "sdkmanApi", "https://api.sdkman.io/2" ); }
+    function installerUrl() { return variables.environ.named( "sdkmanInstaller", "https://get.sdkman.io?rcupdate=false" ); }
     function candidates() { return [ "java", "maven", "gradle" ]; }
     function installed() { return fileExists( dir() & "/bin/sdkman-init.sh" ); }
     function cfgDir() { return variables.config.cfgHome() & "/bxrig"; }
@@ -147,13 +147,18 @@ class Sdk {
 
     function setup( yes, dry, asJson ) {
         if ( installed() ) { writeEnv(); return variables.out.say( "ok", { installed: true, already: true }, arguments.asJson, [ "SDKMAN is already installed in " & dir() & ". The Maven and Gradle shell files are up to date." ] ); }
-        var plan = [ "Plan: install SDKMAN into " & dir() & " (from " & installerUrl() & ").", "Your shell files are NOT changed: the installer runs without its rc update, and BxRig's own shell starters source what is needed.", "Needs curl, zip and unzip." ];
+        var planTitle = "install SDKMAN into " & dir() & " (from " & installerUrl() & ").";
+        var plan = [ "Your shell files are NOT changed: the installer runs without its rc update, and BxRig's own shell starters source what is needed.", "Needs curl, zip and unzip." ];
         var data = { dir: dir() };
         var missing = [];
         for ( var t in [ "curl", "zip", "unzip" ] ) if ( !variables.proc.has( t ) ) missing.append( t );
-        if ( missing.len() ) { plan.append( "error: missing " & missing.toList( ", " ) & ". Install them: bxrig pkg install " & missing.toList( " " ) ); return variables.out.say( "precondition", { error: "missing " & missing.toList( ", " ) }, arguments.asJson, plan ); }
-        if ( arguments.dry ) { plan.append( "Dry run: nothing was changed." ); return variables.out.say( "ok", data, arguments.asJson, plan, true ); }
-        if ( !arguments.yes ) { plan.append( "Nothing was changed. Add --yes to install." ); return variables.out.say( "plan", data, arguments.asJson, plan ); }
+        if ( missing.len() ) {
+            var shown = [ new bxrig.util.Mutation().banner() & planTitle ];
+            for ( var pl in plan ) shown.append( pl );
+            shown.append( "error: missing " & missing.toList( ", " ) & ". Install them: bxrig pkg install " & missing.toList( " " ) );
+            return variables.out.say( "precondition", { error: "missing " & missing.toList( ", " ) }, arguments.asJson, shown );
+        }
+        if ( !arguments.yes || arguments.dry ) return variables.out.plan( planTitle, data, arguments.asJson, arguments.dry, plan, "Add --yes to install." );
         var r = variables.proc.exec( variables.http.installerArgv( installerUrl(), "bash", [], { "SDKMAN_DIR": dir() } ), 1800 );
         if ( r.exitCode != 0 || !installed() ) return variables.out.fail( "failed", "the SDKMAN installer failed: " & trim( right( r.output, 300 ) ), arguments.asJson );
         writeEnv();
@@ -194,11 +199,11 @@ class Sdk {
         if ( arguments.action != "install" && !isHave ) return variables.out.fail( "precondition", arguments.cand & " " & arguments.ver & " is not installed. See: bxrig sdk list " & arguments.cand, arguments.asJson );
         if ( arguments.action == "install" && isHave ) return variables.out.say( "ok", { candidate: arguments.cand, version: arguments.ver, already: true }, arguments.asJson, [ arguments.cand & " " & arguments.ver & " is already installed." ] );
         var verb = arguments.action == "install" ? "install" : ( arguments.action == "default" ? "make the default" : "remove" );
-        var plan = [ "Plan: sdk " & ( arguments.action == "remove" ? "uninstall" : arguments.action ) & " " & arguments.cand & " " & arguments.ver & " (" & verb & " " & arguments.cand & " " & arguments.ver & ")." ];
+        var planTitle = "sdk " & ( arguments.action == "remove" ? "uninstall" : arguments.action ) & " " & arguments.cand & " " & arguments.ver & " (" & verb & " " & arguments.cand & " " & arguments.ver & ").";
+        var plan = [];
         if ( arguments.action == "install" && !have.len() ) plan.append( "It is the first " & arguments.cand & ", so SDKMAN makes it the default." );
         var data = { candidate: arguments.cand, version: arguments.ver, action: arguments.action };
-        if ( arguments.dry ) { plan.append( "Dry run: nothing was changed." ); return variables.out.say( "ok", data, arguments.asJson, plan, true ); }
-        if ( !arguments.yes ) { plan.append( "Nothing was changed. Add --yes to apply." ); return variables.out.say( "plan", data, arguments.asJson, plan ); }
+        if ( !arguments.yes || arguments.dry ) return variables.out.plan( planTitle, data, arguments.asJson, arguments.dry, plan );
         var r = runSdk( arguments.action, arguments.cand, arguments.ver );
         if ( r.exitCode != 0 ) return variables.out.fail( "failed", "sdk " & arguments.action & " failed: " & trim( right( r.output, 400 ) ), arguments.asJson );
         writeEnv();

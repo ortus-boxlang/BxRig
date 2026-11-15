@@ -30,18 +30,14 @@ class Update {
     function file() { return variables.config.cfgHome() & "/bxrig/update.json"; }
 
     function load() {
-        var d = { channel: "stable", notify: false };
-        if ( fileExists( file() ) ) try { var j = jsonDeserialize( fileRead( file() ) ); for ( var k in structKeyArray( j ) ) d[ k ] = j[ k ]; } catch ( any e ) {}
-        return d;
+        return new bxrig.util.JsonStore().read( file(), { channel: "stable", notify: false } );
     }
 
     function save( d ) {
-        var dir = getDirectoryFromPath( file() );
-        if ( !directoryExists( dir ) ) directoryCreate( dir, true );
-        fileWrite( file(), serializeJSON( arguments.d ) & chr( 10 ) );
+        new bxrig.util.JsonStore().write( "update-settings", file(), arguments.d );
     }
 
-    function base() { return getSystemSetting( "BXRIG_BASE_URL", "https://downloads.ortussolutions.com/ortussolutions/bxrig" ); }
+    function base() { return new bxrig.util.Env().named( "baseUrl", new bxrig.util.Urls().downloads() ); }
     function channels() { return [ "stable", "beta" ]; }
 
     function channel( name, asJson ) {
@@ -55,7 +51,7 @@ class Update {
 
     // The running binary: BXRIG_SELF, else the first bxrig on PATH, resolved.
     function selfPath() {
-        var p = getSystemSetting( "BXRIG_SELF", "" );
+        var p = new bxrig.util.Env().named( "self", "" );
         if ( !len( p ) ) p = trim( variables.proc.exec( [ "sh", "-c", "command -v bxrig" ], 10 ).output );
         return len( p ) ? trim( variables.proc.exec( [ "readlink", "-f", p ], 10 ).output ) : "";
     }
@@ -67,7 +63,7 @@ class Update {
 
     // The public key file: BXRIG_PUBKEY_FILE (tests; the value none turns the check off), else the key embedded in this build, else "" (no signature check, a development build).
     function pubKeyFile() {
-        var f = getSystemSetting( "BXRIG_PUBKEY_FILE", "" );
+        var f = new bxrig.util.Env().named( "pubkeyFile", "" );
         if ( f == "none" ) return "";
         if ( len( f ) ) return f;
         var pem = new bxrig.ReleaseKey().pem();
@@ -95,7 +91,7 @@ class Update {
                 signed = true;
             }
             var out = { ok: true, signed: signed };
-            for ( var l in listToArray( fileRead( dir & "/p" ), chr( 10 ) ) ) if ( find( "=", l ) ) out[ listFirst( l, "=" ) ] = trim( listRest( l, "=" ) );
+            for ( var kv in new bxrig.util.Props().pairs( fileRead( dir & "/p" ) ) ) out[ kv.key ] = kv.value;
             return out;
         } finally {
             try { directoryDelete( dir, true ); } catch ( any e ) {}
@@ -142,7 +138,7 @@ class Update {
         if ( !len( target ) ) return variables.out.say( "precondition", { error: "cannot find the installed bxrig" }, arguments.asJson, [ "error: cannot find the installed bxrig binary" ] );
         var data = { channel: d.channel, target: target, latest: p.version ?: "" };
         if ( structKeyExists( p, "sha256" ) && sha( target ) == p.sha256 ) return variables.out.say( "ok", variables.text.merge( data, { updated: false } ), arguments.asJson, [ "Already on the latest " & d.channel & " build." ] );
-        if ( !arguments.yes ) return variables.out.say( "plan", data, arguments.asJson, [ "Plan: replace " & target & " with the " & d.channel & " build " & ( p.version ?: "" ), "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.out.plan( "replace " & target & " with the " & d.channel & " build " & ( p.version ?: "" ), data, arguments.asJson );
         var tmp = target & ".new-" & left( createUUID(), 8 );
         var dl = variables.http.download( base() & "/" & d.channel & "/bxrig-linux-x86_64", tmp, 600 );
         var sum = variables.http.get( base() & "/" & d.channel & "/bxrig-linux-x86_64.sha256", 30 );
@@ -166,8 +162,8 @@ class Update {
             return variables.out.say( "ok", { enabled: false }, arguments.asJson, [ "Update notifications are off." ] );
         }
         if ( arguments.action != "on" ) return variables.out.say( "usage", {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "update notifications" ) ] );
-        var svc = { name: "update-service", target: unit( "service" ), mode: "644", content: "[Unit]" & chr( 10 ) & "Description=BxRig update check" & chr( 10 ) & chr( 10 ) & "[Service]" & chr( 10 ) & "Type=oneshot" & chr( 10 ) & "ExecStart=sh -c 'PATH=$HOME/.local/bin:$PATH bxrig update check --notify; true'" & chr( 10 ) };
-        var tim = { name: "update-timer", target: unit( "timer" ), mode: "644", content: "[Unit]" & chr( 10 ) & "Description=BxRig daily update check" & chr( 10 ) & chr( 10 ) & "[Timer]" & chr( 10 ) & "OnCalendar=daily" & chr( 10 ) & "RandomizedDelaySec=1h" & chr( 10 ) & "Persistent=true" & chr( 10 ) & chr( 10 ) & "[Install]" & chr( 10 ) & "WantedBy=timers.target" & chr( 10 ) };
+        var svc = { name: "update-service", target: unit( "service" ), mode: "644", content: new bxrig.util.SystemdUnit().render( [ { name: "Unit", lines: [ "Description=BxRig update check" ] }, { name: "Service", lines: [ "Type=oneshot", "ExecStart=sh -c 'PATH=$HOME/.local/bin:$PATH bxrig update check --notify; true'" ] } ] ) };
+        var tim = { name: "update-timer", target: unit( "timer" ), mode: "644", content: new bxrig.util.SystemdUnit().render( [ { name: "Unit", lines: [ "Description=BxRig daily update check" ] }, { name: "Timer", lines: [ "OnCalendar=daily", "RandomizedDelaySec=1h", "Persistent=true" ] }, { name: "Install", lines: [ "WantedBy=timers.target" ] } ] ) };
         for ( var e in [ svc, tim ] ) { var st = variables.config.configState( e ); if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( e, e.content, "apply", true, false ); }
         variables.systemd.reload( true );
         var r = variables.systemd.enable( "bxrig-update-check.timer", true );
@@ -185,11 +181,9 @@ class Update {
         if ( variables.aur.available() ) steps.append( variables.aur.upgradeArgv() );
         var data = { steps: steps.map( function( s ) { return s.toList( " " ); } ), snapshot: snap.len() > 0 };
         if ( !arguments.yes ) {
-            var plan = [ "Plan:" ];
-            for ( var st in data.steps ) plan.append( "  " & st );
-            plan.append( snap.len() ? "A snapshot is taken first." : "No snapshot tool found (snapper or timeshift): the update runs without one." );
-            plan.append( "Nothing was changed. Add --yes to apply." );
-            return variables.out.say( "plan", data, arguments.asJson, plan );
+            var shown = data.steps.map( function( st ) { return "  " & st; } );
+            shown.append( snap.len() ? "A snapshot is taken first." : "No snapshot tool found (snapper or timeshift): the update runs without one." );
+            return variables.out.plan( "", data, arguments.asJson, false, shown );
         }
         for ( var s in steps ) {
             var r = variables.proc.exec( s, 3600 );

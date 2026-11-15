@@ -14,7 +14,7 @@ esac
 exit 0
 F
 printf '#!/usr/bin/env bash\necho "systemctl $*" >> "$LOG"\n[[ "$1" == is-active ]] && exit "${ACTIVE:-3}"\nexit 0\n' > "$tmp/bin/systemctl"
-printf '#!/usr/bin/env bash\n[[ "$1" == --version ]] && { echo "Sudo version 1.9"; exit 0; }\necho "sudo $*" >> "$LOG"\nexec "$@"\n' > "$tmp/bin/sudo"
+stub_sudo_log
 cat > "$tmp/bin/pacman" <<'F'
 #!/usr/bin/env bash
 echo "pacman $*" >> "$LOG"
@@ -23,7 +23,7 @@ exit 0
 F
 printf '#!/usr/bin/env bash\necho "yay $*" >> "$LOG"\n' > "$tmp/bin/yay"
 printf '#!/usr/bin/env bash\necho "tzupdate $*" >> "$LOG"\necho Europe/Madrid > "$FAKE/zone"\n' > "$tmp/tzupdate.real"
-printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo 1000; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
+stub_id
 printf '#!/usr/bin/env bash\necho x86_64\n' > "$tmp/bin/uname"; printf 'ID=cachyos\n' > "$tmp/os"
 chmod +x "$tmp/bin"/* "$tmp/tzupdate.real"
 run() { env HOME="$tmp/home" USER=dev BXRIG_OS_RELEASE="$tmp/os" BXRIG_STATE_HOME="$tmp/state" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_SYSTEMD_DIR="$tmp/sd" BXRIG_GEOCLUE_DIR="$tmp/gc" PATH="$tmp/bin:$PATH" LOG="$LOG" FAKE="$tmp/fake" ACTIVE="${ACTIVE:-3}" "$@"; }

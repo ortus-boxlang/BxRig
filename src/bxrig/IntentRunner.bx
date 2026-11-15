@@ -1,0 +1,53 @@
+// What the Control Center does with an intent a page returns: run a bxrig command (the plan with --dry-run first, then --yes), run a program, or show output.
+// The app only holds the state (showPlan, showResult); this class does the running. `runCli` is also used by BxTimeMachine.
+//   intent actions: "cli" { title, args, preface }, "exec" { title, argv, plan }, "show" { title, args or argv }; "confirmed" is set after the y.
+class IntentRunner {
+    function init( proc = "" ) {
+        variables.proc = isSimpleValue( arguments.proc ) ? new bxrig.util.Proc( arguments.proc ) : arguments.proc;
+        return this;
+    }
+
+    function runCli( args ) {
+        return variables.proc.self( arguments.args, 1800 );
+    }
+
+    function withFlag( args, flag ) {
+        var out = [];
+        for ( var a in arguments.args ) out.append( a );
+        out.append( arguments.flag );
+        return out;
+    }
+
+    // Runs a program (argv array) and returns { exitCode, output }.
+    function runArgv( argv ) {
+        return variables.proc.exec( arguments.argv, 1800 );
+    }
+
+    function handle( app, intent ) {
+        if ( !structCount( arguments.intent ) ) return;
+        // exec: any program, with a plan written by the page (no --dry-run exists for it). readonly: run at once and show the output.
+        if ( arguments.intent.action == "exec" ) {
+            if ( !structKeyExists( arguments.intent, "confirmed" ) ) { arguments.app.showPlan( arguments.intent.title, arguments.intent.plan, arguments.intent ); return; }
+            var xr = runArgv( arguments.intent.argv );
+            arguments.app.showResult( arguments.intent.title & ( xr.exitCode == 0 ? ": done" : ": failed (exit " & xr.exitCode & ")" ), listToArray( trim( xr.output ), chr( 10 ) ) );
+            return;
+        }
+        if ( arguments.intent.action == "show" ) {
+            var sr = structKeyExists( arguments.intent, "argv" ) ? runArgv( arguments.intent.argv ) : runCli( arguments.intent.args );
+            arguments.app.showResult( arguments.intent.title, listToArray( trim( sr.output ), chr( 10 ) ) );
+            return;
+        }
+        if ( arguments.intent.action != "cli" ) return;
+        var args = arguments.intent.args;
+        if ( !structKeyExists( arguments.intent, "confirmed" ) ) {
+            var r = runCli( withFlag( args, "--dry-run" ) );
+            var shown = [];
+            if ( structKeyExists( arguments.intent, "preface" ) ) { for ( var pl in arguments.intent.preface ) shown.append( pl ); shown.append( "" ); }
+            for ( var ol in listToArray( trim( r.output ), chr( 10 ) ) ) shown.append( ol );
+            arguments.app.showPlan( arguments.intent.title, shown, arguments.intent );
+            return;
+        }
+        var res = runCli( withFlag( args, "--yes" ) );
+        arguments.app.showResult( arguments.intent.title & ( res.exitCode == 0 ? ": done" : ": failed (exit " & res.exitCode & ")" ), listToArray( trim( res.output ), chr( 10 ) ) );
+    }
+}

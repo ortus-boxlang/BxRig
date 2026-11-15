@@ -15,7 +15,6 @@ class AiModels {
     }
 
     function hasOllama() { return variables.proc.has( "ollama" ); }
-    function validModel( name ) { return reFind( "^[A-Za-z0-9._:/-]{1,100}$", arguments.name ) > 0; }
 
     function missing( cmd, asJson ) {
         return variables.cli.say( arguments.cmd, "precondition", { error: "Ollama is not installed" }, arguments.asJson, [ "error: Ollama is not installed. Install it: bxrig install ollama" ] );
@@ -33,7 +32,7 @@ class AiModels {
     // `ai models pull NAME`
     function pull( name, asJson ) {
         var cmd = "ai models pull";
-        if ( !validModel( arguments.name ) ) return variables.cli.say( cmd, "precondition", { error: "Bad model name" }, arguments.asJson, [ "error: a model name is letters, digits and . _ : / - (for example qwen3:8b)" ] );
+        if ( !new bxrig.util.Names().valid( "model", arguments.name ) ) return variables.cli.say( cmd, "usage", { error: "Bad model name" }, arguments.asJson, [ "error: a model name is letters, digits and . _ : / - (for example qwen3:8b)" ] );
         if ( !hasOllama() ) return missing( cmd, arguments.asJson );
         if ( arguments.asJson ) {
             var r = variables.proc.exec( [ "ollama", "pull", arguments.name ], 7200 );
@@ -47,9 +46,9 @@ class AiModels {
     // `ai models rm NAME --yes`
     function remove( name, yes, asJson ) {
         var cmd = "ai models rm";
-        if ( !validModel( arguments.name ) ) return variables.cli.say( cmd, "precondition", { error: "Bad model name" }, arguments.asJson, [ "error: bad model name" ] );
+        if ( !new bxrig.util.Names().valid( "model", arguments.name ) ) return variables.cli.say( cmd, "usage", { error: "Bad model name" }, arguments.asJson, [ "error: bad model name" ] );
         if ( !hasOllama() ) return missing( cmd, arguments.asJson );
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", { model: arguments.name }, arguments.asJson, [ "Plan: delete the model " & arguments.name & " from disk.", "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "delete the model " & arguments.name & " from disk.", { model: arguments.name }, arguments.asJson );
         var r = variables.proc.exec( [ "ollama", "rm", arguments.name ], 120 );
         if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
         return variables.cli.say( cmd, "ok", { model: arguments.name }, arguments.asJson, [ trim( r.output ) ] );
@@ -69,7 +68,7 @@ class AiModels {
         var cmd = "ai models enable";
         if ( !hasOllama() ) return missing( cmd, arguments.asJson );
         var argv = variables.systemd.enableArgv( "ollama", false, true );
-        if ( !arguments.yes || arguments.dryRun ) return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", { command: argv }, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": " & argv.toList( " " ), "Nothing was changed." & ( arguments.dryRun ? "" : " Add --yes to apply." ) ] );
+        if ( !arguments.yes || arguments.dryRun ) return variables.cli.scoped( cmd ).plan( argv.toList( " " ), { command: argv }, arguments.asJson, arguments.dryRun );
         var r = variables.proc.exec( argv, 120 );
         if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
         return variables.cli.say( cmd, "ok", {}, arguments.asJson, [ "The Ollama service is enabled and running." ] );

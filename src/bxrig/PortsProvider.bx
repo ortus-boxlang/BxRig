@@ -3,12 +3,9 @@
 class PortsProvider {
     function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); variables.fmt = new bxrig.util.Fmt(); return this; }
     function id() { return "ports"; }
-    function icon() { return "plug"; }
+    function icon() { return new bxrig.ControlCenterPages().icon( "ports" ); }
     function title() { return "Ports"; }
     function hint() { return "ports and processes: what listens where"; }
-    function live() { return false; }
-    function refreshSeconds() { return new bxrig.util.Exit().ok(); }
-    function detailLines() { return new bxrig.util.Exit().usage(); }
     function emptyText() { return "Nothing is listening."; }
     function columns() { return [ { key: "port", label: "port", w: 7 }, { key: "proto", label: "proto", w: 7 }, { key: "process", label: "process", w: 18 }, { key: "pid", label: "pid", w: 8 }, { key: "user", label: "user", w: 11 }, { key: "up", label: "up", w: 7 }, { key: "command", label: "command", w: 0 } ]; }
 

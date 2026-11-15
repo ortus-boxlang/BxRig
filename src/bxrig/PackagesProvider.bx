@@ -2,12 +2,10 @@
 class PackagesProvider {
     function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
     function id() { return "packages"; }
-    function icon() { return "download"; }
+    function icon() { return new bxrig.ControlCenterPages().icon( "packages" ); }
     function title() { return "Packages"; }
     function hint() { return "press / and type what you are looking for"; }
     function live() { return true; }
-    function refreshSeconds() { return new bxrig.util.Exit().ok(); }
-    function detailLines() { return new bxrig.util.Exit().usage(); }
     function emptyText() { return "Press / and type a name, like: docker"; }
     function columns() { return [ { key: "mark", label: "", w: 3 }, { key: "name", label: "name", w: 28 }, { key: "version", label: "version", w: 16 }, { key: "source", label: "from", w: 8 }, { key: "description", label: "what it is", w: 0 } ]; }
     function style( r ) { return r.installed ? "ok" : ( r.source == "aur" ? "warn" : "" ); }

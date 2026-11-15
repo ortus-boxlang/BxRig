@@ -9,14 +9,14 @@ account		include		system-auth
 session		include		system-auth
 P
 cp "$tmp/pam/sudo" "$tmp/sudo.original"
-printf '#!/usr/bin/env bash\n[[ "$1" == --version ]] && { echo "Sudo version 1.9"; exit 0; }\necho "sudo $*" >> "$LOG"\nexec "$@"\n' > "$tmp/bin/sudo"
+stub_sudo_log
 printf '#!/usr/bin/env bash\necho "pacman $*" >> "$LOG"\ncase "$1" in -Q) exit 1 ;; esac\n' > "$tmp/bin/pacman"
 printf '#!/usr/bin/env bash\necho "systemctl $*" >> "$LOG"\n[[ "$1" == is-active ]] && exit "${ACTIVE:-3}"\nexit 0\n' > "$tmp/bin/systemctl"
 # visudo -cf FILE: fails when the file has the word BROKEN
 printf '#!/usr/bin/env bash\necho "visudo $*" >> "$LOG"\n! grep -q BROKEN "$2"\n' > "$tmp/bin/visudo"
 printf '#!/usr/bin/env bash\necho "fprintd-enroll $*" >> "$LOG"\n' > "$tmp/fprintd-enroll.real"
 printf '#!/usr/bin/env bash\necho "pamu2fcfg $*" >> "$LOG"\necho "mykey" \n' > "$tmp/pamu2fcfg.real"
-printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo 1000; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
+stub_id
 chmod +x "$tmp/bin"/* "$tmp"/*.real
 run() { env HOME="$tmp/home" USER="${SUSER:-dev}" BXRIG_PAM_DIR="$tmp/pam" BXRIG_SUDOERS_DIR="$tmp/sudoers" PATH="$tmp/bin:$PATH" LOG="$LOG" ACTIVE="${ACTIVE:-3}" "$@"; }
 has() { grep -qF -- "$1" "$LOG"; }

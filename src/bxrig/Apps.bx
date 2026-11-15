@@ -28,17 +28,17 @@ class Apps {
     // `apps`
     function grid() {
         var rows = all();
-        if ( !rows.len() ) { println( "error: no applications were found" ); return 4; }
+        if ( !rows.len() ) { println( "error: no applications were found" ); return new bxrig.util.Exit().precondition(); }
         var pick = 0;
         try {
             var runner = new bxrig.Runner( variables.cli, variables.inst.runner() );
             pick = runner.select( "Apps", rows.map( function( r ) { return len( r.icon ) ? { label: r.name, icon: r.icon } : r.name; } ) );
         } catch ( any err ) {
             println( "error: " & err.message );
-            return 4;
+            return new bxrig.util.Exit().precondition();
         }
-        if ( pick == 0 ) return 0;
-        variables.inst.exec( [ "sh", "-c", 'setsid sh -c "$1" >/dev/null 2>&1 &', "_", rows[ pick ].exec ], 10 );
-        return 0;
+        if ( pick == 0 ) return new bxrig.util.Exit().ok();
+        variables.inst.proc().exec( [ "sh", "-c", 'setsid sh -c "$1" >/dev/null 2>&1 &', "_", rows[ pick ].exec ], 10 );
+        return new bxrig.util.Exit().ok();
     }
 }

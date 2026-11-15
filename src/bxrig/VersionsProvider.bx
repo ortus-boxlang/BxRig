@@ -2,12 +2,9 @@
 class VersionsProvider {
     function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
     function id() { return "versions"; }
-    function icon() { return "tags"; }
+    function icon() { return new bxrig.ControlCenterPages().icon( "versions" ); }
     function title() { return "Versions"; }
     function hint() { return "bvm, mvm and nvm in one place"; }
-    function live() { return false; }
-    function refreshSeconds() { return new bxrig.util.Exit().ok(); }
-    function detailLines() { return new bxrig.util.Exit().usage(); }
     function emptyText() { return "No version managers found."; }
     function columns() { return [ { key: "tool", label: "tool", w: 14 }, { key: "manager", label: "manager", w: 12 }, { key: "active", label: "active", w: 18 }, { key: "extra", label: "", w: 0 } ]; }
     function style( r ) { return r.active == "-" ? "dim" : ""; }
@@ -18,7 +15,7 @@ class VersionsProvider {
     }
 
     function nodeActive() {
-        var d = getSystemSetting( "NVM_DIR", getSystemSetting( "HOME", "" ) & "/.nvm" ) & "/versions/node";
+        var d = new bxrig.util.Env().named( "nvmDir", new bxrig.util.Env().named( "home", "" ) & "/.nvm" ) & "/versions/node";
         try { if ( directoryExists( d ) ) { var names = directoryList( d, false, "name" ); arraySort( names, "textnocase", "desc" ); return names.len() ? { v: names[ 1 ], n: names.len() } : { v: "", n: 0 }; } } catch ( any e ) {}
         return { v: "", n: 0 };
     }

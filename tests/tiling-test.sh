@@ -21,7 +21,7 @@ if [[ "$*" == *unloadScript* ]]; then touch "$STATE/unloaded"; fi
 if [[ "$*" == *reconfigure* ]]; then rm -f "$STATE/unloaded"; fi
 exit 0
 MOCK
-printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo "${MOCK_UID:-1000}"; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
+stub_id
 chmod +x "$tmp/bin/"*
 run() { env HOME="$tmp/home" PATH="$tmp/bin:$PATH" LOG="$LOG" STATE="$STATE" "$@"; }
 

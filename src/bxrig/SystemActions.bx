@@ -18,11 +18,11 @@ class SystemActions {
     // The command for a verb: through Noctalia when it is the running shell, else systemd. Returns { argv, via } or an empty struct.
     function command( verb ) {
         var v = arguments.verb;
-        var hypr = len( getSystemSetting( "HYPRLAND_INSTANCE_SIGNATURE", "" ) ) > 0;
+        var hypr = new bxrig.util.Desktop().inHyprland();
         if ( hypr && variables.proc.has( "noctalia" ) ) return { argv: [ "noctalia", "msg", "session", v ], via: "noctalia" };
         if ( v == "lock" ) return variables.proc.has( "loginctl" ) ? { argv: [ "loginctl", "lock-session" ], via: "systemd" } : {};
         if ( v == "logout" ) {
-            var sid = getSystemSetting( "XDG_SESSION_ID", "" );
+            var sid = new bxrig.util.Env().named( "xdgSessionId", "" );
             return variables.proc.has( "loginctl" ) && len( sid ) ? { argv: [ "loginctl", "terminate-session", sid ], via: "systemd" } : {};
         }
         if ( !variables.systemd.available() ) return {};
@@ -36,7 +36,7 @@ class SystemActions {
         var data = { action: arguments.verb, via: c.via, command: c.argv.toList( " " ) };
         if ( arguments.dryRun || ( needsYes( arguments.verb ) && !arguments.yes ) ) {
             var dry = arguments.dryRun;
-            return variables.out.say( dry ? "ok" : "plan", data, arguments.asJson, [ ( dry ? "Dry run" : "Plan" ) & ": " & arguments.verb & " with `" & data.command & "`" & ( needsYes( arguments.verb ) ? " (ends your session)" : "" ), dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], dry );
+            return variables.out.plan( arguments.verb & " with `" & data.command & "`" & ( needsYes( arguments.verb ) ? " (ends your session)" : "" ), data, arguments.asJson, dry );
         }
         var r = variables.proc.exec( c.argv, 30 );
         return variables.out.say( r.exitCode == 0 ? "ok" : "failed", data, arguments.asJson, [ r.exitCode == 0 ? arguments.verb & ": done" : "error: " & arguments.verb & " failed: " & trim( r.output ) ] );

@@ -6,8 +6,8 @@ printf '[Desktop Entry]\nName=Hyprland (uwsm-managed)\nExec=uwsm start hyprland.
 printf '[Desktop Entry]\nName=Hyprland\nExec=Hyprland\n' > "$tmp/sessions/hyprland.desktop"
 printf '[Desktop Entry]\nName=Plasma (Wayland)\nExec=startplasma-wayland\n' > "$tmp/sessions/plasma.desktop"
 printf '[Last]\nSession=%s/plasma.desktop\nUser=dev\n' "$tmp/sessions" > "$tmp/state.conf"
-printf '#!/usr/bin/env bash\n[[ "$1" == --version ]] && { echo "Sudo version 1.9"; exit 0; }\n"$@"\n' > "$tmp/bin/sudo"
-printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo "${MOCK_UID:-1000}"; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
+stub_sudo
+stub_id
 chmod +x "$tmp/bin/"*
 run() { env HOME="$tmp/home" PATH="$tmp/bin:$PATH" BXRIG_SESSION_DIRS="$tmp/sessions" BXRIG_SDDM_STATE="$tmp/state.conf" "$@"; }
 

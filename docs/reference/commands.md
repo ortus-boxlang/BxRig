@@ -186,15 +186,16 @@ bxrig version
 The control center: every command as a menu on your launcher (Rofi, Walker, Wofi, Fuzzel or Vicinae).
 
 ```text
-bxrig menu | menu items [--json] | menu search TEXT [--json]
+bxrig menu | menu items [--json] | menu search TEXT [--json] | menu open [ROUTE] [--json]
 ```
 
 ```bash
 bxrig menu
 bxrig menu search 'time zone'
+bxrig menu open capture
 ```
 
-> Bind it to a key; the first entry, Search, lists every entry as one flat list.
+> Bind it to a key; the first entry, Search, lists every entry as one flat list. `menu open ROUTE` opens one submenu (system, capture, toggle, agent, shortcuts, trigger > capture); `menu open` lists the routes.
 
 ### `bxrig apps` {#bxrig-apps}
 
@@ -547,20 +548,25 @@ bxrig plasma desktops 4 --yes
 
 ### `bxrig keys` {#bxrig-keys}
 
-The shortcut table: show, check conflicts, apply to Hyprland and Plasma, Mac-style keys.
+The shortcut table: show, search, run, rebind, check conflicts, apply to Hyprland and Plasma, Traditional or Mac style.
 
 ```text
-bxrig keys show | mac [on|off|status] [--yes] | set ID KEYS [--yes] [--force] | reset ID [--yes] | conflicts | render xremap|hyprland|plasma | check | apply [--yes] [--dry-run] [--force] [--json]
+bxrig keys show | search TEXT | run ID | style [traditional|mac] [--keyboard=pc|apple] [--swap=on|off] [--yes] | mac [on|off|status] [--yes] | set ID KEYS [--yes] [--force] | reset ID [--yes] | conflicts | sheet | render xremap|hyprland|plasma | check | apply [--yes] [--dry-run] [--force] [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
 
 ```bash
 bxrig keys show
+bxrig keys search screenshot
+bxrig keys run color-picker
+bxrig keys style mac --keyboard=pc --yes
 bxrig keys set emoji Super+Ctrl+E --yes
 bxrig keys mac on --yes
 bxrig keys conflicts
 ```
+
+> Two styles share one table: Traditional (Omarchy-like keys) and Mac (Cmd-style keys through xremap). The Mac style on a PC keyboard swaps Alt and Win; an Apple keyboard never swaps. `keys conflicts` checks the table, the remaps of the style that is on and your own hl.bind lines.
 
 ### `bxrig runner` {#bxrig-runner}
 
@@ -829,17 +835,20 @@ bxrig nightshift on --location=40.4,-3.7
 
 ### `bxrig notify` {#bxrig-notify}
 
-Notifications through Noctalia: do not disturb, snooze, history, clear.
+Notifications through Noctalia: do not disturb, snooze, clear, and notices for the time, battery and weather.
 
 ```text
-bxrig notify dnd on|off|toggle|status | snooze [30m|2h|90s|off] | clear [--history] [--json]
+bxrig notify dnd on|off|toggle|status | snooze [30m|2h|90s|off] | clear [--history] | time | battery | weather [--json]
 ```
 
 ```bash
 bxrig notify dnd toggle
 bxrig notify snooze 2h
 bxrig notify clear --history
+bxrig notify battery
 ```
+
+> time, battery and weather show one notice through notify-send. weather asks wttr.in over the network.
 
 ## System and security
 
@@ -1336,16 +1345,17 @@ Screenshots, clipboard, windows, dictation and hardware helpers.
 
 ### `bxrig screenshot` {#bxrig-screenshot}
 
-Screenshots: screen, region, window, OCR text, QR codes, or a menu.
+Screenshots: screen, region, window, OCR text, QR codes, a color picker, or a menu.
 
 ```text
-bxrig screenshot screen|region|window [--edit] | ocr | qr | menu [--dry-run] [--json]
+bxrig screenshot screen|region|window [--edit] | ocr | qr | color | menu [--dry-run] [--json]
 ```
 
 ```bash
 bxrig screenshot region
 bxrig screenshot screen --edit
 bxrig screenshot ocr
+bxrig screenshot color
 ```
 
 ### `bxrig qr` {#bxrig-qr}
@@ -1466,12 +1476,13 @@ bxrig dolphin doctor --fix
 Dictation with Superwhisper or Voxtype: setup and toggle.
 
 ```text
-bxrig dictation setup [superwhisper|voxtype] [--yes] [--dry-run] | status | key [ENGINE] [--json]
+bxrig dictation setup [superwhisper|voxtype] [--yes] | status | key [ENGINE] | toggle [--dry-run] [--json]
 ```
 
 ```bash
 bxrig dictation setup voxtype --yes
 bxrig dictation status
+bxrig dictation toggle
 ```
 
 ### `bxrig strata` {#bxrig-strata}

@@ -31,7 +31,7 @@ class Mail {
     function metaFile() { return dir() & "/meta.json"; }
 
     function meta() {
-        try { return fileExists( metaFile() ) ? jsonDeserialize( fileRead( metaFile() ) ) : {}; } catch ( any e ) { return {}; }
+        return new bxrig.util.JsonStore().load( metaFile() );
     }
 
     function smtpPort() { var m = meta(); return structKeyExists( m, "smtp" ) ? m.smtp : 1025; }
@@ -39,7 +39,7 @@ class Mail {
 
     // The web UI and API address, without a trailing slash.
     function base() {
-        var forced = getSystemSetting( "BXRIG_MAIL_API", "" );
+        var forced = new bxrig.util.Env().named( "mailApi", "" );
         return len( forced ) ? reReplace( forced, "/+$", "" ) : "http://127.0.0.1:" & uiPort();
     }
 
@@ -133,7 +133,7 @@ class Mail {
         if ( state == "running" ) return variables.cli.say( cmd, "ok", structAppendNew( data, { already: "running" } ), arguments.asJson, [ container() & " is already running: SMTP 127.0.0.1:" & smtpPort() & ", inbox http://127.0.0.1:" & uiPort() ] );
         var verb = len( state ) ? "start the stopped container " & container() & " (its mail is kept)" : "run " & image() & " as " & container() & ": SMTP 127.0.0.1:" & sp & ", web inbox http://127.0.0.1:" & up & ( arguments.keep ? ", inbox stored in " & dir() : ", mail thrown away when it stops" );
         if ( !arguments.yes || arguments.dry ) {
-            var lines = [ ( arguments.dry ? "Dry run" : "Plan" ) & ": mail start", "  would " & verb, arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ];
+            var lines = [ new bxrig.util.Mutation().banner( arguments.dry ) & "mail start", "  would " & verb, new bxrig.util.Mutation().footer( arguments.dry ) ];
             return variables.cli.say( cmd, arguments.dry ? "ok" : "plan", structAppendNew( data, { would: verb } ), arguments.asJson, lines, arguments.dry );
         }
         if ( len( state ) ) {
@@ -187,7 +187,7 @@ class Mail {
         var hasFiles = directoryExists( dir() );
         if ( !has && !hasFiles ) return variables.cli.fail( cmd, "precondition", "There is nothing to remove for " & container(), arguments.asJson );
         var what = "remove the container " & container() & ( arguments.keepData ? " (the stored mail in " & dir() & " is KEPT)" : " AND DELETE the stored mail in " & dir() );
-        if ( !arguments.yes || arguments.dry ) return variables.cli.say( cmd, arguments.dry ? "ok" : "plan", { container: container(), would: what, deletes_data: !arguments.keepData }, arguments.asJson, [ ( arguments.dry ? "Dry run" : "Plan" ) & ": would " & what, arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dry );
+        if ( !arguments.yes || arguments.dry ) return variables.cli.scoped( cmd ).plan( "would " & what, { container: container(), would: what, deletes_data: !arguments.keepData }, arguments.asJson, arguments.dry );
         if ( has ) {
             var r = variables.db.engineExec( [ "rm", "-f", container() ], 120 );
             if ( r.exitCode != 0 ) return variables.cli.fail( cmd, "failed", trim( r.output ), arguments.asJson );
@@ -231,7 +231,7 @@ class Mail {
         var cmd = "mail clear";
         var m = messages( 1 );
         if ( structKeyExists( m, "error" ) ) return notRunning( cmd, arguments.asJson );
-        var plan = [ ( arguments.dry ? "Dry run" : "Plan" ) & ": would delete all " & m.total & " messages in the inbox.", arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ];
+        var plan = [ new bxrig.util.Mutation().banner( arguments.dry ) & "would delete all " & m.total & " messages in the inbox.", new bxrig.util.Mutation().footer( arguments.dry ) ];
         if ( !arguments.yes || arguments.dry ) return variables.cli.say( cmd, arguments.dry ? "ok" : "plan", { would_delete: m.total }, arguments.asJson, plan, arguments.dry );
         var r = api( "DELETE", "/api/v1/messages" );
         if ( !r.ok ) return variables.cli.fail( cmd, "failed", "The catcher refused the request (HTTP " & r.status & ")", arguments.asJson );
@@ -243,7 +243,7 @@ class Mail {
         if ( !validId( arguments.id ) ) return variables.cli.say( cmd, "usage", { error: "usage" }, arguments.asJson, [ new bxrig.CommandSpec().usage( "mail delete" ) ] );
         var m = message( arguments.id );
         if ( !structCount( m ) ) return structKeyExists( messages( 1 ), "error" ) ? notRunning( cmd, arguments.asJson ) : variables.cli.fail( cmd, "precondition", "There is no message " & arguments.id, arguments.asJson );
-        var plan = [ ( arguments.dry ? "Dry run" : "Plan" ) & ": would delete the message " & chr( 34 ) & m.subject_line & chr( 34 ) & " from " & m.sender & ".", arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ];
+        var plan = [ new bxrig.util.Mutation().banner( arguments.dry ) & "would delete the message " & chr( 34 ) & m.subject_line & chr( 34 ) & " from " & m.sender & ".", new bxrig.util.Mutation().footer( arguments.dry ) ];
         if ( !arguments.yes || arguments.dry ) return variables.cli.say( cmd, arguments.dry ? "ok" : "plan", { mid: arguments.id, subject_line: m.subject_line }, arguments.asJson, plan, arguments.dry );
         if ( !deleteIds( [ arguments.id ] ) ) return variables.cli.fail( cmd, "failed", "The catcher refused the request", arguments.asJson );
         return variables.cli.say( cmd, "ok", { mid: arguments.id, deleted: true }, arguments.asJson, [ "Deleted the message." ] );

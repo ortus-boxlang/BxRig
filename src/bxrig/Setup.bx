@@ -23,7 +23,7 @@ class Setup {
 
     // True when HyprKwin looks installed for this user (its data folder or a hyprkwin script package).
     function hyprkwinInstalled() {
-        var home = getSystemSetting( "HOME", "" );
+        var home = new bxrig.util.Env().named( "home", "" );
         if ( directoryExists( home & "/.local/share/hyprkwin" ) ) return true;
         var scripts = home & "/.local/share/kwin/scripts";
         if ( !directoryExists( scripts ) ) return false;
@@ -33,7 +33,7 @@ class Setup {
 
     // The OS id from os-release (BXRIG_OS_RELEASE overrides the file for tests): "cachyos", "arch" or whatever the file says.
     function osId() {
-        var file = getSystemSetting( "BXRIG_OS_RELEASE", "/etc/os-release" );
+        var file = new bxrig.util.Env().named( "osRelease", "/etc/os-release" );
         if ( !fileExists( file ) ) return "";
         for ( var line in listToArray( fileRead( file ), chr( 10 ) ) ) {
             if ( left( line, 3 ) == "ID=" ) return lCase( replace( replace( mid( line, 4, len( line ) ), '"', "", "all" ), "'", "", "all" ) );
@@ -62,7 +62,7 @@ class Setup {
     function nodeVersion( nvmDir ) {
         if ( !fileExists( arguments.nvmDir & "/nvm.sh" ) ) return "";
         try {
-            var r = variables.inst.exec( [ "env", "NVM_DIR=" & arguments.nvmDir, "bash", "-c", '. "$NVM_DIR/nvm.sh" >/dev/null 2>&1; node --version' ], 30 );
+            var r = variables.inst.proc().exec( [ "env", "NVM_DIR=" & arguments.nvmDir, "bash", "-c", '. "$NVM_DIR/nvm.sh" >/dev/null 2>&1; node --version' ], 30 );
             return r.exitCode == 0 ? trim( r.output ) : "";
         } catch ( any e ) {
             return "";
@@ -71,27 +71,27 @@ class Setup {
 
     // Everything SetupPlan needs to know about this machine.
     function facts() {
-        var nvmDir = getSystemSetting( "NVM_DIR", getSystemSetting( "HOME", "" ) & "/.nvm" );
+        var nvmDir = new bxrig.util.Env().named( "nvmDir", new bxrig.util.Env().named( "home", "" ) & "/.nvm" );
         return {
             nvmDir: nvmDir,
             hasNvm: fileExists( nvmDir & "/nvm.sh" ),
             nodeVersion: nodeVersion( nvmDir ),
             hasCurl: variables.inst.hasCommand( "curl" ),
             os: osId(),
-            arch: trim( variables.inst.exec( [ "uname", "-m" ], 10 ).output ),
+            arch: trim( variables.inst.proc().exec( [ "uname", "-m" ], 10 ).output ),
             hasPacman: variables.pacman.available(),
             hyprlandAdded: hyprlandAdded(),
             isRoot: variables.inst.isRoot(),
             hasSudo: variables.inst.hasCommand( "sudo" ),
             kwinVersion: kwinVersion(),
-            desktop: getSystemSetting( "XDG_CURRENT_DESKTOP", "" ),
-            sessionType: getSystemSetting( "XDG_SESSION_TYPE", "" ),
+            desktop: new bxrig.util.Desktop().raw(),
+            sessionType: new bxrig.util.Desktop().session(),
             installed: new bxrig.Packages( variables.cli, {} ).installedNames(),
             hyprkwinInstalled: hyprkwinInstalled(),
-            user: getSystemSetting( "USER", "" ),
-            loginShell: getSystemSetting( "SHELL", "" ),
+            user: new bxrig.util.Env().named( "user", "" ),
+            loginShell: new bxrig.util.Env().named( "shell", "" ),
             hasYay: variables.aur.available(),
-            groups: listToArray( trim( variables.inst.exec( [ "id", "-nG" ], 10 ).output ), " " ),
+            groups: listToArray( trim( variables.inst.proc().exec( [ "id", "-nG" ], 10 ).output ), " " ),
             udevRule: fileExists( new bxrig.SetupPlan().udevRulePath() ),
             workDir: reReplace( getTempDirectory(), "/+$", "" ) & "/bxrig-hyprkwin-" & left( createUUID(), 8 )
         };
@@ -190,7 +190,7 @@ class Setup {
             println( "plasma: HyprKwin " & ( data.plasma.hyprkwin ? "installed" : "not installed" ) );
             println( "hyprland: " & data.hyprland.installed & " of " & data.hyprland.wanted & " packages installed" );
         }
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 
     // Prints the plan (or the errors) and, with --yes, runs the steps. Returns the exit code.
@@ -199,19 +199,19 @@ class Setup {
         if ( plan.errors.len() ) {
             if ( asJson ) println( variables.cli.envelope( command, 4, data ) );
             else for ( var e in plan.errors ) println( "error: " & e );
-            return 4;
+            return new bxrig.util.Exit().precondition();
         }
         if ( !yes || dryRun ) {
             var code = dryRun ? 0 : 2;
             if ( asJson ) { println( variables.cli.envelope( command, code, data, dryRun ) ); return code; }
-            println( ( dryRun ? "Dry run" : "Plan" ) & ": " & command & ", " & plan.steps.len() & " steps" );
+            println( new bxrig.util.Mutation().banner( dryRun ) & command & ", " & plan.steps.len() & " steps" );
             for ( var w in plan.warnings ) println( "  warning: " & w );
             for ( var s in plan.steps ) {
                 println( "  " & s.id & ": " & s.title );
                 for ( var c in s.commands ) println( "    " & c.toList( " " ) );
             }
             for ( var n in plan.notes ) println( "  note: " & n );
-            println( dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
+            println( new bxrig.util.Mutation().footer( dryRun ) );
             return code;
         }
         var stopped = false; var firstKind = "";
@@ -239,7 +239,7 @@ class Setup {
             }
             for ( var cmd in step.commands ) {
                 if ( len( problem ) ) continue;
-                var r = variables.inst.exec( cmd, 1800 );
+                var r = variables.inst.proc().exec( cmd, 1800 );
                 if ( r.timeout ) problem = "timed out";
                 else if ( r.exitCode != 0 ) problem = "failed (exit " & r.exitCode & ")";
             }

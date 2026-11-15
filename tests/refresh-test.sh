@@ -5,7 +5,7 @@ mkdir -p "$tmp/bin" "$tmp/home"; export LOG="$tmp/log"; : > "$LOG"
 printf '#!/usr/bin/env bash\necho "self $*" >> "$LOG"\n' > "$tmp/self"
 printf '#!/usr/bin/env bash\n:\n' > "$tmp/bin/ghostty"
 printf '#!/usr/bin/env bash\necho "noctalia $*" >> "$LOG"\n' > "$tmp/bin/noctalia"
-printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo 1000; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
+stub_id
 chmod +x "$tmp/self" "$tmp/bin"/*
 run() { env HOME="$tmp/home" SHELL=/usr/bin/zsh BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" BXRIG_SELF="$tmp/self" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
 has() { grep -qF -- "$1" "$LOG"; }

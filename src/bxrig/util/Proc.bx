@@ -64,7 +64,7 @@ class Proc {
 
     // The path or name used to run BxRig itself (BXRIG_SELF, else `bxrig` from the PATH).
     function selfPath() {
-        return getSystemSetting( "BXRIG_SELF", "bxrig" );
+        return new bxrig.util.Env().named( "self", "bxrig" );
     }
 
     // Runs BxRig itself with the given arguments (an array). Never throws.

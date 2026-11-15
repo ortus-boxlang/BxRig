@@ -61,7 +61,7 @@ class ShellConfig {
     // managed init is rewritten when clean and kept when the user changed it; the rc file gets the block once.
     function apply( shell ) {
         var cfg = variables.config.cfgHome();
-        var home = getSystemSetting( "HOME", "" );
+        var home = new bxrig.util.Env().named( "home", "" );
         var rcFile = home & "/" & ( arguments.shell == "zsh" ? ".zshrc" : ".bashrc" );
         var rcText = ( arguments.shell != "fish" && fileExists( rcFile ) ) ? fileRead( rcFile ) : "";
         var out = { written: [], kept: [], failed: [] };

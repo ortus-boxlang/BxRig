@@ -2,12 +2,9 @@
 class DatabasesProvider {
     function init( demo = false, data = "" ) { variables.demo = arguments.demo; variables.data = isSimpleValue( arguments.data ) ? new bxrig.DashboardData( {} ) : arguments.data; return this; }
     function id() { return "databases"; }
-    function icon() { return "database"; }
+    function icon() { return new bxrig.ControlCenterPages().icon( "databases" ); }
     function title() { return "Databases"; }
     function hint() { return "running in " & "podman or docker"; }
-    function live() { return false; }
-    function refreshSeconds() { return new bxrig.util.Exit().ok(); }
-    function detailLines() { return new bxrig.util.Exit().usage(); }
     function emptyText() { return "No databases yet. Press n to start one, like postgres."; }
     function columns() { return [ { key: "mark", label: "", w: 3 }, { key: "name", label: "name", w: 22 }, { key: "engine", label: "engine", w: 16 }, { key: "state", label: "state", w: 10 }, { key: "port", label: "port", w: 8 } ]; }
     function style( r ) { return r.state == "running" ? "" : "dim"; }

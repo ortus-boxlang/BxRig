@@ -10,3 +10,11 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 # stub NAME 'bash body': an executable $tmp/bin/NAME (put $tmp/bin first on PATH in run()).
 stub() { mkdir -p "$tmp/bin"; printf '#!/usr/bin/env bash\n%s\n' "$2" > "$tmp/bin/$1"; chmod +x "$tmp/bin/$1"; }
 code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
+# The fakes that many tests need. stub_id: `id -u` answers 1000 (MOCK_UID overrides it), everything else goes to the real id.
+# stub_sudo: `sudo --version` answers, then it runs the command; stub_sudo_log also appends "sudo ARGS" to $LOG first.
+stub_id() { stub id 'if [[ "$1" == -u ]]; then echo "${MOCK_UID:-1000}"; else /usr/bin/id "$@"; fi'; }
+stub_sudo() { stub sudo '[[ "$1" == --version ]] && { echo "Sudo version 1.9"; exit 0; }
+"$@"'; }
+stub_sudo_log() { stub sudo '[[ "$1" == --version ]] && { echo "Sudo version 1.9"; exit 0; }
+echo "sudo $*" >> "$LOG"
+exec "$@"'; }

@@ -15,9 +15,7 @@ class Layout {
     }
 
     function backend() {
-        if ( len( getSystemSetting( "HYPRLAND_INSTANCE_SIGNATURE", "" ) ) ) return "hyprland";
-        if ( findNoCase( "KDE", getSystemSetting( "XDG_CURRENT_DESKTOP", "" ) ) ) return "plasma";
-        return "";
+        return new bxrig.util.Desktop().shell();
     }
 
     // The windows of the active workspace: [ { address, floating } ].

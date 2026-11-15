@@ -22,7 +22,7 @@ class Ai {
     }
 
     function installed( command ) {
-        try { return variables.inst.exec( [ "sh", "-c", 'command -v "$1"', "_", arguments.command ], 10 ).exitCode == 0; } catch ( any e ) { return false; }
+        try { return variables.inst.proc().exec( [ "sh", "-c", 'command -v "$1"', "_", arguments.command ], 10 ).exitCode == 0; } catch ( any e ) { return false; }
     }
 
     // `ai list`
@@ -46,7 +46,7 @@ class Ai {
         var a = variables.agents.find( arguments.id );
         if ( structIsEmpty( a ) ) return variables.cli.say( cmd, "precondition", { error: "Unknown agent" }, arguments.asJson, [ "error: unknown agent " & arguments.id & " (use " & variables.agents.ids().toList( ", " ) & ")" ] );
         if ( !installed( a.command ) ) return variables.cli.say( cmd, "precondition", { error: a.id & " is not installed" }, arguments.asJson, [ "error: " & a.name & " is not installed (" & a.command & " was not found). Install it first: bxrig install " & a.id ] );
-        if ( !arguments.yes ) return variables.cli.say( cmd, "plan", { default: a.id }, arguments.asJson, [ "Plan: make " & a.name & " your default coding agent.", "Nothing was changed. Add --yes to apply." ] );
+        if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "make " & a.name & " your default coding agent.", { default: a.id }, arguments.asJson );
         var body = serializeJSON( { default: a.id } ) & chr( 10 );
         if ( variables.config.writeText( "ai-settings", file(), body ) != 0 ) return variables.cli.say( cmd, "failed", { error: "Could not write " & file() }, arguments.asJson, [ "error: could not write " & file() ] );
         return variables.cli.say( cmd, "ok", { default: a.id }, arguments.asJson, [ a.name & " is now your default coding agent." ] );
@@ -71,7 +71,7 @@ class Ai {
 
     // The argv that runs an agent with only the keys it accepts: bxrig secrets run KEYS... -- COMMAND.
     function agentCommand( agent ) {
-        var out = [ getSystemSetting( "BXRIG_SELF", "bxrig" ), "secrets", "run" ];
+        var out = [ new bxrig.util.Env().named( "self", "bxrig" ), "secrets", "run" ];
         for ( var k in variables.agents.keys( arguments.agent ) ) out.append( k );
         out.append( "--" );
         out.append( arguments.agent.command );
@@ -95,7 +95,7 @@ class Ai {
         if ( arguments.dryRun ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Dry run: would open " & a.name & " in " & term.id & ": " & argv.toList( " " ) ], true );
         var run = [ "sh", "-c", 'setsid "$@" >/dev/null 2>&1 &', "_" ];
         for ( var p in argv ) run.append( p );
-        variables.inst.exec( run, 10 );
+        variables.inst.proc().exec( run, 10 );
         return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Opened " & a.name & " in " & term.id & "." ] );
     }
 }

@@ -4,7 +4,7 @@
 mkdir -p "$tmp/bin" "$tmp/home"; export LOG="$tmp/log"; : > "$LOG"
 for t in sudo pacman plymouth-set-default-theme; do printf '#!/usr/bin/env bash\necho "%s $*" >> "$LOG"\n' "$t" > "$tmp/bin/$t"; done
 printf '#!/usr/bin/env bash\nexit 1\n' > "$tmp/bin/pacman"   # plymouth not installed (pacman -Q fails)
-printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo 1000; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
+stub_id
 chmod +x "$tmp/bin"/*
 echo 'HOOKS=(base udev autodetect block filesystems fsck)' > "$tmp/mk.conf"
 echo 'BOOT_IMAGE=/vmlinuz root=UUID=x rw' > "$tmp/cmdline"

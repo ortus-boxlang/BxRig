@@ -20,9 +20,8 @@ class AiShell {
 
     function backend( forced = "" ) {
         if ( len( arguments.forced ) ) return arguments.forced;
-        if ( len( getSystemSetting( "HYPRLAND_INSTANCE_SIGNATURE", "" ) ) ) return "hyprland";
-        if ( findNoCase( "KDE", getSystemSetting( "XDG_CURRENT_DESKTOP", "" ) ) ) return "yakuake";
-        return "";
+        var shell = new bxrig.util.Desktop().shell();
+        return shell == "plasma" ? "yakuake" : shell;
     }
 
     function detach( argv ) {
@@ -38,7 +37,7 @@ class AiShell {
             var a = variables.agents.find( id );
             if ( !structIsEmpty( a ) && variables.ai.installed( a.command ) ) return { argv: variables.ai.agentCommand( a ), label: a.name };
         }
-        return { argv: [ getSystemSetting( "SHELL", "sh" ) ], label: "your shell" };
+        return { argv: [ new bxrig.util.Env().named( "shell", "sh" ) ], label: "your shell" };
     }
 
     // A terminal that can give its window a class: the one named first in xdg-terminals.list when it can, else the first installed that can.
@@ -115,7 +114,7 @@ class AiShell {
     }
 
     function stateFile() {
-        var rt = getSystemSetting( "XDG_RUNTIME_DIR", "" );
+        var rt = new bxrig.util.Env().named( "xdgRuntimeDir", "" );
         return len( rt ) ? rt & "/bxrig-ai-shell" : "";
     }
 

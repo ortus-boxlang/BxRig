@@ -29,27 +29,23 @@ class Nas {
     function cfg() { return variables.config.cfgHome(); }
     function nasFile() { return cfg() & "/bxrig/nas.json"; }
     function backupFile() { return cfg() & "/bxrig/backup.json"; }
-    function credDir() { return variables.environ.get( "BXRIG_NAS_CRED_DIR", "/etc/bxrig/nas" ); }
-    function unitDir() { return variables.environ.get( "BXRIG_SYSTEMD_DIR", "/etc/systemd/system" ); }
-    function nasHome() { return variables.environ.get( "BXRIG_NAS_HOME", variables.environ.home() & "/NAS" ); }
+    function credDir() { return variables.environ.named( "nasCredDir", "/etc/bxrig/nas" ); }
+    function unitDir() { return variables.environ.named( "systemdDir", "/etc/systemd/system" ); }
+    function nasHome() { return variables.environ.named( "nasHome", variables.environ.home() & "/NAS" ); }
     function credFile( name ) { return credDir() & "/" & arguments.name & ".cred"; }
     function secretKey( name ) { return "BXRIG_NAS_" & uCase( replace( arguments.name, "-", "_", "all" ) ) & "_PASSWORD"; }
     function secrets() { return new bxrig.Secrets( variables.cli ); }
-    function validName( n ) { return reFind( "^[a-z][a-z0-9-]{0,30}$", arguments.n ) > 0; }
     function validHost( h ) { return reFind( "^[A-Za-z0-9]([A-Za-z0-9.:-]*[A-Za-z0-9])?$", arguments.h ) > 0; }
     function validShare( s ) { return reFind( "^/?[A-Za-z0-9][A-Za-z0-9 ._$/-]{0,100}$", arguments.s ) > 0 && find( "..", arguments.s ) == 0; }
     function validUser( u ) { return reFind( "^[A-Za-z0-9._@-]{1,64}$", arguments.u ) > 0; }
 
     // ---- state ----
     function read() {
-        var s = { nas: {} };
-        if ( fileExists( nasFile() ) ) { try { var j = jsonDeserialize( fileRead( nasFile() ) ); if ( structKeyExists( j, "nas" ) ) s.nas = j.nas; } catch ( any e ) {} }
-        return s;
+        return { nas: new bxrig.util.JsonStore().read( nasFile(), { nas: {} } ).nas };
     }
 
     function write( s ) {
-        directoryCreate( getDirectoryFromPath( nasFile() ), true, true );
-        fileWrite( nasFile(), jsonSerialize( arguments.s ) & chr( 10 ) );
+        new bxrig.util.JsonStore().write( "nas-state", nasFile(), arguments.s );
     }
 
     function get( name ) {
@@ -64,28 +60,12 @@ class Nas {
 
     // A plan without --yes, else the commands in order. cmds: [ argv ].
     function finish( title, shown, cmds, yes, dry, asJson, data = {} ) {
-        var d = arguments.data;
-        d.commands = arguments.cmds.map( function( c ) { return c.toList( " " ); } );
-        if ( !arguments.yes || arguments.dry ) {
-            var lines = [ ( arguments.dry ? "Dry run: " : "Plan: " ) & arguments.title ];
-            for ( var s in arguments.shown ) lines.append( "  " & s );
-            for ( var c in arguments.cmds ) lines.append( "  " & c.toList( " " ) );
-            lines.append( arguments.dry ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." );
-            return variables.out.say( arguments.dry ? "ok" : "plan", d, arguments.asJson, lines, arguments.dry );
-        }
-        for ( var x in arguments.cmds ) {
-            var r = variables.proc.exec( x, 600 );
-            if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ), step: x.toList( " " ) }, arguments.asJson, [ "error: " & x.toList( " " ) & ": " & trim( r.output ) ] );
-        }
-        return variables.out.say( "ok", d, arguments.asJson, [ arguments.title & ": done" ] );
+        return new bxrig.util.Mutation( variables.out, variables.proc ).run( arguments.title, arguments.cmds, arguments.yes, arguments.dry, arguments.asJson, arguments.data, arguments.shown );
     }
 
     // A private temp file holding text (mode 600). Returns its path.
     function privateTemp( text ) {
-        var f = getTempDirectory() & "/bxrig-nas-" & createUUID();
-        variables.proc.exec( [ "sh", "-c", 'umask 077; : > "$1"', "_", f ], 10 );
-        fileWrite( f, arguments.text );
-        return f;
+        return new bxrig.util.SystemFile( variables.proc ).stage( arguments.text, "nas" );
     }
 
     // ---- setup and discovery ----
@@ -116,7 +96,7 @@ class Nas {
 
     // ---- records ----
     function addCmd( name, opts, yes, dry, asJson ) {
-        if ( !validName( arguments.name ) ) return variables.out.fail( "usage", "NAME is lower case letters, digits and dashes, starting with a letter (for example synology)", arguments.asJson );
+        if ( !new bxrig.util.Names().valid( "slug", arguments.name ) ) return variables.out.fail( "usage", "NAME is lower case letters, digits and dashes, starting with a letter (for example synology)", arguments.asJson );
         var host = arguments.opts.host ?: "";
         var proto = lCase( arguments.opts.protocol ?: "smb" );
         var user = arguments.opts.user ?: "";
@@ -165,7 +145,7 @@ class Nas {
         if ( structIsEmpty( r ) ) return variables.out.fail( "precondition", "no NAS called " & arguments.name, arguments.asJson );
         var mounted = structKeyArray( r.shares ?: {} ).filter( function( sh ) { return r.shares[ sh ].auto ?: false; } );
         if ( mounted.len() ) return variables.out.fail( "precondition", "turn the automatic mounts off first: " & mounted.map( function( sh ) { return "bxrig nas auto off " & name & " " & sh; } ).toList( "; " ), arguments.asJson );
-        if ( !arguments.yes || arguments.dry ) return variables.out.say( arguments.dry ? "ok" : "plan", { name: arguments.name }, arguments.asJson, [ ( arguments.dry ? "Dry run: " : "Plan: " ) & "forget the NAS " & arguments.name & " and its stored password (the files on the NAS are not touched)", "Nothing was changed." & ( arguments.dry ? "" : " Add --yes to apply." ) ], arguments.dry );
+        if ( !arguments.yes || arguments.dry ) return variables.out.plan( "forget the NAS " & arguments.name & " and its stored password (the files on the NAS are not touched)", { name: arguments.name }, arguments.asJson, arguments.dry );
         var s = read();
         structDelete( s.nas, arguments.name );
         write( s );
@@ -218,7 +198,7 @@ class Nas {
     function credCommands( name, rec ) {
         var cmds = [];
         var tmp = privateTemp( "username=" & rec.user & chr( 10 ) & "password=" & secrets().fetch( secretKey( arguments.name ) ) & chr( 10 ) );
-        cmds.append( [ "sudo", "install", "-Dm600", "-o", "root", "-g", "root", tmp, credFile( arguments.name ) ] );
+        cmds.append( new bxrig.util.SystemFile().installArgv( tmp, credFile( arguments.name ), "600", true ) );
         return { cmds: cmds, tmp: tmp };
     }
 
@@ -239,7 +219,7 @@ class Nas {
             if ( !len( secrets().fetch( secretKey( arguments.name ) ) ) ) return variables.out.fail( "precondition", "the password of " & arguments.name & " is not in the keyring (bxrig nas add " & arguments.name & " --host=" & r.host & " --user=" & r.user & " --ask-password)", arguments.asJson );
             shown.append( "SMB mounts are read as root, so the password is also kept in " & credFile( arguments.name ) & " (root only, mode 600)" );
             if ( arguments.yes && !arguments.dry ) { var cc = credCommands( arguments.name, r ); tmp = cc.tmp; for ( var c in cc.cmds ) cmds.append( c ); }
-            else cmds.append( [ "sudo", "install", "-Dm600", "-o", "root", "-g", "root", "TEMPFILE", credFile( arguments.name ) ] );
+            else cmds.append( new bxrig.util.SystemFile().installArgv( "TEMPFILE", credFile( arguments.name ), "600", true ) );
         }
         cmds.append( [ "mkdir", "-p", mp ] );
         cmds.append( [ "sudo", "mount", "-t", r.protocol == "smb" ? "cifs" : "nfs", source( r, arguments.share ), mp, "-o", mountOptions( r, arguments.name ) ] );
@@ -278,9 +258,15 @@ class Nas {
             return code;
         }
         if ( r.protocol == "smb" && !len( secrets().fetch( secretKey( nm ) ) ) ) return variables.out.fail( "precondition", "the password of " & nm & " is not in the keyring", arguments.asJson );
-        var mountUnit = "## Written by `bxrig nas auto on`. Remove with `bxrig nas auto off " & nm & " " & share & "`." & chr( 10 ) & "[Unit]" & chr( 10 ) & "Description=" & nm & " " & share & " (BxRig NAS)" & chr( 10 ) & "After=network-online.target" & chr( 10 ) & "Wants=network-online.target" & chr( 10 ) & chr( 10 )
-            & "[Mount]" & chr( 10 ) & "What=" & source( r, share ) & chr( 10 ) & "Where=" & mp & chr( 10 ) & "Type=" & ( r.protocol == "smb" ? "cifs" : "nfs" ) & chr( 10 ) & "Options=" & mountOptions( r, nm ) & ",nofail" & chr( 10 ) & "TimeoutSec=20" & chr( 10 );
-        var autoUnit = "## Written by `bxrig nas auto on`." & chr( 10 ) & "[Unit]" & chr( 10 ) & "Description=Automount " & nm & " " & share & chr( 10 ) & chr( 10 ) & "[Automount]" & chr( 10 ) & "Where=" & mp & chr( 10 ) & "TimeoutIdleSec=600" & chr( 10 ) & chr( 10 ) & "[Install]" & chr( 10 ) & "WantedBy=multi-user.target" & chr( 10 );
+        var mountUnit = new bxrig.util.SystemdUnit().render( [
+            { name: "Unit", lines: [ "Description=" & nm & " " & share & " (BxRig NAS)", "After=network-online.target", "Wants=network-online.target" ] },
+            { name: "Mount", lines: [ "What=" & source( r, share ), "Where=" & mp, "Type=" & ( r.protocol == "smb" ? "cifs" : "nfs" ), "Options=" & mountOptions( r, nm ) & ",nofail", "TimeoutSec=20" ] }
+        ], "Written by `bxrig nas auto on`. Remove with `bxrig nas auto off " & nm & " " & share & "`." );
+        var autoUnit = new bxrig.util.SystemdUnit().render( [
+            { name: "Unit", lines: [ "Description=Automount " & nm & " " & share ] },
+            { name: "Automount", lines: [ "Where=" & mp, "TimeoutIdleSec=600" ] },
+            { name: "Install", lines: [ "WantedBy=multi-user.target" ] }
+        ], "Written by `bxrig nas auto on`." );
         var cmds = [];
         var tmpM = "TEMP.mount";
         var tmpA = "TEMP.automount";
@@ -291,10 +277,10 @@ class Nas {
             tmpA = privateTemp( autoUnit );
         }
         for ( var x in cc.cmds ) cmds.append( x );
-        if ( r.protocol == "smb" && !( arguments.yes && !arguments.dry ) ) cmds.append( [ "sudo", "install", "-Dm600", "-o", "root", "-g", "root", "TEMPFILE", credFile( nm ) ] );
+        if ( r.protocol == "smb" && !( arguments.yes && !arguments.dry ) ) cmds.append( new bxrig.util.SystemFile().installArgv( "TEMPFILE", credFile( nm ), "600", true ) );
         cmds.append( [ "mkdir", "-p", mp ] );
-        cmds.append( [ "sudo", "install", "-Dm644", tmpM, unitDir() & "/" & mnt ] );
-        cmds.append( [ "sudo", "install", "-Dm644", tmpA, unitDir() & "/" & aut ] );
+        cmds.append( new bxrig.util.SystemFile().installArgv( tmpM, unitDir() & "/" & mnt ) );
+        cmds.append( new bxrig.util.SystemFile().installArgv( tmpA, unitDir() & "/" & aut ) );
         cmds.append( variables.systemd.reloadArgv( false, true ) );
         cmds.append( variables.systemd.enableArgv( aut, false, true ) );
         var shown = [ "mounts " & source( r, share ) & " at " & mp & " the first time something opens it, and lets go after 10 idle minutes", ( r.protocol == "smb" ? "the password is kept in " & credFile( nm ) & " (root only, mode 600), because systemd mounts as root" : "NFS needs no password" ) ];
@@ -314,7 +300,7 @@ class Nas {
         if ( structIsEmpty( r ) ) return variables.out.fail( "precondition", "no NAS called " & arguments.name & " (bxrig nas list)", arguments.asJson );
         var port = r.protocol == "smb" ? "445" : "2049";
         var checks = [];
-        var forced = getSystemSetting( "BXRIG_NAS_REACH", "" );
+        var forced = new bxrig.util.Env().named( "nasReach", "" );
         var reach = len( forced ) ? forced == "yes" : variables.proc.exec( [ "bash", "-c", 'exec 3<>"/dev/tcp/$1/$2"', "_", r.host, port ], 8 ).exitCode == 0;
         checks.append( { id: "reachable", ok: reach, note: r.host & ":" & port & ( reach ? " answers" : " does not answer (is the NAS on, is " & uCase( r.protocol ) & " enabled in DSM?)" ) } );
         if ( reach ) {
@@ -393,11 +379,9 @@ class Nas {
         var key = "nas-" & nm;
         var d = { target: key, type: "nas", nas: nm, share: share, path: path, repository: mp & "/" & path };
         if ( arguments.dry ) return variables.out.say( "ok", d, arguments.asJson, [ "Dry run: would make " & mp & "/" & path & " a backup target called " & key ], true );
-        var b = { targets: {} };
-        if ( fileExists( backupFile() ) ) { try { b = jsonDeserialize( fileRead( backupFile() ) ); if ( !structKeyExists( b, "targets" ) ) b.targets = {}; } catch ( any e ) {} }
+        var b = new bxrig.util.JsonStore().read( backupFile(), { targets: {} } );
         b.targets[ key ] = { type: "nas", nas: nm, share: share, path: path };
-        directoryCreate( getDirectoryFromPath( backupFile() ), true, true );
-        fileWrite( backupFile(), jsonSerialize( b ) & chr( 10 ) );
+        new bxrig.util.JsonStore().write( "backup-data", backupFile(), b );
         return variables.out.say( "ok", d, arguments.asJson, [ "Backup target " & key & ": " & mp & "/" & path, "Next: bxrig backup data setup" ] );
     }
 

@@ -36,7 +36,7 @@ class Help {
                 for ( var cm in gr.commands ) println( "  " & pad( cm.name, width + 2 ) & listFirst( cm.summary, "." ) & "." );
             }
             println( "" );
-            println( "More: bxrig help COMMAND    https://bxcachy.boxlang.io/reference/commands/" );
+            println( "More: bxrig help COMMAND    " & new bxrig.util.Urls().commandsReference() );
             println( "Supported today: CachyOS and Arch Linux. Other distributions (Debian, Ubuntu, Fedora) are the direction, not yet supported." );
             return new bxrig.util.Exit().ok();
         }

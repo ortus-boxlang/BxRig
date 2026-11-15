@@ -14,7 +14,7 @@ class Tiling {
     // Runs one command and returns its trimmed output, or "" when it fails or the tool is missing.
     function out( argv ) {
         try {
-            var r = variables.inst.exec( argv, 15 );
+            var r = variables.inst.proc().exec( argv, 15 );
             return r.exitCode == 0 ? trim( r.output ) : "";
         } catch ( any e ) {
             return "";
@@ -36,7 +36,7 @@ class Tiling {
     // True when KWin answers on D-Bus (a Plasma session is running for this user).
     function kwinRunning() {
         try {
-            return variables.inst.exec( [ "qdbus6", "org.kde.KWin", "/KWin" ], 10 ).exitCode == 0;
+            return variables.inst.proc().exec( [ "qdbus6", "org.kde.KWin", "/KWin" ], 10 ).exitCode == 0;
         } catch ( any e ) {
             return false;
         }
@@ -65,10 +65,10 @@ class Tiling {
             return new bxrig.util.Exit().precondition();
         }
         var wasRunning = kwinRunning();
-        variables.inst.exec( [ "kwriteconfig6", "--file", "kwinrc", "--group", "Plugins", "--key", "hyprkwinEnabled", on ? "true" : "false" ], 15 );
+        variables.inst.proc().exec( [ "kwriteconfig6", "--file", "kwinrc", "--group", "Plugins", "--key", "hyprkwinEnabled", on ? "true" : "false" ], 15 );
         if ( wasRunning ) {
-            if ( !on ) variables.inst.exec( [ "qdbus6", "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting.unloadScript", "hyprkwin" ], 15 );
-            variables.inst.exec( [ "qdbus6", "org.kde.KWin", "/KWin", "org.kde.KWin.reconfigure" ], 15 );
+            if ( !on ) variables.inst.proc().exec( [ "qdbus6", "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting.unloadScript", "hyprkwin" ], 15 );
+            variables.inst.proc().exec( [ "qdbus6", "org.kde.KWin", "/KWin", "org.kde.KWin.reconfigure" ], 15 );
         }
         var data = { enabled: on, applied: wasRunning };
         if ( asJson ) println( variables.cli.envelope( command, 0, data ) );
@@ -96,7 +96,7 @@ class Tiling {
             return new bxrig.util.Exit().precondition();
         }
         var argv = len( arguments.name ) ? [ "hyprkwinctl", "layout", arguments.name ] : [ "hyprkwinctl", "layout" ];
-        var r = variables.inst.exec( argv, 20 );
+        var r = variables.inst.proc().exec( argv, 20 );
         if ( r.exitCode != 0 ) {
             if ( arguments.asJson ) println( variables.cli.envelope( command, 6, { error: trim( r.output ) } ) );
             else println( "error: hyprkwinctl failed: " & trim( r.output ) );

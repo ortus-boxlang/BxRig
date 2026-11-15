@@ -24,7 +24,7 @@ play() { rm -f "$FAKE/n" "$FAKE/spawn.log" "$FAKE/terminal.log" "$FAKE/open.log"
 flatidx() { run "$binary" menu items --json | jq -r --arg p "$1" 'def f($pre): if .kind == "sub" then (.label as $l | .children[] | f($pre + $l + " > ")) else $pre + .label end; [.data.menu[] | f("")] | index($p)'; }
 
 # ---- the tree as data (Omarchy's skeleton plus Develop) ----
-run "$binary" menu items --json | jq -e '(.data.menu | map(.label)) == ["Apps","Setup wizard (re-run, prefilled)","Install","Remove","Appearance","Trigger","Setup","Update","Develop","Agent","Learn","About","System","Control Center"] and .data.entries >= 200' >/dev/null || fail "menu sections: $(run "$binary" menu items --json | jq -c '.data.menu | map(.label)')"
+run "$binary" menu items --json | jq -e '(.data.menu | map(.label)) == ["Apps","Setup wizard (re-run, prefilled)","Install","Remove","Appearance","Trigger","Shortcuts","Setup","Update","Develop","Agent","Learn","About","System","Control Center"] and .data.entries >= 200' >/dev/null || fail "menu sections: $(run "$binary" menu items --json | jq -c '.data.menu | map(.label)')"
 run "$binary" menu items --json | jq -e '[.data.menu[] | select(.label == "Install") | .children[] | .label] | index("Package (repos and AUR)") == 0 and index("Catalog") == 2' >/dev/null || fail 'Install starts with package search and the catalog'
 run "$binary" menu items | grep -q 'Next theme   (opens: bxrig theme next)' || fail 'menu items text, nested'
 run "$binary" menu items | grep -q '    Development   (lists the Development apps' || fail 'catalog groups are in the tree'

@@ -30,6 +30,22 @@ class TuiKit {
     }
 
     function tui() { return variables.tui; }
+
+    // Star positions for a backdrop: [ { x, y, i } ], count of them from one small fixed generator (the same sky for the same size), skipping the
+    // rectangle `avoid` ({ x, y, w, h }, or {} for none). Callers cache the result per size and draw the stars their own way.
+    function starPositions( count, width, height, avoid = {} ) {
+        var out = [];
+        var seed = 2654435769;
+        for ( var i = 0; i < arguments.count; i++ ) {
+            seed = ( seed * 1664525 + 1013904223 ) mod 4294967296;
+            var x = int( seed / 256 ) mod arguments.width;
+            seed = ( seed * 1664525 + 1013904223 ) mod 4294967296;
+            var y = int( seed / 256 ) mod arguments.height;
+            if ( structKeyExists( arguments.avoid, "x" ) && x >= arguments.avoid.x && x < arguments.avoid.x + arguments.avoid.w && y >= arguments.avoid.y && y < arguments.avoid.y + arguments.avoid.h ) continue;
+            out.append( { x: x, y: y, i: i } );
+        }
+        return out;
+    }
     function color( name ) { return variables.pal[ arguments.name ]; }
     function setFade( f ) { variables.fade = arguments.f; return this; }
 
@@ -156,7 +172,7 @@ class TuiKit {
     // Pictures (app icons, screenshots) go through the canvas's tui.image: real graphics in Kitty and Ghostty, half blocks everywhere else.
     // They are on unless BXRIG_IMAGES=off, or the canvas reports no support; BXRIG_IMAGES=on forces them. Nothing here ever throws or blocks.
     function imagesDefault() {
-        var o = getSystemSetting( "BXRIG_IMAGES", "" );
+        var o = new bxrig.util.Env().named( "images", "" );
         if ( o == "off" ) return false;
         if ( o == "on" ) return true;
         try { var s = variables.tui.image_support(); return len( s ) && s != "none"; } catch ( any e ) { return false; }

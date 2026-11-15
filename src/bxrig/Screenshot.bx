@@ -1,8 +1,9 @@
-// `bxrig screenshot screen|region|window|ocr|qr|menu [--edit]` and `bxrig qr TEXT [--out=FILE]`.
+// `bxrig screenshot screen|region|window|ocr|qr|color|menu [--edit]` and `bxrig qr TEXT [--out=FILE]`.
 //   Hyprland + Noctalia  `noctalia msg screenshot-fullscreen|screenshot-region|screenshot-window` (Noctalia has its own capture and
 //                        annotation; --edit adds --annotate). Without Noctalia: grim + slurp into the clipboard (wl-copy).
 //   Plasma               Spectacle (`spectacle -f|-r|-a`)
 //   ocr                  you drag a region, its text goes to the clipboard (tesseract); qr: the QR code in a region is read (zbarimg) and copied
+//   color                the color picker (hyprpicker -a): click a pixel and its hex value is copied (Super+Print)
 //   menu                 the Cmd+Shift+5 style picker (Screen, Region, Window, OCR, QR, Record) in your menu program
 //   qr TEXT              prints the QR code in the terminal, or writes a PNG with --out FILE (qrencode)
 // The desktop is read from XDG_CURRENT_DESKTOP (BXRIG_DESKTOP overrides it). Exit: 0 done, 4 precondition (tool missing), 6 failed.
@@ -16,7 +17,7 @@ class Screenshot {
     }
 
     function desktop() {
-        var d = lCase( getSystemSetting( "BXRIG_DESKTOP", getSystemSetting( "XDG_CURRENT_DESKTOP", "" ) ) );
+        var d = new bxrig.util.Desktop().name();
         return find( "kde", d ) || find( "plasma", d ) ? "plasma" : "hyprland";
     }
 
@@ -64,6 +65,16 @@ class Screenshot {
 
     function ocr( dryRun, asJson ) { return fromRegion( "tesseract", 'tesseract "$f" stdout 2>/dev/null | wl-copy', arguments.dryRun, arguments.asJson ); }
     function qrScan( dryRun, asJson ) { return fromRegion( "zbarimg", 'zbarimg -q --raw "$f" | wl-copy', arguments.dryRun, arguments.asJson ); }
+
+    // The color picker: hyprpicker copies the color you click to the clipboard.
+    function color( dryRun, asJson ) {
+        var argv = [ "hyprpicker", "-a" ];
+        if ( !variables.proc.has( "hyprpicker" ) ) return variables.out.say( "precondition", { error: "hyprpicker is not installed" }, arguments.asJson, [ "error: hyprpicker is not installed. Install it: bxrig install hyprpicker --yes" ] );
+        if ( arguments.dryRun ) return variables.out.say( "ok", { argv: argv }, arguments.asJson, [ "Dry run: " & argv.toList( " " ), "Nothing was started." ] );
+        var r = variables.proc.exec( argv, 600 );
+        if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: "the picker was cancelled or failed (exit " & r.exitCode & ")" }, arguments.asJson, [ "Nothing was copied (the picker was cancelled)." ] );
+        return variables.out.say( "ok", { copied: true, color: trim( r.output ) }, arguments.asJson, [ "Copied " & trim( r.output ) ] );
+    }
 
     // `qr TEXT [--out=FILE]`
     function qrMake( text, out, asJson ) {

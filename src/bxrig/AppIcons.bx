@@ -29,9 +29,9 @@ class AppIcons {
         return this;
     }
 
-    function share() { return variables.opts.share ?: variables.environ.get( "BXRIG_SHARE_DIR", "/usr/share" ); }
-    function home() { return variables.opts.home ?: variables.environ.get( "HOME", "" ); }
-    function userShare() { return structKeyExists( variables.opts, "home" ) ? variables.opts.home & "/.local/share" : variables.environ.get( "XDG_DATA_HOME", home() & "/.local/share" ); }
+    function share() { return variables.opts.share ?: variables.environ.named( "shareDir", "/usr/share" ); }
+    function home() { return variables.opts.home ?: variables.environ.named( "home", "" ); }
+    function userShare() { return structKeyExists( variables.opts, "home" ) ? variables.opts.home & "/.local/share" : variables.environ.named( "xdgDataHome", home() & "/.local/share" ); }
     function iconBase() { return variables.opts.iconBase ?: "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png"; }
 
     // "Visual Studio Code" -> "visual-studio-code"
@@ -56,7 +56,7 @@ class AppIcons {
     // The icon theme names to look in, in this order: the current theme and what it Inherits, hicolor, then every other theme folder.
     function themeNames( root ) {
         var names = [];
-        var cur = variables.environ.get( "BXRIG_ICON_THEME", "" );
+        var cur = variables.environ.named( "iconTheme", "" );
         if ( !len( cur ) ) {
             for ( var f in [ variables.environ.xdgConfig( "gtk-3.0/settings.ini" ), variables.environ.xdgConfig( "gtk-4.0/settings.ini" ) ] ) {
                 if ( len( cur ) || !fileExists( f ) ) continue;

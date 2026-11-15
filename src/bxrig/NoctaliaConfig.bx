@@ -89,7 +89,7 @@ class NoctaliaConfig {
             'enabled = ["bxrig/world-clock", "bxrig/agents", "bxrig/themes"]',
             '',
             '# Notifications stack by app, newest at the screen edge, follow the theme (the bell in the bar toggles Do Not Disturb).',
-            '# Super+Alt+Comma acts on the newest one, Super+Ctrl+Comma shows them all.',
+            '# Super+Alt+Comma acts on the newest one, Super+Shift+Comma shows them all.',
             '[notification]',
             'position = "top_right"',
             'group_by_app = true',
