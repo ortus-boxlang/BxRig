@@ -3,8 +3,11 @@
 -- a name row with a launch button (">_") and per account its plan, an ACTIVE
 -- badge and one meter row per limit (label, used bar, reset countdown).
 --
--- Data: `bxrig ai panel --json`, fetched on open and every 60 s while open.
+-- Data: `bxrig ai panel --json`, fetched on open and every 60 s while open. It holds the
+-- installed agents plus the ones added, minus the ones removed.
 -- Launch: `bxrig ai launch <id>` (detached; the panel closes).
+-- "Edit agents" (footer) lists every known agent (`bxrig ai panel list --json`) with a
+-- Show/Hide button: `bxrig ai panel add|remove <id> --yes`.
 -- Colors are palette roles only, so the panel follows the active theme.
 
 local bxrig = require("./bxrig.luau")
@@ -16,6 +19,9 @@ local errorText = nil
 local loading = false
 local lastFetchMs = -REFRESH_MS
 local closeButton = true
+local editing = false
+local choices = nil -- `ai panel list` rows while editing
+local busyId = nil
 
 -- Leading glyph per agent id; anything else gets the robot.
 local AGENT_GLYPHS = {
@@ -160,7 +166,67 @@ local function agentBlock(agent, index)
   }, children)
 end
 
-local function render()
+local fetch
+local fetchChoices
+
+local function editRow(row, index)
+  local id = str(row.id)
+  local shown = row.shown == true
+  local note = row.installed == true and "installed" or "not installed"
+  return ui.row({ key = "edit-" .. index .. "-" .. id, align = "center", gap = 8, paddingH = 12, paddingV = 6, radius = 10, fill = "surface_container" }, {
+    ui.glyph({ name = AGENT_GLYPHS[id] or "robot", size = 16, color = shown and "primary" or "on_surface_variant" }),
+    ui.column({ flexGrow = 1, gap = 1 }, {
+      ui.label({ text = str(row.name ~= nil and row.name or id), fontSize = 13, fontWeight = "semibold", maxLines = 1 }),
+      ui.label({ text = note, fontSize = 10, color = "on_surface_variant", maxLines = 1 }),
+    }),
+    ui.button({
+      text = shown and "Hide" or "Show",
+      variant = shown and "ghost" or "primary",
+      controlSize = "sm",
+      enabled = busyId == nil,
+      onClick = function()
+        busyId = id
+        render()
+        bxrig.run({ "ai", "panel", shown and "remove" or "add", id, "--yes" }, function(ok, msg)
+          busyId = nil
+          if not ok then
+            errorText = msg
+          end
+          fetchChoices()
+          fetch()
+        end)
+      end,
+    }),
+  })
+end
+
+local function editSection()
+  if choices == nil then
+    return ui.label({ text = "Loading…", fontSize = 12, color = "on_surface_variant" })
+  end
+  local rows = {}
+  for i, row in ipairs(choices) do
+    if type(row) == "table" then
+      table.insert(rows, editRow(row, i))
+    end
+  end
+  return ui.scroll({ flexGrow = 1, gap = 6 }, rows)
+end
+
+local function footer()
+  return ui.row({ align = "center", gap = 8 }, {
+    ui.spacer({ flexGrow = 1 }),
+    ui.button({
+      text = editing and "Done" or "Edit agents",
+      glyph = editing and "check" or "pencil",
+      variant = "ghost",
+      controlSize = "sm",
+      onClick = "onEditClicked",
+    }),
+  })
+end
+
+function render()
   local titleColumn = { ui.label({ text = "Agents", fontSize = 16, fontWeight = "bold" }) }
   local tokens = data and compact(data.tokens_today) or nil
   if tokens ~= nil then
@@ -181,13 +247,19 @@ local function render()
   }
 
   local agents = data and data.agents or nil
-  if data == nil then
+  if editing then
+    table.insert(sections, editSection())
+  elseif data == nil then
     table.insert(sections, ui.column({ paddingV = 16, align = "center", gap = 6 }, {
       ui.glyph({ name = errorText ~= nil and "alert-triangle" or "loader", size = 20, color = errorText ~= nil and "error" or "on_surface_variant" }),
       ui.label({ text = errorText or "Loading…", fontSize = 12, color = "on_surface_variant", textAlign = "center", maxLines = 4 }),
     }))
   elseif type(agents) ~= "table" or #agents == 0 then
-    table.insert(sections, ui.label({ text = "No agents found.", fontSize = 12, color = "on_surface_variant" }))
+    table.insert(sections, ui.column({ paddingV = 16, align = "center", gap = 6 }, {
+      ui.glyph({ name = "robot", size = 20, color = "on_surface_variant" }),
+      ui.label({ text = "No coding agents installed", fontSize = 12, color = "on_surface_variant", textAlign = "center" }),
+      ui.label({ text = "Edit agents adds one to this panel", fontSize = 11, color = "on_surface_variant", textAlign = "center" }),
+    }))
   else
     local blocks = {}
     for i, agent in ipairs(agents) do
@@ -201,10 +273,26 @@ local function render()
     end
   end
 
+  if editing and errorText ~= nil then
+    table.insert(sections, ui.label({ text = errorText, fontSize = 10, color = "error", maxLines = 2 }))
+  end
+  table.insert(sections, ui.separator({}))
+  table.insert(sections, footer())
   panel.render(ui.column({ flexGrow = 1, gap = 10, padding = 12 }, sections))
 end
 
-local function fetch()
+function fetchChoices()
+  bxrig.json({ "ai", "panel", "list", "--json" }, function(result, err)
+    if err ~= nil then
+      errorText = err
+    else
+      choices = type(result.agents) == "table" and result.agents or {}
+    end
+    render()
+  end, 30000)
+end
+
+function fetch()
   if loading then
     return
   end
@@ -222,6 +310,15 @@ local function fetch()
   end, 30000)
 end
 
+function onEditClicked()
+  editing = not editing
+  errorText = nil
+  if editing then
+    fetchChoices()
+  end
+  render()
+end
+
 function onRefresh()
   fetch()
 end
@@ -231,6 +328,7 @@ function onCloseClicked()
 end
 
 function onOpen(_context)
+  editing = false
   closeButton = noctalia.getSetting("shell.show_close_buttons") ~= false
   panel.setWantsSecondTicks(true)
   render()

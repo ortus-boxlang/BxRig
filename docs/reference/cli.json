@@ -2202,6 +2202,10 @@
       "ai default [ID] [--yes]",
       "ai launch [ID] [--dry-run]",
       "ai panel [--json]",
+      "ai panel list [--json]",
+      "ai panel add ID... [--yes]",
+      "ai panel remove ID... [--yes]",
+      "ai panel reset [--yes]",
       "ai shell [toggle|status] [--backend=hyprland|yakuake] [--dry-run] [--json]"
      ],
      "examples": [

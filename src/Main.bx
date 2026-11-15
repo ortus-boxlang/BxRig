@@ -608,6 +608,12 @@ class {
           if ( aiSub == "default" && p.len() <= 3 ) CLIExit( ai.setDefault( p.len() == 3 ? p[3] : "", structKeyExists( args.options, "yes" ), asJson ) );
           if ( aiSub == "launch" && p.len() <= 3 ) CLIExit( ai.launch( p.len() == 3 ? p[3] : "", structKeyExists( args.options, "dry-run" ), asJson ) );
           if ( aiSub == "panel" && p.len() == 2 ) CLIExit( new bxrig.AiPanel( cli ).run( asJson ) );
+          if ( aiSub == "panel" && p.len() == 3 && p[3] == "list" ) CLIExit( new bxrig.AiPanel( cli ).listCmd( asJson ) );
+          if ( aiSub == "panel" && p.len() >= 3 && ( p[3] == "add" || p[3] == "remove" || p[3] == "reset" ) ) {
+            aiIds = [];
+            for ( aiI = 4; aiI <= p.len(); aiI++ ) aiIds.append( p[ aiI ] );
+            CLIExit( new bxrig.AiPanel( cli ).changeCmd( p[3], aiIds, structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
+          }
           if ( aiSub == "shell" && p.len() <= 3 ) CLIExit( new bxrig.AiShell( cli ).run( p.len() == 3 ? p[3] : "toggle", args.options.backend ?: "", structKeyExists( args.options, "dry-run" ), asJson ) );
           if ( aiSub == "session" ) {
             aiSes = new bxrig.AiSession( cli );

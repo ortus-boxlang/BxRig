@@ -1311,6 +1311,10 @@ bxrig ai list
 bxrig ai default [ID] [--yes]
 bxrig ai launch [ID] [--dry-run]
 bxrig ai panel [--json]
+bxrig ai panel list [--json]
+bxrig ai panel add ID... [--yes]
+bxrig ai panel remove ID... [--yes]
+bxrig ai panel reset [--yes]
 bxrig ai shell [toggle|status] [--backend=hyprland|yakuake] [--dry-run] [--json]
 ```
 

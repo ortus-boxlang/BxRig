@@ -4,6 +4,11 @@
 //   Codex        limits: the newest rate_limits event in ~/.codex/sessions (used percent, window, seconds to reset) as meters
 //   OpenCode     accounts: the providers signed in, ~/.local/share/opencode/auth.json (an "opencode-go" entry shows as OpenCode Go)
 // Agents with nothing on disk show their account as "Default" and no meters ("no usage data" in the panel).
+// The panel lists the agents that are installed, plus the ones you added, minus the ones you removed (~/.config/bxrig/agents-panel.json):
+//   ai panel list [--json]            every known agent: installed, added, removed, shown
+//   ai panel add ID... [--yes]        show it even when it is not installed
+//   ai panel remove ID... [--yes]     hide it even when it is installed
+//   ai panel reset [--yes]            back to the installed ones only
 class AiPanel {
     function init( cli, runner = "" ) {
         variables.cli = arguments.cli;
@@ -14,6 +19,52 @@ class AiPanel {
     }
 
     function installed( command ) { return variables.proc.has( arguments.command ); }
+
+    // ---- which agents the panel shows ----
+    function choiceFile() { return variables.environ.config( "agents-panel.json" ); }
+    function choices() {
+        var c = { added: [], removed: [] };
+        var j = readJson( choiceFile() );
+        for ( var k in [ "added", "removed" ] ) if ( structKeyExists( j, k ) && isArray( j[ k ] ) ) c[ k ] = j[ k ];
+        return c;
+    }
+    function shown( id, isInstalled, c ) {
+        if ( arrayFindNoCase( arguments.c.added, arguments.id ) ) return true;
+        return arguments.isInstalled && !arrayFindNoCase( arguments.c.removed, arguments.id );
+    }
+    function listCmd( asJson ) {
+        var c = choices();
+        var rows = [];
+        var lines = [];
+        for ( var a in new bxrig.AiAgents().all() ) {
+            var r = { id: a.id, name: a.name, installed: installed( a.command ), added: arrayFindNoCase( c.added, a.id ) > 0, removed: arrayFindNoCase( c.removed, a.id ) > 0 };
+            r.shown = shown( a.id, r.installed, c );
+            rows.append( r );
+            lines.append( left( a.id & repeatString( " ", 16 ), 16 ) & ( r.shown ? "shown " : "hidden" ) & "  " & ( r.installed ? "installed" : "not installed" ) & ( r.added ? ", added" : "" ) & ( r.removed ? ", removed" : "" ) );
+        }
+        return variables.out.say( "ok", { agents: rows, file: choiceFile() }, arguments.asJson, lines );
+    }
+    // add | remove | reset
+    function changeCmd( verb, ids, yes, dry, asJson ) {
+        var known = new bxrig.AiAgents().ids();
+        if ( arguments.verb != "reset" && !arguments.ids.len() ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "ai" ), arguments.asJson );
+        for ( var id in arguments.ids ) if ( !arrayFindNoCase( known, id ) ) return variables.out.fail( "usage", "Unknown agent: " & id & " (use " & known.toList( ", " ) & ")", arguments.asJson );
+        var c = choices();
+        if ( arguments.verb == "reset" ) c = { added: [], removed: [] };
+        for ( var id in arguments.ids ) {
+            var keep = arguments.verb == "add" ? "added" : "removed";
+            var drop = arguments.verb == "add" ? "removed" : "added";
+            var i = arrayFindNoCase( c[ drop ], id );
+            if ( i ) c[ drop ].deleteAt( i );
+            if ( !arrayFindNoCase( c[ keep ], id ) ) c[ keep ].append( lCase( id ) );
+        }
+        var title = "agents panel " & ( arguments.verb == "reset" ? "back to the installed agents" : arguments.verb & " " & arguments.ids.toList( " " ) );
+        var data = { added: c.added, removed: c.removed, file: choiceFile() };
+        if ( arguments.dry || !arguments.yes ) return new bxrig.util.Mutation( variables.out ).show( title, data, arguments.asJson, arguments.dry );
+        directoryCreate( getDirectoryFromPath( choiceFile() ), true, true );
+        fileWrite( choiceFile(), jsonSerialize( c ) & chr( 10 ) );
+        return variables.out.say( "ok", data, arguments.asJson, [ title, "added: " & ( c.added.len() ? c.added.toList( ", " ) : "none" ) & "  removed: " & ( c.removed.len() ? c.removed.toList( ", " ) : "none" ) ] );
+    }
     function readJson( file ) {
         var j = new bxrig.util.Json().read( arguments.file );
         return isStruct( j ) ? j : {};
@@ -101,8 +152,10 @@ class AiPanel {
     function data() {
         var agents = [];
         var tokens = 0;
+        var c = choices();
         for ( var a in new bxrig.AiAgents().all() ) {
             var row = { id: a.id, name: a.name, installed: installed( a.command ), accounts: [] };
+            if ( !shown( a.id, row.installed, c ) ) continue;
             // an agent that is installed has at least its default account; one that is not shows only its name
             if ( row.installed ) row.accounts = [ { name: "Default", plan: "", active: true, meters: [] } ];
             if ( row.installed ) {
@@ -112,7 +165,7 @@ class AiPanel {
             }
             agents.append( row );
         }
-        // installed agents first
+        // installed agents first (an agent you added that is not installed comes last)
         var sorted = agents.filter( function( x ) { return x.installed; } );
         for ( var x in agents ) if ( !x.installed ) sorted.append( x );
         var d = { agents: sorted };
@@ -124,6 +177,7 @@ class AiPanel {
     function run( asJson ) {
         var d = data();
         var lines = [];
+        if ( !d.agents.len() ) lines.append( "No coding agents installed (add one to the panel: bxrig ai panel add ID; see bxrig ai panel list)" );
         if ( structKeyExists( d, "tokens_today" ) ) lines.append( "Tokens today: " & d.tokens_today );
         for ( var a in d.agents ) {
             lines.append( a.name & ( a.installed ? "" : " (not installed)" ) );
