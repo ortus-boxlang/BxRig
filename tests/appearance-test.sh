@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # `bxrig appearance ...` with fake noctalia, hyprctl, fc-list, pacman and sudo. Usage: appearance-test.sh BINARY
 . "$(dirname "$0")/lib/harness.sh"
+export BXRIG_WALLPAPER_DIR="$root/assets/wallpapers" BXRIG_BASE_URL=http://127.0.0.1:9   # the theme wallpapers come from the checkout, never the network
 mkdir -p "$tmp/bin" "$tmp/home/Pictures/BxRig" "$tmp/fake/installed"; export LOG="$tmp/log"; : > "$LOG"
 for t in noctalia hyprctl; do printf '#!/usr/bin/env bash\necho "%s $*" >> "$LOG"\n' "$t" > "$tmp/bin/$t"; done
 printf '#!/usr/bin/env bash\necho "self $*" >> "$LOG"\n' > "$tmp/self"
@@ -94,9 +95,9 @@ run "$binary" appearance font iosevka --json | jq -e '.data.notes | map(test("gh
 grep -q '^# mine' "$tmp/cfg/ghostty/config" && grep -q 'CaskaydiaMono' "$tmp/cfg/ghostty/config" || fail 'your ghostty config was rewritten'
 
 # ---- backgrounds ----
-: > "$tmp/home/Pictures/BxRig/aurora.jpg"; : > "$tmp/home/Pictures/BxRig/notes.txt"
-run "$binary" appearance background list --json | jq -e '.data.images | map(.name) == ["aurora.jpg"]' >/dev/null || fail 'background list'
-: > "$LOG"; run "$binary" appearance background set aurora.jpg >/dev/null; has "noctalia msg wallpaper-set $tmp/home/Pictures/BxRig/aurora.jpg" || fail "background set: $(cat "$LOG")"
+: > "$tmp/home/Pictures/BxRig/nord.jpg"; : > "$tmp/home/Pictures/BxRig/notes.txt"
+run "$binary" appearance background list --json | jq -e '.data.images | map(.name) | (index("nord.jpg") != null) and (index("notes.txt") == null)' >/dev/null || fail 'background list'
+: > "$LOG"; run "$binary" appearance background set nord.jpg >/dev/null; has "noctalia msg wallpaper-set $tmp/home/Pictures/BxRig/nord.jpg" || fail "background set: $(cat "$LOG")"
 run "$binary" appearance background next >/dev/null; has 'noctalia msg wallpaper-next' || fail 'next'
 run "$binary" appearance background random >/dev/null; has 'noctalia msg wallpaper-random' || fail 'random'
 [[ "$(code "$binary" appearance background set nothing.png)" == 4 ]] || fail 'unknown image exits 4'

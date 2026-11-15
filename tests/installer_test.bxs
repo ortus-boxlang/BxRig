@@ -77,4 +77,21 @@ calls = [];
 h = inst.hasCommand( "sudo" );
 testkit.check( "hasCommand asks command -v (the tool is never run, so a tool without --version still counts as installed)", h && calls.len() == 1 && find( "command -v", calls[ 1 ] ) > 0 && !find( "--version", calls[ 1 ] ) );
 testkit.check( "hasCommand passes the name as an argument, not inside a shell string", find( "_ sudo", calls[ 1 ] ) > 0 );
+// a CachyOS-repository package off CachyOS comes from the AUR (aur_targets when the AUR name differs)
+// (the os-release is read once per Installer; this one is not CachyOS unless the test machine is)
+cachy = { id: "brave", source: "pacman", targets: [ "brave-bin" ], repo: "cachyos" };
+ls = { id: "localsend", source: "pacman", targets: [ "localsend" ], repo: "cachyos", aur_targets: [ "localsend-bin" ] };
+inst2 = new bxrig.Installer( runner );
+if ( !inst2.onCachyos() ) {
+ b = inst2.steps( [ app( "git", "pacman", [ "git" ] ), cachy, ls ], false );
+ testkit.check( "off CachyOS: cachyos-repo apps leave the pacman step", b.steps[1].ids.toList() == "git" );
+ testkit.check( "off CachyOS: they are AUR steps, with the AUR name when given", b.steps[2].commands[1].toList( " " ) == "yay -S --needed --noconfirm brave-bin" && b.steps[3].commands[1].toList( " " ) == "yay -S --needed --noconfirm localsend-bin" );
+}
+// one failed pacman transaction: every app again on its own; only the one that really fails is reported
+b = inst2.steps( [ app( "git", "pacman", [ "git" ] ), app( "nope", "pacman", [ "nope-pkg" ] ), app( "btop", "pacman", [ "btop" ] ) ], false );
+calls = []; failOn = "nope-pkg";
+r = inst2.run( b.steps );
+failOn = "";
+testkit.check( "retried one app at a time after the transaction failed", calls.len() == 4 && calls[ 2 ] == "sudo pacman -S --needed --noconfirm git" && calls[ 4 ] == "sudo pacman -S --needed --noconfirm btop" );
+testkit.check( "only the bad app failed", r.failed.len() == 1 && r.failed[1].id == "nope" && r.done.map( function( d ) { return d.id; } ).toList() == "git,btop" );
 testkit.done( "installer tests passed" );

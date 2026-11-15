@@ -236,6 +236,50 @@ class ThemeColors {
         return "[ColorScheme]" & nl() & "active_colors=" & line( active ) & nl() & "disabled_colors=" & line( disabled ) & nl() & "inactive_colors=" & line( inactive ) & nl();
     }
 
+    // A KDE colour scheme (~/.local/share/color-schemes/NAME.colors) from the palette, so Plasma follows the theme, not only dark or light.
+    function kdeColors( c, name ) {
+        var bg = arguments.c.background; var fg = arguments.c.foreground; var acc = arguments.c.accent;
+        var rgb = function( h ) { return toRgb( h ).toList( "," ); };
+        var light = isLight( arguments.c );
+        var view = light ? mix( bg, "##ffffff", 0.5 ) : mix( bg, "##000000", 0.15 );
+        var sets = {
+            "Window": { bg: bg, alt: mix( bg, fg, 0.05 ) },
+            "View": { bg: view, alt: mix( view, fg, 0.04 ) },
+            "Button": { bg: mix( bg, fg, 0.08 ), alt: mix( bg, fg, 0.12 ) },
+            "Tooltip": { bg: mix( bg, fg, 0.06 ), alt: mix( bg, fg, 0.10 ) },
+            "Header": { bg: mix( bg, fg, 0.04 ), alt: mix( bg, fg, 0.08 ) },
+            "Complementary": { bg: mix( bg, "##000000", light ? 0.05 : 0.25 ), alt: mix( bg, fg, 0.08 ) },
+            "Selection": { bg: acc, alt: mix( acc, bg, 0.3 ) }
+        };
+        var out = [ "[General]", "ColorScheme=" & arguments.name, "Name=" & arguments.name, "shadeSortColumn=true", "" ];
+        for ( var k in [ "Window", "View", "Button", "Tooltip", "Header", "Complementary", "Selection" ] ) {
+            var x = sets[ k ];
+            var f = k == "Selection" ? onColor( acc, arguments.c ) : fg;
+            out.append( "[Colors:" & k & "]" );
+            out.append( "BackgroundNormal=" & rgb( x.bg ) );
+            out.append( "BackgroundAlternate=" & rgb( x.alt ) );
+            out.append( "ForegroundNormal=" & rgb( f ) );
+            out.append( "ForegroundInactive=" & rgb( mix( f, x.bg, 0.40 ) ) );
+            out.append( "ForegroundActive=" & rgb( acc ) );
+            out.append( "ForegroundLink=" & rgb( arguments.c.color12 ) );
+            out.append( "ForegroundVisited=" & rgb( arguments.c.color13 ) );
+            out.append( "ForegroundNegative=" & rgb( arguments.c.color1 ) );
+            out.append( "ForegroundNeutral=" & rgb( arguments.c.color3 ) );
+            out.append( "ForegroundPositive=" & rgb( arguments.c.color2 ) );
+            out.append( "DecorationFocus=" & rgb( acc ) );
+            out.append( "DecorationHover=" & rgb( acc ) );
+            out.append( "" );
+        }
+        out.append( "[WM]" );
+        out.append( "activeBackground=" & rgb( mix( bg, fg, 0.04 ) ) );
+        out.append( "activeForeground=" & rgb( fg ) );
+        out.append( "inactiveBackground=" & rgb( bg ) );
+        out.append( "inactiveForeground=" & rgb( mix( fg, bg, 0.40 ) ) );
+        out.append( "activeBlend=" & rgb( acc ) );
+        out.append( "inactiveBlend=" & rgb( bg ) );
+        return out.toList( nl() ) & nl();
+    }
+
     function tmux( c ) {
         var bg = arguments.c.background; var fg = arguments.c.foreground; var acc = arguments.c.accent;
         var out = [ 'set -g status-style "bg=' & mix( bg, fg, 0.06 ) & ',fg=' & fg & '"',

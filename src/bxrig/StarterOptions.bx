@@ -5,7 +5,7 @@
 //   naturalScroll true | false                                touchpad scrolling direction (default false, traditional)
 //   layouts    keyboard layouts, e.g. [ "us-intl", "es" ]     (default [ "us" ]); two or more switch with Alt+Shift
 //   theme      dark | light | auto                            Noctalia colour mode
-//   wallpaper  box | grid | aurora | minimal                  the starting wallpaper
+//   wallpaper  a bundled theme name (bxrig, bxrig-light, ...)  the starting wallpaper (that theme's own); default follows theme: bxrig or bxrig-light
 class StarterOptions {
     function keyboards() {
         return {
@@ -19,10 +19,15 @@ class StarterOptions {
         };
     }
     function themes() { return [ "dark", "light", "auto" ]; }
-    function wallpapers() { return { box: "box.jpg", grid: "grid.jpg", aurora: "aurora.jpg", minimal: "minimal.png" }; }
+    // One wallpaper per bundled theme (assets/wallpapers/NAME.jpg), keyed by theme name.
+    function wallpapers() {
+        var out = {};
+        for ( var n in new bxrig.ThemeData().names() ) out[ n ] = n & ".jpg";
+        return out;
+    }
 
     function defaults() {
-        return { terminal: "ghostty", layout: "dwindle", workspaces: 4, naturalScroll: false, layouts: [ "us" ], theme: "dark", wallpaper: "box" };
+        return { terminal: "ghostty", layout: "dwindle", workspaces: 4, naturalScroll: false, layouts: [ "us" ], theme: "dark", wallpaper: "" };
     }
 
     // Defaults overlaid with the given values (empty or missing keep the default). Returns { value, errors }.
@@ -50,7 +55,9 @@ class StarterOptions {
             }
         }
         if ( structKeyExists( g, "theme" ) && len( g.theme ) ) { v.theme = g.theme; if ( !arrayFind( themes(), v.theme ) ) errors.append( "Unknown theme: " & v.theme & " (use dark, light, auto)" ); }
-        if ( structKeyExists( g, "wallpaper" ) && len( g.wallpaper ) ) { v.wallpaper = g.wallpaper; if ( !structKeyExists( wallpapers(), v.wallpaper ) ) errors.append( "Unknown wallpaper: " & v.wallpaper & " (use box, grid, aurora, minimal)" ); }
+        if ( structKeyExists( g, "wallpaper" ) && len( g.wallpaper ) ) { v.wallpaper = g.wallpaper; if ( !structKeyExists( wallpapers(), v.wallpaper ) ) errors.append( "Unknown wallpaper: " & v.wallpaper & " (use a theme name: " & structKeyArray( wallpapers() ).sort( "textnocase" ).toList( ", " ) & ")" ); }
+        // no wallpaper chosen: the default theme's own, light or dark
+        if ( !len( v.wallpaper ) ) v.wallpaper = v.theme == "light" ? "bxrig-light" : "bxrig";
         return { value: v, errors: errors };
     }
 

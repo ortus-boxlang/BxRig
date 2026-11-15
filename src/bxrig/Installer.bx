@@ -74,17 +74,39 @@ class Installer {
         ] } };
     }
 
+    // True on CachyOS (os-release ID; BXRIG_OS_RELEASE overrides the file for tests). Its own repository (repo: cachyos in the
+    // catalog) exists only there; elsewhere those packages come from the AUR under the same names.
+    function onCachyos() {
+        if ( !structKeyExists( variables, "cachy" ) ) {
+            variables.cachy = false;
+            var f = new bxrig.util.Env().named( "osRelease", "/etc/os-release" );
+            if ( fileExists( f ) ) for ( var line in listToArray( fileRead( f ), chr( 10 ) ) ) {
+                if ( left( line, 3 ) == "ID=" ) variables.cachy = lCase( replace( mid( line, 4, len( line ) ), '"', "", "all" ) ) == "cachyos";
+            }
+        }
+        return variables.cachy;
+    }
+
     // Builds the steps for the selected apps, in catalog order within each kind: pacman, aur, pkgbuild.
+    // The pacman step installs all its packages in one transaction; `pkgs` maps each app to its packages so a failed transaction
+    // can be retried one app at a time (see run).
     function steps( selected, asRoot, home = "" ) {
         var homeDir = len( home ) ? home : new bxrig.util.Env().named( "home", "" );
-        var pacmanIds = []; var pacmanTargets = [];
+        var pacmanIds = []; var pacmanTargets = []; var pkgs = {};
         var aur = []; var builds = []; var webs = []; var scripts = []; var blocked = [];
         for ( var app in selected ) {
             var targets = structKeyExists( app, "targets" ) ? app.targets : [];
-            if ( app.source == "pacman" ) {
+            var src = app.source;
+            // a CachyOS-repository package off CachyOS: the AUR (aur_targets when the AUR name differs)
+            if ( src == "pacman" && ( app.repo ?: "" ) == "cachyos" && !onCachyos() ) {
+                src = "aur";
+                if ( structKeyExists( app, "aur_targets" ) ) targets = app.aur_targets;
+            }
+            if ( src == "pacman" ) {
                 pacmanIds.append( app.id );
+                pkgs[ app.id ] = targets;
                 for ( var t in targets ) if ( !arrayFind( pacmanTargets, t ) ) pacmanTargets.append( t );
-            } else if ( app.source == "aur" ) {
+            } else if ( src == "aur" ) {
                 aur.append( { kind: "aur", ids: [ app.id ], commands: [ variables.aur.installArgv( targets ) ] } );
             } else if ( app.source == "pkgbuild" ) {
                 var built = pkgbuildStep( app );
@@ -103,7 +125,7 @@ class Installer {
         }
         var out = [];
         if ( pacmanIds.len() ) {
-            out.append( { kind: "pacman", ids: pacmanIds, commands: [ variables.pacman.installArgv( pacmanTargets, asRoot ) ] } );
+            out.append( { kind: "pacman", ids: pacmanIds, pkgs: pkgs, asRoot: asRoot, commands: [ variables.pacman.installArgv( pacmanTargets, asRoot ) ] } );
         }
         for ( var s in aur ) out.append( s );
         for ( var s in builds ) out.append( s );
@@ -130,6 +152,16 @@ class Installer {
             }
             if ( structKeyExists( step, "dir" ) ) {
                 try { if ( directoryExists( step.dir ) ) directoryDelete( step.dir, true ); } catch ( any e ) {}
+            }
+            // one pacman transaction failed (one unknown or conflicting package fails them all): each app again on its own,
+            // so only the apps that really cannot be installed are reported failed
+            if ( len( problem ) && step.kind == "pacman" && step.ids.len() > 1 && structKeyExists( step, "pkgs" ) ) {
+                for ( var id in step.ids ) {
+                    var one = variables.procs.exec( variables.pacman.installArgv( step.pkgs[ id ], step.asRoot ), 1800 );
+                    if ( one.timeout || one.exitCode != 0 ) failed.append( { id: id, source: "pacman", error: "pacman failed (exit " & ( one.timeout ? 124 : one.exitCode ) & ")" } );
+                    else done.append( { id: id, source: "pacman" } );
+                }
+                continue;
             }
             for ( var id in step.ids ) {
                 if ( len( problem ) ) failed.append( { id: id, source: step.kind, error: problem } );

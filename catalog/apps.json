@@ -3964,6 +3964,9 @@
       "targets": [
         "localsend"
       ],
+      "aur_targets": [
+        "localsend-bin"
+      ],
       "repo": "cachyos",
       "homepage": "https://github.com/localsend/localsend",
       "macos": "AirDrop",

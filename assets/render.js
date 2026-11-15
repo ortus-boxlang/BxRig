@@ -1,9 +1,9 @@
-// Renders every SVG in assets/ to PNG (wallpapers at 2560x1440, icon 256, logo 720x200). Usage: node assets/render.js [icons]
+// Renders every SVG in assets/ to PNG (icon 256, logo 720x200). Usage: node assets/render.js [icons]
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
 (async () => {
   const b = await chromium.launch();
-  const jobs = [['wallpapers/box', 2560, 1440], ['wallpapers/grid', 2560, 1440], ['wallpapers/aurora', 2560, 1440], ['wallpapers/minimal', 2560, 1440], ['logo', 720, 200]];
+  const jobs = [['logo', 720, 200]];
   const iconsOnly = process.argv[2] === 'icons';   // node assets/render.js icons: only the app icon PNGs
   for (const [name, w, h] of (iconsOnly ? [] : jobs)) {
     const p = await b.newPage({ viewport: { width: w, height: h } });

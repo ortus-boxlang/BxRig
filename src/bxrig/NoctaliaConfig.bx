@@ -35,7 +35,7 @@ class NoctaliaConfig {
     }
 
     // config.toml. home is the user's home directory (wallpaper paths are absolute).
-    function configToml( home, theme = "dark", wallpaper = "box" ) {
+    function configToml( home, theme = "dark", wallpaper = "bxrig" ) {
         var wpFile = new bxrig.StarterOptions().wallpapers()[ arguments.wallpaper ];
         var pics = arguments.home & "/Pictures/BxRig";
         return [
@@ -66,29 +66,45 @@ class NoctaliaConfig {
             'capsule_opacity = 0.9',
             'capsule_border = "outline_variant"',
             'start = ["launcher", "workspaces", "active_window"]',
-            'center = ["clock", "clock-lax", "clock-nyc", "clock-lon", "clock-mad", "media"]',
-            'end = ["tray", "network", "bluetooth", "volume", "battery", "notifications", "control-center"]',
+            'center = ["bxrig-world-clock", "clock", "media"]',
+            'end = ["bxrig-agents", "bxrig-themes", "tray", "network", "bluetooth", "volume", "battery", "notifications", "control-center"]',
             '',
-            '# World clock: more clocks beside the local one. Change the zones (IANA names) and labels to your teams.',
-            '[widget.clock-lax]',
+            '# The clock reads "Nov 5 - 15:44"; the globe before it opens the world clock (zones: bxrig time world set ZONE,ZONE --yes).',
+            '[widget.clock]',
             'type = "clock"',
-            'format = "LAX {:%H:%M}"',
-            'timezone = "America/Los_Angeles"',
+            'format = "{:%b %-d - %H:%M}"',
+            'tooltip_format = "{:%A, %B %-d, %Y}"',
             '',
-            '[widget.clock-nyc]',
-            'type = "clock"',
-            'format = "NYC {:%H:%M}"',
-            'timezone = "America/New_York"',
+            '[widget.bxrig-world-clock]',
+            'type = "bxrig/world-clock:bar"',
             '',
-            '[widget.clock-lon]',
-            'type = "clock"',
-            'format = "LON {:%H:%M}"',
-            'timezone = "Europe/London"',
+            '# Your coding agents and their limits, and the theme switcher (BxRig plugins in ~/.local/share/noctalia/plugins)',
+            '[widget.bxrig-agents]',
+            'type = "bxrig/agents:bar"',
             '',
-            '[widget.clock-mad]',
-            'type = "clock"',
-            'format = "MAD {:%H:%M}"',
-            'timezone = "Europe/Madrid"',
+            '[widget.bxrig-themes]',
+            'type = "bxrig/themes:bar"',
+            '',
+            '[plugins]',
+            'enabled = ["bxrig/world-clock", "bxrig/agents", "bxrig/themes"]',
+            '',
+            '# Notifications stack by app, newest at the screen edge, follow the theme (the bell in the bar toggles Do Not Disturb).',
+            '# Super+Alt+Comma acts on the newest one, Super+Shift+Comma shows them all.',
+            '[notification]',
+            'position = "top_right"',
+            'group_by_app = true',
+            'newest_on_edge = true',
+            'max_visible = 4',
+            'width = 380',
+            'border = true',
+            'border_color = "primary"',
+            'border_width = 1.0',
+            'colorize_icons = false',
+            'show_actions = true',
+            'show_app_name = true',
+            '',
+            '# Hot corners (bxrig hotcorners set top-left=overview ...): the pointer resting in a corner runs its action',
+            new bxrig.HotCorners( "" ).noctaliaToml().toList( chr( 10 ) ),
             '',
             '[wallpaper]',
             'enabled = true',
@@ -109,7 +125,7 @@ class NoctaliaConfig {
     }
 
     // The files bxrig manages for Noctalia, in the config service entry shape (name, target, mode, content).
-    function entries( cfgHome, home, theme = "dark", wallpaper = "box" ) {
+    function entries( cfgHome, home, theme = "dark", wallpaper = "bxrig" ) {
         return [
             { name: "noctalia", target: arguments.cfgHome & "/noctalia/config.toml", mode: "644", content: configToml( arguments.home, arguments.theme, arguments.wallpaper ) },
             { name: "noctalia-palette", target: arguments.cfgHome & "/noctalia/palettes/" & paletteName() & ".json", mode: "644", content: palette() }

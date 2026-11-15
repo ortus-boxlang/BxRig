@@ -58,10 +58,22 @@ class Theme {
         return out;
     }
 
-    // The wallpaper each bundled BxRig theme goes with (files in ~/Pictures/BxRig); other bundled themes keep your wallpaper.
+    // Every bundled theme has its own wallpaper: ~/Pictures/BxRig/NAME.jpg, fetched and checked by bxrig.Wallpapers when missing.
+    // "" when there is none (a theme without one, or offline with no local copy): then your wallpaper stays.
     function bundledWallpaper( name ) {
-        var m = { bxrig: "box.jpg", "bxrig-light": "minimal.png", "bxrig-midnight": "grid.jpg", "bxrig-cyan": "aurora.jpg", "bxrig-forest": "box.jpg" };
-        return structKeyExists( m, arguments.name ) ? variables.environ.home() & "/Pictures/BxRig/" & m[ arguments.name ] : "";
+        var w = new bxrig.Wallpapers( variables.proc.runner() );
+        return w.known( arguments.name ) ? w.target( arguments.name ) : "";
+    }
+    // The wallpaper to switch to: a bundled theme's own is fetched (and checked) when missing; "" when there is none.
+    function wallpaperFor( t ) {
+        var w = new bxrig.Wallpapers( variables.proc.runner() );
+        if ( arguments.t.origin != "user" && len( arguments.t.wallpaper ) && arguments.t.wallpaper == w.target( arguments.t.name ) ) return w.ensure( arguments.t.name );
+        return arguments.t.wallpaper;
+    }
+    // "tokyo-night" -> "Tokyo Night", "bxrig-light" -> "BxRig Light"
+    function label( name ) {
+        var words = listToArray( arguments.name, "-" ).map( function( x ) { return x == "bxrig" ? "BxRig" : uCase( left( x, 1 ) ) & mid( x, 2, len( x ) ); } );
+        return words.toList( " " );
     }
 
     // { found, name, origin, colorsText, neovimText, wallpaper }
@@ -126,8 +138,30 @@ class Theme {
         ];
         // Rofi reads config.rasi: a stub that imports the generated theme, written only when you have none.
         out.append( { name: "theme-rofi-config", target: cfg() & "/rofi/config.rasi", mode: "644", content: '@theme "' & d & '/rofi.rasi"' & chr( 10 ) } );
+        // Plasma: the theme's own colour scheme (applied by notify with plasma-apply-colorscheme)
+        out.append( { name: "theme-kde", target: variables.environ.xdgData( "color-schemes/BxRig.colors" ), mode: "644", content: variables.tc.kdeColors( arguments.c, "BxRig" ) } );
+        // btop only reads a theme named in btop.conf: the file is created when missing, otherwise only its color_theme line changes.
+        out.append( { name: "theme-btop-config", target: cfg() & "/btop/btop.conf", mode: "644", content: btopConfig( cfg() & "/btop/btop.conf" ) } );
         if ( len( arguments.neovimText ) ) out.append( { name: "theme-neovim", target: variables.config.stateDir() & "/current/theme/neovim.lua", mode: "644", content: arguments.neovimText } );
         return out;
+    }
+
+    // btop.conf with color_theme = "bxrig" and theme_background on: your file with those two lines set (or added), or a stub when you have none.
+    function btopConfig( path ) {
+        var want = { color_theme: '"bxrig"', theme_background: "True" };
+        if ( !fileExists( arguments.path ) ) return "# Created by `bxrig theme set`; btop adds its other settings on exit." & chr( 10 ) & 'color_theme = "bxrig"' & chr( 10 ) & "theme_background = True" & chr( 10 );
+        // Line by line (no regex): a line whose key, before the =, is one of ours is replaced; the rest is kept as it is.
+        var src = replace( fileRead( arguments.path ), chr( 13 ), "", "all" ).split( chr( 10 ) );
+        var lines = [];
+        var done = {};
+        for ( var line in src ) {
+            var key = trim( listFirst( line & " ", "=" ) );
+            if ( find( "=", line ) > 0 && structKeyExists( want, key ) ) { lines.append( key & " = " & want[ key ] ); done[ key ] = true; }
+            else lines.append( line );
+        }
+        while ( lines.len() > 0 && lines[ lines.len() ] == "" ) lines.deleteAt( lines.len() );
+        for ( var k in [ "color_theme", "theme_background" ] ) if ( !structKeyExists( done, k ) ) lines.append( k & " = " & want[ k ] );
+        return arrayToList( lines, chr( 10 ) ) & chr( 10 );
     }
 
     // What the managed hypr/bxrig.lua reads: the focused border runs from the accent to the bright cyan, unfocused is muted.
@@ -171,7 +205,10 @@ class Theme {
         for ( var n in names() ) {
             var t = find( n );
             var p = variables.tc.parse( t.colorsText );
-            var row = { name: n, origin: t.origin, valid: p.ok, light: p.ok ? variables.tc.isLight( p.colors ) : false, current: n == cur };
+            var row = { name: n, label: label( n ), origin: t.origin, valid: p.ok, light: p.ok ? variables.tc.isLight( p.colors ) : false, current: n == cur, wallpaper: t.wallpaper };
+            // a screenshot of the theme, when one is there (the theme switcher shows the wallpaper otherwise)
+            var pv = variables.environ.data( "theme-previews/" & n & ".jpg" );
+            if ( fileExists( pv ) ) row.preview = pv;
             rows.append( row );
             lines.append( ( row.current ? "* " : "  " ) & n & "  (" & t.origin & ", " & ( !p.ok ? "invalid" : ( row.light ? "light" : "dark" ) ) & ")" );
         }
@@ -201,8 +238,6 @@ class Theme {
         if ( fileExists( tm ) && !findNoCase( "bxrig/theme/tmux.conf", fileRead( tm ) ) ) out.append( "tmux: add `source-file " & d & "/tmux.conf` to " & tm & " to follow the theme" );
         var rc = cfg() & "/rofi/config.rasi";
         if ( fileExists( rc ) && !findNoCase( "bxrig/theme/rofi.rasi", fileRead( rc ) ) ) out.append( 'rofi: add `@theme "' & d & '/rofi.rasi"` to ' & rc & " to follow the theme" );
-        var bt = cfg() & "/btop/btop.conf";
-        if ( fileExists( bt ) && !reFind( 'color_theme *= *"?bxrig', fileRead( bt ) ) ) out.append( 'btop: set color_theme = "bxrig" in ' & bt );
         return out;
     }
 
@@ -224,8 +259,17 @@ class Theme {
             }
         }
         if ( new bxrig.util.Desktop().inPlasma() && variables.proc.has( "plasma-apply-colorscheme" ) ) {
-            var kp = variables.proc.exec( [ "plasma-apply-colorscheme", arguments.mode == "light" ? "BreezeLight" : "BreezeDark" ], 30 );
+            // the theme's own scheme (BxRig.colors); Plasma reloads a scheme only when the name changes, so it goes through Breeze first
+            variables.proc.exec( [ "plasma-apply-colorscheme", arguments.mode == "light" ? "BreezeLight" : "BreezeDark" ], 30 );
+            var kp = variables.proc.exec( [ "plasma-apply-colorscheme", "BxRig" ], 30 );
             out.plasma = kp.exitCode == 0 ? "applied" : "failed";
+            // the desktop and the lock screen show the theme's wallpaper too
+            if ( len( arguments.wallpaper ) && fileExists( arguments.wallpaper ) ) {
+                if ( variables.proc.has( "plasma-apply-wallpaperimage" ) ) variables.proc.exec( [ "plasma-apply-wallpaperimage", arguments.wallpaper ], 30 );
+                if ( variables.proc.has( "kwriteconfig6" ) ) {
+                    for ( var key in [ "Image", "PreviewImage" ] ) variables.proc.exec( [ "kwriteconfig6", "--file", "kscreenlockerrc", "--group", "Greeter", "--group", "Wallpaper", "--group", "org.kde.image", "--group", "General", "--key", key, "file://" & arguments.wallpaper ], 15 );
+                }
+            }
         }
         out.gtk = "skipped";
         if ( variables.proc.has( "gsettings" ) ) {
@@ -248,7 +292,7 @@ class Theme {
         var st = readState();
         var stateMode = len( arguments.mode ) ? arguments.mode : st.mode;
         var m = resolveMode( stateMode, p.colors );
-        var wall = arguments.keepWallpaper ? "" : t.wallpaper;
+        var wall = arguments.keepWallpaper ? "" : wallpaperFor( t );
         var entries = files( p.colors, t.neovimText );
         var data = { theme: t.name, origin: t.origin, light: variables.tc.isLight( p.colors ), mode: stateMode, applied_mode: m, wallpaper: wall, files: entries.map( function( e ) { return e.target; } ) };
         if ( arguments.dry ) return variables.out.plan( "theme " & t.name & " (" & ( data.light ? "light" : "dark" ) & ", mode " & m & ")", data, arguments.asJson, true, [ "Files: " & entries.map( function( e ) { return e.target; } ).toList( ", " ) ] );

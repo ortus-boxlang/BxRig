@@ -392,6 +392,12 @@ if [[ "$mode" == --install-binary ]]; then
   [[ "$(id -u)" != 0 ]] || { echo "Run as a regular user; no sudo is needed" >&2; exit 1; }
   need_manifest
   work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
+  # The theme wallpapers travel in this bundle (not in the binary): copied for bxrig to pick up (it checks each one's SHA-256).
+  copy_wallpapers() {
+    local src="$root/assets/wallpapers" dest="${XDG_DATA_HOME:-$HOME/.local/share}/bxrig/wallpapers"
+    compgen -G "$src/*.jpg" >/dev/null || return 0
+    mkdir -p "$dest" && cp -f "$src"/*.jpg "$dest"/ && echo "Theme wallpapers ready in $dest"
+  }
   installed="$BIN_DIR/bxrig"
   check_binary() {  # PATH -> prints its version line; fails unless it identifies itself as BxRig
     local out; out="$("$1" version 2>&1 | head -n 1)" || true
@@ -402,13 +408,14 @@ if [[ "$mode" == --install-binary ]]; then
     [[ -f "$binary_arg" && -x "$binary_arg" && ! -L "$binary_arg" ]] || { echo "--binary must be an executable regular file (not a symlink): $binary_arg" >&2; exit 1; }
     candidate="$binary_arg"
     new_version="$(check_binary "$candidate")" || exit 1
-    if [[ -f "$installed" ]] && cmp -s "$candidate" "$installed" && (( ! force )); then echo "Nothing to do: $installed is identical ($new_version)."; exit 0; fi
+    if [[ -f "$installed" ]] && cmp -s "$candidate" "$installed" && (( ! force )); then echo "Nothing to do: $installed is identical ($new_version)."; copy_wallpapers; exit 0; fi
   else
     src="$root/src/Main.bx"
     [[ -n "$root" && -f "$src" ]] || { echo "Source not found ($src). Run this script from a BxRig checkout, or pass --binary PATH." >&2; exit 1; }
-    want="$(grep -m1 -oE 'BxRig [0-9][0-9A-Za-z.+-]*' "$src" || true)"
+    # the version is generated from box.json into src/bxrig/util/Version.bx; bxrig prints it as "BxRig VERSION"
+    want="$(sed -n 's/.*return "\([^"]*\)".*/BxRig \1/p' "$root/src/bxrig/util/Version.bx" 2>/dev/null | head -n 1 || true)"
     if (( ! force )) && [[ -x "$installed" && -n "$want" ]] && [[ "$(check_binary "$installed" 2>/dev/null || true)" == "$want" ]]; then
-      echo "Nothing to do: $installed is already $want (use --force to rebuild)."; exit 0
+      echo "Nothing to do: $installed is already $want (use --force to rebuild)."; copy_wallpapers; exit 0
     fi
     [[ "$(tool_version matchbox)" == "$MATCHBOX_VERSION" ]] || { echo "MatchBox $MATCHBOX_VERSION is required (found: $(tool_version matchbox || true)). Run install.sh toolchains --yes first." >&2; exit 1; }
     cp -r "$root/src" "$work/src"; chmod -R u+rwX,go+rX "$work/src"
@@ -426,6 +433,7 @@ if [[ "$mode" == --install-binary ]]; then
   final="$(check_binary "$installed")" || exit 1
   echo "Installed $installed ($final)"
   case ":$PATH:" in *":$BIN_DIR:"*) ;; *) echo "Note: $BIN_DIR is not on your PATH (see the packages stage for the line to add)." ;; esac
+  copy_wallpapers
   exit 0
 fi
 

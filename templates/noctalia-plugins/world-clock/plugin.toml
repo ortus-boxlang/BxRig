@@ -1,0 +1,37 @@
+# BxRig World Clock: a globe in the bar that opens a card-per-zone panel.
+# All data comes from `bxrig time world --json`, polled every 30 s while the
+# panel is open. Open the panel from a keybind with:
+#   noctalia msg panel-toggle bxrig/world-clock:panel
+
+id = "bxrig/world-clock"
+name = "World Clock (BxRig)"
+version = "1.0.0"
+plugin_api = 43
+author = "bxrig"
+license = "MIT"
+dependencies = ["bxrig"]
+tags = ["clock", "time", "bxrig"]
+icon = "world"
+description = "World clock cards fed by bxrig: local time, zone offsets and where each zone is in its day."
+
+# Plugin-level so the bar widget and the panel both see it.
+[[setting]]
+key = "command"
+type = "string"
+label_key = "settings.command.label"
+description_key = "settings.command.description"
+default = "bxrig"
+
+[[widget]]
+id = "bar"
+entry = "bar.luau"
+
+[[panel]]
+id = "panel"
+entry = "panel.luau"
+width = 380
+height = "content"
+max_height = 720
+placement = "attached"
+position = "auto"
+open_near_click = true

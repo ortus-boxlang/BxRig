@@ -202,7 +202,7 @@
     {
       "id": "look",
       "title": "Look",
-      "intro": "Dark with the BoxLang greens, or your own taste.",
+      "intro": "Your colors, your wallpaper, your bar. Every theme brings its own wallpaper.",
       "questions": [
         {
           "type": "choice",
@@ -229,43 +229,35 @@
         },
         {
           "type": "choice",
-          "id": "wallpaper",
-          "label": "Wallpaper",
-          "default": "box",
-          "options": [
-            {
-              "value": "box",
-              "label": "BxRig",
-              "description": "The BoxLang icon on a soft dark glow."
-            },
-            {
-              "value": "grid",
-              "label": "Grid",
-              "description": "A perspective grid in the brand gradient."
-            },
-            {
-              "value": "aurora",
-              "label": "Aurora",
-              "description": "Green and cyan light on dark."
-            },
-            {
-              "value": "minimal",
-              "label": "Minimal",
-              "description": "Almost nothing. The mono icon."
-            }
-          ]
-        },
-        {
-          "type": "choice",
           "id": "theme_name",
           "label": "Color theme",
           "default": "bxrig",
-          "help": "Colors the shell, terminals, btop, Neovim and window borders. Change it any time: bxrig theme set NAME. Dark/Light above is overridden by the theme unless you chose Auto.",
+          "help": "Colors the shell, terminals, btop, Neovim, window borders and the lock screen, and sets the theme's own wallpaper. Change it any time: bxrig theme set NAME, or the theme switcher. Dark/Light above is overridden by the theme unless you chose Auto.",
           "options": [
             {
               "value": "bxrig",
               "label": "BxRig",
-              "description": "Catppuccin Frappe neutrals with the BoxLang greens (the default)."
+              "description": "Frappe neutrals with the BoxLang greens (the default)."
+            },
+            {
+              "value": "bxrig-midnight",
+              "label": "BxRig Midnight",
+              "description": "Near-black with a green aurora, easy on OLED screens."
+            },
+            {
+              "value": "bxrig-cyan",
+              "label": "BxRig Cyan",
+              "description": "Deep ocean blues with BoxLang cyan."
+            },
+            {
+              "value": "bxrig-forest",
+              "label": "BxRig Forest",
+              "description": "Night forest greens."
+            },
+            {
+              "value": "bxrig-ember",
+              "label": "BxRig Ember",
+              "description": "Charcoal with glowing ember orange."
             },
             {
               "value": "bxrig-light",
@@ -273,69 +265,252 @@
               "description": "Latte neutrals with deeper greens."
             },
             {
-              "value": "bxrig-midnight",
-              "label": "BxRig Midnight",
-              "description": "Near-black, easy on OLED screens."
+              "value": "bxrig-dawn",
+              "label": "BxRig Dawn",
+              "description": "Warm cream with coral sunrise."
             },
             {
-              "value": "bxrig-cyan",
-              "label": "BxRig Cyan",
-              "description": "Macchiato neutrals with the BoxLang cyan accent."
+              "value": "bxrig-paper",
+              "label": "BxRig Paper",
+              "description": "Paper white with ink blue."
             },
             {
-              "value": "bxrig-forest",
-              "label": "BxRig Forest",
-              "description": "Muted, low-contrast greens."
+              "value": "bxrig-mint",
+              "label": "BxRig Mint",
+              "description": "Clean white with glacier teal."
+            },
+            {
+              "value": "bxrig-sky",
+              "label": "BxRig Sky",
+              "description": "Pale sky with bright azure."
             },
             {
               "value": "catppuccin",
               "label": "Catppuccin",
-              "description": "Mocha. From Omarchy."
+              "description": "Mocha: lavender and blue on deep navy."
             },
             {
               "value": "catppuccin-latte",
               "label": "Catppuccin Latte",
-              "description": "Light. From Omarchy."
-            },
-            {
-              "value": "tokyo-night",
-              "label": "Tokyo Night",
-              "description": "From Omarchy."
-            },
-            {
-              "value": "gruvbox",
-              "label": "Gruvbox",
-              "description": "From Omarchy."
-            },
-            {
-              "value": "nord",
-              "label": "Nord",
-              "description": "From Omarchy."
-            },
-            {
-              "value": "rose-pine",
-              "label": "Rose Pine",
-              "description": "Dawn, light. From Omarchy."
-            },
-            {
-              "value": "kanagawa",
-              "label": "Kanagawa",
-              "description": "From Omarchy."
+              "description": "The light Catppuccin."
             },
             {
               "value": "everforest",
               "label": "Everforest",
-              "description": "From Omarchy."
-            },
-            {
-              "value": "matte-black",
-              "label": "Matte Black",
-              "description": "From Omarchy."
+              "description": "Muted forest greens."
             },
             {
               "value": "flexoki-light",
               "label": "Flexoki Light",
-              "description": "From Omarchy."
+              "description": "Warm paper and ink."
+            },
+            {
+              "value": "gruvbox",
+              "label": "Gruvbox",
+              "description": "Retro warm browns and orange."
+            },
+            {
+              "value": "kanagawa",
+              "label": "Kanagawa",
+              "description": "Ink and wave blues."
+            },
+            {
+              "value": "matte-black",
+              "label": "Matte Black",
+              "description": "Black with an amber accent."
+            },
+            {
+              "value": "nord",
+              "label": "Nord",
+              "description": "Arctic frost blues."
+            },
+            {
+              "value": "rose-pine",
+              "label": "Rose Pine",
+              "description": "Soft rose and pine, light."
+            },
+            {
+              "value": "tokyo-night",
+              "label": "Tokyo Night",
+              "description": "Neon blues and purples."
+            }
+          ]
+        },
+        {
+          "type": "confirm",
+          "id": "dock",
+          "label": "Dock",
+          "default": true,
+          "help": "A dock of your apps at the bottom of the screen (Noctalia). Change it later: bxrig appearance dock show|hide.",
+          "when": {
+            "id": "desktops",
+            "in": [
+              "hyprland",
+              "both"
+            ]
+          }
+        },
+        {
+          "type": "choice",
+          "id": "bar_position",
+          "label": "Where the BxRig bar sits",
+          "default": "top",
+          "when": {
+            "id": "desktops",
+            "in": [
+              "hyprland",
+              "both"
+            ]
+          },
+          "options": [
+            {
+              "value": "top",
+              "label": "Top",
+              "description": "Like macOS."
+            },
+            {
+              "value": "bottom",
+              "label": "Bottom",
+              "description": "Like Windows."
+            },
+            {
+              "value": "left",
+              "label": "Left",
+              "description": "A vertical bar on the left."
+            },
+            {
+              "value": "right",
+              "label": "Right",
+              "description": "A vertical bar on the right."
+            }
+          ]
+        },
+        {
+          "type": "confirm",
+          "id": "world_clock",
+          "label": "World clock",
+          "default": true,
+          "help": "A globe before the clock (Nov 5 - 15:44). Click it for every time zone you follow."
+        },
+        {
+          "type": "multi",
+          "id": "world_clock_zones",
+          "label": "Which time zones",
+          "default": [
+            "America/Los_Angeles",
+            "America/New_York",
+            "Europe/London",
+            "Europe/Madrid"
+          ],
+          "when": {
+            "id": "world_clock",
+            "equals": "true"
+          },
+          "help": "Change them later: bxrig time world add|remove ZONE.",
+          "options": [
+            {
+              "value": "America/Los_Angeles",
+              "label": "Los Angeles"
+            },
+            {
+              "value": "America/Denver",
+              "label": "Denver"
+            },
+            {
+              "value": "America/Chicago",
+              "label": "Chicago"
+            },
+            {
+              "value": "America/New_York",
+              "label": "New York"
+            },
+            {
+              "value": "America/Toronto",
+              "label": "Toronto"
+            },
+            {
+              "value": "America/Mexico_City",
+              "label": "Mexico City"
+            },
+            {
+              "value": "America/Bogota",
+              "label": "Bogota"
+            },
+            {
+              "value": "America/Sao_Paulo",
+              "label": "Sao Paulo"
+            },
+            {
+              "value": "America/Argentina/Buenos_Aires",
+              "label": "Buenos Aires"
+            },
+            {
+              "value": "Europe/London",
+              "label": "London"
+            },
+            {
+              "value": "Europe/Madrid",
+              "label": "Madrid"
+            },
+            {
+              "value": "Europe/Paris",
+              "label": "Paris"
+            },
+            {
+              "value": "Europe/Berlin",
+              "label": "Berlin"
+            },
+            {
+              "value": "Europe/Amsterdam",
+              "label": "Amsterdam"
+            },
+            {
+              "value": "Europe/Copenhagen",
+              "label": "Copenhagen"
+            },
+            {
+              "value": "Europe/Helsinki",
+              "label": "Helsinki"
+            },
+            {
+              "value": "Africa/Johannesburg",
+              "label": "Johannesburg"
+            },
+            {
+              "value": "Asia/Dubai",
+              "label": "Dubai"
+            },
+            {
+              "value": "Asia/Kolkata",
+              "label": "India"
+            },
+            {
+              "value": "Asia/Singapore",
+              "label": "Singapore"
+            },
+            {
+              "value": "Asia/Shanghai",
+              "label": "Shanghai"
+            },
+            {
+              "value": "Asia/Tokyo",
+              "label": "Tokyo"
+            },
+            {
+              "value": "Australia/Sydney",
+              "label": "Sydney"
+            },
+            {
+              "value": "Australia/Brisbane",
+              "label": "Brisbane"
+            },
+            {
+              "value": "Pacific/Auckland",
+              "label": "Auckland"
+            },
+            {
+              "value": "UTC",
+              "label": "UTC"
             }
           ]
         }
@@ -464,6 +639,187 @@
           "label": "AirPlay receiver",
           "default": false,
           "help": "Lets your iPhone or Mac cast to this machine (UxPlay)."
+        },
+        {
+          "type": "info",
+          "label": "Hot corners",
+          "help": "Move the pointer into a corner to run an action. Change them later: bxrig hotcorners set top-left overview."
+        },
+        {
+          "type": "choice",
+          "id": "hot_corner_tl",
+          "label": "Top-left corner",
+          "default": "overview",
+          "options": [
+            {
+              "value": "none",
+              "label": "Nothing"
+            },
+            {
+              "value": "overview",
+              "label": "Overview",
+              "description": "All windows at a glance."
+            },
+            {
+              "value": "notifications",
+              "label": "Notifications",
+              "description": "The notification history."
+            },
+            {
+              "value": "desktop",
+              "label": "Show desktop",
+              "description": "Hide every window."
+            },
+            {
+              "value": "lock",
+              "label": "Lock screen"
+            },
+            {
+              "value": "launcher",
+              "label": "App launcher"
+            },
+            {
+              "value": "agents",
+              "label": "Agents panel",
+              "description": "Your coding agents and their limits."
+            },
+            {
+              "value": "themes",
+              "label": "Theme switcher"
+            }
+          ]
+        },
+        {
+          "type": "choice",
+          "id": "hot_corner_tr",
+          "label": "Top-right corner",
+          "default": "notifications",
+          "options": [
+            {
+              "value": "none",
+              "label": "Nothing"
+            },
+            {
+              "value": "overview",
+              "label": "Overview",
+              "description": "All windows at a glance."
+            },
+            {
+              "value": "notifications",
+              "label": "Notifications",
+              "description": "The notification history."
+            },
+            {
+              "value": "desktop",
+              "label": "Show desktop",
+              "description": "Hide every window."
+            },
+            {
+              "value": "lock",
+              "label": "Lock screen"
+            },
+            {
+              "value": "launcher",
+              "label": "App launcher"
+            },
+            {
+              "value": "agents",
+              "label": "Agents panel",
+              "description": "Your coding agents and their limits."
+            },
+            {
+              "value": "themes",
+              "label": "Theme switcher"
+            }
+          ]
+        },
+        {
+          "type": "choice",
+          "id": "hot_corner_bl",
+          "label": "Bottom-left corner",
+          "default": "desktop",
+          "options": [
+            {
+              "value": "none",
+              "label": "Nothing"
+            },
+            {
+              "value": "overview",
+              "label": "Overview",
+              "description": "All windows at a glance."
+            },
+            {
+              "value": "notifications",
+              "label": "Notifications",
+              "description": "The notification history."
+            },
+            {
+              "value": "desktop",
+              "label": "Show desktop",
+              "description": "Hide every window."
+            },
+            {
+              "value": "lock",
+              "label": "Lock screen"
+            },
+            {
+              "value": "launcher",
+              "label": "App launcher"
+            },
+            {
+              "value": "agents",
+              "label": "Agents panel",
+              "description": "Your coding agents and their limits."
+            },
+            {
+              "value": "themes",
+              "label": "Theme switcher"
+            }
+          ]
+        },
+        {
+          "type": "choice",
+          "id": "hot_corner_br",
+          "label": "Bottom-right corner",
+          "default": "lock",
+          "options": [
+            {
+              "value": "none",
+              "label": "Nothing"
+            },
+            {
+              "value": "overview",
+              "label": "Overview",
+              "description": "All windows at a glance."
+            },
+            {
+              "value": "notifications",
+              "label": "Notifications",
+              "description": "The notification history."
+            },
+            {
+              "value": "desktop",
+              "label": "Show desktop",
+              "description": "Hide every window."
+            },
+            {
+              "value": "lock",
+              "label": "Lock screen"
+            },
+            {
+              "value": "launcher",
+              "label": "App launcher"
+            },
+            {
+              "value": "agents",
+              "label": "Agents panel",
+              "description": "Your coding agents and their limits."
+            },
+            {
+              "value": "themes",
+              "label": "Theme switcher"
+            }
+          ]
         }
       ]
     },
@@ -1428,6 +1784,29 @@
               "value": "none",
               "label": "None",
               "description": "Skip dictation."
+            }
+          ]
+        },
+        {
+          "type": "choice",
+          "id": "presentations",
+          "label": "Presentations",
+          "default": "hype",
+          "options": [
+            {
+              "value": "hype",
+              "label": "Hype",
+              "description": "Slides from Markdown, exports PDF and PowerPoint (Omarchy's)."
+            },
+            {
+              "value": "onlyoffice",
+              "label": "ONLYOFFICE",
+              "description": "Full office suite with a PowerPoint-style editor."
+            },
+            {
+              "value": "none",
+              "label": "None",
+              "description": ""
             }
           ]
         },

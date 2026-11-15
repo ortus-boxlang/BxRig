@@ -39,6 +39,10 @@ class Editor {
     }
 
     function neoTree() { return "lazyvim.plugins.extras.editor.neo-tree"; }
+    // A lazyvim.json without "version" is LazyVim's oldest format: LazyVim prefixes every extra with lazyvim.plugins.extras. when it
+    // migrates it, so there the extra is written short. The doubled name such a migration made of the long one is repaired.
+    function neoTreeShort() { return "editor.neo-tree"; }
+    function neoTreeDoubled() { return "lazyvim.plugins.extras.lazyvim.plugins.extras.editor.neo-tree"; }
 
     // Writes entries: missing, clean and outdated files are written; drifted (you changed them) are kept unless force.
     // Returns { written, kept, failed } (entry names).
@@ -59,8 +63,12 @@ class Editor {
         var j = {};
         if ( fileExists( f ) ) { try { j = jsonDeserialize( fileRead( f ) ); } catch ( any e ) { return false; } }
         var extras = structKeyExists( j, "extras" ) && isArray( j.extras ) ? j.extras : [];
-        if ( arrayFind( extras, neoTree() ) ) return false;
-        extras.append( neoTree() );
+        var want = structKeyExists( j, "version" ) ? neoTree() : neoTreeShort();
+        var drop = [ neoTree(), neoTreeShort(), neoTreeDoubled() ].filter( function( x ) { return x != want; } );
+        var kept = extras.filter( function( x ) { return !arrayFind( drop, x ); } );
+        if ( kept.len() == extras.len() && arrayFind( extras, want ) ) return false;
+        extras = kept;
+        if ( !arrayFind( extras, want ) ) extras.append( want );
         j.extras = extras;
         fileWrite( f, jsonSerialize( j ) & chr( 10 ) );
         return true;

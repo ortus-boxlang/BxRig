@@ -11,7 +11,7 @@ ai() { run "$binary" ai "$@"; }
 printf '{"backend":"file"}\n' > "$tmp/cfg/bxrig/secrets.json"
 
 # list: only claude is "installed" (a fake on PATH); nothing is the default yet
-ai list --json | jq -e '(.data.agents | length) == 4 and (.data.agents[0].id == "claude-code") and .data.agents[0].installed == true and (.data.agents[1].installed == false) and .data.default == ""' >/dev/null || fail "list: $(ai list --json)"
+ai list --json | jq -e '(.data.agents | length) == 10 and (.data.agents[0].id == "claude-code") and .data.agents[0].installed == true and (.data.agents[1].installed == false) and .data.default == ""' >/dev/null || fail "list: $(ai list --json)"
 ai list | grep -q 'claude-code.*installed' || fail 'list text'
 
 # default: unknown 4, not installed 4, plan 2, apply 0, show
@@ -37,4 +37,17 @@ rm "$tmp/cfg/xdg-terminals.list"; rm "$tmp/bin/kitty"
 ai launch --dry-run --json | jq -e '.data.terminal == "ghostty"' >/dev/null || fail 'without a list, the first installed terminal is used'
 rm "$tmp/cfg/bxrig/ai.json"
 [[ "$(code "$binary" ai launch)" == 4 ]] || fail 'no default and no id exits 4'
+
+# panel: only installed agents (claude), then add and remove by hand, reset back
+ai panel --json | jq -e '[.data.agents[].id] == ["claude-code"]' >/dev/null || fail "panel shows only installed agents: $(ai panel --json)"
+[[ "$(code "$binary" ai panel add nope --yes)" == 2 ]] || fail 'an unknown agent id exits 2'
+[[ "$(code "$binary" ai panel add codex-cli)" == 2 ]] || fail 'add without --yes exits 2'
+[[ ! -e "$tmp/cfg/bxrig/agents-panel.json" ]] || fail 'the plan wrote the choice'
+ai panel add codex-cli --yes >/dev/null
+ai panel --json | jq -e '[.data.agents[].id] == ["claude-code","codex-cli"] and (.data.agents[1].installed == false)' >/dev/null || fail "an added agent shows, after the installed ones: $(ai panel --json)"
+ai panel remove claude-code --yes >/dev/null
+ai panel --json | jq -e '[.data.agents[].id] == ["codex-cli"]' >/dev/null || fail 'a removed agent is hidden even when installed'
+ai panel list --json | jq -e '(.data.agents | length) == 10 and (.data.agents[] | select(.id == "claude-code") | .installed and .removed and (.shown | not))' >/dev/null || fail "list: $(ai panel list --json)"
+ai panel reset --yes >/dev/null
+ai panel --json | jq -e '[.data.agents[].id] == ["claude-code"]' >/dev/null || fail 'reset: installed agents only'
 echo "ai-test: ok"

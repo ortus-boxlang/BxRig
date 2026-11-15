@@ -142,6 +142,12 @@ class {
           if ( setupSub == "undo" && p.len() == 3 && p[3] == "xremap" ) {
            CLIExit( st.undoXremap( setupYes, setupDry, asJson ) );
           }
+          if ( setupSub == "boot" && p.len() <= 3 ) {
+           CLIExit( new bxrig.BootSplash( cli ).run( p.len() == 3 ? p[3] : "", setupYes, setupDry, asJson ) );
+          }
+          if ( setupSub == "undo" && p.len() == 3 && p[3] == "boot" ) {
+           CLIExit( new bxrig.BootSplash( cli ).run( "undo", setupYes, setupDry, asJson ) );
+          }
           println( new bxrig.CommandSpec().usage( "setup" ) );
           CLIExit( xit.usage() );
           break;
@@ -400,6 +406,12 @@ class {
           if ( structKeyExists( args.options, "list" ) ) tmWords.append( "--list" );
           CLIExit( new bxrig.Time( cli ).run( tmWords, structKeyExists( args.options, "dry-run" ), structKeyExists( args.options, "yes" ), asJson ) );
           break;
+         case "hotcorners":
+          // Hot corners: an action per screen corner (Noctalia on Hyprland, KWin screen edges on Plasma).
+          hcWords = [];
+          for ( hci = 2; hci <= p.len(); hci++ ) hcWords.append( p[ hci ] );
+          CLIExit( new bxrig.HotCorners( cli ).run( hcWords, structKeyExists( args.options, "dry-run" ), structKeyExists( args.options, "yes" ), asJson ) );
+          break;
          case "toggle":
          case "dns":
          case "kernel":
@@ -617,6 +629,13 @@ class {
           if ( aiSub == "list" && p.len() == 2 ) CLIExit( ai.list( asJson ) );
           if ( aiSub == "default" && p.len() <= 3 ) CLIExit( ai.setDefault( p.len() == 3 ? p[3] : "", structKeyExists( args.options, "yes" ), asJson ) );
           if ( aiSub == "launch" && p.len() <= 3 ) CLIExit( ai.launch( p.len() == 3 ? p[3] : "", structKeyExists( args.options, "dry-run" ), asJson ) );
+          if ( aiSub == "panel" && p.len() == 2 ) CLIExit( new bxrig.AiPanel( cli ).run( asJson ) );
+          if ( aiSub == "panel" && p.len() == 3 && p[3] == "list" ) CLIExit( new bxrig.AiPanel( cli ).listCmd( asJson ) );
+          if ( aiSub == "panel" && p.len() >= 3 && ( p[3] == "add" || p[3] == "remove" || p[3] == "reset" ) ) {
+            aiIds = [];
+            for ( aiI = 4; aiI <= p.len(); aiI++ ) aiIds.append( p[ aiI ] );
+            CLIExit( new bxrig.AiPanel( cli ).changeCmd( p[3], aiIds, structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
+          }
           if ( aiSub == "shell" && p.len() <= 3 ) CLIExit( new bxrig.AiShell( cli ).run( p.len() == 3 ? p[3] : "toggle", args.options.backend ?: "", structKeyExists( args.options, "dry-run" ), asJson ) );
           if ( aiSub == "session" ) {
             aiSes = new bxrig.AiSession( cli );

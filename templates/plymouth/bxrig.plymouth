@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=BxRig
+Description=The BxRig laptop fading in over a soft BoxLang glow, with a row of dots while the system boots.
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/bxrig
+ScriptFile=/usr/share/plymouth/themes/bxrig/bxrig.script

@@ -1,0 +1,12 @@
+// A JSON file read in one place: the parsed value, or the fallback when the file is missing or not valid JSON.
+class Json {
+    function read( path, fallback = {} ) {
+        if ( !fileExists( arguments.path ) ) return arguments.fallback;
+        try {
+            var text = fileRead( arguments.path );
+            return jsonDeserialize( text );
+        } catch ( any e ) {
+            return arguments.fallback;
+        }
+    }
+}
