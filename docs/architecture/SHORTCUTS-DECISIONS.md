@@ -59,3 +59,27 @@ Two styles: **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys for 
 5. r10: what should plain `Print` do? Implemented as the region screenshot, like Mac `Super+Shift+4`.
 6. `Alt+Space` (dictation) on a PC keyboard with the Alt/Win swap is the physical `Win+Space`. Fine?
 7. Old starter files: a `hyprland.lua` written before this change still holds the binds that now live in `bxrig.lua`. They fire twice until those lines are deleted; `bxrig keys conflicts` lists them.
+
+## Class API (written before the code)
+
+One table, two styles, renderers that only read the table. Quirks respected: `compare()` for exact-case strings, `var me = this` before a closure, no closure calls a class method, no `extends`.
+
+```
+KeyStyle                        // ~/.config/bxrig/keystyle.json: { style: traditional|mac, keyboard: pc|apple, swap: bool }
+  read() -> { style, keyboard, swap }     // no file: mac when the xremap unit exists, else traditional; swap defaults to true on a PC keyboard
+  swapActive() -> bool                    // style mac AND keyboard pc AND swap on (an Apple keyboard never swaps)
+  write( data ) -> exit code              // through JsonStore (config service: backup, journal)
+
+LuaModule                       // the Lua text both the module and the starter need
+  optional( file, var, apply ) -> [lines] // the "load ~/.config/bxrig/theme/FILE.lua if present" block, written once
+
+Shortcuts( overrides = "", style = "" )   // style: "traditional" | "mac" | a KeyStyle struct; default KeyStyle.read()
+  table() -> rows of { id, group, action, kind, keys, keysBy: { traditional, mac }, dispatch, words, opts }
+             kind: remap (xremap) | bind (Hyprland and Plasma) | hypr-bind (Hyprland only); keys "" = no key in this style
+  conflicts() -> { within, remapShadows, user }       // table + remaps active in this style + hl.bind lines of your own files
+  render( "xremap" | "hyprland" | "plasma" )          // read only the table
+  argvOf( id ) -> the bxrig argv a row runs (for `keys run ID`), [] for a pure Lua dispatch
+
+CLI additions (cli.json): keys style [traditional|mac] [--keyboard=pc|apple] [--swap=on|off] [--yes] | keys search TEXT | keys run ID
+                          notify time|battery|weather | screenshot color | dictation toggle | menu open ROUTE
+```
