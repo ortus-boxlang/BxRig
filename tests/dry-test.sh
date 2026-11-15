@@ -58,6 +58,9 @@ n="$(grep -rn 'getSystemSetting(' "$root/src" --include='*.bx' | grep -v '/util/
 (( n == 0 )) || { echo "FAIL: $n getSystemSetting calls outside src/bxrig/util/Env.bx (use Env.named( id ), the ids are listed in Env.names())"; fails=$((fails+1)); }
 n="$(grep -rn 'function icon() { return "' "$root/src" --include='*.bx' | wc -l)"
 (( n == 0 )) || { echo "FAIL: $n page icon names spelled outside ControlCenterPages (use ControlCenterPages.icon( id ))"; fails=$((fails+1)); }
+# the views draw through TuiKit directly (no one-line forwarders of mix, brand, shimmer, put, fillRect, gtext)
+n="$(grep -rnE '^    function (put|fillRect|gtext|shimmer|mix|brand)\(' "$root"/src/bxrig/*View.bx | wc -l)"
+(( n == 0 )) || { echo "FAIL: $n view forwarders to TuiKit (call variables.kit directly)"; fails=$((fails+1)); }
 # every test file is run by CI (a new test cannot be forgotten)
 for t in "$root"/tests/*-test.sh "$root"/tests/*_test.bxs "$root"/tests/catalog_check.bxs; do
   [[ -f "$t" ]] || continue
