@@ -36,7 +36,7 @@ class Dictation {
         var argv = [ "bxrig", "install" ];
         for ( var a in e.apps ) argv.append( a );
         argv.append( "--yes" );
-        var r = variables.inst.exec( argv, 3600 );
+        var r = variables.inst.proc().exec( argv, 3600 );
         if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: "install failed (exit " & r.exitCode & ")" }, arguments.asJson, [ "error: installing " & e.name & " failed (exit " & r.exitCode & ")" ] );
         return variables.out.say( "ok", data, arguments.asJson, [ e.name & " is installed.", "Shortcut: " & e.key ] );
     }

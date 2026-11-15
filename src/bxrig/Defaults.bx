@@ -43,7 +43,7 @@ class Defaults {
             var code = arguments.dryRun ? 0 : 2;
             return variables.cli.say( cmd, code, data, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": make " & arguments.id & " (" & file & ") your default web browser", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dryRun );
         }
-        var r = variables.inst.exec( [ "xdg-settings", "set", "default-web-browser", file ], 30 );
+        var r = variables.inst.proc().exec( [ "xdg-settings", "set", "default-web-browser", file ], 30 );
         if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
         return variables.cli.say( cmd, "ok", data, arguments.asJson, [ arguments.id & " is now your default web browser." ] );
     }
@@ -68,8 +68,8 @@ class Defaults {
         if ( state == "drifted" || state == "blocked" ) notes.append( entry.target & " was changed by you, so it was kept" );
         else if ( variables.config.configWrite( entry, entry.content, "apply", true, false ) != 0 ) return variables.cli.say( cmd, "failed", { error: "Could not write " & entry.target }, arguments.asJson, [ "error: could not write " & entry.target ] );
         if ( kde ) {
-            variables.inst.exec( [ "kwriteconfig6", "--file", "kdeglobals", "--group", "General", "--key", "TerminalApplication", t.cmd ], 20 );
-            variables.inst.exec( [ "kwriteconfig6", "--file", "kdeglobals", "--group", "General", "--key", "TerminalService", file ], 20 );
+            variables.inst.proc().exec( [ "kwriteconfig6", "--file", "kdeglobals", "--group", "General", "--key", "TerminalApplication", t.cmd ], 20 );
+            variables.inst.proc().exec( [ "kwriteconfig6", "--file", "kdeglobals", "--group", "General", "--key", "TerminalService", file ], 20 );
         }
         var lines = [ arguments.id & " is now your default terminal." ];
         for ( var n in notes ) lines.append( "note: " & n );
@@ -94,7 +94,7 @@ class Defaults {
             var code = arguments.dryRun ? 0 : 2;
             return variables.cli.say( cmd, code, data, arguments.asJson, [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": make " & arguments.id & " (" & file & ") your default file manager", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ], arguments.dryRun );
         }
-        var r = variables.inst.exec( [ "xdg-mime", "default", file, "inode/directory" ], 30 );
+        var r = variables.inst.proc().exec( [ "xdg-mime", "default", file, "inode/directory" ], 30 );
         if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
         return variables.cli.say( cmd, "ok", data, arguments.asJson, [ arguments.id & " is now your default file manager." ] );
     }
@@ -102,11 +102,11 @@ class Defaults {
     // `default show`
     function show( asJson ) {
         var b = "";
-        if ( variables.proc.has( "xdg-settings" ) ) b = trim( variables.inst.exec( [ "xdg-settings", "get", "default-web-browser" ], 20 ).output );
+        if ( variables.proc.has( "xdg-settings" ) ) b = trim( variables.inst.proc().exec( [ "xdg-settings", "get", "default-web-browser" ], 20 ).output );
         var listFile = variables.config.cfgHome() & "/xdg-terminals.list";
         var t = fileExists( listFile ) ? trim( fileRead( listFile ) ) : "";
         var fm = "";
-        if ( variables.proc.has( "xdg-mime" ) ) fm = trim( variables.inst.exec( [ "xdg-mime", "query", "default", "inode/directory" ], 20 ).output );
+        if ( variables.proc.has( "xdg-mime" ) ) fm = trim( variables.inst.proc().exec( [ "xdg-mime", "query", "default", "inode/directory" ], 20 ).output );
         return variables.cli.say( "default show", "ok", { browser: b, terminal: t, filemanager: fm }, arguments.asJson, [ "Default browser:  " & ( len( b ) ? b : "not set" ), "Default terminal: " & ( len( t ) ? t : "not set (" & listFile & ")" ), "Default file manager: " & ( len( fm ) ? fm : "not set" ) ] );
     }
 }

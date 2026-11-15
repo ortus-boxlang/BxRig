@@ -12,7 +12,7 @@ cat > "$tmp/bin/kwriteconfig6" <<'MOCK'
 [[ "$1" == --version ]] && exit 0
 printf '%s' "${@: -1}" > "$KG/${@: -2:1}"
 MOCK
-printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo "${MOCK_UID:-1000}"; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
+stub_id
 chmod +x "$tmp/bin/"*
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" KG="$tmp/kg" PATH="$tmp/bin:$PATH" "$@"; }
 

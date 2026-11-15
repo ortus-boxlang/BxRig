@@ -39,7 +39,7 @@ class Dolphin {
         var missing = installed( [ "kio-extras", "kdegraphics-thumbnailers", "kimageformats", "ffmpegthumbs" ] );
         out.append( check( "helpers", !missing.len(), missing.len() ? "missing: " & missing.toList( ", " ) : "kio-extras and the thumbnailers are installed", "bxrig install " & missing.toList( " " ) ) );
         var fm = "";
-        try { fm = trim( variables.inst.exec( [ "xdg-mime", "query", "default", "inode/directory" ], 20 ).output ); } catch ( any e ) {}
+        try { fm = trim( variables.inst.proc().exec( [ "xdg-mime", "query", "default", "inode/directory" ], 20 ).output ); } catch ( any e ) {}
         out.append( check( "folder-handler", len( fm ) > 0, len( fm ) ? "folders open with " & fm : "no default folder handler", "bxrig default filemanager dolphin --yes" ) );
         var agent = installed( [ "polkit-kde-agent" ] );
         out.append( check( "polkit", !agent.len(), agent.len() ? "no polkit-kde-agent (admin actions and mounting will not ask for a password)" : "polkit-kde-agent is installed", "sudo pacman -S --needed polkit-kde-agent" ) );
@@ -51,7 +51,7 @@ class Dolphin {
         var bad = rows.filter( function( c ) { return !c.ok; } );
         var fixed = false;
         if ( arguments.fix && len( menuFile() ) ) {
-            var r = variables.inst.exec( [ "kbuildsycoca6", "--noincremental" ], 300 );
+            var r = variables.inst.proc().exec( [ "kbuildsycoca6", "--noincremental" ], 300 );
             if ( r.exitCode != 0 ) {
                 if ( arguments.asJson ) println( variables.cli.envelope( "dolphin doctor", 6, { error: "kbuildsycoca6 failed", checks: rows } ) );
                 else println( "error: kbuildsycoca6 --noincremental failed (exit " & r.exitCode & ")" );

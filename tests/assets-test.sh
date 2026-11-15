@@ -2,7 +2,7 @@
 # `bxrig assets list|install`: the embedded images land byte for byte. Usage: assets-test.sh [binary]
 . "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home"
-printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo "${MOCK_UID:-1000}"; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"; chmod +x "$tmp/bin/id"
+stub_id
 run() { env HOME="$tmp/home" PATH="$tmp/bin:$PATH" "$@"; }
 run "$binary" assets list | grep -q 'wallpapers/box.jpg -> '"$tmp"'/home/Pictures/BxRig/box.jpg' || fail 'list shows the targets'
 run "$binary" assets list --json | jq -e '(.data.assets | length) == 13' >/dev/null || fail 'list --json'

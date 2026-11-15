@@ -62,7 +62,7 @@ class Setup {
     function nodeVersion( nvmDir ) {
         if ( !fileExists( arguments.nvmDir & "/nvm.sh" ) ) return "";
         try {
-            var r = variables.inst.exec( [ "env", "NVM_DIR=" & arguments.nvmDir, "bash", "-c", '. "$NVM_DIR/nvm.sh" >/dev/null 2>&1; node --version' ], 30 );
+            var r = variables.inst.proc().exec( [ "env", "NVM_DIR=" & arguments.nvmDir, "bash", "-c", '. "$NVM_DIR/nvm.sh" >/dev/null 2>&1; node --version' ], 30 );
             return r.exitCode == 0 ? trim( r.output ) : "";
         } catch ( any e ) {
             return "";
@@ -78,7 +78,7 @@ class Setup {
             nodeVersion: nodeVersion( nvmDir ),
             hasCurl: variables.inst.hasCommand( "curl" ),
             os: osId(),
-            arch: trim( variables.inst.exec( [ "uname", "-m" ], 10 ).output ),
+            arch: trim( variables.inst.proc().exec( [ "uname", "-m" ], 10 ).output ),
             hasPacman: variables.pacman.available(),
             hyprlandAdded: hyprlandAdded(),
             isRoot: variables.inst.isRoot(),
@@ -91,7 +91,7 @@ class Setup {
             user: getSystemSetting( "USER", "" ),
             loginShell: getSystemSetting( "SHELL", "" ),
             hasYay: variables.aur.available(),
-            groups: listToArray( trim( variables.inst.exec( [ "id", "-nG" ], 10 ).output ), " " ),
+            groups: listToArray( trim( variables.inst.proc().exec( [ "id", "-nG" ], 10 ).output ), " " ),
             udevRule: fileExists( new bxrig.SetupPlan().udevRulePath() ),
             workDir: reReplace( getTempDirectory(), "/+$", "" ) & "/bxrig-hyprkwin-" & left( createUUID(), 8 )
         };
@@ -199,7 +199,7 @@ class Setup {
         if ( plan.errors.len() ) {
             if ( asJson ) println( variables.cli.envelope( command, 4, data ) );
             else for ( var e in plan.errors ) println( "error: " & e );
-            return 4;
+            return new bxrig.util.Exit().precondition();
         }
         if ( !yes || dryRun ) {
             var code = dryRun ? 0 : 2;
@@ -239,7 +239,7 @@ class Setup {
             }
             for ( var cmd in step.commands ) {
                 if ( len( problem ) ) continue;
-                var r = variables.inst.exec( cmd, 1800 );
+                var r = variables.inst.proc().exec( cmd, 1800 );
                 if ( r.timeout ) problem = "timed out";
                 else if ( r.exitCode != 0 ) problem = "failed (exit " & r.exitCode & ")";
             }

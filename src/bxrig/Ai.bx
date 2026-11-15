@@ -22,7 +22,7 @@ class Ai {
     }
 
     function installed( command ) {
-        try { return variables.inst.exec( [ "sh", "-c", 'command -v "$1"', "_", arguments.command ], 10 ).exitCode == 0; } catch ( any e ) { return false; }
+        try { return variables.inst.proc().exec( [ "sh", "-c", 'command -v "$1"', "_", arguments.command ], 10 ).exitCode == 0; } catch ( any e ) { return false; }
     }
 
     // `ai list`
@@ -95,7 +95,7 @@ class Ai {
         if ( arguments.dryRun ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Dry run: would open " & a.name & " in " & term.id & ": " & argv.toList( " " ) ], true );
         var run = [ "sh", "-c", 'setsid "$@" >/dev/null 2>&1 &', "_" ];
         for ( var p in argv ) run.append( p );
-        variables.inst.exec( run, 10 );
+        variables.inst.proc().exec( run, 10 );
         return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Opened " & a.name & " in " & term.id & "." ] );
     }
 }

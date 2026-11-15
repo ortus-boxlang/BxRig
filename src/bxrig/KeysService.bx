@@ -16,7 +16,7 @@ class KeysService {
     // Reads one kglobalshortcutsrc value, or "" when unset or the tool is missing.
     function plasmaValue( s ) {
         try {
-            var r = variables.inst.exec( [ "kreadconfig6", "--file", "kglobalshortcutsrc", "--group", s.group, "--key", s.key ], 15 );
+            var r = variables.inst.proc().exec( [ "kreadconfig6", "--file", "kglobalshortcutsrc", "--group", s.group, "--key", s.key ], 15 );
             return r.exitCode == 0 ? trim( r.output ) : "";
         } catch ( any e ) {
             return "";
@@ -63,7 +63,7 @@ class KeysService {
         if ( variables.inst.isRoot() ) {
             if ( asJson ) println( variables.cli.envelope( "keys apply", 4, { errors: [ "Run as a regular user" ] } ) );
             else progress( "error: Run as a regular user" );
-            return 4;
+            return new bxrig.util.Exit().precondition();
         }
         if ( asJson ) { variables.quiet = true; variables.config.quiet( true ); }
         var worst = 0;
@@ -77,7 +77,7 @@ class KeysService {
                 progress( "set plasma:" & s.key & " -> " & s.value );
                 if ( !yes ) { worst = max( worst, 2 ); continue; }
                 if ( dryRun ) continue;
-                var r = variables.inst.exec( [ "kwriteconfig6", "--file", "kglobalshortcutsrc", "--group", s.group, "--key", s.key, s.value ], 15 );
+                var r = variables.inst.proc().exec( [ "kwriteconfig6", "--file", "kglobalshortcutsrc", "--group", s.group, "--key", s.key, s.value ], 15 );
                 if ( r.exitCode != 0 ) { progress( "plasma:" & s.key & ": kwriteconfig6 failed" ); worst = max( worst, 9 ); }
             }
         } else progress( "plasma: kwriteconfig6 not found, skipped (not a Plasma machine)" );

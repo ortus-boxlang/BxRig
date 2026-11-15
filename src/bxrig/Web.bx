@@ -34,7 +34,7 @@ class Web {
     }
 
     function installed( cmd ) {
-        try { return variables.inst.exec( [ "sh", "-c", 'command -v "$1"', "_", arguments.cmd ], 10 ).exitCode == 0; } catch ( any e ) { return false; }
+        try { return variables.inst.proc().exec( [ "sh", "-c", 'command -v "$1"', "_", arguments.cmd ], 10 ).exitCode == 0; } catch ( any e ) { return false; }
     }
 
     // The browser id to use: the one asked for, else the default browser, else the first installed.
@@ -42,7 +42,7 @@ class Web {
         var all = browsers();
         if ( len( arguments.asked ) ) return structKeyExists( all, arguments.asked ) ? arguments.asked : "";
         var dflt = "";
-        try { dflt = trim( variables.inst.exec( [ "xdg-settings", "get", "default-web-browser" ], 10 ).output ); } catch ( any e ) {}
+        try { dflt = trim( variables.inst.proc().exec( [ "xdg-settings", "get", "default-web-browser" ], 10 ).output ); } catch ( any e ) {}
         for ( var id in structKeyArray( all ) ) if ( len( dflt ) && find( id, lcase( dflt ) ) > 0 && installed( all[ id ].cmd ) ) return id;
         for ( var id2 in [ "brave", "chromium", "google-chrome", "edge", "firefox" ] ) if ( installed( all[ id2 ].cmd ) ) return id2;
         return "";
@@ -60,7 +60,7 @@ class Web {
     function askDetails() {
         var script = 'in="${BXRIG_TTY_IN:-/dev/tty}"; exec 3< "$in"; for p in "Name: " "URL: " "Browser (brave, chromium, google-chrome, edge, firefox; Enter for the default): "; do [ "$in" = /dev/tty ] && printf "%s" "$p" > /dev/tty; IFS= read -r v <&3; printf "%s\n" "$v"; done';
         var out = "";
-        try { out = variables.inst.exec( [ "sh", "-c", script ], 600 ).output; } catch ( any e ) {}
+        try { out = variables.inst.proc().exec( [ "sh", "-c", script ], 600 ).output; } catch ( any e ) {}
         var lines = listToArray( out, chr( 10 ), true );
         while ( lines.len() < 3 ) lines.append( "" );
         return { name: trim( lines[ 1 ] ), url: trim( lines[ 2 ] ), browser: trim( lines[ 3 ] ) };

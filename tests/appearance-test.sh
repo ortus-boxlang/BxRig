@@ -5,7 +5,7 @@ mkdir -p "$tmp/bin" "$tmp/home/Pictures/BxRig" "$tmp/fake/installed"; export LOG
 for t in noctalia hyprctl; do printf '#!/usr/bin/env bash\necho "%s $*" >> "$LOG"\n' "$t" > "$tmp/bin/$t"; done
 printf '#!/usr/bin/env bash\necho "self $*" >> "$LOG"\n' > "$tmp/self"
 printf '#!/usr/bin/env bash\ncat "$FAKE/fonts" 2>/dev/null\n' > "$tmp/bin/fc-list"
-printf '#!/usr/bin/env bash\n[[ "$1" == --version ]] && { echo "Sudo version 1.9"; exit 0; }\necho "sudo $*" >> "$LOG"\nexec "$@"\n' > "$tmp/bin/sudo"
+stub_sudo_log
 cat > "$tmp/bin/pacman" <<'FAKE'
 #!/usr/bin/env bash
 echo "pacman $*" >> "$LOG"
@@ -17,7 +17,7 @@ case "$1" in
   -S) shift; for a in "$@"; do [[ $a == -* ]] || touch "$I/$a"; done ;;
 esac
 FAKE
-printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo 1000; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
+stub_id
 printf '#!/usr/bin/env bash\necho x86_64\n' > "$tmp/bin/uname"; printf 'ID=cachyos\n' > "$tmp/os"
 chmod +x "$tmp/bin"/* "$tmp/self"
 printf 'CaskaydiaMono Nerd Font,CaskaydiaMono NF\nJetBrainsMono Nerd Font,JetBrainsMono NF\nIosevka Nerd Font,Iosevka NF\n' > "$tmp/fake/fonts"

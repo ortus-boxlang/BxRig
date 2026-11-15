@@ -87,7 +87,7 @@ class Menu {
 
     // ---- live lists for pick entries ----
     function exec( argv, timeout = 30 ) {
-        try { return variables.inst.exec( arguments.argv, arguments.timeout ); } catch ( any e ) { return { exitCode: 127, output: e.message }; }
+        try { return variables.inst.proc().exec( arguments.argv, arguments.timeout ); } catch ( any e ) { return { exitCode: 127, output: e.message }; }
     }
 
 
@@ -156,7 +156,7 @@ class Menu {
     function detach( argv ) {
         var run = [ "sh", "-c", 'setsid "$@" >/dev/null 2>&1 &', "_" ];
         for ( var p in arguments.argv ) run.append( p );
-        variables.inst.exec( run, 10 );
+        variables.inst.proc().exec( run, 10 );
     }
 
     // Starts one entry (spawn or run).
@@ -274,7 +274,7 @@ class Menu {
         if ( !len( name ) ) return 0;
         var url = arguments.runner.input( "URL (https://...)" );
         if ( !len( url ) ) return 0;
-        var r = variables.inst.exec( [ variables.environ.self(), "web", "add", name, url, "--yes" ], 60 );
+        var r = variables.inst.proc().exec( [ variables.environ.self(), "web", "add", name, url, "--yes" ], 60 );
         arguments.runner.select( r.exitCode == 0 ? "Added " & name : "Could not add " & name & ": " & left( trim( r.output ), 120 ), [ "OK" ] );
         return 0;
     }
@@ -287,7 +287,7 @@ class Menu {
         var pick = arguments.runner.select( "Remove which web app?", labels );
         if ( pick == 0 ) return 0;
         if ( !confirm( arguments.runner, "Remove " & apps[ pick ].name & "?" ) ) return 0;
-        variables.inst.exec( [ variables.environ.self(), "web", "rm", apps[ pick ].name, "--yes" ], 30 );
+        variables.inst.proc().exec( [ variables.environ.self(), "web", "rm", apps[ pick ].name, "--yes" ], 30 );
         return 0;
     }
 
@@ -351,7 +351,7 @@ class Menu {
             return level( runner, "BxRig", tree(), true );
         } catch ( any err ) {
             println( "error: " & err.message );
-            return 4;
+            return new bxrig.util.Exit().precondition();
         }
     }
 }

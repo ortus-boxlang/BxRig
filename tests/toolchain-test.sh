@@ -3,7 +3,7 @@
 . "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home"
 export LOG="$tmp/log"; : > "$LOG"
-printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo "${MOCK_UID:-1000}"; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
+stub_id
 # fake curl: records the URL and writes a fake nvm installer to the -o path
 cat > "$tmp/bin/curl" <<'MOCK'
 #!/usr/bin/env bash

@@ -32,7 +32,7 @@ class Assets {
     function decode( name, dest ) {
         directoryCreate( getDirectoryFromPath( dest ), true, true );
         fileWrite( dest & ".b64", variables.data.base64( name ) );
-        var r = variables.inst.exec( [ "sh", "-c", 'base64 -d "$1" > "$2"', "sh", dest & ".b64", dest ], 60 );
+        var r = variables.inst.proc().exec( [ "sh", "-c", 'base64 -d "$1" > "$2"', "sh", dest & ".b64", dest ], 60 );
         fileDelete( dest & ".b64" );
         if ( r.exitCode != 0 ) throw( type = "Assets.decode", message = "base64 -d failed for " & name );
     }
@@ -58,7 +58,7 @@ class Assets {
         if ( variables.inst.isRoot() || !variables.inst.hasCommand( "base64" ) ) {
             var msg = variables.inst.isRoot() ? "Run as a regular user" : "base64 (coreutils) was not found";
             if ( asJson ) println( variables.cli.envelope( "assets install", 4, { errors: [ msg ] } ) ); else println( "error: " & msg );
-            return 4;
+            return new bxrig.util.Exit().precondition();
         }
         var plan = variables.data.names().filter( function( n ) { return !fileExists( target( n ) ); } );
         var kept = variables.data.names().filter( function( n ) { return fileExists( target( n ) ); } );

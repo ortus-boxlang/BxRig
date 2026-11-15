@@ -44,7 +44,7 @@ class Db {
     function engineExec( args, timeout = 600 ) {
         var argv = [ engineCli() ];
         for ( var a in arguments.args ) argv.append( a );
-        return variables.inst.exec( argv, arguments.timeout );
+        return variables.inst.proc().exec( argv, arguments.timeout );
     }
 
     function engineAvailable() {
@@ -70,7 +70,7 @@ class Db {
 
     // A random secret (hex, 24 random bytes) from the system's random source.
     function newSecret() {
-        var r = variables.inst.exec( [ "sh", "-c", 'head -c 24 /dev/urandom | od -An -tx1 | tr -d "[:space:]"' ], 10 );
+        var r = variables.inst.proc().exec( [ "sh", "-c", 'head -c 24 /dev/urandom | od -An -tx1 | tr -d "[:space:]"' ], 10 );
         return trim( r.output );
     }
 
@@ -101,7 +101,7 @@ class Db {
         var tmp = reReplace( getTempDirectory(), "/+$", "" ) & "/bxrig-pw-" & left( createUUID(), 8 );
         var script = 'in="${BXRIG_TTY_IN:-/dev/tty}"; exec 3< "$in"; ask() { if [ "$in" = /dev/tty ]; then printf "%s" "$1" > /dev/tty; stty -echo < /dev/tty; fi; IFS= read -r v <&3; if [ "$in" = /dev/tty ]; then stty echo < /dev/tty; echo > /dev/tty; fi; printf "%s" "$v"; }; ask "Password: " > "$1"; echo >> "$1"; ask "Repeat password: " >> "$1"';
         try {
-            variables.inst.exec( [ "sh", "-c", script, "_", tmp ], 300 );
+            variables.inst.proc().exec( [ "sh", "-c", script, "_", tmp ], 300 );
             var lines = fileExists( tmp ) ? listToArray( fileRead( tmp ), chr( 10 ), true ) : [];
         } finally {
             if ( fileExists( tmp ) ) fileDelete( tmp );
@@ -316,7 +316,7 @@ class Db {
     // The first installed terminal, "" when none (the menu runs each action in one so its output stays visible).
     function terminalProgram() {
         for ( var t in [ "ghostty", "kitty", "foot", "alacritty", "konsole" ] ) {
-            try { if ( variables.inst.exec( [ "sh", "-c", 'command -v "$1"', "_", t ], 10 ).exitCode == 0 ) return t; } catch ( any e ) {}
+            try { if ( variables.inst.proc().exec( [ "sh", "-c", 'command -v "$1"', "_", t ], 10 ).exitCode == 0 ) return t; } catch ( any e ) {}
         }
         return "";
     }
@@ -326,14 +326,14 @@ class Db {
             return runMenu();
         } catch ( any err ) {
             println( "error: " & err.message );
-            return 4;
+            return new bxrig.util.Exit().precondition();
         }
     }
 
     function runMenu() {
         var runner = new bxrig.Runner( variables.cli, variables.inst.runner() );
         var term = terminalProgram();
-        if ( !len( term ) ) { println( "error: the menu needs a terminal program to show results (ghostty, kitty, foot, alacritty or konsole)" ); return 4; }
+        if ( !len( term ) ) { println( "error: the menu needs a terminal program to show results (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.util.Exit().precondition(); }
         var supported = variables.engines.all().filter( function( e ) { return !structKeyExists( e, "unsupported" ); } );
         var actions = [ [ "Start", "start" ], [ "Stop", "stop" ], [ "Status", "status" ], [ "Connection info", "info" ], [ "Logs", "logs" ], [ "Remove (deletes the data)", "remove" ] ];
         var self = getSystemSetting( "BXRIG_SELF", "bxrig" );
@@ -353,7 +353,7 @@ class Db {
             if ( arrayFind( [ "start", "remove" ], verb ) ) argv.append( "--yes" );
             var launch = [ "sh", "-c", 'setsid "$@" >/dev/null 2>&1 &', "_" ];
             for ( var part in argv ) launch.append( part );
-            variables.inst.exec( launch, 10 );
+            variables.inst.proc().exec( launch, 10 );
         }
         return 0;
     }

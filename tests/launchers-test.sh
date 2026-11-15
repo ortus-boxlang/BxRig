@@ -2,7 +2,7 @@
 # `bxrig launchers on|off|status`: one .desktop per Control Center page, opt-in, never over your edits. Fake terminal and a fake id. Usage: launchers-test.sh BINARY
 . "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/cfg"
-printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo "${MOCK_UID:-1000}"; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"; chmod +x "$tmp/bin/id"
+stub_id
 for t in ghostty kitty; do printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp/bin/$t"; chmod +x "$tmp/bin/$t"; done
 run() { env HOME="$tmp/home" XDG_DATA_HOME="$tmp/data" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" BXRIG_SELF=/opt/bxrig/bxrig PATH="$tmp/bin:$PATH" "$@"; }
 apps="$tmp/data/applications"; icon="$tmp/data/icons/hicolor/256x256/apps/bxrig.png"

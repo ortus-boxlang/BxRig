@@ -21,7 +21,7 @@ esac
 exit 0
 F
 printf '#!/usr/bin/env bash\n[[ "$1" == -r ]] && { echo "${KERNEL:-6.12.5-2-cachyos}"; exit 0; }\necho Linux\n' > "$tmp/bin/uname"
-printf '#!/usr/bin/env bash\n[[ "$1" == --version ]] && { echo "Sudo version 1.9"; exit 0; }\necho "sudo $*" >> "$LOG"\nexec "$@"\n' > "$tmp/bin/sudo"
+stub_sudo_log
 chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
 has() { grep -qF -- "$1" "$LOG"; }

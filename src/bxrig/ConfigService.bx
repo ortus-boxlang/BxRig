@@ -131,7 +131,7 @@ class ConfigService {
      progress( action & " " & entry.name & " -> " & entry.target );
      if ( !yes ) {
       progress( "Nothing changed. Pass --yes to proceed." );
-      return 2;
+      return new bxrig.util.Exit().plan();
      }
      if ( dryRun ) {
       progress( "Dry run, nothing changed." );
@@ -180,12 +180,12 @@ class ConfigService {
      found = journalEntries( entry.name ).filter( function( e ) { return e.id == id; } );
      if ( !found.len() ) {
       progress( "Unknown journal id for " & entry.name & ": " & id );
-      return 3;
+      return new bxrig.util.Exit().timeout();
      }
      rec = found[1];
      if ( !len( rec.backup ) || !fileExists( rec.backup ) ) {
       progress( id & ": no backup to restore (the file did not exist before, or the backup was pruned)" );
-      return 3;
+      return new bxrig.util.Exit().timeout();
      }
      old = fileRead( rec.backup );
      if ( hashOf( old ) != rec.before ) {

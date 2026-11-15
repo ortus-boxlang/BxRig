@@ -86,7 +86,7 @@ class Runner {
 
     // Whether a program is on PATH (no shell string: `sh -c 'command -v "$1"'`).
     function found( program ) {
-        try { return variables.inst.exec( [ "sh", "-c", 'command -v "$1"', "_", arguments.program ], 10 ).exitCode == 0; } catch ( any e ) { return false; }
+        try { return variables.inst.proc().exec( [ "sh", "-c", 'command -v "$1"', "_", arguments.program ], 10 ).exitCode == 0; } catch ( any e ) { return false; }
     }
 
     // `runner doctor`: what is configured and whether it can run. Changes nothing.
@@ -110,7 +110,7 @@ class Runner {
         if ( !found( cmd[ 1 ] ) ) return { ok: false, error: "Runner command not found: " & cmd[ 1 ] };
         var argv = [ "sh", "-c", 'setsid "$@" >/dev/null 2>&1 &', "_" ];
         for ( var part in cmd ) argv.append( part );
-        variables.inst.exec( argv, 10 );
+        variables.inst.proc().exec( argv, 10 );
         return { ok: true, error: "" };
     }
 
@@ -138,7 +138,7 @@ class Runner {
         try {
             var argv = [ "sh", "-c", 'f="$1"; shift; exec "$@" < "$f"', "_", tmp ];
             for ( var part in cmd ) argv.append( part );
-            var r = variables.inst.exec( argv, 600 );
+            var r = variables.inst.proc().exec( argv, 600 );
         } finally {
             if ( fileExists( tmp ) ) fileDelete( tmp );
         }
@@ -173,7 +173,7 @@ class Runner {
         if ( !found( cmd[ 1 ] ) ) throw( message = "Menu provider unavailable: " & cmd[ 1 ] );
         var argv = [ "sh", "-c", 'exec "$@" < /dev/null', "_" ];
         for ( var p2 in cmd ) argv.append( p2 );
-        var r = variables.inst.exec( argv, 600 );
+        var r = variables.inst.proc().exec( argv, 600 );
         if ( r.timeout || r.exitCode != 0 ) return "";
         return trim( replace( r.output, chr( 10 ), " ", "all" ) );
     }

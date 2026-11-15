@@ -41,6 +41,11 @@ n="$(grep -rn '"install", "-Dm' "$root/src" --include='*.bx' | grep -v '/util/' 
 (( n == 0 )) || { echo "FAIL: $n spelled sudo install argv lists outside src/bxrig/util (use SystemFile.installArgv)"; fails=$((fails+1)); }
 n="$(grep -rn '"\[Unit\]"' "$root/src" --include='*.bx' | wc -l)"
 (( n == 0 )) || { echo "FAIL: $n hand-built [Unit] texts (allowed 0, use SystemdUnit.render)"; fails=$((fails+1)); }
+# exit codes returned by name, not by number (return 2; 3; 4;), and the id and sudo fakes of the shell tests come from tests/lib/harness.sh
+n="$(grep -rnE 'return [234];' "$root/src" --include='*.bx' | grep -v 'MailProvider\|/util/Exit.bx' | wc -l)"
+(( n == 0 )) || { echo "FAIL: $n bare return 2, 3 or 4 (use new bxrig.util.Exit().usage(), .timeout(), .precondition())"; fails=$((fails+1)); }
+n="$(grep -ln '/usr/bin/id' "$root"/tests/*-test.sh | wc -l)"
+(( n <= 5 )) || { echo "FAIL: $n tests spell their own id fake (allowed 5 with their own variants; use stub_id from tests/lib/harness.sh)"; fails=$((fails+1)); }
 # exit codes are named (src/bxrig/util/Exit.bx): no number as the code argument of say( ) / fail( ), and no CLIExit( N ) in Main.bx except 130 (Ctrl+C)
 bare="$(grep -rhoE '(out)\.(say|fail)\( *[0-9]+ *,|(cli)\.(say|fail)\( *[^,()]+, *[0-9]+ *,' "$root/src/bxrig" | wc -l)"
 (( bare == 0 )) || { echo "FAIL: $bare say/fail calls pass a bare number as the exit code (use a name from Exit.bx)"; fails=$((fails+1)); }

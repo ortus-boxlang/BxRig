@@ -6,7 +6,7 @@ mkdir -p "$tmp/bin"; export LOG="$tmp/log"; : > "$LOG"
 for tool in stow chezmoi yadm; do printf '#!/usr/bin/env bash\necho "%s $*" >> "$LOG"\n' "$tool" > "$tmp/fake-$tool"; chmod +x "$tmp/fake-$tool"; done
 # fake pacman -S installs the fake tool of that name; sudo just runs its arguments
 printf '#!/usr/bin/env bash\nif [[ "$1" == -S ]]; then echo "pacman $*" >> "$LOG"; cp "$FAKE_TOOLS/fake-${@: -1}" "$FAKE_BIN/${@: -1}"; fi\n' > "$tmp/bin/pacman"
-printf '#!/usr/bin/env bash\n[[ "$1" == --version ]] && { echo "Sudo version 1.9"; exit 0; }\n"$@"\n' > "$tmp/bin/sudo"
+stub_sudo
 chmod +x "$tmp/bin/pacman" "$tmp/bin/sudo"
 export FAKE_TOOLS="$tmp" FAKE_BIN="$tmp/bin"
 

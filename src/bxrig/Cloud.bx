@@ -42,7 +42,7 @@ class Cloud {
     }
 
     function configure() {
-        if ( !variables.proc.has( "rclone" ) ) { println( "error: rclone is not installed. Install: bxrig install rclone fuse3" ); return 4; }
+        if ( !variables.proc.has( "rclone" ) ) { println( "error: rclone is not installed. Install: bxrig install rclone fuse3" ); return new bxrig.util.Exit().precondition(); }
         var r = systemExecute( "rclone", [ "config" ], 0, false, ".", "", "", true, {}, true );
         return r.exitCode;
     }

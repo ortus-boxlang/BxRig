@@ -120,7 +120,7 @@ class Launchers {
 
     // SHA-256 of a file (a PNG is not text, so fileRead cannot hash it).
     function sha( path ) {
-        var r = variables.inst.exec( [ "sha256sum", arguments.path ], 30 );
+        var r = variables.inst.proc().exec( [ "sha256sum", arguments.path ], 30 );
         if ( r.exitCode != 0 ) throw( type = "Launchers.sha", message = "sha256sum failed" );
         return listFirst( trim( r.output ), " " );
     }
@@ -234,6 +234,6 @@ class Launchers {
         if ( sub == "off" ) return off( arguments.yes, arguments.dryRun, arguments.asJson );
         if ( sub == "status" ) return status( arguments.asJson );
         println( new bxrig.CommandSpec().usage( "launchers" ) );
-        return 2;
+        return new bxrig.util.Exit().usage();
     }
 }

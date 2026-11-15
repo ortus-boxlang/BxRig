@@ -103,7 +103,7 @@ class Init {
         if ( plan.errors.len() ) {
             if ( arguments.asJson ) println( variables.cli.envelope( "init", 4, data ) );
             else for ( var e in plan.errors ) println( "error: " & e );
-            return 4;
+            return new bxrig.util.Exit().precondition();
         }
         if ( !arguments.yes || arguments.dryRun ) {
             var code = arguments.dryRun ? 0 : 2;
@@ -121,7 +121,7 @@ class Init {
             if ( stopped ) { data.skipped.append( { id: step.id, reason: "an earlier step failed" } ); continue; }
             var argv = commandFor( step );
             if ( !arguments.asJson ) println( "==> " & step.title );
-            var r = variables.inst.exec( argv, 3600 );
+            var r = variables.inst.proc().exec( argv, 3600 );
             if ( !arguments.asJson && len( r.output ) ) print( r.output );
             if ( ( r.timeout || r.exitCode != 0 ) && ( step.optional ?: false ) ) {
                 // an optional step (typing a key) that could not run is reported, and the plan goes on
@@ -150,7 +150,7 @@ class Init {
             // where the answers start: your saved ones, or a file you name (answers exported from another machine)
             var base = loadSaved();
             if ( len( arguments.from ) ) {
-                try { base = jsonDeserialize( fileRead( arguments.from ) ); } catch ( any e2 ) { println( "bxrig init: cannot read " & arguments.from & ": " & e2.message ); return 4; }
+                try { base = jsonDeserialize( fileRead( arguments.from ) ); } catch ( any e2 ) { println( "bxrig init: cannot read " & arguments.from & ": " & e2.message ); return new bxrig.util.Exit().precondition(); }
             }
             // tune (default): those answers plus what this machine already has, installed options marked; rerun: those answers only;
             // fresh: the defaults. Nothing the machine has is ever removed.
@@ -161,7 +161,7 @@ class Init {
             result = new bxrig.Wizard( spec, start ).run();
         } catch ( any e ) {
             println( "bxrig init needs a terminal (" & e.message & "). Use --answers FILE to run without one." );
-            return 4;
+            return new bxrig.util.Exit().precondition();
         }
         if ( result.outcome != "done" ) return 130;
         save( result.answers );
