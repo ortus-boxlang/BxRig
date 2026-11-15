@@ -16,6 +16,7 @@ class PlasmaPanels {
         variables.out = new bxrig.util.Out( variables.cli, "plasma panels" );
         variables.proc = new bxrig.util.Proc( arguments.runner );
         variables.config = new bxrig.ConfigService();
+        variables.environ = new bxrig.util.Env();
         return this;
     }
 
@@ -46,6 +47,31 @@ class PlasmaPanels {
         return w;
     }
 
+    // Where Plasma applets live: package folders, and the compiled ones (Plasma 6). BXRIG_PLASMA_APPLET_DIRS (colon list) for tests.
+    function appletDirs() {
+        var given = variables.environ.get( "BXRIG_PLASMA_APPLET_DIRS", "" );
+        if ( len( given ) ) return listToArray( given, ":" );
+        return [ "/usr/share/plasma/plasmoids", variables.environ.xdgData( "plasma/plasmoids" ), "/usr/lib/qt6/plugins/plasma/applets" ];
+    }
+    function appletInstalled( id ) {
+        for ( var d in appletDirs() ) if ( directoryExists( d & "/" & arguments.id ) || fileExists( d & "/" & arguments.id & ".so" ) ) return true;
+        return false;
+    }
+    // The catalog app that brings an applet, for the note on a missing one.
+    function appletApp( id ) {
+        var m = { "org.kde.windowtitle": "window-title", "org.kde.plasma.kvitals": "kvitals", "luisbocanegra.panel.colorizer": "panel-colorizer", "luisbocanegra.panel.colorizer.islands.separator": "panel-colorizer-islands", "org.kde.plasma.weather": "kdeplasma-addons", "org.kde.plasma.eventcalendar": "kdeplasma-addons" };
+        return structKeyExists( m, arguments.id ) ? m[ arguments.id ] : "";
+    }
+    // The widgets of topWidgets() that are not installed (left out of the layout, so it never shows broken icons).
+    function missing( o ) {
+        var out = [];
+        for ( var w in topWidgets( arguments.o ) ) {
+            var id = w.id == "sep" ? "luisbocanegra.panel.colorizer.islands.separator" : w.id;
+            if ( id != "flex" && !appletInstalled( id ) && !arrayFind( out, id ) ) out.append( id );
+        }
+        return out;
+    }
+
     // The Plasma scripting JavaScript (no backslashes, no hash signs).
     function script( o ) {
         var q = chr( 34 );
@@ -57,7 +83,10 @@ class PlasmaPanels {
             "top.location = " & q & "top" & q & ";",
             "top.height = 36;"
         ];
+        var gone = missing( arguments.o );
+        var colorizer = !arrayFind( gone, "luisbocanegra.panel.colorizer.islands.separator" );
         for ( var w in topWidgets( arguments.o ) ) {
+            if ( arrayFind( gone, w.id ) || ( w.id == "sep" && !colorizer ) ) continue;
             if ( w.id == "sep" ) js.append( "top.addWidget(" & q & "luisbocanegra.panel.colorizer.islands.separator" & q & ");" );
             else if ( w.id == "flex" ) js.append( "top.addWidget(" & q & "org.kde.plasma.panelspacer" & q & ");" );
             else if ( w.id == "luisbocanegra.panel.colorizer" ) {
@@ -122,9 +151,13 @@ class PlasmaPanels {
         var op = opts( arguments.o );
         var js = script( op );
         var live = plasmaRunning();
-        var data = { desktops: op.desktops, agenda: op.agenda, weather: op.weather, preset: op.preset, widgets: topWidgets( op ).map( function( w ) { return w.id; } ), applied_now: live, script: scriptFile() };
+        var gone = missing( op );
+        var apps = [];
+        for ( var g in gone ) if ( len( appletApp( g ) ) && !arrayFind( apps, appletApp( g ) ) ) apps.append( appletApp( g ) );
+        var data = { desktops: op.desktops, agenda: op.agenda, weather: op.weather, preset: op.preset, widgets: topWidgets( op ).map( function( w ) { return w.id; } ), missing: gone, applied_now: live, script: scriptFile() };
+        var missNote = gone.len() ? "Not installed, left out: " & gone.map( function( x ) { return listLast( x, "." ); } ).toList( ", " ) & ( apps.len() ? " (add them: bxrig install " & apps.toList( " " ) & ", then apply again)" : "" ) : "";
         if ( !arguments.yes || arguments.dryRun ) {
-            var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": replace your Plasma panels with a top status panel and a bottom dock", "  top: " & topWidgets( op ).map( function( w ) { return w.id == "sep" ? "|" : ( w.id == "flex" ? "<spacer>" : listLast( w.id, "." ) ); } ).toList( " " ), "  bottom: icons-only task manager", "  " & op.desktops & " virtual desktops, Colorizer preset " & op.preset, live ? "Plasma is running: the layout is applied now." : "Plasma is not running: the layout is applied at your next Plasma login.", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ];
+            var lines = [ ( arguments.dryRun ? "Dry run" : "Plan" ) & ": replace your Plasma panels with a top status panel and a bottom dock", "  top: " & topWidgets( op ).map( function( w ) { return w.id == "sep" ? "|" : ( w.id == "flex" ? "<spacer>" : listLast( w.id, "." ) ); } ).toList( " " ), "  bottom: icons-only task manager", "  " & op.desktops & " virtual desktops, Colorizer preset " & op.preset, live ? "Plasma is running: the layout is applied now." : "Plasma is not running: the layout is applied at your next Plasma login.", len( missNote ) ? "note: " & missNote : "", arguments.dryRun ? "Nothing was changed." : "Nothing was changed. Add --yes to apply." ];
             return variables.out.say( arguments.dryRun ? "ok" : "plan", data, arguments.asJson, lines, arguments.dryRun );
         }
         var saved = backup();
@@ -136,7 +169,9 @@ class PlasmaPanels {
             if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: "Plasma refused the layout script: " & trim( r.output ) }, arguments.asJson, [ "error: Plasma refused the layout script: " & trim( r.output ) ] );
             if ( fileExists( autostartFile() ) ) fileDelete( autostartFile() );
             variables.proc.exec( [ "dbus-send", "--session", "--type=signal", "/preset", "luisbocanegra.panel.colorizer.all.preset", "string:/usr/share/plasma/plasmoids/luisbocanegra.panel.colorizer/contents/ui/presets/" & op.preset ], 20 );
-            return variables.out.say( "ok", data, arguments.asJson, [ "Plasma panels applied. Backup of the old layout: " & saved & ". Undo: bxrig plasma panels undo --yes" ] );
+            var okLines = [ "Plasma panels applied. Backup of the old layout: " & saved & ". Undo: bxrig plasma panels undo --yes" ];
+            if ( len( missNote ) ) okLines.append( "note: " & missNote );
+            return variables.out.say( "ok", data, arguments.asJson, okLines );
         }
         var dir = getDirectoryFromPath( autostartFile() );
         if ( !directoryExists( dir ) ) directoryCreate( dir, true );

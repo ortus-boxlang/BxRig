@@ -6,7 +6,8 @@ printf '#!/usr/bin/env bash\necho "qdbus6 $1 $2 $3" >> "$LOG"\nif [ "$1" = org.k
 for t in kwriteconfig6 dbus-send; do printf '#!/usr/bin/env bash\necho "%s $*" >> "$LOG"\n' $t > "$tmp/bin/$t"; done
 chmod +x "$tmp/bin"/*
 export tmp_script="$tmp/script.js"
-run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" PATH="$tmp/bin:$PATH" LOG="$LOG" tmp_script="$tmp_script" "$@"; }
+mkdir -p "$tmp/applets"; for a in org.kde.plasma.kickoff org.kde.plasma.pager org.kde.windowtitle org.kde.plasma.digitalclock org.kde.plasma.eventcalendar org.kde.plasma.weather org.kde.plasma.mediacontroller org.kde.plasma.kvitals org.kde.plasma.systemtray luisbocanegra.panel.colorizer luisbocanegra.panel.colorizer.islands.separator; do mkdir -p "$tmp/applets/$a"; done
+run() { env BXRIG_PLASMA_APPLET_DIRS="$tmp/applets" HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" PATH="$tmp/bin:$PATH" LOG="$LOG" tmp_script="$tmp_script" "$@"; }
 echo '[Containments][1]' > "$tmp/cfg/plasma-org.kde.plasma.desktop-appletsrc"
 
 # plan and dry run change nothing
@@ -48,4 +49,8 @@ rm -rf "$tmp/cfg/bxrig"; [[ "$(code "$binary" plasma panels undo --yes)" == 4 ]]
 : > "$LOG"; run "$binary" plasma desktops 3 --yes >/dev/null; grep -q 'Number 3' "$LOG" && grep -q 'Rows 1' "$LOG" || fail 'plasma desktops'
 [[ "$(code "$binary" plasma desktops 0 --yes)" == 4 ]] || fail 'bad count exits 4'
 [[ "$(code "$binary" plasma)" == 2 ]] || fail 'usage exits 2'
+# an applet that is not installed is left out (no broken icon) and named, with the app that adds it
+rm -rf "$tmp/applets/org.kde.plasma.kvitals"
+run "$binary" plasma panels apply --dry-run --json | jq -e '(.data.missing == ["org.kde.plasma.kvitals"])' >/dev/null || fail 'missing applet reported'
+run "$binary" plasma panels apply --dry-run | grep -q 'bxrig install kvitals' || fail 'missing applet note names the app'
 echo "plasma-panels-test ok"
