@@ -18,14 +18,14 @@ Phases 0 to 5 are done and pushed to `development` (commits `a106a30` for phases
 
 | Finding | Status | Where |
 |---|---|---|
-| F01 `Cli.say` / `Out` | **done**: 57 files migrated; `say` 54 to 2 definitions (`Cli`, `Out`), `fail` 17 to 2; the three text printers renamed `progress` (ConfigService, KeysService) and `flash` (TimeMachineApp). | `Cli.bx`, `Out.bx`, `out_test.bxs` |
-| F02 `Proc` | **done**: `tryExec` 33 to 0, `has` 28 to 1 (`Proc`), `Installer.hasCommand` is now `command -v` (was `--version`, which ran the tool); `TuiSys.has` shell-string bug and the 5 run-myself paths are gone (`Proc.self`). Left for phase 8: direct `systemExecute` calls for interactive commands, `curl`, `pacman -Qq` and similar (see F09, F11). | `Proc.bx`, `proc_test.bxs`, `installer_test.bxs` |
-| F03 `Env` | **done**: `home`/`env`/`self`/`dataHome` copies removed; one precedence rule; `XDG_CONFIG_HOME` is honoured by every config path (it was ignored by the config service); `dataHome` split into `data()` and `xdgData()`. | `Env.bx`, `env_test.bxs`, `paths-test.sh` |
+| F01 `Cli.say` / `Out` | **done**: 57 files migrated; `say` 54 to 2 definitions (`Cli`, `Out`), `fail` 17 to 2; the three text printers renamed `progress` (ConfigService, KeysService) and `flash` (TimeMachineApp). | `util/Cli.bx`, `util/Out.bx`, `out_test.bxs` |
+| F02 `Proc` | **done**: `tryExec` 33 to 0, `has` 28 to 1 (`Proc`), `Installer.hasCommand` is now `command -v` (was `--version`, which ran the tool); `TuiSys.has` shell-string bug and the 5 run-myself paths are gone (`Proc.self`). Left for phase 8: direct `systemExecute` calls for interactive commands, `curl`, `pacman -Qq` and similar (see F09, F11). | `util/Proc.bx`, `proc_test.bxs`, `installer_test.bxs` |
+| F03 `Env` | **done**: `home`/`env`/`self`/`dataHome` copies removed; one precedence rule; `XDG_CONFIG_HOME` is honoured by every config path (it was ignored by the config service); `dataHome` split into `data()` and `xdgData()`. | `util/Env.bx`, `env_test.bxs`, `paths-test.sh` |
 | F04 `Mutation` | **deferred** (phase 7): 44 files, output wording asserted by many tests; needs its own pass with the per-class tests. | |
 | F05 `JsonStore` | **deferred** (phase 9): changes write behaviour (journal and backup files for 8 classes), tests need updates. | |
 | F06 entries, `SystemFile`, `SystemdUnit` | **deferred** (phase 9), depends on F05. | |
 | F07 `Names` | **deferred** (phase 12): changes exit codes of 5 classes (2 vs 4), needs the owner's decision (propose 2). | |
-| F08 `Text` / `Fmt` | **done** (`ba6e1c4`): `Text.merge` replaces the last 3 copies (Pkg, Update, Vm); the 4th, `SystemState.merge`, did a different job and is now `startingAnswers`. `Fmt` is the one home for sizes and ages: `bytes` (was TuiKit.size and BackupConfig.human), `kb` (was Vm.humanKb), `age` (BackupTimeline), `ageShort` (DashboardPage), `span` (was TuiSys). The callers keep their method name and forward to it. | `Text.bx`, `Fmt.bx`, `text_test.bxs`, `fmt_test.bxs` |
+| F08 `Text` / `Fmt` | **done** (`ba6e1c4`): `Text.merge` replaces the last 3 copies (Pkg, Update, Vm); the 4th, `SystemState.merge`, did a different job and is now `startingAnswers`. `Fmt` is the one home for sizes and ages: `bytes` (was TuiKit.size and BackupConfig.human), `kb` (was Vm.humanKb), `age` (BackupTimeline), `ageShort` (DashboardPage), `span` (was TuiSys). The callers keep their method name and forward to it. | `util/Text.bx`, `util/Fmt.bx`, `text_test.bxs`, `fmt_test.bxs` |
 | F09 `Pacman` | **deferred** (phase 8). | |
 | F10 `Systemd` | **deferred** (phase 8). | |
 | F11 `Http` | **deferred** (phase 8). | |
@@ -34,7 +34,7 @@ Phases 0 to 5 are done and pushed to `development` (commits `a106a30` for phases
 | F14 Main logic | **deferred** (phase 12). | |
 | F15 version single source | **deferred** (phase 12). | |
 | F16 page registry, `ProviderSpec` | **deferred** (phase 11). | |
-| F17 `DesktopEntry` | **done**: 3 parsers to 1, 5 writers to `render`, one folder list (`BXRIG_APPS_DIRS`, older `BXRIG_DESKTOP_DIRS` still read); exact-case keys; the Apps page hides BxRig's launchers, the `apps` grid keeps them. | `DesktopEntry.bx`, `desktop_entry_test.bxs` |
+| F17 `DesktopEntry` | **done**: 3 parsers to 1, 5 writers to `render`, one folder list (`BXRIG_APPS_DIRS`, older `BXRIG_DESKTOP_DIRS` still read); exact-case keys; the Apps page hides BxRig's launchers, the `apps` grid keeps them. | `util/DesktopEntry.bx`, `desktop_entry_test.bxs` |
 | F18 `Props` and other parsers | **deferred**. | |
 | F19 shortcut table completeness | **deferred on purpose**: the owner is deciding the Traditional and Mac key styles and the five Mac collisions (`Super+B/F/V/S/Comma`). Nothing in `Shortcuts.bx` or `KeysEditor.bx` changed except the generated Lua also reading `XDG_CONFIG_HOME`. | |
 | F20 Shortcuts split | **deferred** (phase 10), after F19. | |
@@ -42,9 +42,13 @@ Phases 0 to 5 are done and pushed to `development` (commits `a106a30` for phases
 | F22 view forwarders | **deferred** (phase 11). | |
 | F23 test harness | **done for the plain shape** (`7f387fb`): 70 of 75 shell tests source `tests/lib/harness.sh` (header, `fail`, `code`, `tmp` with its trap, the `BXRIG_TEST_LIB` path); `fail() { echo "FAIL` went from 67 copies to 4 (the harness, `native-package-integration.sh`, `web-install-test.sh` and the ratchet line). Not migrated: `bootstrap-test.sh`, `config-test.sh`, `package-manager-test.sh`, `web-install-test.sh` take no binary, and `dry-test.sh` is not a binary test. The three pty tests (`wizard`, `init`) wait for the first screen with `tests/lib/pty_ready.py` instead of a fixed sleep: native start is now 1.6 to 2.2 s, and the old 1.2 and 1.5 s waits made them fail. The fake-binary blocks (`pacman`, `sudo`, `id`, ...) are not yet shared: `stub` exists, the repeats are still in the tests. | `tests/lib/harness.sh`, `tests/lib/pty_ready.py`, `tools/migrate-test-to-harness.py` |
 | F24 test discovery | **done** (`9ee26b8`): running and checking by discovery was already done; `tests/lib/Check.bx` is now the one kit of the 27 `.bxs` tests (`check`, `done`, `tmp`, `sh`, `text`, `touch`, `read`, `frame`), found as `new lib.Check()` from the script's folder. The variable that holds it is `testkit`: a variable named `T` collided with a test's own `t` (names are case-insensitive). A ratchet limits `function check( label, ok )` in tests. | `tests/lib/Check.bx`, `tests/dry-test.sh` |
-| F25 named exit codes | **done for say, fail and CLIExit** (`3950e71`): `Exit.bx` holds the table (`ok negative usage plan timeout precondition official failed partial conflict internal update`). `Cli.say`, `Cli.fail`, `Out.say` and `Out.fail` take a name or a number (an unknown name throws); 859 `say`/`fail` call sites and 79 `CLIExit( N )` calls in `Main.bx` use names, plus 66 `return N;` in functions that return exit codes (`return new bxrig.Exit().usage();`). The numbers on the wire are unchanged. 107 other `return N;` remain: they are in functions that print and return a code without calling `say`, or return counts and timeouts (`1800`, `130`); a ratchet in `dry-test.sh` fails on any new bare number as the code argument of `say`/`fail` and on `CLIExit( N )` (130 allowed). | `Exit.bx`, `Cli.bx`, `Out.bx`, `tools/name-exit-codes.py` |
+| F25 named exit codes | **done for say, fail and CLIExit** (`3950e71`): `util/Exit.bx` holds the table (`ok negative usage plan timeout precondition official failed partial conflict internal update`). `Cli.say`, `Cli.fail`, `Out.say` and `Out.fail` take a name or a number (an unknown name throws); 859 `say`/`fail` call sites and 79 `CLIExit( N )` calls in `Main.bx` use names, plus 66 `return N;` in functions that return exit codes (`return new bxrig.Exit().usage();`). The numbers on the wire are unchanged. 107 other `return N;` remain: they are in functions that print and return a code without calling `say`, or return counts and timeouts (`1800`, `130`); a ratchet in `dry-test.sh` fails on any new bare number as the code argument of `say`/`fail` and on `CLIExit( N )` (130 allowed). | `util/Exit.bx`, `util/Cli.bx`, `util/Out.bx`, `tools/name-exit-codes.py` |
 | F26 `Urls` | **deferred** (phase 12). | |
-| F27 encapsulation leaks | **done except item 7** (`aee4e82`): 1. `Shortcuts` asks `Env` for its file. 2. `ConfigService.entry` and `writeText` replace the entry structs built in `KeysEditor`, `Ai` and `Secrets` (4 sites). 3. `TuiSys` is removed: `Proc.run` and `Proc.selfData`, `Fmt.span`; `AppsData` and the 12 providers use them. 4. `Managed.entries` owns the managed-file list that `Main.bx` built (`Refresh` still maps components to entries, which is a different grouping). 5. 28 classes that used `Installer` only to get a `Proc` create a `Proc` (12 more use `inst.exec`, which throws where `Proc.exec` does not, so they stay). 6. `variables.cfgSvc` and `variables.cfg` are `variables.config` (8 classes). 7. `ControlCenter.handle` mutating the app and running processes is the `IntentRunner` of F21 (deferred). | `Managed.bx`, `ConfigService.bx`, `Proc.bx`, `Fmt.bx` |
+| F27 encapsulation leaks | **done except item 7** (`aee4e82`): 1. `Shortcuts` asks `Env` for its file. 2. `ConfigService.entry` and `writeText` replace the entry structs built in `KeysEditor`, `Ai` and `Secrets` (4 sites). 3. `TuiSys` is removed: `Proc.run` and `Proc.selfData`, `Fmt.span`; `AppsData` and the 12 providers use them. 4. `Managed.entries` owns the managed-file list that `Main.bx` built (`Refresh` still maps components to entries, which is a different grouping). 5. 28 classes that used `Installer` only to get a `Proc` create a `Proc` (12 more use `inst.exec`, which throws where `Proc.exec` does not, so they stay). 6. `variables.cfgSvc` and `variables.cfg` are `variables.config` (8 classes). 7. `ControlCenter.handle` mutating the app and running processes is the `IntentRunner` of F21 (deferred). | `Managed.bx`, `ConfigService.bx`, `util/Proc.bx`, `util/Fmt.bx` |
+
+### The util package (CR3 phase 1)
+
+Shared helpers live in `src/bxrig/util/` and are reached as `bxrig.util.NAME`: `Cli`, `Out`, `Exit`, `Proc`, `Env`, `Text`, `Fmt`, `DesktopEntry`. A command class (`bxrig.Pkg`, `bxrig.Time`, ...) never holds a helper's job; a helper never holds a command's job. Every new shared helper (`Pacman`, `Aur`, `Systemd`, `Http`, `Names`, `JsonStore`, `Mutation`, ...) goes into this folder. The move changed no behaviour: only the class path (`new bxrig.util.Proc()`); nested packages build and load under MatchBox (checked before the move).
 
 ### Behaviour changes made on purpose
 
@@ -122,7 +126,7 @@ function say( code, data, asJson, lines = [], dry = false ) {
 }
 ```
 
-Single home: `Cli.bx` (already injected into 71 classes as `variables.cli`; no new constructor wiring) plus a tiny bound facade `Out`.
+Single home: `util/Cli.bx` (already injected into 71 classes as `variables.cli`; no new constructor wiring) plus a tiny bound facade `Out`.
 
 ```
 class Cli {   // existing, extended
@@ -158,7 +162,7 @@ Where:
 - Run-myself: `ControlCenter.bx:58 runCli`, `TimeMachine.bx:18 runCli` (identical), `TuiSys.bx:6 bx`, `DashboardData.bx:79,90` direct `systemExecute( self(), ... )`, `ControlCenter.bx:70 runArgv`. Five paths, three different timeouts (1800, 120, 40).
 - `self()`: 9 identical copies (`getSystemSetting( "BXRIG_SELF", "bxrig" )`).
 
-Single home: `Proc.bx`. `Installer` keeps only `steps()` / `run()` and receives a `Proc`.
+Single home: `util/Proc.bx`. `Installer` keeps only `steps()` / `run()` and receives a `Proc`.
 
 ```
 class Proc {
@@ -192,7 +196,7 @@ Where:
 - Path literals: `/bxrig/*.json` appears in 17 classes; 97 hits for `.config` or `/bxrig/` strings.
 - State home exists only in `ConfigService.stateDir` (`BXRIG_STATE_HOME`, `XDG_STATE_HOME` ignored).
 
-Single home: `Env.bx`, one precedence rule for everything: `BXRIG_*_HOME` override, then `XDG_*_HOME`, then `$HOME` default.
+Single home: `util/Env.bx`, one precedence rule for everything: `BXRIG_*_HOME` override, then `XDG_*_HOME`, then `$HOME` default.
 
 ```
 class Env {
@@ -325,7 +329,7 @@ Risk: low. Behaviour change in the exit code for 5 classes; update their tests (
 - Lines: `listToArray( ..., chr( 10 ) )` 98 times (45 on command output), `trim( x.output )` 201 times in 59 files, `chr( 10 )` 295 times, a local `nl()` in 7 files.
 - Timestamps: `dateTimeFormat( now(), "yyyy-MM-dd'T'HH:mm:ss" )` in `ConfigService.bx:43`, `BackupConfig.bx:128`, `BackupTimeline.bx:48`.
 
-Single home: `Text.bx` (strings) and `Fmt.bx` (human formatting).
+Single home: `util/Text.bx` (strings) and `util/Fmt.bx` (human formatting).
 
 ```
 class Text { function merge( a, b )  function lines( s )  function pad( s, w )  function padLeft( s, w )  function nl() }
@@ -515,7 +519,7 @@ Where:
 - `cleanExec`: byte-identical in `Apps.bx:48` and `AppsData.bx:33`.
 - Writers: `Installer.bx:53 launcherFile`, `Launchers.bx:85,95`, `Web.bx:59`, `Vm.bx:412`, `PlasmaPanels.bx:143` all concatenate `"[Desktop Entry]" & chr( 10 ) & "Type=Application" ...`. Five spellings of the same file, with `Terminal=false`, `Categories=`, comments in different orders.
 
-Single home: `DesktopEntry.bx`.
+Single home: `util/DesktopEntry.bx`.
 
 ```
 class DesktopEntry {
@@ -690,7 +694,7 @@ Home: name by intent, not by number, in the `Out` of F01 (`out.usage`, `out.prec
 
 #### F26 (Low, effort S): strings that should be named once
 
-- `BXRIG_*` environment names: 63 distinct, 143 references; `BXRIG_SELF` 16 times, `BXRIG_TTY_IN` 11, `BXRIG_POWER_DIR` 6. A typo returns the fallback silently. Home: names are method names on `Env` (`Env.configHome()`), listed in `docs/reference/config-files.md` by a check that greps `Env.bx`.
+- `BXRIG_*` environment names: 63 distinct, 143 references; `BXRIG_SELF` 16 times, `BXRIG_TTY_IN` 11, `BXRIG_POWER_DIR` 6. A typo returns the fallback silently. Home: names are method names on `Env` (`Env.configHome()`), listed in `docs/reference/config-files.md` by a check that greps `util/Env.bx`.
 - Unit names (28 refs, F10), theme module file names (6, F20), page ids (F16), icon names (`ControlCenterPages` 17, provider `icon()` 14, `Launchers.folders` freedesktop names, `MenuTree.themeIcon` 4, `TuiKit.glyphs` 24), URLs (`https://github.com` 118 refs, `www.icloud.com` 16, `downloads.ortussolutions.com`, `skills.boxlang.io`, `try.boxlang.io` repeated in `Update`, `Skills`, `Boxlang`, `MenuTree`, `Boxlang.welcomeHtml`). Home: `Urls.bx` for first-party hosts; page and icon names through the registry of F16.
 - Path literals `/.local/share/applications`, `~/.config/bxrig/*.json`: through `Env` (F03).
 
