@@ -244,7 +244,7 @@ class Appearance {
         var l = arguments.args[ 1 ];
         var applied = {};
         if ( l == "floating" ) {
-            applied.windows = arguments.dry ? "would run: bxrig layout float" : ( variables.proc.exec( [ getSystemSetting( "BXRIG_SELF", "bxrig" ), "layout", "float" ], 30 ).exitCode == 0 ? "floated" : "failed" );
+            applied.windows = arguments.dry ? "would run: bxrig layout float" : ( variables.proc.exec( [ new bxrig.util.Env().named( "self", "bxrig" ), "layout", "float" ], 30 ).exitCode == 0 ? "floated" : "failed" );
             return result( "layout", l, applied, [ "floating floats the windows of the current workspace now; tiling comes back with `appearance layout dwindle`" ], arguments.asJson, arguments.dry );
         }
         var s = readState();

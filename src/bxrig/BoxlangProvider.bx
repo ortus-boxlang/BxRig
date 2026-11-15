@@ -3,7 +3,7 @@
 class BoxlangProvider {
     function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
     function id() { return "boxlang"; }
-    function icon() { return "archive"; }
+    function icon() { return new bxrig.ControlCenterPages().icon( "boxlang" ); }
     function title() { return "BoxLang"; }
     function hint() { return "versions installed with bvm"; }
     function emptyText() { return "No BoxLang versions found. Press i to install the latest."; }

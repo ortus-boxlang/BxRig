@@ -39,7 +39,7 @@ class Mail {
 
     // The web UI and API address, without a trailing slash.
     function base() {
-        var forced = getSystemSetting( "BXRIG_MAIL_API", "" );
+        var forced = new bxrig.util.Env().named( "mailApi", "" );
         return len( forced ) ? reReplace( forced, "/+$", "" ) : "http://127.0.0.1:" & uiPort();
     }
 

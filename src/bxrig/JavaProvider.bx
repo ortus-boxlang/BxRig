@@ -2,7 +2,7 @@
 class JavaProvider {
     function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); variables.view = "homes"; return this; }
     function id() { return "java"; }
-    function icon() { return "coffee"; }
+    function icon() { return new bxrig.ControlCenterPages().icon( "java" ); }
     function title() { return "Java"; }
     function hint() { return variables.view == "homes" ? "* default for new shells   > this shell   (a: what you can install)" : "everything SDKMAN offers   (a: back to your homes)"; }
     function emptyText() { return variables.view == "homes" ? "No Java found. Press a to see what you can install, or i and type 21." : "Could not read the list. Check your network."; }

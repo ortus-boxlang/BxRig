@@ -3,17 +3,17 @@
 class Desktop {
     // XDG_CURRENT_DESKTOP as the session set it ("KDE", "Hyprland", ...), or BXRIG_DESKTOP when that is set.
     function raw() {
-        return getSystemSetting( "BXRIG_DESKTOP", getSystemSetting( "XDG_CURRENT_DESKTOP", "" ) );
+        return new bxrig.util.Env().named( "desktop", new bxrig.util.Env().named( "xdgCurrentDesktop", "" ) );
     }
 
     // raw() in lower case.
     function name() { return lCase( raw() ); }
 
     // The session type ("wayland", "x11" or "").
-    function session() { return getSystemSetting( "XDG_SESSION_TYPE", "" ); }
+    function session() { return new bxrig.util.Env().named( "xdgSessionType", "" ); }
 
     // True inside a Hyprland session (its instance signature is set).
-    function inHyprland() { return len( getSystemSetting( "HYPRLAND_INSTANCE_SIGNATURE", "" ) ) > 0; }
+    function inHyprland() { return len( new bxrig.util.Env().named( "hyprlandInstanceSignature", "" ) ) > 0; }
 
     // True inside KDE Plasma.
     function inPlasma() { return findNoCase( "KDE", raw() ) > 0 || findNoCase( "plasma", raw() ) > 0; }

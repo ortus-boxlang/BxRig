@@ -2,7 +2,7 @@
 class ThemesProvider {
     function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
     function id() { return "themes"; }
-    function icon() { return "brush"; }
+    function icon() { return new bxrig.ControlCenterPages().icon( "themes" ); }
     function title() { return "Themes"; }
     function hint() { return "Enter applies a theme"; }
     function emptyText() { return "No themes found."; }

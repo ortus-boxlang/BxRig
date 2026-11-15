@@ -1,4 +1,4 @@
-// ProviderSpec, Modal, IntentRunner, TuiKit.starPositions and ControlCenterPages.make. Run from src/: (cd src && matchbox ../tests/tui_helpers_test.bxs)
+// ProviderSpec, Modal, IntentRunner, TuiKit.starPositions and PageFactory.make. Run from src/: (cd src && matchbox ../tests/tui_helpers_test.bxs)
 testkit = new lib.Check( "tui helpers" );
 bare = { id: function() { return "x"; } };
 spec = new bxrig.ProviderSpec( bare );
@@ -20,10 +20,10 @@ testkit.check( "stars skip the avoided rectangle", cleared.filter( function( s )
 reg = new bxrig.ControlCenterPages();
 dash = new bxrig.DashboardDemo( new bxrig.DashboardData( new bxrig.util.Cli( "0" ) ) );
 okIds = true;
-for ( id in reg.ids() ) { page = reg.make( id, true, dash ); if ( page.id() != id ) okIds = false; }
+for ( id in reg.ids() ) { page = new bxrig.PageFactory().make( id, true, dash ); if ( page.id() != id ) okIds = false; }
 testkit.check( "every registered id builds the page of that id", okIds );
 caught = false;
-try { reg.make( "nope", true, dash ); } catch ( any e ) { caught = true; }
+try { new bxrig.PageFactory().make( "nope", true, dash ); } catch ( any e ) { caught = true; }
 testkit.check( "an unknown id throws", caught );
 calls = [];
 proc = new bxrig.util.Proc( function( argv, timeout ) { calls.append( argv.toList( " " ) ); return { exitCode: 0, timeout: false, output: "line1" & chr( 10 ) & "line2" }; } );

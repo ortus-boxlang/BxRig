@@ -13,7 +13,7 @@ class Record {
     }
 
     function recording() { return variables.proc.exec( [ "pgrep", "-x", "wf-recorder" ], 10 ).exitCode == 0; }
-    function folder() { return getSystemSetting( "BXRIG_VIDEOS", getSystemSetting( "HOME", "" ) & "/Videos" ); }
+    function folder() { return new bxrig.util.Env().named( "videos", new bxrig.util.Env().named( "home", "" ) & "/Videos" ); }
 
     function start( region, dryRun, asJson ) {
         var cmd = "record start";

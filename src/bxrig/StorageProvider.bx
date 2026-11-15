@@ -2,7 +2,7 @@
 class StorageProvider {
     function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
     function id() { return "storage"; }
-    function icon() { return "hdd"; }
+    function icon() { return new bxrig.ControlCenterPages().icon( "storage" ); }
     function title() { return "Storage"; }
     function hint() { return "NAS and cloud"; }
     function emptyText() { return "No NAS or cloud yet. Add a NAS: bxrig nas add NAME --host=HOST"; }

@@ -23,7 +23,7 @@ class Setup {
 
     // True when HyprKwin looks installed for this user (its data folder or a hyprkwin script package).
     function hyprkwinInstalled() {
-        var home = getSystemSetting( "HOME", "" );
+        var home = new bxrig.util.Env().named( "home", "" );
         if ( directoryExists( home & "/.local/share/hyprkwin" ) ) return true;
         var scripts = home & "/.local/share/kwin/scripts";
         if ( !directoryExists( scripts ) ) return false;
@@ -33,7 +33,7 @@ class Setup {
 
     // The OS id from os-release (BXRIG_OS_RELEASE overrides the file for tests): "cachyos", "arch" or whatever the file says.
     function osId() {
-        var file = getSystemSetting( "BXRIG_OS_RELEASE", "/etc/os-release" );
+        var file = new bxrig.util.Env().named( "osRelease", "/etc/os-release" );
         if ( !fileExists( file ) ) return "";
         for ( var line in listToArray( fileRead( file ), chr( 10 ) ) ) {
             if ( left( line, 3 ) == "ID=" ) return lCase( replace( replace( mid( line, 4, len( line ) ), '"', "", "all" ), "'", "", "all" ) );
@@ -71,7 +71,7 @@ class Setup {
 
     // Everything SetupPlan needs to know about this machine.
     function facts() {
-        var nvmDir = getSystemSetting( "NVM_DIR", getSystemSetting( "HOME", "" ) & "/.nvm" );
+        var nvmDir = new bxrig.util.Env().named( "nvmDir", new bxrig.util.Env().named( "home", "" ) & "/.nvm" );
         return {
             nvmDir: nvmDir,
             hasNvm: fileExists( nvmDir & "/nvm.sh" ),
@@ -88,8 +88,8 @@ class Setup {
             sessionType: new bxrig.util.Desktop().session(),
             installed: new bxrig.Packages( variables.cli, {} ).installedNames(),
             hyprkwinInstalled: hyprkwinInstalled(),
-            user: getSystemSetting( "USER", "" ),
-            loginShell: getSystemSetting( "SHELL", "" ),
+            user: new bxrig.util.Env().named( "user", "" ),
+            loginShell: new bxrig.util.Env().named( "shell", "" ),
             hasYay: variables.aur.available(),
             groups: listToArray( trim( variables.inst.proc().exec( [ "id", "-nG" ], 10 ).output ), " " ),
             udevRule: fileExists( new bxrig.SetupPlan().udevRulePath() ),

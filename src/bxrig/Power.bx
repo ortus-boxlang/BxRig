@@ -19,13 +19,13 @@ class Power {
     }
 
     // ---- facts ----
-    function logindDir() { return variables.environ.get( "BXRIG_LOGIND_DIR", "/etc/systemd/logind.conf.d" ); }
+    function logindDir() { return variables.environ.named( "logindDir", "/etc/systemd/logind.conf.d" ); }
     function lidFile() { return logindDir() & "/50-bxrig-lid.conf"; }
 
     // [ { name, percent, status } ] for each BAT* under the power supply directory.
     function batteries() {
         var out = [];
-        var dir = variables.environ.get( "BXRIG_POWER_DIR", "/sys/class/power_supply" );
+        var dir = variables.environ.named( "powerDir", "/sys/class/power_supply" );
         if ( !directoryExists( dir ) ) return out;
         for ( var d in directoryList( dir, false, "name" ) ) {
             if ( !reFind( "^BAT", d ) ) continue;
@@ -58,7 +58,7 @@ class Power {
 
     // kB from /proc/meminfo.
     function meminfo( key ) {
-        var f = variables.environ.get( "BXRIG_MEMINFO", "/proc/meminfo" );
+        var f = variables.environ.named( "meminfo", "/proc/meminfo" );
         if ( !fileExists( f ) ) return 0;
         for ( var line in listToArray( fileRead( f ), chr( 10 ) ) ) {
             if ( reFind( "^" & arguments.key & ":", line ) ) return int( val( trim( reReplace( listRest( line, ":" ), "[^0-9]", "", "all" ) ) ) );

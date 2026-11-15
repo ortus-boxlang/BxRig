@@ -25,8 +25,8 @@ class Containers {
             var rl = variables.proc.exec( [ "podman", "info", "--format", "{{.Host.Security.Rootless}}" ], 30 );
             var rootless = trim( rl.output ) == "true";
             rows.append( check( "rootless", rootless, rootless ? "running without root" : "podman is not rootless for this user" ) );
-            var user = getSystemSetting( "USER", "" );
-            var etc = getSystemSetting( "BXRIG_ETC", "/etc" );
+            var user = new bxrig.util.Env().named( "user", "" );
+            var etc = new bxrig.util.Env().named( "etc", "/etc" );
             var subs = variables.proc.exec( [ "sh", "-c", 'grep -q "^$1:" "$2/subuid" && grep -q "^$1:" "$2/subgid"', "_", user, etc ], 10 ).exitCode == 0;
             rows.append( check( "subuid", subs, subs ? "subuid and subgid entries exist" : "no subuid/subgid range for " & user, "sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 " & user ) );
             var compose = variables.proc.has( "podman-compose" ) || variables.proc.has( "docker-compose" );
@@ -45,7 +45,7 @@ class Containers {
     function socketEnable( yes, asJson ) {
         var cmd = "containers socket enable";
         var argv = variables.systemd.enableArgv( "podman.socket", true );
-        var host = "unix://" & getSystemSetting( "XDG_RUNTIME_DIR", "/run/user/1000" ) & "/podman/podman.sock";
+        var host = "unix://" & new bxrig.util.Env().named( "xdgRuntimeDir", "/run/user/1000" ) & "/podman/podman.sock";
         if ( !variables.proc.has( "podman" ) ) return variables.cli.say( cmd, "precondition", { error: "Podman is not installed" }, arguments.asJson, [ "error: Podman is not installed. Install it: bxrig profile-install containers" ] );
         if ( !arguments.yes ) return variables.cli.say( cmd, "plan", { command: argv, docker_host: host }, arguments.asJson, [ "Plan: " & argv.toList( " " ), "Then tools that speak the Docker API use DOCKER_HOST=" & host, "Nothing was changed. Add --yes to apply." ] );
         var r = variables.proc.exec( argv, 30 );

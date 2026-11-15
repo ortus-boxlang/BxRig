@@ -2,7 +2,7 @@
 class MachinesProvider {
     function init( demo = false, data = "" ) { variables.demo = arguments.demo; variables.data = isSimpleValue( arguments.data ) ? new bxrig.DashboardData( {} ) : arguments.data; return this; }
     function id() { return "machines"; }
-    function icon() { return "desktop"; }
+    function icon() { return new bxrig.ControlCenterPages().icon( "machines" ); }
     function title() { return "Machines"; }
     function hint() { return "Windows and Linux desktops in containers"; }
     function emptyText() { return "No VMs yet. Press n to create a Linux desktop."; }

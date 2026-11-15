@@ -71,7 +71,7 @@ class Ai {
 
     // The argv that runs an agent with only the keys it accepts: bxrig secrets run KEYS... -- COMMAND.
     function agentCommand( agent ) {
-        var out = [ getSystemSetting( "BXRIG_SELF", "bxrig" ), "secrets", "run" ];
+        var out = [ new bxrig.util.Env().named( "self", "bxrig" ), "secrets", "run" ];
         for ( var k in variables.agents.keys( arguments.agent ) ) out.append( k );
         out.append( "--" );
         out.append( arguments.agent.command );

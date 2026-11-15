@@ -32,7 +32,7 @@ class AppsData {
     function selfName() { return variables.proc.selfPath(); }
 
     function cacheDir() {
-        var base = variables.environ.get( "BXRIG_CACHE_HOME", len( getSystemSetting( "XDG_CACHE_HOME", "" ) ) ? getSystemSetting( "XDG_CACHE_HOME", "" ) & "/bxrig" : variables.environ.home() & "/.cache/bxrig" );
+        var base = variables.environ.named( "cacheHome", len( new bxrig.util.Env().named( "xdgCacheHome", "" ) ) ? new bxrig.util.Env().named( "xdgCacheHome", "" ) & "/bxrig" : variables.environ.home() & "/.cache/bxrig" );
         return base & "/apps";
     }
 

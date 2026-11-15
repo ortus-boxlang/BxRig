@@ -23,7 +23,6 @@ count '"Usage: bxrig'              src/bxrig 16
 count 'fail() { echo "FAIL'        tests 4
 count 'function check( label, ok )' tests 2
 count 'jsonDeserialize( fileRead(' src/bxrig 24
-count 'getSystemSetting( "HOME"'   src/bxrig 12
 # external tools have one home each (src/bxrig/util): pacman, the AUR helper, systemctl and curl are only ever spelled there
 for pat in '"pacman", "-' '"yay", "-' '"curl", "-' '"systemctl", "[-a-z]'; do
   n="$(grep -rnE "\[ *\"(sudo\", )?$pat" "$root/src" --include='*.bx' | grep -v '/util/' | grep -vE '^\S+:[0-9]+:\s*//' | wc -l)"
@@ -51,6 +50,11 @@ bare="$(grep -rhoE '(out)\.(say|fail)\( *[0-9]+ *,|(cli)\.(say|fail)\( *[^,()]+,
 (( bare == 0 )) || { echo "FAIL: $bare say/fail calls pass a bare number as the exit code (use a name from Exit.bx)"; fails=$((fails+1)); }
 bare="$(grep -oE 'CLIExit\( *[0-9]+ *\)' "$root/src/Main.bx" | grep -vc '130' || true)"
 (( bare == 0 )) || { echo "FAIL: $bare CLIExit( N ) calls in Main.bx pass a bare number (use xit.NAME())"; fails=$((fails+1)); }
+# environment variable names are listed once (util/Env.names), page icon names once (ControlCenterPages)
+n="$(grep -rn 'getSystemSetting(' "$root/src" --include='*.bx' | grep -v '/util/Env.bx' | wc -l)"
+(( n == 0 )) || { echo "FAIL: $n getSystemSetting calls outside src/bxrig/util/Env.bx (use Env.named( id ), the ids are listed in Env.names())"; fails=$((fails+1)); }
+n="$(grep -rn 'function icon() { return "' "$root/src" --include='*.bx' | wc -l)"
+(( n == 0 )) || { echo "FAIL: $n page icon names spelled outside ControlCenterPages (use ControlCenterPages.icon( id ))"; fails=$((fails+1)); }
 # every test file is run by CI (a new test cannot be forgotten)
 for t in "$root"/tests/*-test.sh "$root"/tests/*_test.bxs "$root"/tests/catalog_check.bxs; do
   [[ -f "$t" ]] || continue

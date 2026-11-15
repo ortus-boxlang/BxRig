@@ -12,7 +12,7 @@ class Starter {
     // The managed starter files in the config service entry shape (name, target, mode, content).
     function entries() {
         var cfg = variables.config.cfgHome();
-        var home = getSystemSetting( "HOME", "" );
+        var home = new bxrig.util.Env().named( "home", "" );
         var out = new bxrig.NoctaliaConfig().entries( cfg, home, variables.opts.theme, variables.opts.wallpaper );
         out.append( { name: "hyprland", target: cfg & "/hypr/hyprland.lua", mode: "644", content: hyprlandText() } );
         return out;

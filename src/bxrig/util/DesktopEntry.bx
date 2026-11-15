@@ -12,7 +12,7 @@ class DesktopEntry {
     // The folders to read, later ones win for the same file name. BXRIG_APPS_DIRS (or the older BXRIG_DESKTOP_DIRS) replaces the list (colon separated).
     // withFlatpak adds the Flatpak exports (leave it off where Flatpak apps are listed another way).
     function dirs( withFlatpak = true ) {
-        var over = variables.environ.get( "BXRIG_APPS_DIRS", variables.environ.get( "BXRIG_DESKTOP_DIRS", "" ) );
+        var over = variables.environ.named( "appsDirs", variables.environ.named( "desktopDirs", "" ) );
         if ( len( over ) ) return listToArray( over, ":" );
         var out = [ "/usr/share/applications", "/usr/local/share/applications", variables.environ.xdgData( "applications" ) ];
         if ( arguments.withFlatpak ) { out.append( "/var/lib/flatpak/exports/share/applications" ); out.append( variables.environ.xdgData( "flatpak/exports/share/applications" ) ); }

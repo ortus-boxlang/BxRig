@@ -23,8 +23,8 @@ class Time {
         return this;
     }
 
-    function unitFile() { return variables.environ.get( "BXRIG_SYSTEMD_DIR", "/etc/systemd/system" ) & "/automatic-timezoned.service"; }
-    function geoclueFile() { return variables.environ.get( "BXRIG_GEOCLUE_DIR", "/etc/geoclue/conf.d" ) & "/90-bxrig-timezone.conf"; }
+    function unitFile() { return variables.environ.named( "systemdDir", "/etc/systemd/system" ) & "/automatic-timezoned.service"; }
+    function geoclueFile() { return variables.environ.named( "geoclueDir", "/etc/geoclue/conf.d" ) & "/90-bxrig-timezone.conf"; }
 
     function unitText() {
         return new bxrig.util.SystemdUnit().render( [

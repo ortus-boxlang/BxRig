@@ -15,7 +15,7 @@ class Packages {
 
     // Where `install` puts the launcher of a web app (decided in COMMAND-CONTRACT section 11).
     function launcherPath( id ) {
-        return getSystemSetting( "HOME", "" ) & "/.local/share/applications/bxrig-" & id & ".desktop";
+        return new bxrig.util.Env().named( "home", "" ) & "/.local/share/applications/bxrig-" & id & ".desktop";
     }
 
     // True when the app is on the system: every target installed, or the launcher file for a web app.
@@ -28,7 +28,7 @@ class Packages {
 
     // The filesystem of / ("btrfs", "ext4", ...; "" when it cannot be read). BXRIG_ROOT_FS overrides it (tests).
     function rootFs() {
-        var forced = getSystemSetting( "BXRIG_ROOT_FS", "" );
+        var forced = new bxrig.util.Env().named( "rootFs", "" );
         if ( len( forced ) ) return forced;
         try {
             var r = systemExecute( "findmnt", [ "-n", "-o", "FSTYPE", "/" ], 10, true );

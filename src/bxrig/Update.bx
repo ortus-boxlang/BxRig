@@ -37,7 +37,7 @@ class Update {
         new bxrig.util.JsonStore().write( "update-settings", file(), arguments.d );
     }
 
-    function base() { return getSystemSetting( "BXRIG_BASE_URL", new bxrig.util.Urls().downloads() ); }
+    function base() { return new bxrig.util.Env().named( "baseUrl", new bxrig.util.Urls().downloads() ); }
     function channels() { return [ "stable", "beta" ]; }
 
     function channel( name, asJson ) {
@@ -51,7 +51,7 @@ class Update {
 
     // The running binary: BXRIG_SELF, else the first bxrig on PATH, resolved.
     function selfPath() {
-        var p = getSystemSetting( "BXRIG_SELF", "" );
+        var p = new bxrig.util.Env().named( "self", "" );
         if ( !len( p ) ) p = trim( variables.proc.exec( [ "sh", "-c", "command -v bxrig" ], 10 ).output );
         return len( p ) ? trim( variables.proc.exec( [ "readlink", "-f", p ], 10 ).output ) : "";
     }
@@ -63,7 +63,7 @@ class Update {
 
     // The public key file: BXRIG_PUBKEY_FILE (tests; the value none turns the check off), else the key embedded in this build, else "" (no signature check, a development build).
     function pubKeyFile() {
-        var f = getSystemSetting( "BXRIG_PUBKEY_FILE", "" );
+        var f = new bxrig.util.Env().named( "pubkeyFile", "" );
         if ( f == "none" ) return "";
         if ( len( f ) ) return f;
         var pem = new bxrig.ReleaseKey().pem();

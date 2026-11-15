@@ -14,7 +14,7 @@ class DashboardPage {
     }
 
     function id() { return "dashboard"; }
-    function icon() { return "home"; }
+    function icon() { return new bxrig.ControlCenterPages().icon( "dashboard" ); }
     function usesLeft() { return false; }
     function title() { return "Dashboard"; }
 

@@ -22,7 +22,7 @@ class BackupSnapshots {
     }
 
     function fsType() {
-        var f = getSystemSetting( "BXRIG_ROOT_FS", "" );
+        var f = new bxrig.util.Env().named( "rootFs", "" );
         if ( len( f ) ) return f;
         return trim( variables.proc.exec( [ "findmnt", "-no", "FSTYPE", "/" ], 10 ).output );
     }
@@ -103,7 +103,7 @@ class BackupSnapshots {
         var notes = [];
         if ( fs == "btrfs" ) {
             var pk = [ "snapper", "snap-pac" ];
-            var bl = getSystemSetting( "BXRIG_BOOTLOADER", "" );
+            var bl = new bxrig.util.Env().named( "bootloader", "" );
             if ( bl == "grub" || ( !len( bl ) && ( directoryExists( "/boot/grub" ) || variables.proc.has( "grub-install" ) ) ) ) pk.append( "grub-btrfs" ); else notes.append( "grub-btrfs (boot entries for snapshots) is skipped: it works with GRUB, and this machine does not use it" );
             cmds.append( variables.pacman.installArgv( pk ) );
             var cfgs = variables.proc.has( "snapper" ) ? configs() : [];

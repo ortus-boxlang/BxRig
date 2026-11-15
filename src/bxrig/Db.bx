@@ -64,7 +64,7 @@ class Db {
     }
 
     function maxMapCount() {
-        var f = getSystemSetting( "BXRIG_MAX_MAP_COUNT_FILE", "/proc/sys/vm/max_map_count" );
+        var f = new bxrig.util.Env().named( "maxMapCountFile", "/proc/sys/vm/max_map_count" );
         try { return fileExists( f ) ? trim( fileRead( f ) ) + 0 : 0; } catch ( any e ) { return 0; }
     }
 
@@ -336,7 +336,7 @@ class Db {
         if ( !len( term ) ) { println( "error: the menu needs a terminal program to show results (ghostty, kitty, foot, alacritty or konsole)" ); return new bxrig.util.Exit().precondition(); }
         var supported = variables.engines.all().filter( function( e ) { return !structKeyExists( e, "unsupported" ); } );
         var actions = [ [ "Start", "start" ], [ "Stop", "stop" ], [ "Status", "status" ], [ "Connection info", "info" ], [ "Logs", "logs" ], [ "Remove (deletes the data)", "remove" ] ];
-        var self = getSystemSetting( "BXRIG_SELF", "bxrig" );
+        var self = new bxrig.util.Env().named( "self", "bxrig" );
         while ( true ) {
             var labels = supported.map( function( e ) { return e.title; } );
             labels.append( "Exit" );

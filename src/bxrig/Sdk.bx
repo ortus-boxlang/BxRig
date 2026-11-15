@@ -22,9 +22,9 @@ class Sdk {
         return this;
     }
 
-    function dir() { return variables.environ.get( "BXRIG_SDKMAN_DIR", variables.environ.home() & "/.sdkman" ); }
-    function api() { return variables.environ.get( "BXRIG_SDKMAN_API", "https://api.sdkman.io/2" ); }
-    function installerUrl() { return variables.environ.get( "BXRIG_SDKMAN_INSTALLER", "https://get.sdkman.io?rcupdate=false" ); }
+    function dir() { return variables.environ.named( "sdkmanDir", variables.environ.home() & "/.sdkman" ); }
+    function api() { return variables.environ.named( "sdkmanApi", "https://api.sdkman.io/2" ); }
+    function installerUrl() { return variables.environ.named( "sdkmanInstaller", "https://get.sdkman.io?rcupdate=false" ); }
     function candidates() { return [ "java", "maven", "gradle" ]; }
     function installed() { return fileExists( dir() & "/bin/sdkman-init.sh" ); }
     function cfgDir() { return variables.config.cfgHome() & "/bxrig"; }

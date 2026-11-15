@@ -2,7 +2,7 @@
 class DatabasesProvider {
     function init( demo = false, data = "" ) { variables.demo = arguments.demo; variables.data = isSimpleValue( arguments.data ) ? new bxrig.DashboardData( {} ) : arguments.data; return this; }
     function id() { return "databases"; }
-    function icon() { return "database"; }
+    function icon() { return new bxrig.ControlCenterPages().icon( "databases" ); }
     function title() { return "Databases"; }
     function hint() { return "running in " & "podman or docker"; }
     function emptyText() { return "No databases yet. Press n to start one, like postgres."; }

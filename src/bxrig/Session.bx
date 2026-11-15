@@ -12,12 +12,12 @@ class Session {
 
     // Directories that hold session .desktop files (BXRIG_SESSION_DIRS overrides, colon separated, for tests).
     function sessionDirs() {
-        return listToArray( getSystemSetting( "BXRIG_SESSION_DIRS", "/usr/share/wayland-sessions:/usr/share/xsessions" ), ":" );
+        return listToArray( new bxrig.util.Env().named( "sessionDirs", "/usr/share/wayland-sessions:/usr/share/xsessions" ), ":" );
     }
 
     // SDDM's state file (BXRIG_SDDM_STATE overrides, for tests).
     function stateFile() {
-        return getSystemSetting( "BXRIG_SDDM_STATE", "/var/lib/sddm/state.conf" );
+        return new bxrig.util.Env().named( "sddmState", "/var/lib/sddm/state.conf" );
     }
 
     // The installed sessions: [ { file, path, name } ].

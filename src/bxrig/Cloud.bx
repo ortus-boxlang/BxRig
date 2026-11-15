@@ -20,7 +20,7 @@ class Cloud {
 
     function unitName( name ) { return "bxrig-cloud-" & arguments.name & ".service"; }
     function unitDir() { return variables.config.cfgHome() & "/systemd/user"; }
-    function defaultDir( name ) { return getSystemSetting( "HOME", "" ) & "/Cloud/" & arguments.name; }
+    function defaultDir( name ) { return new bxrig.util.Env().named( "home", "" ) & "/Cloud/" & arguments.name; }
 
     function remotes() {
         var r = variables.proc.exec( [ "rclone", "listremotes" ], 20 );

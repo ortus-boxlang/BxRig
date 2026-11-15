@@ -37,7 +37,7 @@ class BackupData {
     }
 
     function settingsFile() { return variables.config.cfgHome() & "/bxrig/backup.json"; }
-    function unitDir() { return getSystemSetting( "BXRIG_USER_UNIT_DIR", variables.config.cfgHome() & "/systemd/user" ); }
+    function unitDir() { return new bxrig.util.Env().named( "userUnitDir", variables.config.cfgHome() & "/systemd/user" ); }
     function secrets() { return new bxrig.Secrets( variables.cli ); }
 
     // ---- settings ----
@@ -76,7 +76,7 @@ class BackupData {
         var ty = arguments.t.type;
         var path = arguments.t.path ?: "";
         if ( ty == "local" ) return path;
-        if ( ty == "nas" ) return getSystemSetting( "BXRIG_NAS_HOME", variables.environ.home() & "/NAS" ) & "/" & arguments.t.nas & "/" & listLast( arguments.t.share, "/" ) & "/" & ( len( path ) ? path : "bxrig-backup" );
+        if ( ty == "nas" ) return new bxrig.util.Env().named( "nasHome", variables.environ.home() & "/NAS" ) & "/" & arguments.t.nas & "/" & listLast( arguments.t.share, "/" ) & "/" & ( len( path ) ? path : "bxrig-backup" );
         if ( ty == "sftp" ) return "sftp:" & ( len( arguments.t.port ?: "" ) ? "-p " & arguments.t.port & " " : "" ) & arguments.t.user & "@" & arguments.t.host & ":" & path;
         if ( ty == "rest" ) return "rest:" & arguments.t.url;
         if ( ty == "s3" ) return "s3:" & ( len( arguments.t.endpoint ?: "" ) ? reReplace( arguments.t.endpoint, "/+$", "" ) & "/" : "s3.amazonaws.com/" ) & arguments.t.bucket & ( len( path ) ? "/" & path : "" );

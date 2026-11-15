@@ -21,10 +21,10 @@ class Java {
         return this;
     }
 
-    function dataDir() { return variables.environ.get( "BXRIG_JAVA_DIR", variables.environ.xdgData( "bxrig/java" ) ); }
-    function sysDir() { return variables.environ.get( "BXRIG_JAVA_SYSTEM_DIR", "/usr/lib/jvm" ); }
-    function sdkDir() { return variables.environ.get( "BXRIG_SDKMAN_DIR", variables.environ.home() & "/.sdkman" ) & "/candidates/java"; }
-    function api() { return variables.environ.get( "BXRIG_ADOPTIUM_API", "https://api.adoptium.net" ); }
+    function dataDir() { return variables.environ.named( "javaDir", variables.environ.xdgData( "bxrig/java" ) ); }
+    function sysDir() { return variables.environ.named( "javaSystemDir", "/usr/lib/jvm" ); }
+    function sdkDir() { return variables.environ.named( "sdkmanDir", variables.environ.home() & "/.sdkman" ) & "/candidates/java"; }
+    function api() { return variables.environ.named( "adoptiumApi", "https://api.adoptium.net" ); }
     function cfgDir() { return variables.config.cfgHome() & "/bxrig"; }
     function shFile() { return cfgDir() & "/java.sh"; }
     function fishFile() { return cfgDir() & "/java.fish"; }
@@ -70,7 +70,7 @@ class Java {
         for ( var h in scan( sdkDir(), "sdkman", "sdkman-" ) ) all.append( h );
         for ( var s in scan( sysDir(), "system", "system-" ) ) all.append( s );
         var def = defaultHome();
-        var cur = getSystemSetting( "JAVA_HOME", "" );
+        var cur = new bxrig.util.Env().named( "javaHome", "" );
         for ( var x in all ) { x.default = len( def ) && x.path == def; x.active = len( cur ) && x.path == cur; }
         arraySort( all, function( a, b ) { return b.major - a.major != 0 ? b.major - a.major : compare( b.id, a.id ); } );
         return all;
@@ -97,7 +97,7 @@ class Java {
     }
 
     function downloadUrl( major ) {
-        var forced = getSystemSetting( "BXRIG_JAVA_DOWNLOAD_URL", "" );
+        var forced = new bxrig.util.Env().named( "javaDownloadUrl", "" );
         if ( len( forced ) ) return forced;
         return api() & "/v3/binary/latest/" & arguments.major & "/ga/linux/x64/jdk/hotspot/normal/eclipse";
     }

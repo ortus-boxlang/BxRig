@@ -72,7 +72,7 @@ class SystemState {
             var plasma = structKeyExists( variables.names, "plasma-desktop" ) || structKeyExists( variables.names, "plasma-workspace" );
             res.value = hypr && plasma ? "both" : ( hypr ? "hyprland" : ( plasma ? "plasma" : "" ) );
         } else if ( id == "shell" ) {
-            var sh = listLast( getSystemSetting( "SHELL", "" ), "/" );
+            var sh = listLast( new bxrig.util.Env().named( "shell", "" ), "/" );
             res.value = arrayFind( [ "zsh", "fish", "bash" ], sh ) ? sh : "";
         } else if ( id == "terminal" ) res.value = defaultTerminal();
         else if ( id == "default_browser" ) res.value = defaultBrowser();
@@ -93,7 +93,7 @@ class SystemState {
     // `scan( spec )`: { answers: { qid: value or [values] }, installed: { qid: [values] } }; only questions the system has something to say about appear.
     // Is there a battery (a laptop)? BXRIG_POWER_DIR overrides /sys/class/power_supply for tests.
     function hasBattery() {
-        var dir = getSystemSetting( "BXRIG_POWER_DIR", "/sys/class/power_supply" );
+        var dir = new bxrig.util.Env().named( "powerDir", "/sys/class/power_supply" );
         if ( !directoryExists( dir ) ) return false;
         for ( var d in directoryList( dir, false, "name" ) ) if ( reFind( "^BAT", d ) ) return true;
         return false;

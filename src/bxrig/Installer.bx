@@ -76,7 +76,7 @@ class Installer {
 
     // Builds the steps for the selected apps, in catalog order within each kind: pacman, aur, pkgbuild.
     function steps( selected, asRoot, home = "" ) {
-        var homeDir = len( home ) ? home : getSystemSetting( "HOME", "" );
+        var homeDir = len( home ) ? home : new bxrig.util.Env().named( "home", "" );
         var pacmanIds = []; var pacmanTargets = [];
         var aur = []; var builds = []; var webs = []; var scripts = []; var blocked = [];
         for ( var app in selected ) {

@@ -34,8 +34,9 @@ class ControlCenter {
 
     function buildPages( demo ) {
         var registry = new bxrig.ControlCenterPages();
+        var factory = new bxrig.PageFactory();
         var out = [];
-        for ( var id in registry.ids() ) out.append( registry.make( id, arguments.demo, provider( arguments.demo ) ) );
+        for ( var id in registry.ids() ) out.append( factory.make( id, arguments.demo, provider( arguments.demo ) ) );
         return out;
     }
 
@@ -55,7 +56,7 @@ class ControlCenter {
 
     // Icons are Nerd Font glyphs. "on" and "off" are explicit; "" follows BXRIG_ICONS, then looks for a Nerd Font on the machine.
     function iconsEnabled( opt = "" ) {
-        var o = len( arguments.opt ) ? arguments.opt : getSystemSetting( "BXRIG_ICONS", "" );
+        var o = len( arguments.opt ) ? arguments.opt : new bxrig.util.Env().named( "icons", "" );
         if ( o == "on" ) return true;
         if ( o == "off" ) return false;
         try { return systemExecute( "sh", [ "-c", "fc-list 2>/dev/null | grep -qi 'nerd'" ], 5, true ).exitCode == 0; } catch ( any e ) { return false; }

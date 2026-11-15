@@ -9,7 +9,7 @@ class SshKey {
         return this;
     }
 
-    function dir() { return getSystemSetting( "HOME", "" ) & "/.ssh"; }
+    function dir() { return new bxrig.util.Env().named( "home", "" ) & "/.ssh"; }
     function keyFile() { return dir() & "/id_ed25519"; }
 
     function run( email, yes, dryRun, asJson ) {

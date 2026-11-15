@@ -2,7 +2,7 @@
 class VersionsProvider {
     function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
     function id() { return "versions"; }
-    function icon() { return "tags"; }
+    function icon() { return new bxrig.ControlCenterPages().icon( "versions" ); }
     function title() { return "Versions"; }
     function hint() { return "bvm, mvm and nvm in one place"; }
     function emptyText() { return "No version managers found."; }
@@ -15,7 +15,7 @@ class VersionsProvider {
     }
 
     function nodeActive() {
-        var d = getSystemSetting( "NVM_DIR", getSystemSetting( "HOME", "" ) & "/.nvm" ) & "/versions/node";
+        var d = new bxrig.util.Env().named( "nvmDir", new bxrig.util.Env().named( "home", "" ) & "/.nvm" ) & "/versions/node";
         try { if ( directoryExists( d ) ) { var names = directoryList( d, false, "name" ); arraySort( names, "textnocase", "desc" ); return names.len() ? { v: names[ 1 ], n: names.len() } : { v: "", n: 0 }; } } catch ( any e ) {}
         return { v: "", n: 0 };
     }

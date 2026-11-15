@@ -29,9 +29,9 @@ class Nas {
     function cfg() { return variables.config.cfgHome(); }
     function nasFile() { return cfg() & "/bxrig/nas.json"; }
     function backupFile() { return cfg() & "/bxrig/backup.json"; }
-    function credDir() { return variables.environ.get( "BXRIG_NAS_CRED_DIR", "/etc/bxrig/nas" ); }
-    function unitDir() { return variables.environ.get( "BXRIG_SYSTEMD_DIR", "/etc/systemd/system" ); }
-    function nasHome() { return variables.environ.get( "BXRIG_NAS_HOME", variables.environ.home() & "/NAS" ); }
+    function credDir() { return variables.environ.named( "nasCredDir", "/etc/bxrig/nas" ); }
+    function unitDir() { return variables.environ.named( "systemdDir", "/etc/systemd/system" ); }
+    function nasHome() { return variables.environ.named( "nasHome", variables.environ.home() & "/NAS" ); }
     function credFile( name ) { return credDir() & "/" & arguments.name & ".cred"; }
     function secretKey( name ) { return "BXRIG_NAS_" & uCase( replace( arguments.name, "-", "_", "all" ) ) & "_PASSWORD"; }
     function secrets() { return new bxrig.Secrets( variables.cli ); }
@@ -300,7 +300,7 @@ class Nas {
         if ( structIsEmpty( r ) ) return variables.out.fail( "precondition", "no NAS called " & arguments.name & " (bxrig nas list)", arguments.asJson );
         var port = r.protocol == "smb" ? "445" : "2049";
         var checks = [];
-        var forced = getSystemSetting( "BXRIG_NAS_REACH", "" );
+        var forced = new bxrig.util.Env().named( "nasReach", "" );
         var reach = len( forced ) ? forced == "yes" : variables.proc.exec( [ "bash", "-c", 'exec 3<>"/dev/tcp/$1/$2"', "_", r.host, port ], 8 ).exitCode == 0;
         checks.append( { id: "reachable", ok: reach, note: r.host & ":" & port & ( reach ? " answers" : " does not answer (is the NAS on, is " & uCase( r.protocol ) & " enabled in DSM?)" ) } );
         if ( reach ) {

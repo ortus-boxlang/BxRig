@@ -45,7 +45,7 @@ class BackupTimeline {
     }
 
     function nowEpoch() {
-        var forced = getSystemSetting( "BXRIG_NOW_EPOCH", "" );
+        var forced = new bxrig.util.Env().named( "nowEpoch", "" );
         if ( len( forced ) ) return int( val( forced ) );
         return epoch( dateTimeFormat( dateConvert( "local2utc", now() ), "yyyy-MM-dd'T'HH:mm:ss" ) );
     }
@@ -124,7 +124,7 @@ class BackupTimeline {
 
     function mirrorRows( now ) {
         var rows = [];
-        var file = variables.runner == "" ? getSystemSetting( "HOME", "" ) : getSystemSetting( "HOME", "" );
+        var file = variables.runner == "" ? new bxrig.util.Env().named( "home", "" ) : new bxrig.util.Env().named( "home", "" );
         var cfg = new bxrig.ConfigService().quiet( true ).cfgHome() & "/bxrig/nas.json";
         if ( !fileExists( cfg ) ) return rows;
         try {
@@ -139,7 +139,7 @@ class BackupTimeline {
     }
 
     function build( localOnly = false ) {
-        var forced = getSystemSetting( "BXRIG_TIMELINE_FILE", "" );
+        var forced = new bxrig.util.Env().named( "timelineFile", "" );
         if ( len( forced ) && fileExists( forced ) ) return jsonDeserialize( fileRead( forced ) );
         var now = nowEpoch();
         var rows = [ systemRow( now ), configRow( now ) ];

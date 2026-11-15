@@ -100,7 +100,7 @@ class MacExtras {
 
     // The coordinates of a time zone from zone1970.tab (or zone.tab), or [].
     function zoneCoords( zone ) {
-        var dir = getSystemSetting( "BXRIG_ZONEINFO", "/usr/share/zoneinfo" );
+        var dir = new bxrig.util.Env().named( "zoneinfo", "/usr/share/zoneinfo" );
         for ( var f in [ "zone.tab", "zone1970.tab" ] ) {
             if ( !fileExists( dir & "/" & f ) ) continue;
             for ( var line in listToArray( fileRead( dir & "/" & f ), chr( 10 ) ) ) {

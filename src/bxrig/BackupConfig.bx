@@ -25,7 +25,7 @@ class BackupConfig {
         return this;
     }
 
-    function dataHome() { return getSystemSetting( "BXRIG_DATA_HOME", variables.environ.home() & "/.local/share/bxrig" ); }
+    function dataHome() { return new bxrig.util.Env().named( "dataHome", variables.environ.home() & "/.local/share/bxrig" ); }
     function storeDir() { return dataHome() & "/backups/config"; }
     function settingsFile() { return variables.config.cfgHome() & "/bxrig/backup.json"; }
 

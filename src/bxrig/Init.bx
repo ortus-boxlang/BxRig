@@ -84,7 +84,7 @@ class Init {
     }
 
     // This program, to run the plan's own commands: BXRIG_SELF (tests, odd installs), else `bxrig` on PATH.
-    function selfPath() { return getSystemSetting( "BXRIG_SELF", "bxrig" ); }
+    function selfPath() { return new bxrig.util.Env().named( "self", "bxrig" ); }
 
     // The command line for a step: our own path, --yes on our own commands.
     function commandFor( step ) {

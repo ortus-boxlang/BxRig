@@ -23,10 +23,10 @@ class Security {
         return this;
     }
 
-    function pamFile() { return variables.environ.get( "BXRIG_PAM_DIR", "/etc/pam.d" ) & "/sudo"; }
-    function sudoersFile() { return variables.environ.get( "BXRIG_SUDOERS_DIR", "/etc/sudoers.d" ) & "/50-bxrig-nopasswd"; }
-    function u2fFile() { return variables.environ.get( "BXRIG_U2F_FILE", variables.environ.xdgConfig( "Yubico/u2f_keys" ) ); }
-    function user() { return getSystemSetting( "USER", "" ); }
+    function pamFile() { return variables.environ.named( "pamDir", "/etc/pam.d" ) & "/sudo"; }
+    function sudoersFile() { return variables.environ.named( "sudoersDir", "/etc/sudoers.d" ) & "/50-bxrig-nopasswd"; }
+    function u2fFile() { return variables.environ.named( "u2fFile", variables.environ.xdgConfig( "Yubico/u2f_keys" ) ); }
+    function user() { return new bxrig.util.Env().named( "user", "" ); }
 
     function pamLine( kind ) { return arguments.kind == "fingerprint" ? "auth sufficient pam_fprintd.so" : "auth sufficient pam_u2f.so cue"; }
     function pamMarker( kind ) { return " # bxrig " & arguments.kind; }

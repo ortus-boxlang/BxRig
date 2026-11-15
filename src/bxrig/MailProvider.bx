@@ -4,7 +4,7 @@
 class MailProvider {
     function init( demo = false ) { variables.demo = arguments.demo; variables.mail = new bxrig.Mail( {} ); variables.up = true; variables.cacheId = ""; variables.cacheMsg = {}; return this; }
     function id() { return "mail"; }
-    function icon() { return "envelope"; }
+    function icon() { return new bxrig.ControlCenterPages().icon( "mail" ); }
     function title() { return "Mail"; }
     function hint() { return variables.up ? "your app's mail, newest first · refreshes every 3 s" : "the catcher is not running. Start it: bxrig mail start --yes"; }
     function refreshSeconds() { return 3; }

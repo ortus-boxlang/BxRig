@@ -2,7 +2,7 @@
 class PackagesProvider {
     function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
     function id() { return "packages"; }
-    function icon() { return "download"; }
+    function icon() { return new bxrig.ControlCenterPages().icon( "packages" ); }
     function title() { return "Packages"; }
     function hint() { return "press / and type what you are looking for"; }
     function live() { return true; }

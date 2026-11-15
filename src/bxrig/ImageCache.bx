@@ -16,8 +16,8 @@ class ImageCache {
         variables.environ = new bxrig.util.Env();
         variables.opts = arguments.opts;
         variables.maxBytes = arguments.opts.maxBytes ?: 5242880;
-        variables.capKb = arguments.opts.capKb ?: int( val( variables.environ.get( "BXRIG_IMAGE_CAP_KB", "204800" ) ) );
-        variables.maxTime = arguments.opts.maxTime ?: int( val( variables.environ.get( "BXRIG_IMAGE_MAX_TIME", "15" ) ) );
+        variables.capKb = arguments.opts.capKb ?: int( val( variables.environ.named( "imageCapKb", "204800" ) ) );
+        variables.maxTime = arguments.opts.maxTime ?: int( val( variables.environ.named( "imageMaxTime", "15" ) ) );
         variables.failSeconds = 6 * 3600;
         variables.pendingSeconds = max( 60, variables.maxTime * 4 );
         return this;
@@ -25,9 +25,9 @@ class ImageCache {
 
     function base() {
         if ( structKeyExists( variables.opts, "base" ) ) return variables.opts.base;
-        var home = variables.environ.get( "HOME", "" );
-        var xdg = variables.environ.get( "XDG_CACHE_HOME", home & "/.cache" );
-        return variables.environ.get( "BXRIG_CACHE_HOME", xdg & "/bxrig" );
+        var home = variables.environ.named( "home", "" );
+        var xdg = variables.environ.named( "xdgCacheHome", home & "/.cache" );
+        return variables.environ.named( "cacheHome", xdg & "/bxrig" );
     }
 
     function dir( kind ) { return base() & "/images/" & reReplace( arguments.kind, "[^a-z0-9_-]", "", "all" ); }
@@ -37,7 +37,7 @@ class ImageCache {
     function allowed( url ) {
         var u = arguments.url;
         if ( left( u, 8 ) == "https://" && len( u ) < 2000 && !reFind( "[\s'" & chr( 34 ) & "]", u ) ) return true;
-        return ( ( variables.opts.allowHttp ?: false ) || variables.environ.get( "BXRIG_IMAGE_ALLOW_HTTP", "" ) == "1" ) && left( u, 7 ) == "http://" && len( u ) < 2000 && !reFind( "[\s'" & chr( 34 ) & "]", u );
+        return ( ( variables.opts.allowHttp ?: false ) || variables.environ.named( "imageAllowHttp", "" ) == "1" ) && left( u, 7 ) == "http://" && len( u ) < 2000 && !reFind( "[\s'" & chr( 34 ) & "]", u );
     }
 
     // The file that holds the picture once it is cached, or "".

@@ -44,15 +44,15 @@ class Vm {
         return r.exitCode == 0 ? trim( r.output ) : "";
     }
 
-    function ipv6Dir() { return getSystemSetting( "BXRIG_IPV6_DIR", "/proc/sys/net/ipv6" ); }
+    function ipv6Dir() { return new bxrig.util.Env().named( "ipv6Dir", "/proc/sys/net/ipv6" ); }
     // True when this machine has no IPv6 (kernel built or booted without it): the webtop's nginx then cannot listen on [::] unless told with DISABLE_IPV6.
     function noIpv6() { return variables.proc.exec( [ "sh", "-c", '[ ! -d "$1" ]', "_", ipv6Dir() ], 10 ).exitCode == 0; }
-    function driDir() { return getSystemSetting( "BXRIG_DRI_DIR", "/dev/dri" ); }
+    function driDir() { return new bxrig.util.Env().named( "driDir", "/dev/dri" ); }
     function secrets() { return new bxrig.Secrets( variables.cli ); }
 
     // ---- host facts ----
     function hostMemGb() {
-        var f = getSystemSetting( "BXRIG_MEMINFO_FILE", "/proc/meminfo" );
+        var f = new bxrig.util.Env().named( "meminfoFile", "/proc/meminfo" );
         try {
             for ( var l in listToArray( fileRead( f ), chr( 10 ) ) ) if ( left( l, 9 ) == "MemTotal:" ) return int( val( trim( replace( replace( l, "MemTotal:", "" ), "kB", "" ) ) ) / 1048576 );
         } catch ( any e ) {}
@@ -93,7 +93,7 @@ class Vm {
     }
 
     function tz() {
-        var env = getSystemSetting( "TZ", "" );
+        var env = new bxrig.util.Env().named( "tz", "" );
         if ( len( env ) ) return env;
         var r = variables.proc.exec( [ "sh", "-c", 'readlink /etc/localtime 2>/dev/null | sed "s|.*/zoneinfo/||"' ], 10 );
         return r.exitCode == 0 && len( trim( r.output ) ) ? trim( r.output ) : "Etc/UTC";
@@ -163,7 +163,7 @@ class Vm {
         var rows = [];
         var eng = engineCli();
         rows.append( check( "container engine (" & eng & ")", engineAvailable(), engineAvailable() ? "found" : eng & " was not found (bxrig profile-install containers, or bxrig db engine docker)" ) );
-        var kvm = getSystemSetting( "BXRIG_KVM_DEVICE", "/dev/kvm" );
+        var kvm = new bxrig.util.Env().named( "kvmDevice", "/dev/kvm" );
         var kvmOk = variables.proc.exec( [ "sh", "-c", '[ -r "$1" ] && [ -w "$1" ]', "_", kvm ], 10 ).exitCode == 0;
         rows.append( check( "KVM (" & kvm & ", read and write)", kvmOk, kvmOk ? "ok" : ( fileExists( kvm ) ? kvm & " exists but you cannot use it: add yourself to the kvm group (sudo usermod -aG kvm $USER) and log in again" : kvm & " is missing: enable virtualization (VT-x or AMD-V) in the firmware and load the kvm module" ), true ) );
         var tun = variables.proc.exec( [ "sh", "-c", '[ -e /dev/net/tun ]' ], 10 ).exitCode == 0;
@@ -195,7 +195,7 @@ class Vm {
 
     // ---- choosing a Windows version ----
     function hasTerminal() {
-        if ( len( getSystemSetting( "BXRIG_TTY_IN", "" ) ) ) return true;
+        if ( len( new bxrig.util.Env().named( "ttyIn", "" ) ) ) return true;
         return variables.proc.exec( [ "sh", "-c", ': < /dev/tty' ], 10 ).exitCode == 0;
     }
 
@@ -207,7 +207,7 @@ class Vm {
         for ( var i = 1; i <= list.len(); i++ ) text.append( "  " & i & ") " & list[ i ].value & repeatString( " ", max( 1, 8 - len( list[ i ].value ) ) ) & list[ i ].name & ", " & numberFormat( list[ i ].size, "0.0" ) & " GB" & ( len( list[ i ].note ) ? ": " & list[ i ].note : "" ) );
         text.append( "You need your own Windows license for any of them." );
         if ( !arguments.asJson ) for ( var l in text ) println( l );
-        else if ( !len( getSystemSetting( "BXRIG_TTY_IN", "" ) ) ) variables.proc.exec( [ "sh", "-c", 'printf "%s\n" "$1" > /dev/tty 2>/dev/null', "_", text.toList( chr( 10 ) ) ], 10 );
+        else if ( !len( new bxrig.util.Env().named( "ttyIn", "" ) ) ) variables.proc.exec( [ "sh", "-c", 'printf "%s\n" "$1" > /dev/tty 2>/dev/null', "_", text.toList( chr( 10 ) ) ], 10 );
         var tmp = reReplace( getTempDirectory(), "/+$", "" ) & "/bxrig-vm-" & left( createUUID(), 8 );
         var script = 'in="${BXRIG_TTY_IN:-/dev/tty}"; printf "Number or version [1]: " > /dev/tty 2>/dev/null; IFS= read -r v < "$in"; printf "%s" "$v" > "$1"';
         var answer = "";
@@ -345,7 +345,7 @@ class Vm {
             return variables.cli.say( cmd, arguments.dryRun ? "ok" : "plan", variables.text.merge( data, { would: what } ), arguments.asJson, lines, arguments.dryRun );
         }
         if ( !engineAvailable() ) return variables.cli.fail( cmd, "precondition", engineCli() & " is required but was not found (bxrig profile-install containers, or bxrig db engine docker)", arguments.asJson );
-        if ( arguments.kind == "windows" && variables.proc.exec( [ "sh", "-c", '[ -r /dev/kvm ] && [ -w /dev/kvm ]' ], 10 ).exitCode != 0 && !len( getSystemSetting( "BXRIG_VM_SKIP_KVM_CHECK", "" ) ) ) return variables.cli.fail( cmd, "precondition", "/dev/kvm is not usable by you (run: bxrig vm doctor)", arguments.asJson );
+        if ( arguments.kind == "windows" && variables.proc.exec( [ "sh", "-c", '[ -r /dev/kvm ] && [ -w /dev/kvm ]' ], 10 ).exitCode != 0 && !len( new bxrig.util.Env().named( "vmSkipKvmCheck", "" ) ) ) return variables.cli.fail( cmd, "precondition", "/dev/kvm is not usable by you (run: bxrig vm doctor)", arguments.asJson );
         // the password goes to the keyring (bxrig secrets) and, for this run only, into an env file (mode 600) the container reads
         var pw = newSecret();
         if ( len( pw ) < 16 ) return variables.cli.fail( cmd, "failed", "Could not generate a password", arguments.asJson );
@@ -418,7 +418,7 @@ class Vm {
     }
 
     function waitFor( port, seconds ) {
-        if ( len( getSystemSetting( "BXRIG_VM_NO_WAIT", "" ) ) ) return true;
+        if ( len( new bxrig.util.Env().named( "vmNoWait", "" ) ) ) return true;
         return variables.proc.exec( [ "bash", "-c", 'i=0; while [ "$i" -lt "$2" ]; do (exec 3<>/dev/tcp/127.0.0.1/$1) 2>/dev/null && exit 0; sleep 1; i=$((i+1)); done; exit 1', "_", arguments.port & "", arguments.seconds & "" ], arguments.seconds + 30 ).exitCode == 0;
     }
 

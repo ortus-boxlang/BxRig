@@ -18,8 +18,8 @@ class Skills {
         return this;
     }
 
-    function store() { return getSystemSetting( "BXRIG_SKILLS_DIR", variables.environ.home() & "/.agents/skills" ); }
-    function hub() { return getSystemSetting( "BXRIG_SKILLS_URL", new bxrig.util.Urls().skillsHub() ); }
+    function store() { return new bxrig.util.Env().named( "skillsDir", variables.environ.home() & "/.agents/skills" ); }
+    function hub() { return new bxrig.util.Env().named( "skillsUrl", new bxrig.util.Urls().skillsHub() ); }
     function manifestFile() { return variables.config.cfgHome() & "/bxrig/skills.json"; }
 
     function aliases() {

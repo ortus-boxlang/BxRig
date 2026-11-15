@@ -22,7 +22,7 @@ class SystemActions {
         if ( hypr && variables.proc.has( "noctalia" ) ) return { argv: [ "noctalia", "msg", "session", v ], via: "noctalia" };
         if ( v == "lock" ) return variables.proc.has( "loginctl" ) ? { argv: [ "loginctl", "lock-session" ], via: "systemd" } : {};
         if ( v == "logout" ) {
-            var sid = getSystemSetting( "XDG_SESSION_ID", "" );
+            var sid = new bxrig.util.Env().named( "xdgSessionId", "" );
             return variables.proc.has( "loginctl" ) && len( sid ) ? { argv: [ "loginctl", "terminate-session", sid ], via: "systemd" } : {};
         }
         if ( !variables.systemd.available() ) return {};

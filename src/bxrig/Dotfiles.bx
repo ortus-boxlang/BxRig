@@ -23,7 +23,7 @@ class Dotfiles {
 
     function methods() { return [ "chezmoi", "yadm", "stow", "links" ]; }
     function toolFor( method ) { return arguments.method == "links" ? "" : arguments.method; }
-    function dataHome() { return getSystemSetting( "BXRIG_DATA_HOME", variables.environ.home() & "/.local/share/bxrig" ); }
+    function dataHome() { return new bxrig.util.Env().named( "dataHome", variables.environ.home() & "/.local/share/bxrig" ); }
     function cloneDir() { return dataHome() & "/dotfiles/repo"; }
     function journalFile() { return variables.config.stateDir() & "/dotfiles.json"; }
 

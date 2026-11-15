@@ -172,7 +172,7 @@ class TuiKit {
     // Pictures (app icons, screenshots) go through the canvas's tui.image: real graphics in Kitty and Ghostty, half blocks everywhere else.
     // They are on unless BXRIG_IMAGES=off, or the canvas reports no support; BXRIG_IMAGES=on forces them. Nothing here ever throws or blocks.
     function imagesDefault() {
-        var o = getSystemSetting( "BXRIG_IMAGES", "" );
+        var o = new bxrig.util.Env().named( "images", "" );
         if ( o == "off" ) return false;
         if ( o == "on" ) return true;
         try { var s = variables.tui.image_support(); return len( s ) && s != "none"; } catch ( any e ) { return false; }

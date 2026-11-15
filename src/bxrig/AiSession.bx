@@ -48,7 +48,7 @@ class AiSession {
         if ( len( arguments.name ) && !new bxrig.util.Names().valid( "label", arguments.name ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: a session name is letters, digits, - and _ (up to 40)" ] );
         if ( !hasTmux() ) return variables.cli.say( cmd, "precondition", { error: "tmux is not installed" }, arguments.asJson, [ "error: tmux is not installed. Install it: bxrig install tmux" ] );
         if ( !variables.ai.installed( a.command ) ) return variables.cli.say( cmd, "precondition", { error: a.id & " is not installed" }, arguments.asJson, [ "error: " & a.name & " is not installed. Install it first: bxrig install " & a.id ] );
-        var folder = len( arguments.dir ) ? arguments.dir : getSystemSetting( "PWD", "." );
+        var folder = len( arguments.dir ) ? arguments.dir : new bxrig.util.Env().named( "pwd", "." );
         if ( !directoryExists( folder ) ) return variables.cli.say( cmd, "precondition", { error: "No such folder" }, arguments.asJson, [ "error: " & folder & " is not a folder" ] );
         var session = prefix() & a.id & ( len( arguments.name ) ? "-" & arguments.name : "" );
         var inner = variables.ai.agentCommand( a );

@@ -11,7 +11,7 @@ class Quicklook {
     }
 
     function run( path, dryRun, asJson ) {
-        var target = len( arguments.path ) ? arguments.path : getSystemSetting( "PWD", "." );
+        var target = len( arguments.path ) ? arguments.path : new bxrig.util.Env().named( "pwd", "." );
         if ( !fileExists( target ) && !directoryExists( target ) ) return variables.out.say( "precondition", { error: "No such file or folder: " & target }, arguments.asJson, [ "error: no such file or folder: " & target ] );
         var have = variables.inst.proc().exec( [ "sh", "-c", "command -v kiview" ], 10 ).exitCode == 0;
         if ( !have ) return variables.out.say( "precondition", { error: "kiview is not installed" }, arguments.asJson, [ "error: kiview is not installed. Install it: bxrig install kiview" ] );

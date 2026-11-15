@@ -3,7 +3,7 @@
 class SdkProvider {
     function init( cand, demo = false ) { variables.cand = arguments.cand; variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); variables.ready = true; return this; }
     function id() { return variables.cand; }
-    function icon() { return variables.cand == "maven" ? "wrench" : "gear"; }
+    function icon() { return new bxrig.ControlCenterPages().icon( variables.cand ); }
     function title() { return uCase( left( variables.cand, 1 ) ) & mid( variables.cand, 2, 20 ); }
     function hint() { return variables.ready ? "through SDKMAN · * default · ● installed" : "SDKMAN is not installed. Press S to set it up."; }
     function emptyText() { return "Could not read the version list. Check your network."; }
