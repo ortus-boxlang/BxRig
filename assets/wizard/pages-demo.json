@@ -587,7 +587,7 @@
           "id": "mac_keys",
           "label": "Mac-style Super keys",
           "default": true,
-          "help": "Super+C, Super+V, Super+Tab behave like Cmd. Off keeps the Traditional (Omarchy-like) keys."
+          "help": "On: Super+Z S F T N O P R W L B I U and Super+Tab behave like Cmd. Off keeps the Traditional (Omarchy-like) keys. Super+C, V, X and A copy, paste, cut and select all either way."
         },
         {
           "type": "choice",

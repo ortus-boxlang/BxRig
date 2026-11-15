@@ -149,6 +149,7 @@ class MenuTree {
                 sub( "Toggle", [
                     spawn( "Do Not Disturb", [ "notify", "dnd", "toggle" ] ),
                     spawn( "Dictation on or off", [ "dictation", "toggle" ] ),
+                    spawn( "Dock: show or hide", [ "appearance", "dock", "toggle" ] ),
                     spawn( "Snooze notifications for 30 minutes", [ "notify", "snooze", "30m" ] ),
                     spawn( "Snooze notifications for 2 hours", [ "notify", "snooze", "2h" ] ),
                     spawn( "Turn snooze off", [ "notify", "snooze", "off" ] ),

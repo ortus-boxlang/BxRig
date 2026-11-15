@@ -11,18 +11,18 @@ Two styles: **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys for 
 | r2 | Launch apps | `Super+Alt+Space` | `Super+Alt+Space` | Moves from `Super+Space`; the separate all-apps key goes away |
 | r8 | Clipboard manager | `Super+Ctrl+V` | `Super+Ctrl+V` | `Super+Shift+V` is dropped |
 | r9 | Copy, paste, cut, select all | `Super+C/V/X/A` | `Super+C/V/X/A` | Terminal aware |
-| r10 | Screenshot | `Super+Shift+3/4/5` and `Print` | same | Custom text "keep Mac plus Print", read as both styles |
+| r10 | Screenshot | `Print` | `Print` and `Super+Shift+3/4/5` | Custom text "keep Mac plus Print"; owner answer 2026-11-15 |
 | r13 | Color picker | `Super+Print` | `Super+Print` | Custom with empty text: read as the page proposal. New: hyprpicker |
 | r17 | Time, battery, weather notices | `Super+Ctrl+Alt+T/B/W` | same | New `bxrig notify time\|battery\|weather` |
 | r22 | Agent picker | `Super+Shift+Ctrl+A` | same | The pull-down AI shell stays on `Super+Grave` |
 | r23 | Dictation toggle | `Alt+Space` | same | Replaces `Super+Ctrl+X` |
-| r25 | Input language switch | `Super+I`, `Super+Shift+I` | `Super+Alt+I`, `Super+Alt+Shift+I` | `Super+I` is Italic in Mac mode (see open questions) |
+| r25 | Input language switch | `Super+I`, `Super+Shift+I` | `Super+Alt+I`, `Super+Alt+Shift+I` | `Super+I` is Italic in Mac mode |
 | r27 | Lock | `Super+Ctrl+L` | `Super+Ctrl+L` | Replaces `Super+Ctrl+Q` |
-| r31 | Full screen desktop | `Super+Ctrl+Alt+F` | same | |
+| r31 | Full screen desktop | `Super+Ctrl+Alt+F` | same | Toggles the Noctalia bar |
 | r33 | Notification act, dismiss one, history, keyboard control | dropped | dropped | |
 | r34 | Silence notifications (DND) | `Super+Ctrl+Alt+Comma` | same | Replaces `Super+Alt+N` |
 | r36 | Night light | no key (menu only) | no key (menu only) | Omarchy has none; `Super+Alt+Shift+N` goes |
-| r39 | Close window | `Super+W`, `Super+Q` | `Super+Q` | Custom "Super w and super q"; `Super+W` is Close tab in Mac mode (see open questions) |
+| r39 | Close window | `Super+W`, `Super+Q` | `Super+Q` | `Super+W` is the Close tab remap in Mac mode |
 | r43 | Float or tile | `Super+T` | `Super+Alt+T` | `Super+T` is New tab in Mac mode |
 | r52 | Quake console | `Super+Shift+Grave` | `Super+Shift+Grave` | Not built here yet; the key is reserved |
 | r53 | Minimize | `Super+H` | `Super+H` | Replaces `Super+M`; restore is `Super+Shift+H` (assumed) |
@@ -41,7 +41,7 @@ Two styles: **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys for 
 | r76 | Log out | System menu | `Super+Shift+Q` | Omarchy uses it for the calculator. Kept on both styles (Plasma needs it) |
 | r77, r78 | Force quit, Overview | `Super+Alt+Escape`, `Super+Ctrl+Up` | same | |
 | r81 | Noctalia settings window | `Super+Ctrl+Comma` | `Super+Ctrl+Comma` | `Super+Comma` is Preferences in Mac mode |
-| x1 | Noctalia control center panel | `Super+Alt+C` | `Super+Alt+C` | Was `Super+S` (Save in Mac mode) |
+| x1, r18 | Noctalia control center panel | `Super+Alt+C`, `Super+Ctrl+A/B/N/P/D` | same | Was `Super+S` (Save in Mac mode); the five panel keys open the same panel |
 | r41, r49, r50, r56, r57, r63 | Split, arrows, workspaces, swap, Alt+Tab, volume and brightness keys | as today | as today | Move from the starter file into the table |
 
 ## Consequences
@@ -50,15 +50,25 @@ Two styles: **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys for 
 - Mac mode also swaps Alt and Win on PC keyboards (asked in the wizard; Apple keyboard: no swap).
 - New runner entries: region record, dictation toggle, color picker, time, battery and weather notices, a Shortcuts section (list, search, rebind, run).
 
-## Open questions for the owner (nothing guessed)
+## Owner answers to the open questions (2026-11-15)
 
-1. Panel keys `Super+Ctrl+A/B/N/P/D` (r18, P1): the Noctalia IPC docs list only `panel-toggle control-center` and `launcher`, so the panel ids are unknown. Not added.
-2. Screen recording with desktop or microphone audio (P1 menu gap): no decision row. Not added.
-3. r25 Mac: you chose "use Omarchy's" (`Super+I`), which is Italic in Mac mode. The table keeps the earlier answer `Super+Alt+I` for Mac. Confirm?
-4. r39 Mac: `Super+W` closes a tab with Mac keys, so Mac has only `Super+Q`. Do you want `Super+W` to close the window in Mac mode too (the tab remap would then lose that key)?
-5. r10: what should plain `Print` do? Implemented as the region screenshot, like Mac `Super+Shift+4`.
-6. `Alt+Space` (dictation) on a PC keyboard with the Alt/Win swap is the physical `Win+Space`. Fine?
-7. Old starter files: a `hyprland.lua` written before this change still holds the binds that now live in `bxrig.lua`. They fire twice until those lines are deleted; `bxrig keys conflicts` lists them.
+- Panel keys `Super+Ctrl+A/B/N/P/D` (r18) all open the Noctalia control center panel, the same action as `Super+Alt+C`. No panel ids are needed.
+- r25 Mac input language is `Super+Alt+I` and `Super+Alt+Shift+I` (confirmed).
+- r39 close window: `Super+Q` closes the window in both styles. Traditional also has `Super+W` (Omarchy 4.5). In the Mac style `Super+W` stays the Ctrl+W remap (close tab, which closes the window in most apps).
+- r10 `Print` is the region screenshot. Traditional has `Print` only; the Mac style also has `Super+Shift+3/4/5`.
+- r31 `Super+Ctrl+Alt+F` ("full screen desktop", Omarchy's shell toggle that hides bar and dock) toggles the Noctalia bar in both styles (`appearance bar toggle`). The Mac full screen is `Super+Ctrl+F`, unchanged.
+- Workspace moves: Traditional keeps `Super+Shift+1..0`. In the Mac style `Super+Shift+3/4/5` are screenshots, so moving a window to workspaces 3, 4 and 5 is `Super+Alt+Shift+3/4/5` (1, 2 and 6 to 0 stay `Super+Shift+N`). `keys conflicts` is clean in both styles.
+- xremap is always installed (copy, paste, cut and select all are remaps in both styles); the wizard no longer ties it to the Mac keys question.
+- `Alt+Space` (dictation) is the logical Alt key. With the Mac swap on a PC keyboard it is physically the Win key, the same place as Option on a Mac.
+- This is the first version: there is no migration step and no migration code.
+
+## Owner request: toggle the dock (2026-11-15)
+
+`Super+Alt+D` shows or hides the dock in both styles (macOS Cmd+Option+D; with the Alt/Win swap on a PC keyboard it lands on the same physical keys). It runs `bxrig appearance dock toggle`, which is Noctalia's `dock-toggle` IPC command. No Omarchy 4.5 key uses `Super+Alt+D` (Omarchy has `Super+Ctrl+Alt+D` for the calendar), and `keys conflicts` is clean. It is also in the runner under Trigger > Toggle. macOS's "focus the dock" key (Ctrl+F3) is not possible: Noctalia has no IPC command to focus its dock.
+
+## Still open
+
+- Not built, so not bound: private browser window, file manager in the current directory, quake console, webcam, `Super+Ctrl+H` (no Hardware section), screen recording with audio (no decision row).
 
 ## Class API (written before the code)
 
@@ -83,7 +93,3 @@ Shortcuts( overrides = "", style = "" )   // style: "traditional" | "mac" | a Ke
 CLI additions (cli.json): keys style [traditional|mac] [--keyboard=pc|apple] [--swap=on|off] [--yes] | keys search TEXT | keys run ID
                           notify time|battery|weather | screenshot color | dictation toggle | menu open ROUTE
 ```
-8. `Super+Shift+3/4/5` are the screenshot keys (r10) and used to be "send window to workspace 3/4/5" too (both fired). The table leaves workspace moves 3 to 5 unbound. Which keys do you want for them?
-9. "Full screen desktop" (`Super+Ctrl+Alt+F`, r31): what should it do (Omarchy's meaning is not in the repo)? Not bound.
-10. Traditional copy, paste, cut and select all (r9) use xremap, like Mac style. The wizard installs xremap only when Mac keys are on. Should it always install it?
-11. Not built, so not bound: private browser window, file manager in the current directory, quake console, webcam, menu key `Super+Ctrl+H` (no Hardware section).

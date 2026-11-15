@@ -123,7 +123,7 @@ Leaf entries per section (Omarchy, counted from the JSONC; a provider submenu co
 | Emoji | Emoji | Emoji | same | |
 | Clipboard history | Clipboard History | Clipboard history | same | |
 | Reminder: set, show all, clear all (3) | `omarchy-reminder` | none | Omarchy only | Add (P3): small `bxrig remind` |
-| Screenshot | Screenshot | Super+Shift+3, 4, 5 and Print | different on purpose | Owner: keep Mac plus Print (r10). Print is the region screenshot (open question) |
+| Screenshot | Screenshot | Screenshot menu, Screen, Region, Window (4) | same | |
 | Screenrecord: no audio | Screenrecord | Screen recording start or stop | same | |
 | Screenrecord: with desktop audio | `--with-desktop-audio` | none (`Record.bx` has no audio option) | Omarchy only | Add (P1) |
 | Screenrecord: desktop and microphone | `--with-microphone-audio` | none | Omarchy only | Add (P1) |
@@ -131,7 +131,7 @@ Leaf entries per section (Omarchy, counted from the JSONC; a provider submenu co
 | Stop screenrecording | row shown only while recording | the same toggle entry | same | |
 | Text (OCR) | Text | Text (OCR) | same | |
 | QR code | QR Code | QR code | same | |
-| Color picker | `hyprpicker -a` | Super+Print (`screenshot color`, hyprpicker) | same | Done (P1, r13) |
+| Color picker | `hyprpicker -a` | `bxrig screenshot color` (Trigger > Capture > Color picker) | same | Done (P1) |
 | Transcode | `omarchy-transcode` (not read) | none | Omarchy only | Add (P3): `ffmpeg` is in the catalog |
 | Share: clipboard, file, folder, receive (4) | `omarchy-menu-share`, LocalSend for receive | none (`localsend` is a default catalog app) | Omarchy only | Add (P3) |
 | Hardware: laptop display, mirror (4 rows, on and off) | present on laptops | Setup > Display > Laptop panel, Mirror (4) | same | Different section |
@@ -241,7 +241,7 @@ Leaf entries per section (Omarchy, counted from the JSONC; a provider submenu co
 | Timezone, Time | `omarchy-menu-timezone`, `omarchy-update-time` | Setup > Time (6 leaves) | same | Different section |
 | Notifications, re-apply appearance and display, agent skills update (5) | none | present | ours only | |
 | About | `omarchy-launch-about` | About (`bxrig status`) | same | |
-| Lock | `omarchy-system-lock` | Super+Ctrl+L | same | Owner r27 |
+| Lock | `omarchy-system-lock` | Lock | same | |
 | Suspend | `systemctl suspend`, hidden when sleep is off | Suspend | same | |
 | Hibernate | shown when available | none | Omarchy only | Add (P2) |
 | Logout, Reboot, Shutdown | 3 | 3 (with `--yes`) | same | |
@@ -274,7 +274,7 @@ Moved or new in 4.5 that matter here: panels have their own keys (Super+Ctrl+A a
 | Emoji picker | Super+Ctrl+E | Super+Ctrl+E | same | |
 | Clipboard manager | Super+Ctrl+V | Super+Ctrl+V | same | `Super+Shift+V` dropped (r8) |
 | Copy, paste, cut, select all | Super+C, V, X, A (Hyprland key injection, terminal aware) | Super+C, V, X, A (xremap, terminal aware, both styles) | same | The other Cmd keys are Mac style only |
-| Screenshot | Print, Super+Ctrl+Alt+C | Super+Shift+3, 4, 5 and Print | different on purpose | Owner: keep Mac plus Print (r10). Print is the region screenshot (open question) |
+| Screenshot | Print, Super+Ctrl+Alt+C | Print; Mac style also Super+Shift+3, 4, 5 | different on purpose | Owner r10: Print is the region screenshot |
 | Screen recording | Alt+Print (menu or stop) | Super+Shift+R; region Super+Alt+Shift+R | different on purpose | |
 | Webcam overlay size | Super+Alt+code:34, 35 | none | Omarchy only | Add (P3) with webcam recording |
 | Color picker | Super+Print | Super+Print (`screenshot color`, hyprpicker) | same | Done (P1, r13) |
@@ -282,7 +282,7 @@ Moved or new in 4.5 that matter here: panels have their own keys (Super+Ctrl+A a
 | Share, transcode | Super+Ctrl+S, Super+Ctrl+Period | none | Omarchy only | Add (P3) |
 | Reminders: set, show, clear | Super+Ctrl+R, Super+Ctrl+Alt+R, Super+Shift+Ctrl+R | none | Omarchy only | Add (P3) with Reminder |
 | Time, battery, weather notices | Super+Ctrl+Alt+T, B, W | Super+Ctrl+Alt+T, B, W (`notify time|battery|weather`) | same | Done (r17) |
-| Audio, Bluetooth, Network, Power, Display panels | Super+Ctrl+A, B, N, P, D | none (Super+Alt+C opens the control center panel) | Omarchy only | Not done: the Noctalia panel ids for these are not documented, only control-center and launcher |
+| Audio, Bluetooth, Network, Power, Display panels | Super+Ctrl+A, B, N, P, D | Super+Ctrl+A, B, N, P, D | same | Owner: all open the Noctalia control center panel, as Super+Alt+C does |
 | Bar panel by number | Super+Ctrl+1..9 | none | Omarchy only | Add (P3) |
 | Calendar, world clock | Super+Ctrl+Alt+D, E | none | Omarchy only | Add (P3) |
 | Activity monitor | Super+Shift+T (btop) | none | Omarchy only | Add (P3) |
@@ -295,7 +295,7 @@ Moved or new in 4.5 that matter here: panels have their own keys (Super+Ctrl+A a
 | Toggle top bar | Super+Shift+Space | none | Omarchy only | Add (P2): bind `appearance bar toggle` |
 | Background menu, theme menu | Super+Ctrl+Space or W; Super+Shift+Ctrl+Space or Super+Ctrl+T | none | Omarchy only | Add (P3) |
 | Window transparency, gaps, square ratio | Super+Backspace, with Shift, with Ctrl | none | Omarchy only | Add (P3) |
-| Full screen desktop | Super+Ctrl+Alt+F | none | Omarchy only | Owner chose Super+Ctrl+Alt+F (r31) but what it does is not known; not bound (open question) |
+| Full screen desktop | Super+Ctrl+Alt+F | Super+Ctrl+Alt+F (`appearance bar toggle`) | same | Owner r31: toggles the Noctalia bar |
 | Dismiss all notifications | Super+Shift+comma | none (menu: Clear notifications) | Omarchy only | Add (P2): bind `notify clear` |
 | Act on, dismiss one, history, keyboard control of notifications | Super+comma, Alt+comma, Shift+Alt+comma, Ctrl+comma | none (Super+Comma is Noctalia settings or Preferences) | Omarchy only | N/A: no Noctalia equivalent was read; revisit with Noctalia's IPC |
 | Silence notifications | Super+Ctrl+Alt+comma | Super+Ctrl+Alt+Comma | same | Owner r34 |
@@ -303,7 +303,7 @@ Moved or new in 4.5 that matter here: panels have their own keys (Super+Ctrl+A a
 | Night light | none (menu only) | none (menu only) | same | Owner r36: Omarchy has no key, so the key is gone |
 | Laptop display toggle, mirror | Super+Ctrl+Delete, with Alt | none (menu entries exist) | Omarchy only | Add (P3) |
 | Lid close and open (incl. Apple SMC lid) | `switch:on:Lid Switch` and the Apple name | Power > Closing the lid (logind setting) | different on purpose | Apple Silicon: BxRig targets x86 Arch |
-| Close window | Super+W, Super+Q | Super+Q; Super+W in the Traditional style | same | Owner r39. Super+W is Close tab in the Mac style |
+| Close window | Super+W, Super+Q | Super+Q; Super+W in the Traditional style | same | Owner r39. In the Mac style Super+W is the Close tab remap |
 | Close all windows | Ctrl+Alt+Delete | none | Omarchy only | Add (P3) |
 | Toggle split | Super+J | Super+J | same |  |
 | Pseudo window | Super+P | none | Omarchy only | N/A: Super+P is Print with Mac keys, pseudo-tiling is rare |
@@ -314,7 +314,7 @@ Moved or new in 4.5 that matter here: panels have their own keys (Super+Ctrl+A a
 | Save, restore window width | Super+Alt+Home, Super+Home | none | Omarchy only | Add (P3) |
 | Cycle workspace layout | Super+L, Super+Alt+L | none (menu: Window layout) | Omarchy only | Add (P3) |
 | Focus with arrows | Super+Arrows | Super+Arrows (starter file) | same | |
-| Workspace 1 to 10: switch, move, move silently | Super+1..0, with Shift, with Shift+Alt | Super+1..0, with Shift | same | BxRig lacks the silent move (Add P3) |
+| Workspace 1 to 10: switch, move, move silently | Super+1..0, with Shift, with Shift+Alt | Super+1..0, with Shift (Mac style: Super+Alt+Shift+3/4/5 for 3 to 5) | same | BxRig lacks the silent move (Add P3) |
 | Scratchpad | Super+S, Super+Alt+S | none (Super+S is the Noctalia panel) | Omarchy only | Add (P3) |
 | Quake console | Super+grave, Super+Shift+grave (`qconsole.lua`, not read) | none (reserved: Super+Shift+Grave); the AI shell is Super+Grave | different on purpose | Owner r52; the console is not built |
 | Minimize to the dock | Super+M | Super+H (restore Super+Shift+H) | different on purpose | Owner r53 |
@@ -377,6 +377,7 @@ Every row of `bxrig keys show`, plus the extra binds in `bxrig.lua` and the star
 | 17 Control Center page rows | Open one TUI page | yes | Control Center, one entry each | |
 | Cmd-style remaps (19 keys incl. Super+Tab) | Key remaps | style only | Setup > Keyboard > Mac-style keys on, off only | Remaps are not actions; nothing to run |
 | Super+Alt+C | Noctalia control center panel | no | none | Add (P2) with the panel entries |
+| Super+Alt+D | Toggle the dock | yes | Trigger > Toggle > Dock: show or hide | Owner request (macOS Cmd+Option+D) |
 | Super+Ctrl+Comma | Noctalia settings | no | none | Add (P2) |
 | Alt+Tab | Noctalia window switcher | no | none | N/A: interactive switcher |
 | Super+Q, Return, B, E, F, V, J, arrows, workspaces, mouse | Window and app basics (starter file) | no | none | N/A: window manager actions, not commands |
@@ -403,12 +404,12 @@ Reading the numbers: Omarchy 4.5 moved Audio, Wi-Fi, Bluetooth and power out of 
 
 ### Prioritized gaps
 
-P1, small to build, clear value (status 2026-11-15: 1 and 2 are done, 3 and 4 are not):
+P1, small to build, clear value (status 2026-11-15: 1, 2 and 4 are done, 3 is not):
 
 1. DONE (`bxrig menu open ROUTE`; keys Super+Escape, XF86PowerOff, Super+Ctrl+C, Super+Ctrl+O; no Hardware section exists, so no key for it). `bxrig menu ROUTE` (open any section directly, as `omarchy menu summon`), then keys for System, Capture, Toggle and Hardware menus (Omarchy Super+Escape, Super+Ctrl+C, O, H, XF86PowerOff).
 2. DONE (`bxrig screenshot color`, Super+Print, menu entry Trigger > Capture > Color picker). Trigger > Capture > Color picker (`hyprpicker`, optional in the catalog) and a key (Omarchy Super+Print).
 3. NOT DONE (no decision row). Screen recording with desktop audio and with microphone (`Record.bx` has no audio option).
-4. NOT DONE (the panel ids are not in Noctalia's IPC docs; Super+S moved to Super+Alt+C). Keys for the Noctalia panels: audio, Bluetooth, network, power, display (Omarchy Super+Ctrl+A, B, N, P, D). The key is P1 here, the matching menu entries are P2. Super+S already opens the control center but clashes with the Save remap when Mac keys are on.
+4. DONE (owner: the five panel keys all open the control center panel; Super+S moved to Super+Alt+C). Keys for the Noctalia panels: audio, Bluetooth, network, power, display (Omarchy Super+Ctrl+A, B, N, P, D). The key is P1 here, the matching menu entries are P2. Super+S already opens the control center but clashes with the Save remap when Mac keys are on.
 
 P2, useful:
 
