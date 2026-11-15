@@ -1,0 +1,25 @@
+// The key rules of the boxes every terminal screen shows: the plan to confirm and the line of text to type. Pure, no state and no drawing.
+// ControlCenterApp and TimeMachineApp keep their own modes; they ask here what a key means.
+class Modal {
+    // "yes" for y, Y and Enter; "no" for n, N, Escape and q; "" for any other key.
+    function answer( key ) {
+        var k = arguments.key;
+        if ( k == "y" || k == "Y" || k == "Enter" ) return "yes";
+        if ( k == "n" || k == "N" || k == "Escape" || k == "q" ) return "no";
+        return "";
+    }
+
+    // The text after one key typed into an input: Backspace removes the last character, Space adds a blank, one character is added, any other key changes nothing.
+    function typed( text, key ) {
+        var k = arguments.key;
+        if ( k == "Backspace" ) return len( arguments.text ) > 1 ? left( arguments.text, len( arguments.text ) - 1 ) : "";
+        if ( k == "Space" ) return arguments.text & " ";
+        if ( len( k ) == 1 ) return arguments.text & k;
+        return arguments.text;
+    }
+
+    // The lines of a text for a box (empty lines kept).
+    function lines( text ) {
+        return listToArray( arguments.text, chr( 10 ), true );
+    }
+}

@@ -11,12 +11,8 @@ class WizardView {
         variables.data = new bxrig.WizardData();
         variables.icon = len( trim( variables.data.icon() ) ) ? listToArray( variables.data.icon(), chr( 10 ), true ) : [];
         variables.wordmark = listToArray( variables.data.wordmark(), chr( 10 ), true );
-        variables.BASE = "##303446";    variables.MANTLE = "##292c3c";   variables.CRUST = "##232634";
-        variables.SURFACE0 = "##414559"; variables.SURFACE1 = "##51576d"; variables.OVERLAY = "##737994";
-        variables.TEXT = "##c6d0f5";    variables.SUB = "##a5adce";
-        variables.GREEN = "##00ff78";   variables.CYAN = "##00dbff";
-        variables.YELLOW = "##e5c890";  variables.RED = "##e78284";
         variables.kit = new bxrig.TuiKit( arguments.tui );
+        for ( var shade in [ "BASE", "MANTLE", "CRUST", "SURFACE0", "SURFACE1", "OVERLAY", "TEXT", "SUB", "GREEN", "CYAN", "YELLOW", "RED" ] ) variables[ shade ] = variables.kit.color( shade );
         variables.shownKey = "";
         variables.changedAt = 0;
         variables.stars = [];
@@ -95,16 +91,7 @@ class WizardView {
         var sizeKey = arguments.width & "x" & arguments.height;
         if ( sizeKey != variables.starsFor ) {
             variables.starsFor = sizeKey;
-            variables.stars = [];
-            var seed = 2654435769;
-            for ( var i = 0; i < 46; i++ ) {
-                seed = ( seed * 1664525 + 1013904223 ) mod 4294967296;
-                var x = int( seed / 256 ) mod arguments.width;
-                seed = ( seed * 1664525 + 1013904223 ) mod 4294967296;
-                var y = int( seed / 256 ) mod arguments.height;
-                if ( x >= arguments.avoid.x && x < arguments.avoid.x + arguments.avoid.w && y >= arguments.avoid.y && y < arguments.avoid.y + arguments.avoid.h ) continue;
-                variables.stars.append( { x: x, y: y, i: i } );
-            }
+            variables.stars = variables.kit.starPositions( 46, arguments.width, arguments.height, arguments.avoid );
         }
         for ( var s in variables.stars ) {
             var tw = ( sin( arguments.tick / 14 + s.i * 1.7 ) * 0.5 + 0.5 ) * 0.85;

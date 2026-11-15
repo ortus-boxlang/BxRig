@@ -1,6 +1,6 @@
 // The pages of the Control Center as data: id, title, icon name. One list for everything that needs to know the pages without building them:
-// `bxrig tui list`, the Control Center menu, the per-page launchers and the unbound shortcuts. ControlCenter.buildPages() must return the same pages in the
-// same order (a test checks ids, titles and icons against it).
+// `bxrig tui list`, the Control Center menu, the per-page launchers and the unbound shortcuts. ControlCenter.buildPages() returns the same pages in the
+// same order (a test checks ids, titles and icons against it). make( id, demo, dashboard ) builds the page for an id.
 class ControlCenterPages {
     function list() {
         return [
@@ -25,6 +25,32 @@ class ControlCenterPages {
     }
 
     function ids() { return list().map( function( p ) { return p.id; } ); }
+
+    // The page object for an id. `dashboard` is the dashboard data provider (the Dashboard, Machines and Databases pages share it).
+    // The order and the ids are `list()`; a test checks that every id builds.
+    function make( id, demo, dashboard ) {
+        var d = arguments.demo;
+        switch ( arguments.id ) {
+            case "dashboard": return new bxrig.DashboardPage( arguments.dashboard );
+            case "apps": return new bxrig.AppsPage( d );
+            case "boxlang": return new bxrig.ListPage( new bxrig.BoxlangProvider( d ) );
+            case "java": return new bxrig.ListPage( new bxrig.JavaProvider( d ) );
+            case "maven": return new bxrig.ListPage( new bxrig.SdkProvider( "maven", d ) );
+            case "gradle": return new bxrig.ListPage( new bxrig.SdkProvider( "gradle", d ) );
+            case "versions": return new bxrig.ListPage( new bxrig.VersionsProvider( d ) );
+            case "ports": return new bxrig.ListPage( new bxrig.PortsProvider( d ) );
+            case "packages": return new bxrig.ListPage( new bxrig.PackagesProvider( d ) );
+            case "shortcuts": return new bxrig.ListPage( new bxrig.ShortcutsProvider( d ) );
+            case "machines": return new bxrig.ListPage( new bxrig.MachinesProvider( d, arguments.dashboard ) );
+            case "databases": return new bxrig.ListPage( new bxrig.DatabasesProvider( d, arguments.dashboard ) );
+            case "mail": return new bxrig.ListPage( new bxrig.MailProvider( d ) );
+            case "storage": return new bxrig.ListPage( new bxrig.StorageProvider( d ) );
+            case "secrets": return new bxrig.ListPage( new bxrig.SecretsProvider( d ) );
+            case "themes": return new bxrig.ListPage( new bxrig.ThemesProvider( d ) );
+            case "logs": return new bxrig.ListPage( new bxrig.LogsProvider( d ) );
+        }
+        throw( type = "bxrig.pages", message = "unknown page: " & arguments.id );
+    }
 
     function find( id ) {
         for ( var p in list() ) if ( p.id == arguments.id ) return p;

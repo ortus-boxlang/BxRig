@@ -166,12 +166,12 @@ class TimeMachineApp {
 
     // ---- the modal screens ----
     function showPlan( title, text, intent ) {
-        variables.modal = { title: arguments.title, lines: listToArray( arguments.text, chr( 10 ), true ), intent: arguments.intent };
+        variables.modal = { title: arguments.title, lines: new bxrig.Modal().lines( arguments.text ), intent: arguments.intent };
         variables.mode = "confirm";
     }
 
     function showResult( title, text ) {
-        variables.modal = { title: arguments.title, lines: listToArray( arguments.text, chr( 10 ), true ), intent: {} };
+        variables.modal = { title: arguments.title, lines: new bxrig.Modal().lines( arguments.text ), intent: {} };
         variables.mode = "result";
     }
 
@@ -195,8 +195,9 @@ class TimeMachineApp {
         if ( variables.mode == "help" ) { variables.mode = "timeline"; return {}; }
         if ( variables.mode == "result" ) { variables.mode = variables.browse.files.len() && structKeyExists( variables.modal, "back" ) ? "browse" : "timeline"; return {}; }
         if ( variables.mode == "confirm" ) {
-            if ( k == "y" || k == "Y" || k == "Enter" ) { var it = variables.modal.intent; it.confirmed = true; return it; }
-            if ( k == "n" || k == "N" || k == "Escape" || k == "q" ) leaveConfirm();
+            var answer = new bxrig.Modal().answer( k );
+            if ( answer == "yes" ) { var it = variables.modal.intent; it.confirmed = true; return it; }
+            if ( answer == "no" ) leaveConfirm();
             return {};
         }
         if ( variables.mode == "pick" ) return onPickKey( k );

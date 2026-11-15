@@ -8,11 +8,8 @@
 class TimeMachineView {
     function init( tui ) {
         variables.tui = arguments.tui;
-        variables.BASE = "##303446"; variables.MANTLE = "##292c3c"; variables.CRUST = "##232634";
-        variables.SURFACE0 = "##414559"; variables.SURFACE1 = "##51576d"; variables.OVERLAY = "##737994";
-        variables.TEXT = "##c6d0f5"; variables.SUB = "##a5adce";
-        variables.GREEN = "##00ff78"; variables.CYAN = "##00dbff"; variables.YELLOW = "##e5c890"; variables.RED = "##e78284"; variables.MAUVE = "##ca9ee6"; variables.SKY = "##99d1db";
         variables.kit = new bxrig.TuiKit( arguments.tui );
+        for ( var shade in [ "BASE", "MANTLE", "CRUST", "SURFACE0", "SURFACE1", "OVERLAY", "TEXT", "SUB", "GREEN", "CYAN", "YELLOW", "RED", "MAUVE", "SKY" ] ) variables[ shade ] = variables.kit.color( shade );
         variables.months = [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" ];
         variables.days = [ "Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed" ];
         variables.stars = [];
@@ -102,13 +99,7 @@ class TimeMachineView {
         var key = arguments.width & "x" & arguments.height;
         if ( key != variables.starsFor ) {
             variables.starsFor = key;
-            variables.stars = [];
-            var seed = 2654435769;
-            for ( var i = 0; i < 40; i++ ) {
-                seed = ( seed * 1664525 + 1013904223 ) mod 4294967296; var x = int( seed / 256 ) mod arguments.width;
-                seed = ( seed * 1664525 + 1013904223 ) mod 4294967296; var y = int( seed / 256 ) mod arguments.height;
-                variables.stars.append( { x: x, y: y, i: i } );
-            }
+            variables.stars = variables.kit.starPositions( 40, arguments.width, arguments.height );
         }
         for ( var s in variables.stars ) if ( s.y >= arguments.minY && s.y < arguments.height - 3 ) put( s.x, s.y, ( ( arguments.tick / 6 + s.i ) mod 9 ) < 1 ? "*" : "·", variables.SURFACE0, variables.BASE );
     }

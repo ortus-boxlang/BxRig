@@ -1,0 +1,38 @@
+// ProviderSpec, Modal, IntentRunner, TuiKit.starPositions and ControlCenterPages.make. Run from src/: (cd src && matchbox ../tests/tui_helpers_test.bxs)
+testkit = new lib.Check( "tui helpers" );
+bare = { id: function() { return "x"; } };
+spec = new bxrig.ProviderSpec( bare );
+testkit.check( "a provider that defines nothing gets the defaults", !spec.live() && spec.refreshSeconds() == 0 && spec.detailLines() == 2 );
+own = { live: function() { return true; }, refreshSeconds: function() { return 5; }, detailLines: function() { return 9; } };
+spec2 = new bxrig.ProviderSpec( own );
+testkit.check( "a provider that defines them wins", spec2.live() && spec2.refreshSeconds() == 5 && spec2.detailLines() == 9 );
+testkit.check( "real providers: Packages is live, Logs takes the defaults, Mail overrides", new bxrig.ProviderSpec( new bxrig.PackagesProvider( true ) ).live() && !new bxrig.ProviderSpec( new bxrig.LogsProvider( true ) ).live() && new bxrig.ProviderSpec( new bxrig.LogsProvider( true ) ).detailLines() == 2 && new bxrig.ProviderSpec( new bxrig.MailProvider( true ) ).detailLines() == 9 );
+m = new bxrig.Modal();
+testkit.check( "confirm keys", m.answer( "y" ) == "yes" && m.answer( "Y" ) == "yes" && m.answer( "Enter" ) == "yes" && m.answer( "n" ) == "no" && m.answer( "Escape" ) == "no" && m.answer( "q" ) == "no" && m.answer( "x" ) == "" );
+testkit.check( "typing: characters, space, backspace, other keys", m.typed( "ab", "c" ) == "abc" && m.typed( "ab", "Space" ) == "ab " && m.typed( "ab", "Backspace" ) == "a" && m.typed( "a", "Backspace" ) == "" && m.typed( "ab", "Up" ) == "ab" );
+testkit.check( "lines keep empty lines", m.lines( "a" & chr( 10 ) & chr( 10 ) & "b" ).len() == 3 );
+sky = new bxrig.TuiKit( {} ).starPositions( 40, 80, 24 );
+testkit.check( "the same sky for the same size", sky.len() == 40 && sky[ 1 ].x == new bxrig.TuiKit( {} ).starPositions( 40, 80, 24 )[ 1 ].x );
+testkit.check( "stars stay inside the screen", sky.filter( function( s ) { return s.x < 0 || s.x >= 80 || s.y < 0 || s.y >= 24; } ).len() == 0 );
+avoid = { x: 10, y: 5, w: 40, h: 12 };
+cleared = new bxrig.TuiKit( {} ).starPositions( 46, 80, 24, avoid );
+testkit.check( "stars skip the avoided rectangle", cleared.filter( function( s ) { return s.x >= 10 && s.x < 50 && s.y >= 5 && s.y < 17; } ).len() == 0 && cleared.len() < 46 );
+reg = new bxrig.ControlCenterPages();
+dash = new bxrig.DashboardDemo( new bxrig.DashboardData( new bxrig.util.Cli( "0" ) ) );
+okIds = true;
+for ( id in reg.ids() ) { page = reg.make( id, true, dash ); if ( page.id() != id ) okIds = false; }
+testkit.check( "every registered id builds the page of that id", okIds );
+caught = false;
+try { reg.make( "nope", true, dash ); } catch ( any e ) { caught = true; }
+testkit.check( "an unknown id throws", caught );
+calls = [];
+proc = new bxrig.util.Proc( function( argv, timeout ) { calls.append( argv.toList( " " ) ); return { exitCode: 0, timeout: false, output: "line1" & chr( 10 ) & "line2" }; } );
+events = [];
+app = { showPlan: function( title, lines, intent ) { events.append( "plan:" & title & ":" & lines.len() ); }, showResult: function( title, lines ) { events.append( "result:" & title & ":" & lines.len() ); } };
+ir = new bxrig.IntentRunner( proc );
+ir.handle( app, { action: "exec", title: "T", argv: [ "echo", "x" ], plan: [ "Plan" ] } );
+testkit.check( "an exec intent is a plan first and runs nothing", events[ 1 ] == "plan:T:1" && calls.len() == 0 );
+ir.handle( app, { action: "exec", title: "T", argv: [ "echo", "x" ], plan: [ "Plan" ], confirmed: true } );
+testkit.check( "after the y it runs and shows the result", calls[ 1 ] == "echo x" && events[ 2 ] == "result:T: done:2" );
+testkit.check( "withFlag appends without changing the input", ir.withFlag( [ "a" ], "--yes" ).len() == 2 );
+testkit.done( "tui helper tests passed" );

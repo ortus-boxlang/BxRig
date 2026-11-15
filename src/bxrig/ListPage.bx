@@ -10,6 +10,7 @@
 class ListPage {
     function init( provider ) {
         variables.p = arguments.provider;
+        variables.spec = new bxrig.ProviderSpec( arguments.provider );
         variables.rows = [];
         variables.list = new bxrig.TuiList( [], function( r ) { return r.__text ?: ""; } );
         variables.mode = "list";
@@ -38,7 +39,7 @@ class ListPage {
         if ( variables.mode != "list" ) return [ [ "Enter", "keep" ], [ "Esc", "clear" ] ];
         var out = [ [ "↑↓", "move" ] ];
         for ( var a in variables.p.actions() ) out.append( [ a.key, a.label ] );
-        out.append( [ "/", variables.p.live() ? "search" : "filter" ] );
+        out.append( [ "/", variables.spec.live() ? "search" : "filter" ] );
         return out;
     }
 
@@ -58,7 +59,7 @@ class ListPage {
     function load() {
         variables.lastLoad = variables.tickNow;
         setRows( variables.p.load( variables.query ) );
-        if ( !variables.p.live() && len( variables.list.query() ) ) variables.list.filter( variables.list.query() );
+        if ( !variables.spec.live() && len( variables.list.query() ) ) variables.list.filter( variables.list.query() );
         return this;
     }
 
@@ -85,18 +86,18 @@ class ListPage {
         var k = arguments.key;
         if ( variables.mode != "list" ) {
             if ( k == "Enter" ) {
-                if ( variables.p.live() ) { variables.query = variables.input; load(); } else variables.list.filter( variables.input );
+                if ( variables.spec.live() ) { variables.query = variables.input; load(); } else variables.list.filter( variables.input );
                 variables.mode = "list";
             } else if ( k == "Escape" ) {
                 variables.input = ""; variables.query = "";
-                if ( variables.p.live() ) load(); else variables.list.filter( "" );
+                if ( variables.spec.live() ) load(); else variables.list.filter( "" );
                 variables.mode = "list";
             } else if ( k == "Backspace" ) {
                 variables.input = len( variables.input ) > 1 ? left( variables.input, len( variables.input ) - 1 ) : "";
-                if ( !variables.p.live() ) variables.list.filter( variables.input );
+                if ( !variables.spec.live() ) variables.list.filter( variables.input );
             } else if ( len( k ) == 1 || k == "Space" ) {
                 variables.input &= ( k == "Space" ? " " : k );
-                if ( !variables.p.live() ) variables.list.filter( variables.input );
+                if ( !variables.spec.live() ) variables.list.filter( variables.input );
             }
             return {};
         }
@@ -106,7 +107,7 @@ class ListPage {
         if ( k == "PageDown" ) { variables.list.page( 1, variables.rowsShown ); return {}; }
         if ( k == "Home" ) { variables.list.home(); return {}; }
         if ( k == "End" ) { variables.list.end(); return {}; }
-        if ( k == "/" ) { variables.mode = "input"; variables.input = variables.p.live() ? variables.query : variables.list.query(); return {}; }
+        if ( k == "/" ) { variables.mode = "input"; variables.input = variables.spec.live() ? variables.query : variables.list.query(); return {}; }
         if ( compare( k, "r" ) == 0 ) { load(); return {}; }
         return intentFor( k );
     }
@@ -125,7 +126,7 @@ class ListPage {
         var k = arguments.kit;
         var C = function( n ) { return k.color( n ); };
         variables.tickNow = arguments.tick;
-        var every = variables.p.refreshSeconds();
+        var every = variables.spec.refreshSeconds();
         if ( every > 0 && variables.loaded && variables.mode == "list" && arguments.tick - variables.lastLoad >= every * 20 ) reloadKeepingCursor();
         var ico = k.icon( variables.p.icon() );
         if ( len( ico ) ) k.put( arguments.x + 1, arguments.y, ico, C( "GREEN" ), C( "BASE" ) );
@@ -135,7 +136,7 @@ class ListPage {
         k.put( tx + 2 + len( variables.p.title() ), arguments.y, k.trunc( hint, arguments.w - len( variables.p.title() ) - 28 ), C( "OVERLAY" ), C( "BASE" ) );
         var fl = variables.mode != "list" ? "/ " & variables.input & "▌" : ( len( variables.list.query() ) ? "/ " & variables.list.query() : ( len( variables.query ) ? "/ " & variables.query : "" ) );
         if ( len( fl ) ) k.put( arguments.x + arguments.w - len( fl ) - 2, arguments.y, fl, variables.mode != "list" ? C( "GREEN" ) : C( "CYAN" ), C( "BASE" ), true );
-        var nd = variables.p.detailLines();
+        var nd = variables.spec.detailLines();
         var detailH = 4 + nd;
         var tableH = arguments.h - detailH - 1;
         k.panel( arguments.x, arguments.y + 2, arguments.w, tableH, "", false, arguments.phase );

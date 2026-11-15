@@ -168,6 +168,7 @@ jobs:
           (cd src && matchbox ../tests/util_tools_test.bxs)
           (cd src && matchbox ../tests/util_misc_test.bxs)
           (cd src && matchbox ../tests/util_state_test.bxs)
+          (cd src && matchbox ../tests/tui_helpers_test.bxs)
           bash tests/wizard-test.sh "$candidate"
           bash tests/init-test.sh "$candidate"
           bash tests/toolchain-test.sh "$candidate"

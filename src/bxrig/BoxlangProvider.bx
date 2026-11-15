@@ -6,9 +6,6 @@ class BoxlangProvider {
     function icon() { return "archive"; }
     function title() { return "BoxLang"; }
     function hint() { return "versions installed with bvm"; }
-    function live() { return false; }
-    function refreshSeconds() { return new bxrig.util.Exit().ok(); }
-    function detailLines() { return new bxrig.util.Exit().usage(); }
     function emptyText() { return "No BoxLang versions found. Press i to install the latest."; }
     function columns() { return [ { key: "mark", label: "", w: 4 }, { key: "version", label: "version", w: 24 }, { key: "state", label: "", w: 0 } ]; }
     function style( r ) { return r.active ? "ok" : ""; }
