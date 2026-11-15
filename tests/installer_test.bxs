@@ -83,9 +83,9 @@ cachy = { id: "brave", source: "pacman", targets: [ "brave-bin" ], repo: "cachyo
 ls = { id: "localsend", source: "pacman", targets: [ "localsend" ], repo: "cachyos", aur_targets: [ "localsend-bin" ] };
 inst2 = new bxrig.Installer( runner );
 if ( !inst2.onCachyos() ) {
- b = inst2.steps( [ app( "git", "pacman", [ "git" ] ), cachy, ls ], false );
- testkit.check( "off CachyOS: cachyos-repo apps leave the pacman step", b.steps[1].ids.toList() == "git" );
- testkit.check( "off CachyOS: they are AUR steps, with the AUR name when given", b.steps[2].commands[1].toList( " " ) == "yay -S --needed --noconfirm brave-bin" && b.steps[3].commands[1].toList( " " ) == "yay -S --needed --noconfirm localsend-bin" );
+	b = inst2.steps( [ app( "git", "pacman", [ "git" ] ), cachy, ls ], false );
+	testkit.check( "off CachyOS: cachyos-repo apps leave the pacman step", b.steps[1].ids.toList() == "git" );
+	testkit.check( "off CachyOS: they are AUR steps, with the AUR name when given", b.steps[2].commands[1].toList( " " ) == "yay -S --needed --noconfirm brave-bin" && b.steps[3].commands[1].toList( " " ) == "yay -S --needed --noconfirm localsend-bin" );
 }
 // one failed pacman transaction: every app again on its own; only the one that really fails is reported
 b = inst2.steps( [ app( "git", "pacman", [ "git" ] ), app( "nope", "pacman", [ "nope-pkg" ] ), app( "btop", "pacman", [ "btop" ] ) ], false );

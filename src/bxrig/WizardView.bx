@@ -9,7 +9,6 @@ class WizardView {
 	function init( tui ) {
 		variables.tui = arguments.tui;
 		variables.data = new bxrig.WizardData();
-		variables.icon = len( trim( variables.data.icon() ) ) ? listToArray( variables.data.icon(), chr( 10 ), true ) : [];
 		variables.wordmark = listToArray( variables.data.wordmark(), chr( 10 ), true );
 		variables.kit = new bxrig.TuiKit( arguments.tui );
 		for ( var shade in [ "BASE", "MANTLE", "CRUST", "SURFACE0", "SURFACE1", "OVERLAY", "TEXT", "SUB", "GREEN", "CYAN", "YELLOW", "RED" ] ) variables[ shade ] = variables.kit.color( shade );

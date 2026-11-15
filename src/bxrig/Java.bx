@@ -160,7 +160,7 @@ class Java {
 	function writeEnv( h ) {
 		directoryCreate( cfgDir(), true, true );
 		variables.config.writeAtomic( shFile(), "# Written by `bxrig java default`. Remove it with: bxrig java default --unset" & chr( 10 ) & "export JAVA_HOME=" & chr( 34 ) & arguments.h.path & chr( 34 ) & chr( 10 ) & "export PATH=" & chr( 34 ) & "$JAVA_HOME/bin:$PATH" & chr( 34 ) & chr( 10 ), "644" );
-        variables.config.writeAtomic( fishFile(), "# Written by `bxrig java default`. Remove it with: bxrig java default --unset" & chr( 10 ) & "set -gx JAVA_HOME " & arguments.h.path & chr( 10 ) & "fish_add_path -gP $JAVA_HOME/bin" & chr( 10 ), "644" );
+		variables.config.writeAtomic( fishFile(), "# Written by `bxrig java default`. Remove it with: bxrig java default --unset" & chr( 10 ) & "set -gx JAVA_HOME " & arguments.h.path & chr( 10 ) & "fish_add_path -gP $JAVA_HOME/bin" & chr( 10 ), "644" );
 	}
 
 	function setDefault( ref, unset, yes, dry, asJson ) {

@@ -31,134 +31,134 @@ class Security {
 	function pamLine( kind ) { return arguments.kind == "fingerprint" ? "auth sufficient pam_fprintd.so" : "auth sufficient pam_u2f.so cue"; }
 	function pamMarker( kind ) { return " # bxrig " & arguments.kind; }
 
-    // ---- PAM text (pure, so it is tested without touching /etc) ----
-    function pamHas( text, kind ) { return find( pamMarker( arguments.kind ), arguments.text ) > 0; }
+	// ---- PAM text (pure, so it is tested without touching /etc) ----
+	function pamHas( text, kind ) { return find( pamMarker( arguments.kind ), arguments.text ) > 0; }
 
-    // Adds our line before the first `auth` line. Returns "" when the file does not look like a sudo PAM file.
-    function pamAdd( text, kind ) {
-        if ( pamHas( arguments.text, arguments.kind ) ) return arguments.text;
-        var lines = listToArray( arguments.text, chr( 10 ), true );
-        var out = [];
-        var done = false;
-        for ( var l in lines ) {
-            if ( !done && reFind( "^auth\s", l ) ) { out.append( pamLine( arguments.kind ) & pamMarker( arguments.kind ) ); done = true; }
-            out.append( l );
-        }
-        return done ? out.toList( chr( 10 ) ) : "";
-    }
+	// Adds our line before the first `auth` line. Returns "" when the file does not look like a sudo PAM file.
+	function pamAdd( text, kind ) {
+		if ( pamHas( arguments.text, arguments.kind ) ) return arguments.text;
+		var lines = listToArray( arguments.text, chr( 10 ), true );
+		var out = [];
+		var done = false;
+		for ( var l in lines ) {
+			if ( !done && reFind( "^auth\s", l ) ) { out.append( pamLine( arguments.kind ) & pamMarker( arguments.kind ) ); done = true; }
+			out.append( l );
+		}
+		return done ? out.toList( chr( 10 ) ) : "";
+	}
 
-    function pamRemove( text, kind ) {
-        var out = [];
-        for ( var l in listToArray( arguments.text, chr( 10 ), true ) ) if ( find( pamMarker( arguments.kind ), l ) == 0 ) out.append( l );
-        return out.toList( chr( 10 ) );
-    }
+	function pamRemove( text, kind ) {
+		var out = [];
+		for ( var l in listToArray( arguments.text, chr( 10 ), true ) ) if ( find( pamMarker( arguments.kind ), l ) == 0 ) out.append( l );
+		return out.toList( chr( 10 ) );
+	}
 
-    function pamState( kind ) { return fileExists( pamFile() ) && pamHas( fileRead( pamFile() ), arguments.kind ); }
+	function pamState( kind ) { return fileExists( pamFile() ) && pamHas( fileRead( pamFile() ), arguments.kind ); }
 
-    // ---- a plan, or the commands ----
-    function finish( title, shown, cmds, yes, dry, asJson, data = {} ) {
-        return new bxrig.util.Mutation( variables.out, variables.proc ).run( arguments.title, arguments.cmds, arguments.yes, arguments.dry, arguments.asJson, arguments.data, arguments.shown, 900 );
-    }
+	// ---- a plan, or the commands ----
+	function finish( title, shown, cmds, yes, dry, asJson, data = {} ) {
+		return new bxrig.util.Mutation( variables.out, variables.proc ).run( arguments.title, arguments.cmds, arguments.yes, arguments.dry, arguments.asJson, arguments.data, arguments.shown, 900 );
+	}
 
-    function installFirst( pkg, yes, dry ) {
-        if ( variables.proc.has( arguments.pkg == "fprintd" ? "fprintd-enroll" : "pamu2fcfg" ) ) return [];
-        return [ variables.pacman.installArgv( [ arguments.pkg ] ) ];
-    }
+	function installFirst( pkg, yes, dry ) {
+		if ( variables.proc.has( arguments.pkg == "fprintd" ? "fprintd-enroll" : "pamu2fcfg" ) ) return [];
+		return [ variables.pacman.installArgv( [ arguments.pkg ] ) ];
+	}
 
-    // The PAM change for fingerprint and fido2.
-    function pamCmd( kind, args, yes, dry, asJson ) {
-        var v = arguments.args.len() ? arguments.args[ 1 ] : "";
-        var pkg = arguments.kind == "fingerprint" ? "fprintd" : "pam-u2f";
-        var extra = arguments.kind == "fingerprint" ? "enroll" : "register";
-        if ( arguments.args.len() != 1 || !arrayFind( [ "on", "off", extra ], v ) ) return variables.out.fail( "usage", "Usage: bxrig security " & arguments.kind & " on|off|" & extra, arguments.asJson );
-        if ( v == extra ) {
-            var tool = arguments.kind == "fingerprint" ? [ "fprintd-enroll" ] : [ "sh", "-c", 'mkdir -p "$(dirname "$1")" && pamu2fcfg > "$1"', "_", u2fFile() ];
-            if ( !variables.proc.has( arguments.kind == "fingerprint" ? "fprintd-enroll" : "pamu2fcfg" ) ) return variables.out.fail( "precondition", pkg & " is not installed (bxrig security " & arguments.kind & " on)", arguments.asJson );
-            return finish( arguments.kind == "fingerprint" ? "enroll a fingerprint (follow the prompts and swipe)" : "register your security key (touch it when it blinks)", [], [ tool ], arguments.yes, arguments.dry, arguments.asJson );
-        }
-        if ( !fileExists( pamFile() ) ) return variables.out.fail( "precondition", pamFile() & " was not found", arguments.asJson );
-        var text = fileRead( pamFile() );
-        var tmp = new bxrig.util.SystemFile().tempPath( "pam" );
-        var cmds = [];
-        var shown = [];
-        if ( v == "on" ) {
-            if ( arguments.kind == "fido2" && !fileExists( u2fFile() ) ) return variables.out.fail( "precondition", "no security key is registered yet: run `bxrig security fido2 register --yes` first (so the PAM line has a key to check)", arguments.asJson );
-            var next = pamAdd( text, arguments.kind );
-            if ( !len( next ) ) return variables.out.fail( "precondition", pamFile() & " has no auth line, so it was left alone", arguments.asJson );
-            if ( next == text ) return variables.out.say( "ok", { already: true }, arguments.asJson, [ arguments.kind & " is already on for sudo." ] );
-            for ( var ic in installFirst( pkg, arguments.yes, arguments.dry ) ) cmds.append( ic );
-            if ( !fileExists( pamFile() & ".bxrig-backup" ) ) cmds.append( [ "sudo", "cp", "-p", pamFile(), pamFile() & ".bxrig-backup" ] );
-            cmds.append( new bxrig.util.SystemFile().installArgv( tmp, pamFile() ) );
-            shown.append( "adds this line before the first auth line of " & pamFile() & ":" );
-            shown.append( "    " & pamLine( arguments.kind ) );
-            shown.append( "sufficient: your password still works if the " & ( arguments.kind == "fingerprint" ? "reader" : "key" ) & " is missing. Only sudo is changed." );
-            if ( arguments.yes && !arguments.dry ) fileWrite( tmp, next );
-        } else {
-            var prev = pamRemove( text, arguments.kind );
-            if ( prev == text ) return variables.out.say( "ok", { already: true }, arguments.asJson, [ arguments.kind & " is already off for sudo." ] );
-            cmds.append( new bxrig.util.SystemFile().installArgv( tmp, pamFile() ) );
-            shown.append( "removes the bxrig " & arguments.kind & " line from " & pamFile() );
-            if ( arguments.yes && !arguments.dry ) fileWrite( tmp, prev );
-        }
-        var code = finish( ( v == "on" ? "turn " & arguments.kind & " on for sudo" : "turn " & arguments.kind & " off for sudo" ), shown, cmds, arguments.yes, arguments.dry, arguments.asJson, { kind: arguments.kind, pam: pamFile() } );
-        try { if ( fileExists( tmp ) ) fileDelete( tmp ); } catch ( any e ) {}
-        if ( code == 0 && v == "on" && arguments.yes && !arguments.dry && !arguments.asJson ) println( arguments.kind == "fingerprint" ? "Enroll a finger with: bxrig security fingerprint enroll --yes" : "Test it in a new terminal: sudo -k && sudo true" );
-        return code;
-    }
+	// The PAM change for fingerprint and fido2.
+	function pamCmd( kind, args, yes, dry, asJson ) {
+		var v = arguments.args.len() ? arguments.args[ 1 ] : "";
+		var pkg = arguments.kind == "fingerprint" ? "fprintd" : "pam-u2f";
+		var extra = arguments.kind == "fingerprint" ? "enroll" : "register";
+		if ( arguments.args.len() != 1 || !arrayFind( [ "on", "off", extra ], v ) ) return variables.out.fail( "usage", "Usage: bxrig security " & arguments.kind & " on|off|" & extra, arguments.asJson );
+		if ( v == extra ) {
+			var tool = arguments.kind == "fingerprint" ? [ "fprintd-enroll" ] : [ "sh", "-c", 'mkdir -p "$(dirname "$1")" && pamu2fcfg > "$1"', "_", u2fFile() ];
+			if ( !variables.proc.has( arguments.kind == "fingerprint" ? "fprintd-enroll" : "pamu2fcfg" ) ) return variables.out.fail( "precondition", pkg & " is not installed (bxrig security " & arguments.kind & " on)", arguments.asJson );
+			return finish( arguments.kind == "fingerprint" ? "enroll a fingerprint (follow the prompts and swipe)" : "register your security key (touch it when it blinks)", [], [ tool ], arguments.yes, arguments.dry, arguments.asJson );
+		}
+		if ( !fileExists( pamFile() ) ) return variables.out.fail( "precondition", pamFile() & " was not found", arguments.asJson );
+		var text = fileRead( pamFile() );
+		var tmp = new bxrig.util.SystemFile().tempPath( "pam" );
+		var cmds = [];
+		var shown = [];
+		if ( v == "on" ) {
+			if ( arguments.kind == "fido2" && !fileExists( u2fFile() ) ) return variables.out.fail( "precondition", "no security key is registered yet: run `bxrig security fido2 register --yes` first (so the PAM line has a key to check)", arguments.asJson );
+			var next = pamAdd( text, arguments.kind );
+			if ( !len( next ) ) return variables.out.fail( "precondition", pamFile() & " has no auth line, so it was left alone", arguments.asJson );
+			if ( next == text ) return variables.out.say( "ok", { already: true }, arguments.asJson, [ arguments.kind & " is already on for sudo." ] );
+			for ( var ic in installFirst( pkg, arguments.yes, arguments.dry ) ) cmds.append( ic );
+			if ( !fileExists( pamFile() & ".bxrig-backup" ) ) cmds.append( [ "sudo", "cp", "-p", pamFile(), pamFile() & ".bxrig-backup" ] );
+			cmds.append( new bxrig.util.SystemFile().installArgv( tmp, pamFile() ) );
+			shown.append( "adds this line before the first auth line of " & pamFile() & ":" );
+			shown.append( "    " & pamLine( arguments.kind ) );
+			shown.append( "sufficient: your password still works if the " & ( arguments.kind == "fingerprint" ? "reader" : "key" ) & " is missing. Only sudo is changed." );
+			if ( arguments.yes && !arguments.dry ) fileWrite( tmp, next );
+		} else {
+			var prev = pamRemove( text, arguments.kind );
+			if ( prev == text ) return variables.out.say( "ok", { already: true }, arguments.asJson, [ arguments.kind & " is already off for sudo." ] );
+			cmds.append( new bxrig.util.SystemFile().installArgv( tmp, pamFile() ) );
+			shown.append( "removes the bxrig " & arguments.kind & " line from " & pamFile() );
+			if ( arguments.yes && !arguments.dry ) fileWrite( tmp, prev );
+		}
+		var code = finish( ( v == "on" ? "turn " & arguments.kind & " on for sudo" : "turn " & arguments.kind & " off for sudo" ), shown, cmds, arguments.yes, arguments.dry, arguments.asJson, { kind: arguments.kind, pam: pamFile() } );
+		try { if ( fileExists( tmp ) ) fileDelete( tmp ); } catch ( any e ) {}
+		if ( code == 0 && v == "on" && arguments.yes && !arguments.dry && !arguments.asJson ) println( arguments.kind == "fingerprint" ? "Enroll a finger with: bxrig security fingerprint enroll --yes" : "Test it in a new terminal: sudo -k && sudo true" );
+		return code;
+	}
 
-    function sshCmd( args, yes, dry, asJson ) {
-        var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
-        if ( v != "on" && v != "off" ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "security ssh-server" ), arguments.asJson );
-        var cmds = [];
-        if ( v == "on" ) {
-            if ( !variables.proc.has( "sshd" ) ) cmds.append( variables.pacman.installArgv( [ "openssh" ] ) );
-            cmds.append( variables.systemd.enableArgv( "sshd.service", false, true ) );
-        } else cmds.append( variables.systemd.disableArgv( "sshd.service", false, true ) );
-        return finish( "turn the SSH server " & v & ( v == "on" ? " (it listens on port 22: only password-less keys or strong passwords belong there)" : "" ), [], cmds, arguments.yes, arguments.dry, arguments.asJson, { ssh_server: v == "on" } );
-    }
+	function sshCmd( args, yes, dry, asJson ) {
+		var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
+		if ( v != "on" && v != "off" ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "security ssh-server" ), arguments.asJson );
+		var cmds = [];
+		if ( v == "on" ) {
+			if ( !variables.proc.has( "sshd" ) ) cmds.append( variables.pacman.installArgv( [ "openssh" ] ) );
+			cmds.append( variables.systemd.enableArgv( "sshd.service", false, true ) );
+		} else cmds.append( variables.systemd.disableArgv( "sshd.service", false, true ) );
+		return finish( "turn the SSH server " & v & ( v == "on" ? " (it listens on port 22: only password-less keys or strong passwords belong there)" : "" ), [], cmds, arguments.yes, arguments.dry, arguments.asJson, { ssh_server: v == "on" } );
+	}
 
-    function sudoCmd( args, yes, dry, asJson ) {
-        var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
-        if ( v != "on" && v != "off" ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "security passwordless-sudo" ), arguments.asJson );
-        var u = user();
-        if ( !reFind( "^[a-z_][a-z0-9_-]*$", u ) ) return variables.out.fail( "precondition", "could not read a safe user name from $USER", arguments.asJson );
-        if ( v == "off" ) return finish( "turn passwordless sudo off", [ "removes " & sudoersFile() ], [ [ "sudo", "rm", "-f", sudoersFile() ] ], arguments.yes, arguments.dry, arguments.asJson, { passwordless_sudo: false } );
-        var tmp = new bxrig.util.SystemFile().tempPath( "sudoers" );
-        var text = "## Written by `bxrig security passwordless-sudo on`. Remove with `bxrig security passwordless-sudo off`." & chr( 10 ) & u & " ALL=(ALL:ALL) NOPASSWD: ALL" & chr( 10 );
-        var shown = [ "writes " & sudoersFile() & ":", "    " & u & " ALL=(ALL:ALL) NOPASSWD: ALL", "Anyone who can run a command as you (a malicious script, a stolen session) gets root without a password." ];
-        if ( arguments.yes && !arguments.dry ) {
-            fileWrite( tmp, text );
-            var chk = variables.proc.exec( [ "visudo", "-cf", tmp ], 15 );
-            if ( chk.exitCode != 0 ) { try { fileDelete( tmp ); } catch ( any e ) {} return variables.out.say( "failed", { error: "visudo rejected the file: " & trim( chk.output ) }, arguments.asJson, [ "error: visudo rejected the file, nothing was installed: " & trim( chk.output ) ] ); }
-        }
-        var code = finish( "turn passwordless sudo on for " & u, shown, [ [ "visudo", "-cf", tmp ], new bxrig.util.SystemFile().installArgv( tmp, sudoersFile(), "440", true ) ], arguments.yes, arguments.dry, arguments.asJson, { passwordless_sudo: true } );
-        try { if ( fileExists( tmp ) ) fileDelete( tmp ); } catch ( any e ) {}
-        return code;
-    }
+	function sudoCmd( args, yes, dry, asJson ) {
+		var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
+		if ( v != "on" && v != "off" ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "security passwordless-sudo" ), arguments.asJson );
+		var u = user();
+		if ( !reFind( "^[a-z_][a-z0-9_-]*$", u ) ) return variables.out.fail( "precondition", "could not read a safe user name from $USER", arguments.asJson );
+		if ( v == "off" ) return finish( "turn passwordless sudo off", [ "removes " & sudoersFile() ], [ [ "sudo", "rm", "-f", sudoersFile() ] ], arguments.yes, arguments.dry, arguments.asJson, { passwordless_sudo: false } );
+		var tmp = new bxrig.util.SystemFile().tempPath( "sudoers" );
+		var text = "## Written by `bxrig security passwordless-sudo on`. Remove with `bxrig security passwordless-sudo off`." & chr( 10 ) & u & " ALL=(ALL:ALL) NOPASSWD: ALL" & chr( 10 );
+		var shown = [ "writes " & sudoersFile() & ":", "    " & u & " ALL=(ALL:ALL) NOPASSWD: ALL", "Anyone who can run a command as you (a malicious script, a stolen session) gets root without a password." ];
+		if ( arguments.yes && !arguments.dry ) {
+			fileWrite( tmp, text );
+			var chk = variables.proc.exec( [ "visudo", "-cf", tmp ], 15 );
+			if ( chk.exitCode != 0 ) { try { fileDelete( tmp ); } catch ( any e ) {} return variables.out.say( "failed", { error: "visudo rejected the file: " & trim( chk.output ) }, arguments.asJson, [ "error: visudo rejected the file, nothing was installed: " & trim( chk.output ) ] ); }
+		}
+		var code = finish( "turn passwordless sudo on for " & u, shown, [ [ "visudo", "-cf", tmp ], new bxrig.util.SystemFile().installArgv( tmp, sudoersFile(), "440", true ) ], arguments.yes, arguments.dry, arguments.asJson, { passwordless_sudo: true } );
+		try { if ( fileExists( tmp ) ) fileDelete( tmp ); } catch ( any e ) {}
+		return code;
+	}
 
-    function statusCmd( asJson ) {
-        var data = {
-            fingerprint: { installed: variables.proc.has( "fprintd-enroll" ), sudo: pamState( "fingerprint" ) },
-            fido2: { installed: variables.proc.has( "pamu2fcfg" ), sudo: pamState( "fido2" ), key_registered: fileExists( u2fFile() ) },
-            ssh_server: variables.systemd.active( "sshd.service" ),
-            passwordless_sudo: fileExists( sudoersFile() )
-        };
-        var yn = function( b ) { return b ? "on" : "off"; };
-        var lines = [ "fingerprint for sudo: " & yn( data.fingerprint.sudo ) & ( data.fingerprint.installed ? "" : " (fprintd not installed)" ),
-            "security key for sudo: " & yn( data.fido2.sudo ) & ( data.fido2.key_registered ? ", key registered" : ", no key registered" ),
-            "ssh server: " & yn( data.ssh_server ), "passwordless sudo: " & yn( data.passwordless_sudo ) ];
-        return variables.out.say( "ok", data, arguments.asJson, lines );
-    }
+	function statusCmd( asJson ) {
+		var data = {
+			fingerprint: { installed: variables.proc.has( "fprintd-enroll" ), sudo: pamState( "fingerprint" ) },
+			fido2: { installed: variables.proc.has( "pamu2fcfg" ), sudo: pamState( "fido2" ), key_registered: fileExists( u2fFile() ) },
+			ssh_server: variables.systemd.active( "sshd.service" ),
+			passwordless_sudo: fileExists( sudoersFile() )
+		};
+		var yn = function( b ) { return b ? "on" : "off"; };
+		var lines = [ "fingerprint for sudo: " & yn( data.fingerprint.sudo ) & ( data.fingerprint.installed ? "" : " (fprintd not installed)" ),
+			"security key for sudo: " & yn( data.fido2.sudo ) & ( data.fido2.key_registered ? ", key registered" : ", no key registered" ),
+			"ssh server: " & yn( data.ssh_server ), "passwordless sudo: " & yn( data.passwordless_sudo ) ];
+		return variables.out.say( "ok", data, arguments.asJson, lines );
+	}
 
-    function run( words, dry = false, yes = false, asJson = false ) {
-        var verb = arguments.words.len() ? arguments.words[ 1 ] : "";
-        var rest = [];
-        for ( var i = 2; i <= arguments.words.len(); i++ ) rest.append( arguments.words[ i ] );
-        if ( verb == "" || verb == "status" ) return statusCmd( arguments.asJson );
-        if ( verb == "fingerprint" ) return pamCmd( "fingerprint", rest, arguments.yes, arguments.dry, arguments.asJson );
-        if ( verb == "fido2" ) return pamCmd( "fido2", rest, arguments.yes, arguments.dry, arguments.asJson );
-        if ( verb == "ssh-server" ) return sshCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
-        if ( verb == "passwordless-sudo" ) return sudoCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
-        return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "security" ), arguments.asJson );
-    }
+	function run( words, dry = false, yes = false, asJson = false ) {
+		var verb = arguments.words.len() ? arguments.words[ 1 ] : "";
+		var rest = [];
+		for ( var i = 2; i <= arguments.words.len(); i++ ) rest.append( arguments.words[ i ] );
+		if ( verb == "" || verb == "status" ) return statusCmd( arguments.asJson );
+		if ( verb == "fingerprint" ) return pamCmd( "fingerprint", rest, arguments.yes, arguments.dry, arguments.asJson );
+		if ( verb == "fido2" ) return pamCmd( "fido2", rest, arguments.yes, arguments.dry, arguments.asJson );
+		if ( verb == "ssh-server" ) return sshCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
+		if ( verb == "passwordless-sudo" ) return sudoCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
+		return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "security" ), arguments.asJson );
+	}
 }

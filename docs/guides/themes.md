@@ -51,7 +51,7 @@ bxrig theme import ~/my-theme --name=mine
 bxrig theme remove mine
 ```
 
-Both `colors.toml` formats are understood: the named colors of current Omarchy and the older `color0` to `color15` list.
+Every bundled theme, BxRig's own included, uses the Omarchy standard `colors.toml`: `mode`, `accent`, `selection`, `muted`, the background shades (`background`, `dark_background`, `darker_background`, `lighter_background`), the foreground shades (`foreground`, `dark_foreground`, `light_foreground`, `bright_foreground`) and the named colours (`red` to `brown`, then `bright_red` to `bright_magenta`). The terminal palette comes from them: black is `background`, white is `foreground`, bright black is `muted`, bright white is `bright_foreground`, and the cursor is `bright_foreground`. The older `color0` to `color15` list is still read, for themes you install from elsewhere.
 
 ## Neovim
 

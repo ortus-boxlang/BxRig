@@ -128,47 +128,47 @@ class BackupSnapshots {
 		if ( t == "snapper" ) {
 			var all = allSnapshots();
 			return variables.out.say( "ok", { tool: t, snapshots: all }, arguments.asJson, all.len() ? all.map( function( s ) { return s.config & " #" & s.number & "   " & s.date & "   " & s.type & "   " & s.description; } ) : [ "No snapshots yet." ] );
-        }
-        if ( t == "timeshift" ) {
-            var r = variables.proc.exec( [ "sudo", "timeshift", "--list" ], 60 );
-            return variables.out.say( "ok", { tool: t, output: r.output }, arguments.asJson, listToArray( r.output, chr( 10 ) ) );
-        }
-        return variables.out.fail( "precondition", "no snapshot tool is set up (bxrig backup snapshots setup)", arguments.asJson );
-    }
+		}
+		if ( t == "timeshift" ) {
+			var r = variables.proc.exec( [ "sudo", "timeshift", "--list" ], 60 );
+			return variables.out.say( "ok", { tool: t, output: r.output }, arguments.asJson, listToArray( r.output, chr( 10 ) ) );
+		}
+		return variables.out.fail( "precondition", "no snapshot tool is set up (bxrig backup snapshots setup)", arguments.asJson );
+	}
 
-    function snapperConfigFor( n ) {
-        for ( var s in allSnapshots() ) if ( s.number == arguments.n ) return s.config;
-        return "root";
-    }
+	function snapperConfigFor( n ) {
+		for ( var s in allSnapshots() ) if ( s.number == arguments.n ) return s.config;
+		return "root";
+	}
 
-    function run( words, opts = {}, yes = false, dry = false, asJson = false ) {
-        var verb = arguments.words.len() ? arguments.words[ 1 ] : "status";
-        var rest = [];
-        for ( var i = 2; i <= arguments.words.len(); i++ ) rest.append( arguments.words[ i ] );
-        if ( verb == "status" ) return statusCmd( arguments.asJson );
-        if ( verb == "setup" ) return setupCmd( arguments.opts, arguments.yes, arguments.dry, arguments.asJson );
-        if ( verb == "list" ) return listCmd( arguments.asJson );
-        if ( !arrayFind( [ "create", "delete", "changes", "restore" ], verb ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "backup" ), arguments.asJson );
-        var t = tool();
-        if ( !len( t ) ) return variables.out.fail( "precondition", "no snapshot tool is set up (bxrig backup snapshots setup)", arguments.asJson );
-        if ( verb == "create" ) {
-            var desc = arguments.opts.description ?: "bxrig";
-            if ( !reFind( "^[A-Za-z0-9 ._:,()+-]{1,120}$", desc ) ) return variables.out.fail( "usage", "--description is plain text up to 120 characters", arguments.asJson );
-            var cmd = t == "snapper" ? [ "sudo", "snapper", "-c", "root", "create", "--description", desc, "-p" ] : [ "sudo", "timeshift", "--create", "--comments", desc, "--tags", "O" ];
-            return pending( "take a snapshot now (" & desc & ")", [ cmd ], arguments.yes, arguments.dry, arguments.asJson, { tool: t } );
-        }
-        if ( t != "snapper" ) return variables.out.fail( "precondition", "this needs snapper (Btrfs); with Timeshift use its own window", arguments.asJson );
-        if ( ( verb == "delete" || verb == "changes" ) && rest.len() == 1 && reFind( "^[0-9]+$", rest[ 1 ] ) ) {
-            var cfg = snapperConfigFor( int( val( rest[ 1 ] ) ) );
-            if ( verb == "delete" ) return pending( "delete snapshot " & rest[ 1 ], [ [ "sudo", "snapper", "-c", cfg, "delete", rest[ 1 ] ] ], arguments.yes, arguments.dry, arguments.asJson, { number: int( val( rest[ 1 ] ) ) } );
-            var cr = variables.proc.exec( [ "sudo", "snapper", "-c", cfg, "status", rest[ 1 ] & "..0" ], 120 );
-            return variables.out.say( cr.exitCode == 0 ? "ok" : "failed", { number: int( val( rest[ 1 ] ) ), output: cr.output }, arguments.asJson, listToArray( cr.output, chr( 10 ) ) );
-        }
-        if ( verb == "restore" && rest.len() == 2 && reFind( "^[0-9]+$", rest[ 1 ] ) ) {
-            var path = rest[ 2 ];
-            if ( left( path, 1 ) != "/" || find( "..", path ) > 0 || !reFind( "^[A-Za-z0-9._/ +@-]+$", path ) ) return variables.out.fail( "usage", "PATH is an absolute path without .. (for example /home/me/projects/app)", arguments.asJson );
-            return pending( "bring " & path & " back as it was in snapshot " & rest[ 1 ] & " (files changed since are replaced; files that did not exist then are removed)", [ [ "sudo", "snapper", "-c", snapperConfigFor( int( val( rest[ 1 ] ) ) ), "undochange", rest[ 1 ] & "..0", path ] ], arguments.yes, arguments.dry, arguments.asJson, { number: int( val( rest[ 1 ] ) ), path: path } );
-        }
-        return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "backup" ), arguments.asJson );
-    }
+	function run( words, opts = {}, yes = false, dry = false, asJson = false ) {
+		var verb = arguments.words.len() ? arguments.words[ 1 ] : "status";
+		var rest = [];
+		for ( var i = 2; i <= arguments.words.len(); i++ ) rest.append( arguments.words[ i ] );
+		if ( verb == "status" ) return statusCmd( arguments.asJson );
+		if ( verb == "setup" ) return setupCmd( arguments.opts, arguments.yes, arguments.dry, arguments.asJson );
+		if ( verb == "list" ) return listCmd( arguments.asJson );
+		if ( !arrayFind( [ "create", "delete", "changes", "restore" ], verb ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "backup" ), arguments.asJson );
+		var t = tool();
+		if ( !len( t ) ) return variables.out.fail( "precondition", "no snapshot tool is set up (bxrig backup snapshots setup)", arguments.asJson );
+		if ( verb == "create" ) {
+			var desc = arguments.opts.description ?: "bxrig";
+			if ( !reFind( "^[A-Za-z0-9 ._:,()+-]{1,120}$", desc ) ) return variables.out.fail( "usage", "--description is plain text up to 120 characters", arguments.asJson );
+			var cmd = t == "snapper" ? [ "sudo", "snapper", "-c", "root", "create", "--description", desc, "-p" ] : [ "sudo", "timeshift", "--create", "--comments", desc, "--tags", "O" ];
+			return pending( "take a snapshot now (" & desc & ")", [ cmd ], arguments.yes, arguments.dry, arguments.asJson, { tool: t } );
+		}
+		if ( t != "snapper" ) return variables.out.fail( "precondition", "this needs snapper (Btrfs); with Timeshift use its own window", arguments.asJson );
+		if ( ( verb == "delete" || verb == "changes" ) && rest.len() == 1 && reFind( "^[0-9]+$", rest[ 1 ] ) ) {
+			var cfg = snapperConfigFor( int( val( rest[ 1 ] ) ) );
+			if ( verb == "delete" ) return pending( "delete snapshot " & rest[ 1 ], [ [ "sudo", "snapper", "-c", cfg, "delete", rest[ 1 ] ] ], arguments.yes, arguments.dry, arguments.asJson, { number: int( val( rest[ 1 ] ) ) } );
+			var cr = variables.proc.exec( [ "sudo", "snapper", "-c", cfg, "status", rest[ 1 ] & "..0" ], 120 );
+			return variables.out.say( cr.exitCode == 0 ? "ok" : "failed", { number: int( val( rest[ 1 ] ) ), output: cr.output }, arguments.asJson, listToArray( cr.output, chr( 10 ) ) );
+		}
+		if ( verb == "restore" && rest.len() == 2 && reFind( "^[0-9]+$", rest[ 1 ] ) ) {
+			var path = rest[ 2 ];
+			if ( left( path, 1 ) != "/" || find( "..", path ) > 0 || !reFind( "^[A-Za-z0-9._/ +@-]+$", path ) ) return variables.out.fail( "usage", "PATH is an absolute path without .. (for example /home/me/projects/app)", arguments.asJson );
+			return pending( "bring " & path & " back as it was in snapshot " & rest[ 1 ] & " (files changed since are replaced; files that did not exist then are removed)", [ [ "sudo", "snapper", "-c", snapperConfigFor( int( val( rest[ 1 ] ) ) ), "undochange", rest[ 1 ] & "..0", path ] ], arguments.yes, arguments.dry, arguments.asJson, { number: int( val( rest[ 1 ] ) ), path: path } );
+		}
+		return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "backup" ), arguments.asJson );
+	}
 }

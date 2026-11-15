@@ -95,7 +95,10 @@ def protected_c_like(text, interpolate):
 				if i + 1 < n and text[i + 1] == "#":
 					i += 2
 					continue
-				state.append(("interp",))
+				close, eol = text.find("#", i + 1), text.find("\n", i + 1)
+				if close >= 0 and (eol < 0 or close < eol):
+					i = close + 1  # #expr# on one line: skip it whole, quotes inside belong to it
+					continue
 			i += 1
 			continue
 		if top and top[0] == "interp" and c == "#":
@@ -305,7 +308,10 @@ def bracket_levels(text):
 				if i + 1 < n and text[i + 1] == "#":
 					i += 2
 					continue
-				state.append(("interp",))
+				close, eol = text.find("#", i + 1), text.find("\n", i + 1)
+				if close >= 0 and (eol < 0 or close < eol):
+					i = close + 1
+					continue
 			i += 1
 			continue
 		if top and top[0] == "interp" and c == "#":

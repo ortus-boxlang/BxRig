@@ -62,46 +62,46 @@ class TerminalConfig {
 		var th = arguments.cfgHome & "/bxrig/theme";
 		var nl = chr( 10 );
 		var head = "# BxRig starter. Written once; from here on it is yours." & nl;
-        switch ( arguments.id ) {
-            case "ghostty":   return head & "font-family = " & f & nl & "config-file = ?" & th & "/ghostty" & nl;
-            case "kitty":     return head & "font_family " & f & nl & "include " & th & "/kitty.conf" & nl;
-            case "alacritty": return head & "[general]" & nl & 'import = ["' & th & '/alacritty.toml"]' & nl & nl & "[font.normal]" & nl & 'family = "' & f & '"' & nl;
-            case "foot":      return head & "include=" & th & "/foot.ini" & nl & nl & "[main]" & nl & "font=" & f & ":size=11" & nl;
-        }
-        return "";
-    }
+		switch ( arguments.id ) {
+			case "ghostty":   return head & "font-family = " & f & nl & "config-file = ?" & th & "/ghostty" & nl;
+			case "kitty":     return head & "font_family " & f & nl & "include " & th & "/kitty.conf" & nl;
+			case "alacritty": return head & "[general]" & nl & 'import = ["' & th & '/alacritty.toml"]' & nl & nl & "[font.normal]" & nl & 'family = "' & f & '"' & nl;
+			case "foot":      return head & "include=" & th & "/foot.ini" & nl & nl & "[main]" & nl & "font=" & f & ":size=11" & nl;
+		}
+		return "";
+	}
 
-    // Config entries (name, target, mode, content) for a list of terminal ids.
-    function entries( ids, cfgHome ) {
-        var out = [];
-        for ( var id in arguments.ids ) {
-            var t = find( id );
-            if ( structKeyExists( t, "id" ) && len( t.config ) ) out.append( { name: "terminal-" & id, target: arguments.cfgHome & "/" & t.config, mode: "644", content: starter( id, arguments.cfgHome ) } );
-        }
-        return out;
-    }
+	// Config entries (name, target, mode, content) for a list of terminal ids.
+	function entries( ids, cfgHome ) {
+		var out = [];
+		for ( var id in arguments.ids ) {
+			var t = find( id );
+			if ( structKeyExists( t, "id" ) && len( t.config ) ) out.append( { name: "terminal-" & id, target: arguments.cfgHome & "/" & t.config, mode: "644", content: starter( id, arguments.cfgHome ) } );
+		}
+		return out;
+	}
 
-    // Rewrites the starters of the terminals that exist with the current font, but only the ones still as BxRig wrote them (clean or outdated);
-    // one you changed is kept and reported. Returns { written, kept } (entry names).
-    function refreshFonts() {
-        var out = { written: [], kept: [] };
-        for ( var e in entries( ids(), variables.config.cfgHome() ) ) {
-            var st = variables.config.configState( e );
-            if ( st == "missing" || st == "clean" ) continue;
-            if ( st == "outdated" && variables.config.configWrite( e, e.content, "font", true, false ) == 0 ) out.written.append( e.name );
-            else out.kept.append( e.name );
-        }
-        return out;
-    }
+	// Rewrites the starters of the terminals that exist with the current font, but only the ones still as BxRig wrote them (clean or outdated);
+	// one you changed is kept and reported. Returns { written, kept } (entry names).
+	function refreshFonts() {
+		var out = { written: [], kept: [] };
+		for ( var e in entries( ids(), variables.config.cfgHome() ) ) {
+			var st = variables.config.configState( e );
+			if ( st == "missing" || st == "clean" ) continue;
+			if ( st == "outdated" && variables.config.configWrite( e, e.content, "font", true, false ) == 0 ) out.written.append( e.name );
+			else out.kept.append( e.name );
+		}
+		return out;
+	}
 
-    // Writes the missing starter files. Returns { written, kept, failed }.
-    function apply( ids ) {
-        var out = { written: [], kept: [], failed: [] };
-        for ( var e in entries( arguments.ids, variables.config.cfgHome() ) ) {
-            if ( variables.config.configState( e ) != "missing" ) { out.kept.append( e.name ); continue; }
-            if ( variables.config.configWrite( e, e.content, "apply", true, false ) == 0 ) out.written.append( e.name ); else out.failed.append( e.name );
-        }
-        if ( out.written.len() ) new bxrig.Theme( {} ).ensure();
-        return out;
-    }
+	// Writes the missing starter files. Returns { written, kept, failed }.
+	function apply( ids ) {
+		var out = { written: [], kept: [], failed: [] };
+		for ( var e in entries( arguments.ids, variables.config.cfgHome() ) ) {
+			if ( variables.config.configState( e ) != "missing" ) { out.kept.append( e.name ); continue; }
+			if ( variables.config.configWrite( e, e.content, "apply", true, false ) == 0 ) out.written.append( e.name ); else out.failed.append( e.name );
+		}
+		if ( out.written.len() ) new bxrig.Theme( {} ).ensure();
+		return out;
+	}
 }
