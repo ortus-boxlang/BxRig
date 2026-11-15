@@ -12,6 +12,12 @@ summary: BxRig brings an opinionated, beautiful and efficient desktop to Linux, 
 
 *This is the documentation for version {{ version }}.*
 
+![BxRig: the BxRig theme with its wallpaper, the bar and a themed terminal](assets/screenshots/themes/bxrig.webp)
+
+<video src="assets/clips/theme-switcher.webm" poster="assets/screenshots/panel-theme-switcher.webp" autoplay loop muted playsinline width="100%"></video>
+
+Twenty themes, each with its own wallpaper: see them all in [Themes](guides/themes.md).
+
 ## Install
 
 ```bash title="One line"

@@ -85,7 +85,7 @@ class Mail {
 			var from = structKeyExists( m, "From" ) && isStruct( m.From ) ? m.From : {};
 			var to = structKeyExists( m, "To" ) && isArray( m.To ) && m.To.len() ? m.To[ 1 ] : {};
 			out.append( { mid: m.ID ?: "", sender: len( from.Name ?: "" ) ? from.Name : ( from.Address ?: "" ), sender_address: from.Address ?: "", recipient: to.Address ?: "", subject_line: m.Subject ?: "", received: replace( left( m.Created ?: "", 19 ), "T", " " ),
-						  bytes: m.Size ?: 0, attachment_count: isNumeric( m.Attachments ?: 0 ) ? m.Attachments : 0, seen: m.Read ?: false, preview: m.Snippet ?: "" } );
+					bytes: m.Size ?: 0, attachment_count: isNumeric( m.Attachments ?: 0 ) ? m.Attachments : 0, seen: m.Read ?: false, preview: m.Snippet ?: "" } );
 		}
 		return { total: g.data.total ?: out.len(), unread: g.data.unread ?: 0, messages: out };
 	}

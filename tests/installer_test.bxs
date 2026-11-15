@@ -2,20 +2,20 @@
 // Run from src/: (cd src && matchbox ../tests/installer_test.bxs)
 testkit = new lib.Check( "installer" );
 function app( id, source, targets, extra = {} ) {
- a = { id: id, source: source, targets: targets };
- for ( k in extra ) a[k] = extra[k];
- return a;
+	a = { id: id, source: source, targets: targets };
+	for ( k in extra ) a[k] = extra[k];
+	return a;
 }
 calls = [];
 failOn = "";
 runner = function( argv, timeout ) {
- calls.append( argv.toList( " " ) );
- if ( len( failOn ) && find( failOn, argv.toList( " " ) ) ) return { exitCode: 1, timeout: false, output: "" };
- return { exitCode: 0, timeout: false, output: "0" };
+	calls.append( argv.toList( " " ) );
+	if ( len( failOn ) && find( failOn, argv.toList( " " ) ) ) return { exitCode: 1, timeout: false, output: "" };
+	return { exitCode: 0, timeout: false, output: "0" };
 };
 inst = new bxrig.Installer( runner );
 sel = [ app( "git", "pacman", [ "git" ] ), app( "podman", "pacman", [ "podman", "buildah", "skopeo" ] ),
-		app( "vscode", "aur", [ "visual-studio-code-bin" ] ), app( "brave", "aur", [ "brave-bin" ] ) ];
+	app( "vscode", "aur", [ "visual-studio-code-bin" ] ), app( "brave", "aur", [ "brave-bin" ] ) ];
 b = inst.steps( sel, false );
 testkit.check( "one pacman step for all pacman apps", b.steps[1].kind == "pacman" && b.steps[1].ids.toList() == "git,podman" );
 testkit.check( "pacman uses sudo and lists every target once", b.steps[1].commands[1].toList( " " ) == "sudo pacman -S --needed --noconfirm git podman buildah skopeo" );
@@ -23,7 +23,7 @@ testkit.check( "aur apps are one step each, after pacman", b.steps.len() == 3 &&
 b = inst.steps( [ app( "git", "pacman", [ "git" ] ) ], true );
 testkit.check( "root: no sudo", b.steps[1].commands[1][1] == "pacman" );
 b = inst.steps( [ app( "omazed", "pkgbuild", [ "omazed" ], { pkgbuild: { repo: "omacom/omarchy-pkgs", path: "pkgbuilds/omazed", ref: "master" } } ),
-				  app( "intellij", "unresolved", [ "x" ] ) ], false );
+		app( "intellij", "unresolved", [ "x" ] ) ], false );
 testkit.check( "unpinned pkgbuild and unresolved are blocked, no steps", b.steps.len() == 0 && b.blocked.len() == 2 );
 testkit.check( "blocked reasons are explicit", find( "not a full commit", b.blocked[1].error ) && find( "no installable source", b.blocked[2].error ) );
 b = inst.steps( [ app( "omazed", "pkgbuild", [ "omazed" ], { pkgbuild: { repo: "omacom/omarchy-pkgs", path: "pkgbuilds/omazed", ref: "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f" } } ) ], false );
@@ -83,9 +83,9 @@ cachy = { id: "brave", source: "pacman", targets: [ "brave-bin" ], repo: "cachyo
 ls = { id: "localsend", source: "pacman", targets: [ "localsend" ], repo: "cachyos", aur_targets: [ "localsend-bin" ] };
 inst2 = new bxrig.Installer( runner );
 if ( !inst2.onCachyos() ) {
- b = inst2.steps( [ app( "git", "pacman", [ "git" ] ), cachy, ls ], false );
- testkit.check( "off CachyOS: cachyos-repo apps leave the pacman step", b.steps[1].ids.toList() == "git" );
- testkit.check( "off CachyOS: they are AUR steps, with the AUR name when given", b.steps[2].commands[1].toList( " " ) == "yay -S --needed --noconfirm brave-bin" && b.steps[3].commands[1].toList( " " ) == "yay -S --needed --noconfirm localsend-bin" );
+	b = inst2.steps( [ app( "git", "pacman", [ "git" ] ), cachy, ls ], false );
+	testkit.check( "off CachyOS: cachyos-repo apps leave the pacman step", b.steps[1].ids.toList() == "git" );
+	testkit.check( "off CachyOS: they are AUR steps, with the AUR name when given", b.steps[2].commands[1].toList( " " ) == "yay -S --needed --noconfirm brave-bin" && b.steps[3].commands[1].toList( " " ) == "yay -S --needed --noconfirm localsend-bin" );
 }
 // one failed pacman transaction: every app again on its own; only the one that really fails is reported
 b = inst2.steps( [ app( "git", "pacman", [ "git" ] ), app( "nope", "pacman", [ "nope-pkg" ] ), app( "btop", "pacman", [ "btop" ] ) ], false );

@@ -7,6 +7,8 @@ summary: One terminal for your whole machine, with a page for each job. Run bxri
 
 `bxrig tui` opens one terminal screen with a list of pages on the left and the open page on the right.
 
+![The Control Center dashboard](../assets/screenshots/control-center-dashboard.webp)
+
 ```bash
 bxrig tui                   # opens on the Dashboard, sidebar open
 bxrig tui databases         # one page on its own, sidebar collapsed
@@ -53,6 +55,12 @@ The first page shows what needs your attention, then the state of the machine:
 - **Backups:** how fresh each place is. Enter opens BxTimeMachine, and you come back to the Dashboard when you leave it.
 
 Each part is read on its own. If one cannot be read, the rest still shows.
+
+<video src="../assets/clips/control-center.webm" poster="../assets/screenshots/control-center-dashboard.webp" autoplay loop muted playsinline width="100%"></video>
+
+| | |
+| --- | --- |
+| ![The Apps page: installed apps with details](../assets/screenshots/control-center-apps.webp)<br>**Apps** | ![The Maven page: every version, install with one key](../assets/screenshots/control-center-maven.webp)<br>**Maven** (Java, Gradle and BoxLang look the same) |
 
 ## Pages
 

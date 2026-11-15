@@ -1,0 +1,44 @@
+// The files BxRig writes use tabs for indentation, like its own source (scripts/format.sh). ConfigService runs every
+// config it writes or compares through tabs( text, path ), so a generator may build its text with spaces.
+// Only leading spaces change, step by step (each step of 2 or 4 spaces becomes a tab, leftover alignment stays);
+// YAML (tabs are not allowed there) and Markdown keep their spaces, and text whose indent step is not clearly
+// 2 or 4 spaces is left as it is.
+class Indent {
+	function tabs( text, path = "" ) {
+		var ext = lCase( listLast( getFileFromPath( arguments.path ), "." ) );
+		if ( arrayFind( [ "yml", "yaml", "md" ], ext ) ) return arguments.text;
+		var lines = listToArray( arguments.text, chr( 10 ), true );
+		var widths = [];
+		for ( var l in lines ) {
+			var n = lead( l );
+			if ( n > 0 && n < len( l ) ) widths.append( n );
+		}
+		if ( !widths.len() ) return arguments.text;
+		var unit = stepOf( widths );
+		if ( unit == 0 ) return arguments.text;
+		var out = [];
+		for ( var l in lines ) {
+			var n = lead( l );
+			if ( n == 0 || n == len( l ) ) { out.append( n == len( l ) ? "" : l ); continue; }
+			out.append( repeatString( chr( 9 ), int( n / unit ) ) & repeatString( " ", n % unit ) & mid( l, n + 1, len( l ) ) );
+		}
+		return out.toList( chr( 10 ) );
+	}
+
+	// the number of spaces a line starts with (a line that starts with a tab counts 0: it is already indented with tabs)
+	private function lead( line ) {
+		var n = 0;
+		while ( n < len( arguments.line ) && mid( arguments.line, n + 1, 1 ) == " " ) n++;
+		return n;
+	}
+
+	// 4 or 2 when nearly every indent is a multiple of it, 0 when the step is not clear
+	private function stepOf( widths ) {
+		var fours = 0; var twos = 0;
+		for ( var w in arguments.widths ) { if ( w % 4 == 0 ) fours++; if ( w % 2 == 0 ) twos++; }
+		var step = 0;
+		if ( fours >= arguments.widths.len() * 0.9 ) step = 4;
+		else if ( twos >= arguments.widths.len() * 0.9 ) step = 2;
+		return step;
+	}
+}

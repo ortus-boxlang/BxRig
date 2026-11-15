@@ -5,10 +5,10 @@ good = catalogClass.load();
 testkit = new lib.Check( "catalog check negative" );
 function copyOf( c ) { return jsonDeserialize( jsonSerialize( c ) ); }
 function expect( label, c, needle ) {
- r = catalogClass.check( c );
- hit = false;
- for ( e in r.errors ) if ( findNoCase( needle, e ) ) hit = true;
- testkit.check( hit ? label : label & " (wanted '" & needle & "', got " & r.errors.len() & " errors)", hit );
+	r = catalogClass.check( c );
+	hit = false;
+	for ( e in r.errors ) if ( findNoCase( needle, e ) ) hit = true;
+	testkit.check( hit ? label : label & " (wanted '" & needle & "', got " & r.errors.len() & " errors)", hit );
 }
 r = catalogClass.check( good );
 testkit.check( r.errors.len() == 0 ? "real catalog has no errors" : "real catalog: " & r.errors.toList( "; " ), r.errors.len() == 0 );
@@ -35,14 +35,14 @@ c = copyOf( good ); c.apps[1].shells = [];
 expect( "empty shells", c, "shells must be a non-empty list" );
 
 for ( bad in [ "master", "main", "abc1234", "65A4B0F646F7AFE480FDEBC7C0CF8CF2B56BF27F" ] ) {
- c = copyOf( good );
- for ( a in c.apps ) if ( a.source == "pkgbuild" ) { a.pkgbuild.ref = bad; break; }
- expect( "pkgbuild ref '" & bad & "' is rejected", c, "full 40-character commit" );
+	c = copyOf( good );
+	for ( a in c.apps ) if ( a.source == "pkgbuild" ) { a.pkgbuild.ref = bad; break; }
+	expect( "pkgbuild ref '" & bad & "' is rejected", c, "full 40-character commit" );
 }
 
 for ( bad in [ "http://x.com/i.sh", "https://u:p@x.com/i.sh" ] ) {
- c = copyOf( good ); c.apps[1].source = "script"; c.apps[1].script = { url: bad };
- expect( "script url '" & bad & "' is rejected", c, "script needs an https url" );
+	c = copyOf( good ); c.apps[1].source = "script"; c.apps[1].script = { url: bad };
+	expect( "script url '" & bad & "' is rejected", c, "script needs an https url" );
 }
 c = copyOf( good ); c.apps[1].source = "script"; c.apps[1].script = { url: "https://x.com/i.sh", args: [ "a b;rm" ] };
 expect( "unsafe script argument", c, "unsafe script argument" );

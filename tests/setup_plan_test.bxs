@@ -2,9 +2,9 @@
 testkit = new lib.Check( "setup plan" );
 plan = new bxrig.SetupPlan();
 function facts( over = {} ) {
- f = { isRoot: false, hasSudo: true, kwinVersion: "6.6.2", desktop: "KDE", sessionType: "wayland", installed: { git: true, "python-dbus": true, "python-gobject": true, "qt6-tools": true }, hyprkwinInstalled: false, workDir: "/tmp/hk", os: "cachyos", arch: "x86_64", hasPacman: true, hyprlandAdded: [] };
- for ( k in over ) f[k] = over[k];
- return f;
+	f = { isRoot: false, hasSudo: true, kwinVersion: "6.6.2", desktop: "KDE", sessionType: "wayland", installed: { git: true, "python-dbus": true, "python-gobject": true, "qt6-tools": true }, hyprkwinInstalled: false, workDir: "/tmp/hk", os: "cachyos", arch: "x86_64", hasPacman: true, hyprlandAdded: [] };
+	for ( k in over ) f[k] = over[k];
+	return f;
 }
 ids = function( p ) { return p.steps.map( function( s ) { return s.id; } ).toList( "," ); };
 
@@ -75,9 +75,9 @@ testkit.check( "undo hyprland: already removed is an error", plan.undoHyprland( 
 
 // setup xremap
 function xfacts( over = {} ) {
- f = facts( { desktop: "Hyprland", installed: {}, hasYay: true, user: "dev", groups: [ "dev", "wheel" ], udevRule: false } );
- for ( k in over ) f[k] = over[k];
- return f;
+	f = facts( { desktop: "Hyprland", installed: {}, hasYay: true, user: "dev", groups: [ "dev", "wheel" ], udevRule: false } );
+	for ( k in over ) f[k] = over[k];
+	return f;
 }
 x = plan.xremap( xfacts(), {} );
 testkit.check( "xremap on Hyprland: package, udev, group, config, service", ids( x ) == "package,udev,group,config,service" && x.steps[1].commands[1][5] == "xremap-hypr-bin" );
@@ -100,9 +100,9 @@ testkit.check( "undo xremap: nothing recorded is an error", plan.undoXremap( xfa
 
 // session set
 function sfacts( over = {} ) {
- f = { isRoot: false, hasSudo: true, sessions: [ { file: "hyprland.desktop", path: "/usr/share/wayland-sessions/hyprland.desktop" }, { file: "hyprland-uwsm.desktop", path: "/usr/share/wayland-sessions/hyprland-uwsm.desktop" }, { file: "plasma.desktop", path: "/usr/share/wayland-sessions/plasma.desktop" } ], stateFile: "/var/lib/sddm/state.conf", stateLines: [ "[Last]", "Session=/usr/share/wayland-sessions/plasma.desktop", "User=dev" ], autologin: "", workDir: "" };
- for ( k in over ) f[k] = over[k];
- return f;
+	f = { isRoot: false, hasSudo: true, sessions: [ { file: "hyprland.desktop", path: "/usr/share/wayland-sessions/hyprland.desktop" }, { file: "hyprland-uwsm.desktop", path: "/usr/share/wayland-sessions/hyprland-uwsm.desktop" }, { file: "plasma.desktop", path: "/usr/share/wayland-sessions/plasma.desktop" } ], stateFile: "/var/lib/sddm/state.conf", stateLines: [ "[Last]", "Session=/usr/share/wayland-sessions/plasma.desktop", "User=dev" ], autologin: "", workDir: "" };
+	for ( k in over ) f[k] = over[k];
+	return f;
 }
 se = plan.session( sfacts(), "hyprland" );
 testkit.check( "session hyprland prefers the uwsm session", se.errors.len() == 0 && se.chosen == "/usr/share/wayland-sessions/hyprland-uwsm.desktop" && ids( se ) == "backup,write" );

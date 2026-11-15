@@ -77,7 +77,7 @@ class Runner {
 	function resolve( provider, cfg ) {
 		if ( arguments.provider == "system" ) return [];
 		var cmd = arguments.provider == "custom" ? arguments.cfg.custom_command
-			: ( structKeyExists( arguments.cfg.launcher_commands, arguments.provider ) ? arguments.cfg.launcher_commands[ arguments.provider ] : ( structKeyExists( launchCommands(), arguments.provider ) ? launchCommands()[ arguments.provider ] : [] ) );
+		: ( structKeyExists( arguments.cfg.launcher_commands, arguments.provider ) ? arguments.cfg.launcher_commands[ arguments.provider ] : ( structKeyExists( launchCommands(), arguments.provider ) ? launchCommands()[ arguments.provider ] : [] ) );
 		if ( !validArgv( cmd ) ) throw( message = "Invalid launcher command for " & arguments.provider );
 		return cmd;
 	}

@@ -359,14 +359,14 @@ class BackupData {
 	// ---- schedule ----
 	function unitTexts( when ) {
 		var svc = new bxrig.util.SystemdUnit().render( [
-			{ name: "Unit", lines: [ "Description=BxRig backup of your files", "ConditionACPower=true", "After=network-online.target" ] },
-			{ name: "Service", lines: [ "Type=oneshot", "Nice=10", "IOSchedulingClass=idle", "ExecStart=" & variables.environ.self() & " backup data run --all --yes --scheduled" ] }
-		], "Written by `bxrig backup data schedule`." );
+				{ name: "Unit", lines: [ "Description=BxRig backup of your files", "ConditionACPower=true", "After=network-online.target" ] },
+				{ name: "Service", lines: [ "Type=oneshot", "Nice=10", "IOSchedulingClass=idle", "ExecStart=" & variables.environ.self() & " backup data run --all --yes --scheduled" ] }
+			], "Written by `bxrig backup data schedule`." );
 		var tim = new bxrig.util.SystemdUnit().render( [
-			{ name: "Unit", lines: [ "Description=BxRig backup (" & arguments.when & ")" ] },
-			{ name: "Timer", lines: [ "OnCalendar=" & arguments.when, "Persistent=true", "RandomizedDelaySec=15min" ] },
-			{ name: "Install", lines: [ "WantedBy=timers.target" ] }
-		], "Written by `bxrig backup data schedule`." );
+				{ name: "Unit", lines: [ "Description=BxRig backup (" & arguments.when & ")" ] },
+				{ name: "Timer", lines: [ "OnCalendar=" & arguments.when, "Persistent=true", "RandomizedDelaySec=15min" ] },
+				{ name: "Install", lines: [ "WantedBy=timers.target" ] }
+			], "Written by `bxrig backup data schedule`." );
 		return { service: svc, timer: tim };
 	}
 

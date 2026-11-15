@@ -259,14 +259,14 @@ class Nas {
 		}
 		if ( r.protocol == "smb" && !len( secrets().fetch( secretKey( nm ) ) ) ) return variables.out.fail( "precondition", "the password of " & nm & " is not in the keyring", arguments.asJson );
 		var mountUnit = new bxrig.util.SystemdUnit().render( [
-			{ name: "Unit", lines: [ "Description=" & nm & " " & share & " (BxRig NAS)", "After=network-online.target", "Wants=network-online.target" ] },
-			{ name: "Mount", lines: [ "What=" & source( r, share ), "Where=" & mp, "Type=" & ( r.protocol == "smb" ? "cifs" : "nfs" ), "Options=" & mountOptions( r, nm ) & ",nofail", "TimeoutSec=20" ] }
-		], "Written by `bxrig nas auto on`. Remove with `bxrig nas auto off " & nm & " " & share & "`." );
+				{ name: "Unit", lines: [ "Description=" & nm & " " & share & " (BxRig NAS)", "After=network-online.target", "Wants=network-online.target" ] },
+				{ name: "Mount", lines: [ "What=" & source( r, share ), "Where=" & mp, "Type=" & ( r.protocol == "smb" ? "cifs" : "nfs" ), "Options=" & mountOptions( r, nm ) & ",nofail", "TimeoutSec=20" ] }
+			], "Written by `bxrig nas auto on`. Remove with `bxrig nas auto off " & nm & " " & share & "`." );
 		var autoUnit = new bxrig.util.SystemdUnit().render( [
-			{ name: "Unit", lines: [ "Description=Automount " & nm & " " & share ] },
-			{ name: "Automount", lines: [ "Where=" & mp, "TimeoutIdleSec=600" ] },
-			{ name: "Install", lines: [ "WantedBy=multi-user.target" ] }
-		], "Written by `bxrig nas auto on`." );
+				{ name: "Unit", lines: [ "Description=Automount " & nm & " " & share ] },
+				{ name: "Automount", lines: [ "Where=" & mp, "TimeoutIdleSec=600" ] },
+				{ name: "Install", lines: [ "WantedBy=multi-user.target" ] }
+			], "Written by `bxrig nas auto on`." );
 		var cmds = [];
 		var tmpM = "TEMP.mount";
 		var tmpA = "TEMP.automount";

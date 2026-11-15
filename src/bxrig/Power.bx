@@ -96,8 +96,8 @@ class Power {
 	function lidConf( action ) {
 		var a = arguments.action;
 		return "## Written by `bxrig power lid " & a & "`. Remove this file to go back to the systemd defaults." & chr( 10 )
-			& "[Login]" & chr( 10 )
-			& "HandleLidSwitch=" & a & chr( 10 ) & "HandleLidSwitchExternalPower=" & a & chr( 10 ) & "HandleLidSwitchDocked=ignore" & chr( 10 );
+		& "[Login]" & chr( 10 )
+		& "HandleLidSwitch=" & a & chr( 10 ) & "HandleLidSwitchExternalPower=" & a & chr( 10 ) & "HandleLidSwitchDocked=ignore" & chr( 10 );
 	}
 
 	function lidCmd( args, yes, dry, asJson ) {

@@ -58,7 +58,7 @@ class ConfigCmd {
 		println( arguments.name & ": " & st );
 		if ( st == "outdated" || st == "drifted" ) {
 			var tmpSrc = getTempDirectory() & "/bxrig-src-" & left( createUUID(), 8 );
-			fileWrite( tmpSrc, arguments.entry.content );
+			fileWrite( tmpSrc, variables.config.contentOf( arguments.entry ) );
 			var d = variables.proc.exec( [ "diff", "-u", arguments.entry.target, tmpSrc ], 15 );
 			println( d.output );
 			fileDelete( tmpSrc );

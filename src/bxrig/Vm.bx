@@ -382,7 +382,7 @@ class Vm {
 	function writeLauncher( rec ) {
 		var nl = chr( 10 );
 		var text = new bxrig.util.DesktopEntry().render( [ "Type=Application", "Name=" & arguments.rec.name & " (" & ( arguments.rec.kind == "windows" ? "Windows" : "Linux" ) & " VM)",
-			"Comment=Open the BxRig VM " & arguments.rec.name, "Exec=sh -c 'PATH=" & '"$HOME/.local/bin:$PATH"' & "; bxrig vm open " & arguments.rec.name & "'", "Icon=computer", "Terminal=false", "Categories=System;" ] );
+				"Comment=Open the BxRig VM " & arguments.rec.name, "Exec=sh -c 'PATH=" & '"$HOME/.local/bin:$PATH"' & "; bxrig vm open " & arguments.rec.name & "'", "Icon=computer", "Terminal=false", "Categories=System;" ] );
 		variables.config.writeAtomic( desktopFile( arguments.rec.name ), text, "644" );
 	}
 

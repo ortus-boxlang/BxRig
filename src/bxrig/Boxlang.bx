@@ -61,11 +61,11 @@ class Boxlang {
 			vscode: variables.proc.has( "code" ), vscode_extension: find( variables.extension, vsx ) > 0
 		};
 		return variables.out.say( "ok", d, arguments.asJson, [
-			"BoxLang:   " & ( len( d.boxlang ) ? d.boxlang : "not installed" ) & ( len( d.bvm ) ? "  (bvm: " & d.bvm & ")" : "" ),
-			"MatchBox:  " & ( len( d.matchbox ) ? d.matchbox : "not installed" ) & ( d.mvm ? "  (mvm)" : "" ),
-			"Modules:   " & ( d.bx_module ? "bx-module is available" : "bx-module not found" ),
-			"VS Code:   " & ( d.vscode ? ( d.vscode_extension ? "installed, BoxLang extension present" : "installed, BoxLang extension missing: bxrig boxlang vscode" ) : "not installed" )
-		] );
+				"BoxLang:   " & ( len( d.boxlang ) ? d.boxlang : "not installed" ) & ( len( d.bvm ) ? "  (bvm: " & d.bvm & ")" : "" ),
+				"MatchBox:  " & ( len( d.matchbox ) ? d.matchbox : "not installed" ) & ( d.mvm ? "  (mvm)" : "" ),
+				"Modules:   " & ( d.bx_module ? "bx-module is available" : "bx-module not found" ),
+				"VS Code:   " & ( d.vscode ? ( d.vscode_extension ? "installed, BoxLang extension present" : "installed, BoxLang extension missing: bxrig boxlang vscode" ) : "not installed" )
+			] );
 	}
 
 	// `use VERSION` (bvm) or `matchbox use VERSION` (mvm)
@@ -139,10 +139,10 @@ class Boxlang {
 	function welcomeHtml() {
 		var rows = links().map( function( l ) { return '<li><a href="' & l.url & '">' & l.title & '</a> <span>' & l.about & '</span></li>'; } ).toList( chr( 10 ) );
 		return '<!doctype html><meta charset="utf-8"><title>Welcome to BxRig</title>' & chr( 10 )
-			& '<style>body{font:16px system-ui;background:##0d1117;color:##e6edf3;max-width:46rem;margin:3rem auto;padding:0 1rem}h1{background:linear-gradient(90deg,##00dbff,##00ff78);-webkit-background-clip:text;color:transparent}a{color:##00dbff}li{margin:.5rem 0}span{color:##8b949e}code{background:##161b22;padding:.1rem .4rem;border-radius:4px}</style>' & chr( 10 )
-			& '<h1>Welcome to BxRig</h1><p>Your dev rig is set up. BoxLang and MatchBox are installed.</p>' & chr( 10 )
-			& '<h2>Start here</h2><ol><li>Open <a href="https://try.boxlang.io">Try BoxLang</a> and run something.</li><li>In a terminal: <code>boxlang --version</code>, then <code>bxrig boxlang modules list</code>.</li><li>Compile a script to a native binary with MatchBox: <code>matchbox script.bxs</code> (docs: <a href="https://matchbox.boxlang.io">matchbox.boxlang.io</a>).</li></ol>' & chr( 10 )
-			& '<h2>The BoxLang ecosystem</h2><ul>' & rows & '</ul>' & chr( 10 );
+		& '<style>body{font:16px system-ui;background:##0d1117;color:##e6edf3;max-width:46rem;margin:3rem auto;padding:0 1rem}h1{background:linear-gradient(90deg,##00dbff,##00ff78);-webkit-background-clip:text;color:transparent}a{color:##00dbff}li{margin:.5rem 0}span{color:##8b949e}code{background:##161b22;padding:.1rem .4rem;border-radius:4px}</style>' & chr( 10 )
+		& '<h1>Welcome to BxRig</h1><p>Your dev rig is set up. BoxLang and MatchBox are installed.</p>' & chr( 10 )
+		& '<h2>Start here</h2><ol><li>Open <a href="https://try.boxlang.io">Try BoxLang</a> and run something.</li><li>In a terminal: <code>boxlang --version</code>, then <code>bxrig boxlang modules list</code>.</li><li>Compile a script to a native binary with MatchBox: <code>matchbox script.bxs</code> (docs: <a href="https://matchbox.boxlang.io">matchbox.boxlang.io</a>).</li></ol>' & chr( 10 )
+		& '<h2>The BoxLang ecosystem</h2><ul>' & rows & '</ul>' & chr( 10 );
 	}
 
 	function welcome( open, asJson ) {

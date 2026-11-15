@@ -135,7 +135,7 @@ class Sdk {
 		directoryCreate( cfgDir(), true, true );
 		var d = dir();
 		var sh = [ "# Written by `bxrig sdk`. Maven and Gradle from SDKMAN; Java is set by `bxrig java default`.", "export SDKMAN_DIR=" & chr( 34 ) & d & chr( 34 ) ];
-        var fish = [ "# Written by `bxrig sdk`. Maven and Gradle from SDKMAN; Java is set by `bxrig java default`.", "set -gx SDKMAN_DIR " & d ];
+		var fish = [ "# Written by `bxrig sdk`. Maven and Gradle from SDKMAN; Java is set by `bxrig java default`.", "set -gx SDKMAN_DIR " & d ];
 		for ( var c in [ "maven", "gradle" ] ) {
 			var up = uCase( c );
 			sh.append( "[ -d " & chr( 34 ) & "$SDKMAN_DIR/candidates/" & c & "/current/bin" & chr( 34 ) & " ] && export " & up & "_HOME=" & chr( 34 ) & "$SDKMAN_DIR/candidates/" & c & "/current" & chr( 34 ) & " && export PATH=" & chr( 34 ) & "$" & up & "_HOME/bin:$PATH" & chr( 34 ) );

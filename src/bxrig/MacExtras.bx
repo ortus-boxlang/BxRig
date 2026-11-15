@@ -233,46 +233,46 @@ class MacExtras {
 
 	function gesturesText() {
 		return "# Written by bxrig. Three-finger swipes switch workspaces and open the overview; edit it freely (it is kept)." & chr( 10 )
-            & "gesture swipe left 3 hyprctl dispatch workspace e+1" & chr( 10 )
-            & "gesture swipe right 3 hyprctl dispatch workspace e-1" & chr( 10 )
-            & "gesture swipe up 3 bxrig overview" & chr( 10 )
-            & "gesture swipe down 3 hyprctl dispatch workspace previous" & chr( 10 );
-    }
+		& "gesture swipe left 3 hyprctl dispatch workspace e+1" & chr( 10 )
+		& "gesture swipe right 3 hyprctl dispatch workspace e-1" & chr( 10 )
+		& "gesture swipe up 3 bxrig overview" & chr( 10 )
+		& "gesture swipe down 3 hyprctl dispatch workspace previous" & chr( 10 );
+	}
 
-    function gestures( yes, dryRun, asJson ) {
-        var cmd = "input gestures";
-        if ( !variables.proc.has( "libinput-gestures-setup" ) ) return need( cmd, "libinput-gestures-setup", "Install it: bxrig install libinput-gestures", arguments.asJson );
-        var entry = { name: "libinput-gestures", target: gesturesFile(), mode: "644", content: gesturesText() };
-        var data = { file: gesturesFile() };
-        if ( !arguments.yes || arguments.dryRun ) return variables.cli.scoped( cmd ).plan( "write " & gesturesFile() & " (3-finger swipe left/right: workspaces, up: overview) and start libinput-gestures at login", data, arguments.asJson, arguments.dryRun );
-        var st = variables.config.configState( entry );
-        if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( entry, entry.content, "apply", true, false );
-        variables.proc.exec( [ "libinput-gestures-setup", "autostart" ], 30 );
-        variables.proc.exec( [ "libinput-gestures-setup", "start" ], 30 );
-        return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Gestures set up. You must be in the input group (bxrig input doctor)." ] );
-    }
+	function gestures( yes, dryRun, asJson ) {
+		var cmd = "input gestures";
+		if ( !variables.proc.has( "libinput-gestures-setup" ) ) return need( cmd, "libinput-gestures-setup", "Install it: bxrig install libinput-gestures", arguments.asJson );
+		var entry = { name: "libinput-gestures", target: gesturesFile(), mode: "644", content: gesturesText() };
+		var data = { file: gesturesFile() };
+		if ( !arguments.yes || arguments.dryRun ) return variables.cli.scoped( cmd ).plan( "write " & gesturesFile() & " (3-finger swipe left/right: workspaces, up: overview) and start libinput-gestures at login", data, arguments.asJson, arguments.dryRun );
+		var st = variables.config.configState( entry );
+		if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( entry, entry.content, "apply", true, false );
+		variables.proc.exec( [ "libinput-gestures-setup", "autostart" ], 30 );
+		variables.proc.exec( [ "libinput-gestures-setup", "start" ], 30 );
+		return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Gestures set up. You must be in the input group (bxrig input doctor)." ] );
+	}
 
-    // ---- AirPlay ----
-    function airplayUnit() { return variables.config.cfgHome() & "/systemd/user/bxrig-airplay.service"; }
+	// ---- AirPlay ----
+	function airplayUnit() { return variables.config.cfgHome() & "/systemd/user/bxrig-airplay.service"; }
 
-    function airplay( action, asJson ) {
-        var cmd = "airplay";
-        if ( arguments.action == "status" ) {
-            var s = variables.systemd.state( "bxrig-airplay.service", true );
-            return variables.cli.say( cmd, "ok", { active: s == "active" }, arguments.asJson, [ "AirPlay receiver: " & s ] );
-        }
-        if ( arguments.action == "off" ) {
-            variables.systemd.disable( "bxrig-airplay.service", true );
-            return variables.cli.say( cmd, "ok", { active: false }, arguments.asJson, [ "AirPlay receiver is off." ] );
-        }
-        if ( arguments.action != "on" ) return variables.cli.say( cmd, "usage", {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "airplay" ) ] );
-        if ( !variables.proc.has( "uxplay" ) ) return need( cmd, "uxplay", "Install it: bxrig install uxplay", arguments.asJson );
-        var entry = { name: "airplay-unit", target: airplayUnit(), mode: "644", content: new bxrig.util.SystemdUnit().render( [ { name: "Unit", lines: [ "Description=BxRig AirPlay receiver (UxPlay)", "After=graphical-session.target" ] }, { name: "Service", lines: [ "ExecStart=uxplay -n BxRig", "Restart=on-failure" ] }, { name: "Install", lines: [ "WantedBy=graphical-session.target" ] } ] ) };
-        var st = variables.config.configState( entry );
-        if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( entry, entry.content, "apply", true, false );
-        variables.systemd.reload( true );
-        var r = variables.systemd.enable( "bxrig-airplay.service", true );
-        if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: could not start the AirPlay receiver" ] );
-        return variables.cli.say( cmd, "ok", { active: true }, arguments.asJson, [ "AirPlay receiver on as BxRig. It needs avahi: sudo systemctl enable --now avahi-daemon" ] );
-    }
+	function airplay( action, asJson ) {
+		var cmd = "airplay";
+		if ( arguments.action == "status" ) {
+			var s = variables.systemd.state( "bxrig-airplay.service", true );
+			return variables.cli.say( cmd, "ok", { active: s == "active" }, arguments.asJson, [ "AirPlay receiver: " & s ] );
+		}
+		if ( arguments.action == "off" ) {
+			variables.systemd.disable( "bxrig-airplay.service", true );
+			return variables.cli.say( cmd, "ok", { active: false }, arguments.asJson, [ "AirPlay receiver is off." ] );
+		}
+		if ( arguments.action != "on" ) return variables.cli.say( cmd, "usage", {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "airplay" ) ] );
+		if ( !variables.proc.has( "uxplay" ) ) return need( cmd, "uxplay", "Install it: bxrig install uxplay", arguments.asJson );
+		var entry = { name: "airplay-unit", target: airplayUnit(), mode: "644", content: new bxrig.util.SystemdUnit().render( [ { name: "Unit", lines: [ "Description=BxRig AirPlay receiver (UxPlay)", "After=graphical-session.target" ] }, { name: "Service", lines: [ "ExecStart=uxplay -n BxRig", "Restart=on-failure" ] }, { name: "Install", lines: [ "WantedBy=graphical-session.target" ] } ] ) };
+		var st = variables.config.configState( entry );
+		if ( st != "drifted" && st != "blocked" ) variables.config.configWrite( entry, entry.content, "apply", true, false );
+		variables.systemd.reload( true );
+		var r = variables.systemd.enable( "bxrig-airplay.service", true );
+		if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: could not start the AirPlay receiver" ] );
+		return variables.cli.say( cmd, "ok", { active: true }, arguments.asJson, [ "AirPlay receiver on as BxRig. It needs avahi: sudo systemctl enable --now avahi-daemon" ] );
+	}
 }

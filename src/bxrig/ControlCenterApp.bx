@@ -45,8 +45,8 @@ class ControlCenterApp {
 	// taking text; "page": only when the focus is on the page (not the sidebar) and the page is not taking text.
 	function keyMap() {
 		return new bxrig.KeyMap().bind( "tab", "Tab", "pages", "next" ).bind( "", [ "Shift+Tab", "BackTab" ], "", "prev" ).bind( "", "Ctrl+b", "", "sidebar" )
-			.bind( chr( 92 ), chr( 92 ), "sidebar", "sidebar", "free" ).bind( "", "]", "", "next", "page" ).bind( "", "[", "", "prev", "page" )
-			.bind( "", "Left", "", "left", "page" ).bind( "q", [ "q", "Escape" ], "quit", "quit", "page" );
+		.bind( chr( 92 ), chr( 92 ), "sidebar", "sidebar", "free" ).bind( "", "]", "", "next", "page" ).bind( "", "[", "", "prev", "page" )
+		.bind( "", "Left", "", "left", "page" ).bind( "q", [ "q", "Escape" ], "quit", "quit", "page" );
 	}
 
 	// "main", or the kind of the box that is open: "confirm", "result" or "ask".

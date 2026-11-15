@@ -125,10 +125,10 @@ class AppsModel {
 		}
 		var by = variables.sortBy;
 		arraySort( out, function( a, b ) {
-			if ( by == "size" && a.size != b.size ) return b.size - a.size;
-			if ( by == "source" && compareNoCase( a.source, b.source ) != 0 ) return compareNoCase( a.source, b.source );
-			return compareNoCase( a.name, b.name );
-		} );
+				if ( by == "size" && a.size != b.size ) return b.size - a.size;
+				if ( by == "source" && compareNoCase( a.source, b.source ) != 0 ) return compareNoCase( a.source, b.source );
+				return compareNoCase( a.name, b.name );
+			} );
 		return out;
 	}
 

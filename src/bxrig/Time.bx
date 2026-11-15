@@ -31,16 +31,16 @@ class Time {
 
 	function unitText() {
 		return new bxrig.util.SystemdUnit().render( [
-			{ name: "Unit", lines: [ "Description=Automatically update system timezone based on location", "Requires=geoclue.service", "After=geoclue.service" ] },
-			{ name: "Service", lines: [ "ExecStart=/usr/bin/automatic-timezoned" ] },
-			{ name: "Install", lines: [ "WantedBy=multi-user.target" ] }
-		], "Written by `bxrig time auto on`. Remove with `bxrig time auto off`." );
+				{ name: "Unit", lines: [ "Description=Automatically update system timezone based on location", "Requires=geoclue.service", "After=geoclue.service" ] },
+				{ name: "Service", lines: [ "ExecStart=/usr/bin/automatic-timezoned" ] },
+				{ name: "Install", lines: [ "WantedBy=multi-user.target" ] }
+			], "Written by `bxrig time auto on`. Remove with `bxrig time auto off`." );
 	}
 
 	function geoclueText() {
 		return "; Written by `bxrig time auto on`. Remove with `bxrig time auto off`." & chr( 10 )
-			& "[agent]" & chr( 10 ) & "whitelist=" & chr( 10 ) & chr( 10 )
-			& "[automatic-timezoned]" & chr( 10 ) & "allowed=true" & chr( 10 ) & "system=true" & chr( 10 ) & "users=" & chr( 10 );
+		& "[agent]" & chr( 10 ) & "whitelist=" & chr( 10 ) & chr( 10 )
+		& "[automatic-timezoned]" & chr( 10 ) & "allowed=true" & chr( 10 ) & "system=true" & chr( 10 ) & "users=" & chr( 10 );
 	}
 
 	// key=value lines of `timedatectl show`.
@@ -210,7 +210,7 @@ class Time {
 			var x = c[ z ];
 			var rel = x.ymd == h.ymd ? "today" : ( x.ymd > h.ymd ? "tomorrow" : "yesterday" );
 			data.zones.append( { label: zoneCity( z ), tz: z, time: x.hm, date: x.date, relative_day: rel, abbrev: x.abbrev,
-				offset: offsetText( x.offsetMin - h.offsetMin ), day_fraction: round( x.minutes / 1440 * 1000 ) / 1000, is_day: x.minutes >= 420 && x.minutes < 1140 } );
+					offset: offsetText( x.offsetMin - h.offsetMin ), day_fraction: round( x.minutes / 1440 * 1000 ) / 1000, is_day: x.minutes >= 420 && x.minutes < 1140 } );
 		}
 		return data;
 	}

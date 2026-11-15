@@ -44,9 +44,9 @@ class Packages {
 	// desktop-list, tui-list, web-list, optional-list: the catalog filtered by kind or tier.
 	function listApps( command, asJson ) {
 		var rows = variables.cat.apps.filter( function( a ) {
-			if ( command == "optional-list" ) return a.tier == "optional";
-			return a.kind == replace( command, "-list", "" );
-		} );
+				if ( command == "optional-list" ) return a.tier == "optional";
+				return a.kind == replace( command, "-list", "" );
+			} );
 		if ( asJson ) println( variables.cli.envelope( command, 0, rows ) );
 		else for ( var a in rows ) println( new bxrig.Catalog().row( a ) );
 		return new bxrig.util.Exit().ok();
@@ -81,8 +81,8 @@ class Packages {
 		}
 		var shell = structKeyExists( options, "shell" ) ? options.shell : defaultShell();
 		var bad = !isSimpleValue( profile ) || profile == true || !isSimpleValue( shell ) || shell == true
-			|| ( profileCmd && p.len() != 2 )
-			|| ( arrayFind( [ "optional-plan", "optional-install" ], cmd ) && !ids.len() );
+		|| ( profileCmd && p.len() != 2 )
+		|| ( arrayFind( [ "optional-plan", "optional-install" ], cmd ) && !ids.len() );
 		var what = profileCmd ? " NAME" : ( arrayFind( [ "optional-plan", "optional-install" ], cmd ) ? " ID [ID...]" : " [ID...] [--profile=NAME]" );
 		var usage = "Usage: bxrig " & cmd & what & " [--optional] [--shell=hyprland|plasma|all] [--json]" & ( findNoCase( "install", cmd ) && !findNoCase( "plan", cmd ) ? " [--yes] [--dry-run]" : "" );
 		return { bad: bad, usage: usage, req: { ids: ids, profile: profile, optional: structKeyExists( options, "optional" ), shell: shell } };
@@ -163,8 +163,8 @@ class Packages {
 			return new bxrig.util.Exit().usage();
 		}
 		var wouldInstall = res.selected.map( function( a ) {
-			return { id: a.id, source: a.source, targets: structKeyExists( a, "targets" ) ? a.targets : [] };
-		} );
+				return { id: a.id, source: a.source, targets: structKeyExists( a, "targets" ) ? a.targets : [] };
+			} );
 		var code = res.failed.len() ? 3 : 0;
 		if ( asJson ) {
 			var selection = { mode: res.mode, ids: req.ids, profile: req.profile, optional: req.optional, shell: req.shell };

@@ -87,11 +87,11 @@ class CommandSpec {
 		for ( var n = w.len(); n >= 1; n-- ) {
 			var want = w.slice( 1, n );
 			var hit = vs.filter( function( v ) {
-				var vw = listToArray( v, " " );
-				if ( vw.len() < want.len() ) return false;
-				for ( var j = 1; j <= want.len(); j++ ) if ( compare( vw[ j ], want[ j ] ) != 0 ) return false;
-				return true;
-			} );
+					var vw = listToArray( v, " " );
+					if ( vw.len() < want.len() ) return false;
+					for ( var j = 1; j <= want.len(); j++ ) if ( compare( vw[ j ], want[ j ] ) != 0 ) return false;
+					return true;
+				} );
 			if ( hit.len() ) return "Usage: bxrig " & hit.toList( "  |  " );
 		}
 		return "Usage: bxrig " & arguments.key;

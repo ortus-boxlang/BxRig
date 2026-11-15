@@ -28,7 +28,7 @@ class Shortcuts {
 	// Valid key names besides single letters and digits.
 	function namedKeys() {
 		var out = [ "Space", "Tab", "Return", "Escape", "grave", "comma", "period", "slash", "minus", "equal", "Left", "Right", "Up", "Down",
-					"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "mouse_down", "mouse_up", "mouse:272", "mouse:273" ];
+			"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "mouse_down", "mouse_up", "mouse:272", "mouse:273" ];
 		for ( var b in bareKeys() ) out.append( b );
 		return out;
 	}
@@ -147,7 +147,7 @@ class Shortcuts {
 			// menus and launchers
 			bx( "menu", G.menu, "BxRig menu (the runner: AI, databases, settings)", "Super+Space", "Super+Space", "menu" ),
 			row( "launcher", G.menu, "Launch apps (the launcher you chose; Noctalia if it cannot run)", "Super+Alt+Space", "Super+Alt+Space", "hypr-bind",
-				 'hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; bxrig runner launch || noctalia msg panel-toggle launcher'']])', "runner launch" ),
+				'hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; bxrig runner launch || noctalia msg panel-toggle launcher'']])', "runner launch" ),
 			bx( "key-sheet", G.menu, "Shortcut cheat sheet", "Super+K", "Super+K", "keys sheet" ),
 			bx( "menu-system", G.menu, "System menu", "Super+Escape", "Super+Escape", "menu open system" ),
 			bx( "menu-hardware", G.menu, "Hardware menu", "Super+Ctrl+H", "Super+Ctrl+H", "menu open hardware" ),
@@ -270,8 +270,8 @@ class Shortcuts {
 	// The table as text lines for `keys show`.
 	function show() {
 		return table().map( function( r ) {
-			return { id: r.id, group: r.group, keys: r.keys, custom: r.kind != "remap" && structKeyExists( variables.overrides, r.id ), action: r.action, how: r.kind == "remap" ? "xremap" : ( r.kind == "hypr-bind" ? "Hyprland binding" : "desktop binding" ), runs: len( r.words ) > 0 };
-		} );
+				return { id: r.id, group: r.group, keys: r.keys, custom: r.kind != "remap" && structKeyExists( variables.overrides, r.id ), action: r.action, how: r.kind == "remap" ? "xremap" : ( r.kind == "hypr-bind" ? "Hyprland binding" : "desktop binding" ), runs: len( r.words ) > 0 };
+			} );
 	}
 
 	// Double use of a combo: { within: [ { combo, ids } ], remapShadows: [ { id, combo, remap } ], user: [ { id, combo, file, line } ] }.
@@ -329,8 +329,8 @@ class Shortcuts {
 		var remaps = table().filter( function( r ) { return r.kind == "remap" && len( r.keys ) > 0; } );
 		var termList = terminals().map( function( c ) { return "'" & c & "'"; } ).toList( ", " );
 		var out = [ "# Written by bxrig (keys). Cmd-style keys, same on Hyprland and Plasma." ];
-        if ( new bxrig.KeyStyle().swapActive( variables.keyStyle ) ) {
-            out.append( "# Mac style on a PC keyboard: Alt acts as Cmd and Win as Option (left keys only; Right Alt stays AltGr)." );
+		if ( new bxrig.KeyStyle().swapActive( variables.keyStyle ) ) {
+			out.append( "# Mac style on a PC keyboard: Alt acts as Cmd and Win as Option (left keys only; Right Alt stays AltGr)." );
 			out.append( "modmap:" );
 			out.append( "  - name: Alt and Win swapped" );
 			out.append( "    remap:" );
@@ -408,34 +408,34 @@ class Shortcuts {
 	// kglobalshortcutsrc fragment for Plasma.
 	function plasma() {
 		var out = [ "# Written by bxrig (keys)." ];
-        for ( var r in table() ) if ( r.kind == "bind" ) {
-            out.append( "[" & r.plasma.group & "]" );
-            out.append( r.plasma.key & "=" & r.plasma.value );
-        }
-        return out.toList( chr( 10 ) ) & chr( 10 );
-    }
+		for ( var r in table() ) if ( r.kind == "bind" ) {
+			out.append( "[" & r.plasma.group & "]" );
+			out.append( r.plasma.key & "=" & r.plasma.value );
+		}
+		return out.toList( chr( 10 ) ) & chr( 10 );
+	}
 
-    // The files bxrig manages for the shortcuts, in the config service entry shape (name, target, mode, content).
-    // They join `config list|diff|apply|restore`. The Hyprland file still has to be `source`d from hyprland.conf.
-    function entries( cfgHome ) {
-        return [
-            { name: "xremap", target: cfgHome & "/xremap/config.yml", mode: "644", content: xremap() },
-            { name: "hypr-keys", target: cfgHome & "/hypr/bxrig.lua", mode: "644", content: hyprland() },
-            { name: "xremap-service", target: cfgHome & "/systemd/user/xremap.service", mode: "644", content: xremapService() }
-        ];
-    }
+	// The files bxrig manages for the shortcuts, in the config service entry shape (name, target, mode, content).
+	// They join `config list|diff|apply|restore`. The Hyprland file still has to be `source`d from hyprland.conf.
+	function entries( cfgHome ) {
+		return [
+			{ name: "xremap", target: cfgHome & "/xremap/config.yml", mode: "644", content: xremap() },
+			{ name: "hypr-keys", target: cfgHome & "/hypr/bxrig.lua", mode: "644", content: hyprland() },
+			{ name: "xremap-service", target: cfgHome & "/systemd/user/xremap.service", mode: "644", content: xremapService() }
+		];
+	}
 
-    // Plasma settings written with kwriteconfig6 into kglobalshortcutsrc: [ { group, key, value } ].
-    function plasmaSettings() {
-        return table().filter( function( r ) { return r.kind == "bind"; } ).map( function( r ) { return r.plasma; } );
-    }
+	// Plasma settings written with kwriteconfig6 into kglobalshortcutsrc: [ { group, key, value } ].
+	function plasmaSettings() {
+		return table().filter( function( r ) { return r.kind == "bind"; } ).map( function( r ) { return r.plasma; } );
+	}
 
-    // The systemd user unit that runs xremap with the shared config. Enabled by `setup xremap`.
-    function xremapService() {
-        return new bxrig.util.SystemdUnit().render( [
-            { name: "Unit", lines: [ "Description=xremap key remapper (bxrig)", "PartOf=graphical-session.target", "After=graphical-session.target" ] },
-            { name: "Service", lines: [ "ExecStart=/usr/bin/xremap %h/.config/xremap/config.yml", "Restart=on-failure" ] },
-            { name: "Install", lines: [ "WantedBy=graphical-session.target" ] }
-        ], "Written by bxrig (keys)." );
-    }
+	// The systemd user unit that runs xremap with the shared config. Enabled by `setup xremap`.
+	function xremapService() {
+		return new bxrig.util.SystemdUnit().render( [
+				{ name: "Unit", lines: [ "Description=xremap key remapper (bxrig)", "PartOf=graphical-session.target", "After=graphical-session.target" ] },
+				{ name: "Service", lines: [ "ExecStart=/usr/bin/xremap %h/.config/xremap/config.yml", "Restart=on-failure" ] },
+				{ name: "Install", lines: [ "WantedBy=graphical-session.target" ] }
+			], "Written by bxrig (keys)." );
+	}
 }
