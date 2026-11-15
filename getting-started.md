@@ -43,7 +43,7 @@ curl -fsSL {{ installUrl }} | bash -s -- --yes --answers answers.json
 |---|---|
 | See what is set up | `bxrig status` |
 | Change your choices | `bxrig init` |
-| Open the control center | `Super+Alt+M` or `bxrig menu` |
+| Open the control center | `Super+Space` or `bxrig menu` |
 | See every shortcut | `Super+K` or `bxrig keys sheet` |
 | Check for updates | `bxrig update check` |
 

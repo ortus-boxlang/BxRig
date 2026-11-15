@@ -25,7 +25,7 @@ You can open any page without a terminal open first:
 
 - **Menu:** `bxrig menu` has a Control Center section at the end. The first entry opens everything, then one entry per page. Each opens in your default terminal.
 - **Application menu (optional):** `bxrig launchers on --yes` adds a "BxRig" submenu to your application menu: the Setup Wizard, the Runner Menu and the Control Center at the top, then Apps and Dashboard, then folders with their own icon (Develop, System, Look) holding one entry per page (menus without folders, like rofi, list them flat). `bxrig launchers status` shows them and `bxrig launchers off --yes` (or `bxrig remove launchers --yes`) takes them away. Entries you edited are kept. Nothing is added unless you ask.
-- **Shortcuts:** every page has an unbound shortcut (`tui-databases`, ...). Give it keys with `bxrig keys set tui-databases Super+Alt+D --yes`, then `bxrig keys apply --yes`.
+- **Shortcuts:** every page has an unbound shortcut (`tui-databases`, ...). Give it keys with `bxrig keys set tui-databases Super+Alt+B --yes`, then `bxrig keys apply --yes`.
 
 ## Icons
 

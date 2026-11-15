@@ -240,34 +240,38 @@
 
 		
 		<h1 id="shortcuts-and-mac-keys"><a href="#shortcuts-and-mac-keys" id="shortcuts-and-mac-keys" name="shortcuts-and-mac-keys" class="anchor"></a>Shortcuts and Mac keys</h1>
-<p>BxRig keeps one shortcut table and renders it for xremap (Cmd-style keys, on both desktops), the Hyprland module (<code>~/.config/hypr/bxrig.lua</code>) and Plasma. Every key BxRig binds is a row, including the window, workspace, arrow, mouse, volume and brightness keys that the starter <code>hyprland.lua</code> used to hold. Press <code>Super+K</code> (or run <code>bxrig keys sheet</code>) to see every shortcut in your menu program.</p>
+<p>BxRig keeps one shortcut table (<code>src/bxrig/Shortcuts.bx</code>) and renders it for xremap (Cmd-style keys, on both desktops), the Hyprland module (<code>~/.config/hypr/bxrig.lua</code>) and Plasma. Every key BxRig binds is a row, including the window, workspace, arrow, mouse, volume and brightness keys, and each row has a key for each style. xremap is always installed: copy, paste, cut and select all (<code>Super+C V X A</code>) are remaps in both styles. Press <code>Super+K</code> (or run <code>bxrig keys sheet</code>) to see every shortcut in your menu program.</p>
 <h2 id="two-styles"><a href="#two-styles" id="two-styles" name="two-styles" class="anchor"></a>Two styles</h2>
-<div class="bxsites-table-wrap"><table class="table">
+<div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
 <thead>
 <tr><th> </th><th>Traditional</th><th>Mac</th></tr>
 </thead>
 <tbody>
-<tr><td>Idea</td><td>Omarchy-like keys</td><td>Cmd-style keys for apps</td></tr>
-<tr><td><code>Super+C V X A</code></td><td>copy, paste, cut, select all (terminal aware)</td><td>same</td></tr>
-<tr><td><code>Super+Z S F T N O P R W L B I U</code> and <code>Super+,</code></td><td>plain Super keys</td><td>send the Ctrl version (Undo, Save, Find, ...)</td></tr>
-<tr><td>Browser</td><td><code>Super+B</code>, <code>Super+Shift+Return</code></td><td><code>Super+Shift+Return</code></td></tr>
-<tr><td>Full screen</td><td><code>Super+F</code></td><td><code>Super+Ctrl+F</code></td></tr>
-<tr><td>Float or tile</td><td><code>Super+T</code></td><td><code>Super+Alt+T</code></td></tr>
-<tr><td>Window to workspace 3, 4, 5</td><td><code>Super+Shift+3/4/5</code></td><td><code>Super+Alt+Shift+3/4/5</code></td></tr>
-<tr><td>Close window</td><td><code>Super+Q</code>, <code>Super+W</code></td><td><code>Super+Q</code> (<code>Super+W</code> is Close tab)</td></tr>
-<tr><td>Input language</td><td><code>Super+I</code>, <code>Super+Shift+I</code></td><td><code>Super+Alt+I</code>, <code>Super+Alt+Shift+I</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Idea</td><td>Omarchy-like keys</td><td>Cmd-style keys for apps</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>Super+C V X A</code></td><td>copy, paste, cut, select all (terminal aware)</td><td>same</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>Super+Z S F T N O P R W L B I U</code> and <code>Super+,</code></td><td>plain Super keys</td><td>send the Ctrl version (Undo, Save, Find, ...)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Browser</td><td><code>Super+B</code>, <code>Super+Shift+Return</code></td><td><code>Super+Shift+Return</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Private browser window</td><td><code>Super+Alt+Shift+B</code></td><td><code>Super+Shift+N</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>File manager</td><td><code>Super+Shift+F</code></td><td><code>Super+E</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Full screen</td><td><code>Super+F</code></td><td><code>Super+Ctrl+F</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Float or tile</td><td><code>Super+T</code></td><td><code>Super+Alt+T</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Window to workspace 3, 4, 5</td><td><code>Super+Shift+3/4/5</code></td><td><code>Super+Alt+Shift+3/4/5</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Close window</td><td><code>Super+Q</code>, <code>Super+W</code></td><td><code>Super+Q</code> (<code>Super+W</code> is Close tab)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Input language</td><td><code>Super+I</code>, <code>Super+Shift+I</code></td><td><code>Super+Alt+I</code>, <code>Super+Alt+Shift+I</code></td></tr>
 </tbody>
 </table></div>
-<p>On a PC keyboard the Mac style swaps Alt and Win (Alt acts as Cmd, Win as Option; the left keys only, Right Alt stays AltGr). An Apple keyboard never swaps. The choice is saved in <code>~/.config/bxrig/keystyle.json</code>. Keys in the table are what Hyprland sees after the swap. See <code>docs/architecture/SHORTCUTS-DECISIONS.md</code> for every decision.</p>
+<p>On a PC keyboard the Mac style swaps Alt and Win (Alt acts as Cmd, Win as Option; the left keys only, Right Alt stays AltGr). An Apple keyboard never swaps. The choice is saved in <code>~/.config/bxrig/keystyle.json</code> (<code>bxrig keys style mac --keyboard=pc|apple --swap=on|off --yes</code>; the wizard asks the same). Keys in the table are what Hyprland sees after the swap, so with the swap on a PC keyboard <code>Super+Alt+D</code> is the Win and Alt keys in the places where Option and Cmd sit on a Mac. See <code>docs/architecture/SHORTCUTS-DECISIONS.md</code> for every decision.</p>
 <h2 id="change-a-shortcut"><a href="#change-a-shortcut" id="change-a-shortcut" name="change-a-shortcut" class="anchor"></a>Change a shortcut</h2>
 <pre><code class="language-bash">bxrig keys show                         # the table, in the style that is on
-bxrig keys set menu Super+Alt+M --yes
-bxrig keys reset menu --yes
+bxrig keys search screenshot           # find a shortcut by words, keys or id
+bxrig keys run color-picker             # run the command a shortcut stands for
+bxrig keys set ai-shell Super+Alt+A --yes
+bxrig keys reset ai-shell --yes
 bxrig keys conflicts                    # the table, the remaps of the style that is on, and your own hl.bind lines
 </code></pre>
 <p>Your changes live in <code>~/.config/bxrig/shortcuts.json</code> and apply to both styles. Remaps (the Cmd keys) are xremap's and cannot be changed this way. <code>keys set</code> refuses a key another binding uses or xremap rewrites.</p>
 <h2 id="from-the-runner"><a href="#from-the-runner" id="from-the-runner" name="from-the-runner" class="anchor"></a>From the runner</h2>
-<p><code>Super+Space</code> opens the menu; its Shortcuts section lists every shortcut, searches them (<code>bxrig keys search TEXT</code>), rebinds one (it asks which one and for the new keys, then runs <code>keys set</code>), runs the command a shortcut stands for (<code>bxrig keys run ID</code>), writes the keys to Hyprland and Plasma, and switches the style. <code>Super+Escape</code>, <code>Super+Ctrl+C</code> and <code>Super+Ctrl+O</code> open the System, Capture and Toggle menus on their own (<code>bxrig menu open system</code>).</p>
+<p><code>Super+Space</code> opens the menu; its Shortcuts section lists every shortcut, searches them (<code>bxrig keys search TEXT</code>), rebinds one (it asks which one and for the new keys, then runs <code>keys set</code>), runs the command a shortcut stands for (<code>bxrig keys run ID</code>), writes the keys to Hyprland and Plasma, and switches the style. <code>Super+Escape</code>, <code>Super+Ctrl+C</code>, <code>Super+Ctrl+O</code>, <code>Super+Ctrl+H</code> and <code>Super+Shift+Ctrl+A</code> open the System, Capture, Toggle, Hardware and Agent menus on their own (<code>bxrig menu open system</code>).</p>
 <h2 id="the-main-ones"><a href="#the-main-ones" id="the-main-ones" name="the-main-ones" class="anchor"></a>The main ones</h2>
 <div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
 <thead>
@@ -279,7 +283,9 @@ bxrig keys conflicts                    # the table, the remaps of the style tha
 <tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>Super+K</code></td><td>Shortcut cheat sheet</td></tr>
 <tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>Print</code> (Mac style also <code>Super+Shift+3</code> / <code>4</code> / <code>5</code>)</td><td>Screenshot: region (Mac style: screen / region / menu)</td></tr>
 <tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>Super+Print</code></td><td>Color picker</td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>Super+Shift+R</code></td><td>Screen recording (<code>Super+Alt+Shift+R</code>: a region)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>Super+Shift+R</code></td><td>Screen recording (<code>Super+Alt+Shift+R</code>: a region, <code>Alt+Print</code>: with desktop audio; the microphone variant is in the Capture menu)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>Super+Ctrl+Alt+V</code></td><td>Webcam preview on or off (needs <code>mpv</code>)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>Super+Ctrl+H</code></td><td>Hardware menu</td></tr>
 <tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>Super+Ctrl+V</code></td><td>Clipboard history</td></tr>
 <tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>Super+Ctrl+E</code></td><td>Emoji</td></tr>
 <tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>Alt+Space</code></td><td>Dictation on or off (the logical Alt key: with the Mac swap on a PC keyboard it is the Win key, where Option sits on a Mac)</td></tr>
@@ -294,6 +300,9 @@ bxrig keys conflicts                    # the table, the remaps of the style tha
 <tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>Super+Alt+C</code></td><td>Noctalia control center panel</td></tr>
 <tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>Super+Ctrl+Comma</code></td><td>Noctalia settings</td></tr>
 <tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>Super+Grave</code></td><td>Pull-down AI shell</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>Super+Shift+Grave</code> / <code>Super+Ctrl+Grave</code></td><td>Quake console: show or hide / send the focused window there</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>Super+Alt+Shift+B</code> (Mac: <code>Super+Shift+N</code>)</td><td>Private window of your default browser</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td><code>Super+Alt+Shift+F</code></td><td>File manager in the folder of the focused window</td></tr>
 </tbody>
 </table></div>
 
@@ -301,7 +310,7 @@ bxrig keys conflicts                    # the table, the remaps of the style tha
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/shortcuts.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/shortcuts.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 15, 2026, 7&#x3a;42&#x3a;49 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Shortcuts%20and%20Mac%20keys&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fshortcuts%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/shortcuts.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/shortcuts.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 15, 2026, 7&#x3a;54&#x3a;04 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Shortcuts%20and%20Mac%20keys&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fshortcuts%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 

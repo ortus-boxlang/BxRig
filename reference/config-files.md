@@ -12,13 +12,17 @@ summary: Where BxRig keeps things.
 |---|---|
 | `~/.local/bin/bxrig` | the program |
 | `~/.config/bxrig/answers.json` | your wizard answers (mode 600, no secrets) |
-| `~/.config/bxrig/shortcuts.json` | your shortcut changes |
+| `~/.config/bxrig/shortcuts.json` | your shortcut changes (`keys set`) |
+| `~/.config/bxrig/keystyle.json` | the shortcut style (`traditional` or `mac`), the keyboard (`pc` or `apple`) and the Alt/Win swap |
+| `~/.config/xremap/config.yml` | generated xremap remaps (Cmd-style keys, and the Alt/Win swap in the Mac style on a PC keyboard); never edit |
+| `~/.config/systemd/user/xremap.service` | runs xremap with that file |
 | `~/.config/bxrig/runner.json` | launcher and menu program |
 | `~/.config/bxrig/update.json` | update channel and notification setting |
 | `~/.config/bxrig/skills.json` | the agent skills BxRig installed |
 | `~/.config/bxrig/appearance.json` | what you chose in `bxrig appearance` (bar, dock, windows, font) |
 | `~/.config/bxrig/display.json` | what you chose in `bxrig display` (scale, rotation, mirror, laptop panel) |
 | `~/.config/bxrig/theme.json` | the current theme and mode |
+| `~/.config/bxrig/theme/hypr.lua` | generated Hyprland border colours of the theme; never edit |
 | `~/.config/bxrig/theme/look.lua` | generated Hyprland window looks (gaps, corners, opacity); never edit |
 | `~/.config/bxrig/theme/monitors.lua` | generated Hyprland monitor settings; never edit |
 | `~/.config/bxrig/nas.json` | your NAS boxes (no passwords) |
@@ -37,5 +41,6 @@ summary: Where BxRig keeps things.
 | `~/.agents/skills/` | the agent skills store, linked into each agent |
 | `~/.config/systemd/user/bxrig-*.service` | night shift, AirPlay, update check, cloud mounts |
 | `~/.cache/bxrig/install.log` | the installer's log |
+| `~/Videos/bxrig-YYYYMMDD-HHMMSS.mp4` | screen recordings (`bxrig record`; `BXRIG_VIDEOS` changes the folder) |
 
 Every file BxRig writes goes through one safe writer: atomic replace, a backup, a journal, and a **drift** check. A file you changed is kept and reported as drifted. `bxrig config diff NAME` shows how it differs from what BxRig would write.

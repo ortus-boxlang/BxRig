@@ -240,7 +240,8 @@
 
 		
 		<h1 id="the-setup-wizard"><a href="#the-setup-wizard" id="the-setup-wizard" name="the-setup-wizard" class="anchor"></a>The setup wizard</h1>
-<p><code>bxrig init</code> opens a full-screen form with these pages: <strong>Desktop</strong>, <strong>Look</strong>, <strong>Input</strong>, <strong>Developer</strong>, <strong>Toolchains</strong>, <strong>Containers</strong>, <strong>Apps</strong>, <strong>AI</strong>, <strong>Extras</strong> and <strong>Import</strong>, then a review screen that lists exactly the commands it will run. Nothing runs until you confirm.</p>
+<p><code>bxrig init</code> opens a full-screen form with these pages: <strong>Desktop</strong>, <strong>Look</strong>, <strong>Input</strong>, <strong>Developer</strong>, <strong>Toolchains</strong>, <strong>Containers</strong>, <strong>NAS</strong>, <strong>Remote backups</strong>, <strong>Backups</strong>, <strong>Apps</strong>, <strong>AI</strong>, <strong>Extras</strong> and <strong>Import</strong>, then a review screen that lists exactly the commands it will run. With the Customize choice on the Apps page there is one more page per catalog group. Nothing runs until you confirm.</p>
+<p>The <strong>Input</strong> page asks about keyboard layouts, natural scrolling, and the shortcut style: &quot;Mac-style Super keys&quot; (on by default) and, when it is on, &quot;Which keyboard do you type on?&quot; (PC: Alt and Win are swapped so Alt acts as Cmd; Apple: no swap). Off keeps the Traditional (Omarchy-like) keys. The answers become <code>bxrig keys style</code> and the xremap setup, which is installed either way because copy, paste, cut and select all are remaps in both styles. See <a href="/guides/shortcuts/index.html">Shortcuts</a>.</p>
 <h2 id="run-it-again"><a href="#run-it-again" id="run-it-again" name="run-it-again" class="anchor"></a>Run it again</h2>
 <p>On a machine that is already set up the wizard starts from your saved answers plus what it finds on the system, and marks installed options with <code>✓ installed</code>.</p>
 <div class="bxsites-table-wrap"><table class="table">
@@ -251,32 +252,35 @@
 <tr><td><code>bxrig init</code></td><td>your saved answers and what the system has (tune)</td></tr>
 <tr><td><code>bxrig init --rerun</code></td><td>your saved answers only</td></tr>
 <tr><td><code>bxrig init --fresh</code></td><td>the defaults</td></tr>
-<tr><td><code>bxrig init --from FILE</code></td><td>an answers file from another machine</td></tr>
+<tr><td><code>bxrig init --from=FILE</code></td><td>an answers file from another machine</td></tr>
 </tbody>
 </table></div>
 <p>Nothing the machine already has is ever removed. <code>bxrig status</code> shows the same scan without opening the wizard.</p>
 <h2 id="without-a-terminal"><a href="#without-a-terminal" id="without-a-terminal" name="without-a-terminal" class="anchor"></a>Without a terminal</h2>
-<pre><code class="language-bash">bxrig init --answers answers.json --yes     # apply an answers file
+<pre><code class="language-bash">bxrig init --answers=answers.json --yes     # apply an answers file
 bxrig init --defaults --yes                  # the wizard's default answers
 bxrig init --dry-run                         # show the plan only
-bxrig init --export answers.json             # save your answers for another machine
+bxrig init --export=answers.json             # save your answers for another machine
 </code></pre>
 <p>Answers are saved in <code>~/.config/bxrig/answers.json</code> (mode 600). They never contain secrets.</p>
 <h2 id="defaults-worth-knowing"><a href="#defaults-worth-knowing" id="defaults-worth-knowing" name="defaults-worth-knowing" class="anchor"></a>Defaults worth knowing</h2>
-<div class="bxsites-table-wrap"><table class="table">
+<div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
 <thead>
 <tr><th>Question</th><th>Default</th></tr>
 </thead>
 <tbody>
-<tr><td>Desktop</td><td>Hyprland + Noctalia</td></tr>
-<tr><td>Workspaces</td><td>4</td></tr>
-<tr><td>Shell</td><td>zsh with the Starship prompt (Catppuccin Powerline)</td></tr>
-<tr><td>Terminal</td><td>Ghostty</td></tr>
-<tr><td>File manager</td><td>Strata</td></tr>
-<tr><td>Toolchains</td><td>Java and Rust</td></tr>
-<tr><td>Containers</td><td>Podman (with <code>docker</code> commands mapped to it)</td></tr>
-<tr><td>Dictation</td><td>Superwhisper (Voxtype is the alternative)</td></tr>
-<tr><td>Updates</td><td>stable channel, daily notification</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Desktop</td><td>Hyprland + Noctalia</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Shortcut style</td><td>Mac-style Super keys on a PC keyboard (Alt and Win swapped)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Default browser</td><td>Brave</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Launcher, menu program</td><td>Noctalia, Rofi</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Workspaces</td><td>4</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Shell</td><td>zsh with the Starship prompt (Catppuccin Powerline)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Terminal</td><td>Ghostty</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>File manager</td><td>Strata</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Toolchains</td><td>Java and Rust</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Containers</td><td>Podman (with <code>docker</code> commands mapped to it)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Dictation</td><td>Superwhisper (Voxtype is the alternative)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Updates</td><td>stable channel, daily notification</td></tr>
 </tbody>
 </table></div>
 
@@ -284,7 +288,7 @@ bxrig init --export answers.json             # save your answers for another mac
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/wizard.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/wizard.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 15, 2026, 7&#x3a;42&#x3a;49 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20The%20setup%20wizard&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fwizard%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/wizard.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/wizard.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 15, 2026, 7&#x3a;54&#x3a;04 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20The%20setup%20wizard&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fwizard%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 

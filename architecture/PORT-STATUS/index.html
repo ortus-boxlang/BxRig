@@ -26,8 +26,8 @@
 
 	
 	
-		<meta name="description" content="BxRig migration status Milestone 1 &mdash; native foundation &#x28;not yet accepted&#x29; Implemented on development &#x3a; Native BoxLang CLI with install --yes , optional-install&hellip;">
-		<meta property="og:description" content="BxRig migration status Milestone 1 &mdash; native foundation &#x28;not yet accepted&#x29; Implemented on development &#x3a; Native BoxLang CLI with install --yes , optional-install&hellip;">
+		<meta name="description" content="BxRig port status State on 2026-11-15 &#x28;version 0.11.0-dev, MatchBox 0.14.0 from the bxcachy branch&#x29;. The legacy v0.10.0 &#x28;Python and shell&#x29; tree is kept in&hellip;">
+		<meta property="og:description" content="BxRig port status State on 2026-11-15 &#x28;version 0.11.0-dev, MatchBox 0.14.0 from the bxcachy branch&#x29;. The legacy v0.10.0 &#x28;Python and shell&#x29; tree is kept in&hellip;">
 	
 
 	
@@ -233,35 +233,32 @@
 		
 		
 		
-			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#milestone-1--native-foundation-not-yet-accepted">Milestone 1 &mdash; native foundation &#x28;not yet accepted&#x29;</a></li><li class="toc-level-2"><a href="#legacy-migration-remaining">Legacy migration remaining</a></li></ul></details>
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#built-on-development">Built on development</a></li><li class="toc-level-2"><a href="#not-verified-yet">Not verified yet</a></li><li class="toc-level-2"><a href="#reference-tree">Reference tree</a></li></ul></details>
 		
 
 		
-		<h1 id="bxrig-migration-status"><a href="#bxrig-migration-status" id="bxrig-migration-status" name="bxrig-migration-status" class="anchor"></a>BxRig migration status</h1>
-<h2 id="milestone-1--native-foundation-not-yet-accepted"><a href="#milestone-1--native-foundation-not-yet-accepted" id="milestone-1--native-foundation-not-yet-accepted" name="milestone-1--native-foundation-not-yet-accepted" class="anchor"></a>Milestone 1 — native foundation (not yet accepted)</h2>
-<p>Implemented on <code>development</code>:</p>
+		<h1 id="bxrig-port-status"><a href="#bxrig-port-status" id="bxrig-port-status" name="bxrig-port-status" class="anchor"></a>BxRig port status</h1>
+<p>State on 2026-11-15 (version 0.11.0-dev, MatchBox 0.14.0 from the <code>bxcachy</code> branch). The legacy v0.10.0 (Python and shell) tree is kept in <code>artifacts/legacy/</code> as a feature reference only.</p>
+<h2 id="built-on-development"><a href="#built-on-development" id="built-on-development" name="built-on-development" class="anchor"></a>Built on <code>development</code></h2>
 <ul>
-<li>Native BoxLang CLI with <code>install --yes</code>, <code>optional-install NAME... --yes</code>, <code>profile-install NAME --yes</code>.</li>
-<li>Catalog validation, package detection, pacman-first/yay fallback, full repository preflight, root-user AUR guard, and nonzero failure exits.</li>
-<li>Mocked native integration tests for success, root rejection and unavailable packages.</li>
-<li>Single ordered CI pipeline with global cancellation and MatchBox 0.12.0 pin.</li>
+<li>One native executable written in BoxLang (<code>src/Main.bx</code> plus 152 classes in <code>src/bxrig/</code>), compiled by MatchBox: 96 commands in 7 groups (<code>docs/reference/cli.json</code>), each with <code>--json</code>, <code>--yes</code> or <code>--dry-run</code> where it changes something, and the exit codes of the <a href="/architecture/COMMAND-CONTRACT/index.html">command contract</a>.</li>
+<li>The desktop: <code>setup hyprland|plasma|terminal|shell|xremap</code>, the one shortcut table in two styles, the menu (<code>menu</code>), the runner abstraction, themes, appearance, display, power, time, screenshots, recording, clipboard, notifications, dictation, Quick Look.</li>
+<li>Install and update: the signed one-line installer, channels, <code>update</code>, <code>refresh</code>, <code>reinstall</code>.</li>
+<li>Developer tools: Java, BoxLang, MatchBox, databases and vector stores, virtual machines, containers, agent skills, the mail catcher, secrets.</li>
+<li>Data and safety: the catalog (289 apps), the config service with backup, journal and drift checks, BxRig setup snapshots, system snapshots, file backups, NAS, BxTimeMachine.</li>
+<li>The terminal UIs: the setup wizard and the Control Center on MatchBox's terminal canvas.</li>
+<li>Tests: 75 script tests with fake tools, 35 <code>.bxs</code> unit tests, a ratchet (<code>tests/dry-test.sh</code>), a real Arch container suite (<code>tests/arch/</code>), and CI that builds the binary and runs them.</li>
 </ul>
-<p>Still required before declaring milestone 1 complete:</p>
-<ul>
-<li>Verify successful CI execution of all native integration cases on the latest commit.</li>
-<li>Pin the MVM installer itself, BVM and BoxLang versions; provision and verify these on CachyOS (bootstrap currently provisions Java/Rust only).</li>
-<li>Reusable configuration-management service with backup, atomic replacement, idempotency and recovery tests.</li>
-<li>Installation recovery guidance: pacman and yay cannot provide a cross-manager atomic transaction. A failed AUR phase can leave official packages installed. Do not promise rollback without a tested implementation.</li>
-<li>Confirm actual native command execution and exit-code semantics on CachyOS, not just mocked Linux CI.</li>
-</ul>
-<h2 id="legacy-migration-remaining"><a href="#legacy-migration-remaining" id="legacy-migration-remaining" name="legacy-migration-remaining" class="anchor"></a>Legacy migration remaining</h2>
-<p>Developer tools, KDE integration, AI/databases, containers/network/VM management, cloud, Quick Look, dictation, and first-run flows remain to be ported. The Python v0.10.0 release remains the functional reference until feature parity.</p>
+<h2 id="not-verified-yet"><a href="#not-verified-yet" id="not-verified-yet" name="not-verified-yet" class="anchor"></a>Not verified yet</h2>
+<p>Features that need real hardware or a live desktop are covered by tests against fake tools only: Hyprland and Noctalia on a running session (the generated Lua module, the quake workspace, the webcam window rule), HyprKwin and KWin scripting, xremap on both builds, KVM virtual machines, GPUs, the signed install from the download bucket, and a full run on a clean CachyOS machine. The contract lists them per feature. Nothing here claims a real-machine acceptance.</p>
+<h2 id="reference-tree"><a href="#reference-tree" id="reference-tree" name="reference-tree" class="anchor"></a>Reference tree</h2>
+<p><code>artifacts/legacy/original/</code> holds the v0.10.0 source (44 executables, 20 tests). The migration tracking table in <code>plan.md</code> section 17 is the 2026-11-08 audit; the native commands are listed in the reference, and a command-by-command parity audit against the legacy tree has not been redone since.</p>
 
 	
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/architecture/PORT-STATUS.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/architecture/PORT-STATUS.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 15, 2026, 7&#x3a;42&#x3a;49 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Port%20status&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Farchitecture%2FPORT-STATUS%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/architecture/PORT-STATUS.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/architecture/PORT-STATUS.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 15, 2026, 7&#x3a;54&#x3a;04 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Port%20status&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Farchitecture%2FPORT-STATUS%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
@@ -280,7 +277,7 @@
 			
 			
 				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
-					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#milestone-1--native-foundation-not-yet-accepted">Milestone 1 &mdash; native foundation &#x28;not yet accepted&#x29;</a></li><li class="toc-level-2"><a href="#legacy-migration-remaining">Legacy migration remaining</a></li></ul></nav>
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#built-on-development">Built on development</a></li><li class="toc-level-2"><a href="#not-verified-yet">Not verified yet</a></li><li class="toc-level-2"><a href="#reference-tree">Reference tree</a></li></ul></nav>
 				</aside>
 			
 		</div>

@@ -43,7 +43,7 @@ A local inbox for the mail your apps send while you develop. One command, nothin
 :::
 
 ::: card title="Every app, your choice" href="guides/apps.md"
-A curated catalog of 280 apps and web apps, with one-click Google, Microsoft and Apple suites.
+A curated catalog of about 290 apps and web apps, with one-click Google, Microsoft and Apple suites.
 :::
 
 ::: card title="BoxLang, ready" href="guides/boxlang.md"
