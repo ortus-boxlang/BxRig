@@ -103,7 +103,9 @@ class AiPanel {
         var agents = [];
         var tokens = 0;
         for ( var a in new bxrig.AiAgents().all() ) {
-            var row = { id: a.id, name: a.name, installed: installed( a.command ), accounts: [ { name: "Default", plan: "", active: true, meters: [] } ] };
+            var row = { id: a.id, name: a.name, installed: installed( a.command ), accounts: [] };
+            // an agent that is installed has at least its default account; one that is not shows only its name
+            if ( row.installed ) row.accounts = [ { name: "Default", plan: "", active: true, meters: [] } ];
             if ( row.installed ) {
                 if ( a.id == "claude-code" ) { var c = claude(); row.accounts = c.accounts; if ( c.tokens > 0 ) tokens = c.tokens; }
                 else if ( a.id == "codex-cli" ) row.accounts = codex();

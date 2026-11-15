@@ -167,6 +167,7 @@ local function render()
   local selTheme = selectedTheme()
   local list = ui.scroll({
     width = 300,
+    height = 420,
     gap = 2,
     padding = 8,
     revealKey = selTheme and ("theme-" .. str(selTheme.name)) or nil,
@@ -176,9 +177,9 @@ local function render()
   local preview
   local path = previewPath(selTheme)
   if path ~= nil then
-    preview = ui.image({ key = "preview-" .. path, path = path, fit = "cover", radius = 10, height = 230 })
+    preview = ui.image({ key = "preview-" .. path, path = path, fit = "cover", radius = 10, height = 380 })
   else
-    preview = ui.column({ height = 230, radius = 10, fill = "surface_container", align = "center", justify = "center", gap = 6 }, {
+    preview = ui.column({ height = 380, radius = 10, fill = "surface_container", align = "center", justify = "center", gap = 6 }, {
       ui.glyph({ name = "photo-off", size = 32, color = "on_surface_variant" }),
       ui.label({ text = selTheme and "No preview" or "", fontSize = 12, color = "on_surface_variant" }),
     })
@@ -190,15 +191,12 @@ local function render()
     table.insert(info, infoRow("Theme", displayName(selTheme)))
     table.insert(info, infoRow("Mode", selTheme.light == true and "Light" or "Dark"))
   end
-  local right = ui.column({ flexGrow = 1, gap = 12, padding = 14 }, {
-    preview,
-    ui.spacer({ flexGrow = 1 }),
-    ui.separator({}),
-    ui.column({ gap = 6 }, info),
-  })
+  -- the theme's name and mode live in the footer (a column under the preview grew past the panel in Noctalia 5.5)
+  local right = ui.column({ flexGrow = 1, padding = 14 }, { preview })
 
   -- Footer.
   local status = "Switch Theme"
+  if selTheme ~= nil then status = displayName(selTheme) .. "  ·  " .. (selTheme.light == true and "Light" or "Dark") .. " theme with its own wallpaper" end
   local statusColor = "on_surface_variant"
   if applying ~= nil then
     status = "Applying " .. applying .. "…"
@@ -222,7 +220,7 @@ local function render()
   panel.render(ui.column({ flexGrow = 1, gap = 6, padding = 6 }, {
     search,
     ui.separator({}),
-    ui.row({ flexGrow = 1, gap = 0, align = "stretch" }, {
+    ui.row({ height = 420, gap = 0, align = "start" }, {
       list,
       ui.separator({ orientation = "vertical" }),
       right,

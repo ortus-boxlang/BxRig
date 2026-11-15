@@ -67,6 +67,20 @@ class HotCorners {
         return out;
     }
 
+    // The [hot_corners] section of Noctalia's config.toml for the saved corners (the starter config carries it).
+    function noctaliaToml() {
+        var c = read();
+        var out = [ "[hot_corners]", "enabled = true", "delay_ms = 150" ];
+        for ( var k in corners() ) {
+            var cmd = noctaliaCommand( c[ k ] );
+            out.append( "" );
+            out.append( "[hot_corners." & replace( k, "-", "_", "all" ) & "]" );
+            if ( len( cmd ) ) { out.append( 'action = "command"' ); out.append( 'command = "' & cmd & '"' ); }
+            else out.append( 'action = "none"' );
+        }
+        return out;
+    }
+
     // ---- Plasma (KWin screen edges) ----
     // KWin's ElectricBorder numbers, used by the effects' BorderActivate lists.
     function kwinEdge( corner ) { return { "top-left": 7, "top-right": 1, "bottom-right": 3, "bottom-left": 5 }[ arguments.corner ]; }
@@ -103,7 +117,8 @@ class HotCorners {
         if ( d.noctalia ) {
             var bad = 0;
             for ( var s in noctaliaSettings( arguments.c ) ) if ( variables.proc.exec( [ "noctalia", "msg", "config-set", s[ 1 ], s[ 2 ] ], 15 ).exitCode != 0 ) bad++;
-            res.noctalia = bad ? "not running (saved; applied at the next run)" : "applied";
+            res.noctalia = bad ? "not running" : "applied";
+            if ( bad ) res.notes.append( "Noctalia did not answer: run this again from your Hyprland session (a new Noctalia starter config already has these corners)" );
         }
         if ( d.plasma ) {
             var p = plasmaPlan( arguments.c );
