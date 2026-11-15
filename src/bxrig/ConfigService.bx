@@ -14,6 +14,12 @@ class ConfigService {
 	function progress( text ) {
 		if ( !variables.silent ) println( arguments.text );
 	}
+	// What BxRig writes for an entry: its content indented with tabs (util/Indent; YAML and Markdown keep spaces).
+	// An rc entry (your own .zshrc or .bashrc with the BxRig block in it) is written as it is.
+	function contentOf( entry ) {
+		return structKeyExists( arguments.entry, "rc" ) ? arguments.entry.content : new bxrig.util.Indent().tabs( arguments.entry.content, arguments.entry.target );
+	}
+
 	// A managed file in the shape configState and configWrite take: { name, target, mode, content }.
 	function entry( name, target, content, mode = "644" ) {
 		return { name: arguments.name, target: arguments.target, mode: arguments.mode, content: arguments.content };
@@ -75,7 +81,7 @@ class ConfigService {
 		if ( kind == "none" ) return "missing";
 		if ( kind != "file" ) return "blocked";
 		current = fileHashOf( entry.target );
-		if ( current == hashOf( entry.content ) ) return "clean";
+		if ( current == hashOf( contentOf( entry ) ) ) return "clean";
 		last = journalEntries( entry.name );
 		if ( last.len() && last[1].after == current ) return "outdated";
 		return "drifted";
@@ -123,6 +129,8 @@ class ConfigService {
 	}
 	// Shared by apply and restore. Returns an exit code, never exits itself.
 	function configWrite( entry, content, action, yes, dryRun ) {
+		// generated text is written with tabs; a restore puts a backup back byte for byte
+		if ( action != "restore" && !structKeyExists( entry, "rc" ) ) arguments.content = new bxrig.util.Indent().tabs( arguments.content, entry.target );
 		kind = pathKind( entry.target );
 		if ( kind == "link" || kind == "other" ) {
 			progress( entry.name & ": refusing to write, target is a symlink or special file: " & entry.target );
