@@ -45,9 +45,9 @@ class Time {
         var f = { timezone: "", ntp: false, synchronized: false, rtc_local: false, time: "" };
         var r = variables.proc.exec( [ "timedatectl", "show" ], 10 );
         if ( r.exitCode == 0 ) {
-            for ( var line in listToArray( r.output, chr( 10 ) ) ) {
-                var k = listFirst( line, "=" );
-                var v = trim( listRest( line, "=" ) );
+            for ( var kv in new bxrig.util.Props().pairs( r.output ) ) {
+                var k = kv.key;
+                var v = kv.value;
                 if ( k == "Timezone" ) f.timezone = v;
                 if ( k == "NTP" ) f.ntp = v == "yes";
                 if ( k == "NTPSynchronized" ) f.synchronized = v == "yes";

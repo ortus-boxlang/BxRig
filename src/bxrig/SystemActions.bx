@@ -18,7 +18,7 @@ class SystemActions {
     // The command for a verb: through Noctalia when it is the running shell, else systemd. Returns { argv, via } or an empty struct.
     function command( verb ) {
         var v = arguments.verb;
-        var hypr = len( getSystemSetting( "HYPRLAND_INSTANCE_SIGNATURE", "" ) ) > 0;
+        var hypr = new bxrig.util.Desktop().inHyprland();
         if ( hypr && variables.proc.has( "noctalia" ) ) return { argv: [ "noctalia", "msg", "session", v ], via: "noctalia" };
         if ( v == "lock" ) return variables.proc.has( "loginctl" ) ? { argv: [ "loginctl", "lock-session" ], via: "systemd" } : {};
         if ( v == "logout" ) {

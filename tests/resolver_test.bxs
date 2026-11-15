@@ -74,9 +74,9 @@ testkit.check( "brave named too: not duplicated", idsOf( r ) == "brave,gmail" );
 r = resolverClass.resolve( webCat, { ids: [ "git" ] } );
 testkit.check( "no web app: no browser", idsOf( r ) == "git" );
 // shell detection
-testkit.check( "detect Hyprland", resolverClass.detectShell( "Hyprland" ) == "hyprland" );
-testkit.check( "detect KDE", resolverClass.detectShell( "KDE" ) == "plasma" );
-testkit.check( "detect unknown", resolverClass.detectShell( "GNOME" ) == "" && resolverClass.detectShell( "" ) == "" );
+testkit.check( "detect Hyprland", new bxrig.util.Desktop().shellOf( "Hyprland" ) == "hyprland" );
+testkit.check( "detect KDE", new bxrig.util.Desktop().shellOf( "KDE" ) == "plasma" );
+testkit.check( "detect unknown", new bxrig.util.Desktop().shellOf( "GNOME" ) == "" && new bxrig.util.Desktop().shellOf( "" ) == "" );
 // real catalog
 real = new bxrig.Catalog().load();
 r = resolverClass.resolve( real, { profile: "core" } );

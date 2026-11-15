@@ -19,7 +19,7 @@ class Skills {
     }
 
     function store() { return getSystemSetting( "BXRIG_SKILLS_DIR", variables.environ.home() & "/.agents/skills" ); }
-    function hub() { return getSystemSetting( "BXRIG_SKILLS_URL", "https://skills.boxlang.io" ); }
+    function hub() { return getSystemSetting( "BXRIG_SKILLS_URL", new bxrig.util.Urls().skillsHub() ); }
     function manifestFile() { return variables.config.cfgHome() & "/bxrig/skills.json"; }
 
     function aliases() {

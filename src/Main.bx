@@ -2,13 +2,11 @@
 // runs main( args ) (BoxLang class entry, MatchBox PR #152). Application.bx adds the lifecycle.
 class {
 
-    property name="version" default="0.11.0-dev";
-
     function main( rawArgs = [] ) {
         var args = CLIGetArgs();
         var p = args.positionals;
         var cmd = p.len() ? p[1] : "help";
-        var appVersion = "0.11.0-dev";
+        var appVersion = new bxrig.util.Version().current();
         var asJson = structKeyExists( args.options, "json" );
         var cli = new bxrig.util.Cli( appVersion );
         var xit = new bxrig.util.Exit();
@@ -40,7 +38,7 @@ class {
           if ( asJson ) println( cli.envelope( "version", 0, { name: "BxRig", version: appVersion } ) );
           else {
            if ( CLIIsTerminal() ) { for ( var vl in new bxrig.Brand().ansi( new bxrig.Brand().large() ) ) println( vl ); println( "" ); }
-           println( "BxRig 0.11.0-dev" );
+           println( "BxRig " & appVersion );
            if ( CLIIsTerminal() ) println( new bxrig.Brand().tagline() );
           }
           break;
@@ -92,7 +90,7 @@ class {
           println( "Java: jdk21-openjdk via pacman" );
           println( "Maven: maven via pacman" );
           println( "Gradle: gradle via pacman" );
-          println( "BVM: https://install-bvm.boxlang.io" );
+          println( "BVM: " & new bxrig.util.Urls().bvm() );
           println( "MVM: https://raw.githubusercontent.com/ortus-boxlang/matchbox-quick-installer/main/install/install.sh" );
           break;
          case "install":
@@ -108,130 +106,10 @@ class {
           CLIExit( pk.install( cmd, instReq.req, asJson, structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ) ) );
           break;
          case "catalog":
-          catVerb = p.len() >= 2 ? p[2] : "";
-          catArg = p.len() >= 3 ? p[3] : "";
-          catBad = p.len() > 3 || !arrayFind( [ "list", "show", "groups", "check", "version" ], catVerb ) || ( catVerb == "show" && p.len() != 3 ) || ( catVerb != "show" && p.len() > 2 );
-          catOpts = [ "json", "group", "category", "tier", "kind", "source" ];
-          for ( var o in args.options ) if ( !arrayFind( catOpts, o ) && !arrayFind( [ "yes", "dry-run", "force", "quiet" ], o ) ) catBad = true;
-          if ( catBad ) {
-           println( new bxrig.CommandSpec().usage( "catalog" ) );
-           CLIExit( xit.usage() );
-          }
-          cat = catalog.load();
-          if ( catVerb == "version" ) {
-           if ( asJson ) println( cli.envelope( "catalog version", 0, { catalog_version: cat.catalog_version, schema: cat.schema, apps: cat.apps.len() } ) );
-           else println( "catalog " & cat.catalog_version & " (schema " & cat.schema & ", " & cat.apps.len() & " apps)" );
-           break;
-          }
-          if ( catVerb == "groups" ) {
-           rows = [];
-           for ( var g in cat.groups ) {
-            cs = cat.categories.filter( function( c ) { return c.group == g.id; } ).map( function( c ) { return c.title; } );
-            n = cat.apps.filter( function( a ) { return a.group == g.id; } ).len();
-            rows.append( { id: g.id, title: g.title, blurb: g.blurb, order: g.order, apps: n, categories: cs } );
-           }
-           if ( asJson ) println( cli.envelope( "catalog groups", 0, rows ) );
-           else for ( var r in rows ) println( r.id & ": " & r.title & " (" & r.apps & " apps) - " & r.categories.toList( ", " ) );
-           break;
-          }
-          if ( catVerb == "show" ) {
-           found = catalog.find( cat, catArg );
-           if ( structIsEmpty( found ) ) {
-            println( "Unknown catalog id: " & catArg );
-            CLIExit( xit.timeout() );
-           }
-           if ( asJson ) {
-            println( cli.envelope( "catalog show", 0, found ) );
-           } else {
-            println( found.name & " (" & found.id & ")" );
-            println( found.description );
-            println( "group: " & found.group & "/" & found.category & "  tier: " & found.tier & "  kind: " & found.kind );
-            println( "source: " & found.source & ( structKeyExists( found, "targets" ) ? "  targets: " & found.targets.toList( " " ) : "" ) & ( structKeyExists( found, "url" ) ? "  url: " & found.url : "" ) );
-            if ( structKeyExists( found, "homepage" ) ) println( "homepage: " & found.homepage );
-            if ( !isNull( found.macos ) ) println( "macOS: " & found.macos );
-            if ( structKeyExists( found, "note" ) ) println( "note: " & found.note );
-           }
-           break;
-          }
-          if ( catVerb == "check" ) {
-           res = catalog.check( cat );
-           code = res.errors.len() ? 1 : 0;
-           if ( asJson ) {
-            println( cli.envelope( "catalog check", code, res ) );
-           } else {
-            for ( var e in res.errors ) println( "error: " & e );
-            for ( var w in res.warnings ) println( "warning: " & w );
-            println( "catalog check: " & res.errors.len() & " errors, " & res.warnings.len() & " warnings, " & cat.apps.len() & " apps" );
-           }
-           CLIExit( code );
-          }
-          // list
-          sel = cat.apps.filter( function( a ) {
-           if ( structKeyExists( args.options, "group" ) && a.group != args.options.group ) return false;
-           if ( structKeyExists( args.options, "category" ) && a.category != args.options.category ) return false;
-           if ( structKeyExists( args.options, "tier" ) && a.tier != args.options.tier ) return false;
-           if ( structKeyExists( args.options, "kind" ) && a.kind != args.options.kind ) return false;
-           if ( structKeyExists( args.options, "source" ) && a.source != args.options.source ) return false;
-           return true;
-          } );
-          if ( asJson ) println( cli.envelope( "catalog list", 0, sel ) );
-          else for ( var a in sel ) println( catalog.row( a ) );
+          CLIExit( new bxrig.CatalogCmd( cli, catalog ).run( p, args.options, asJson ) );
           break;
          case "config":
-          cfgVerb = p.len() >= 2 ? p[2] : "";
-          cfgName = p.len() >= 3 ? p[3] : "";
-          cfgBad = !len( getSystemSetting( "HOME", "" ) ) || p.len() > 4 || ( p.len() == 4 && cfgVerb != "restore" ) || !arrayFind( [ "list", "diff", "apply", "restore", "history" ], cfgVerb );
-          if ( cfgBad ) {
-           println( new bxrig.CommandSpec().usage( "config" ) );
-           CLIExit( xit.usage() );
-          }
-          yes = structKeyExists( args.options, "yes" );
-          dryRun = structKeyExists( args.options, "dry-run" );
-          force = structKeyExists( args.options, "force" );
-          nl = chr( 10 );
-          var managed = new bxrig.Managed().entries( config.cfgHome() );
-          if ( cfgVerb == "list" || cfgVerb == "history" ) {
-           rows = [];
-           if ( cfgVerb == "list" ) {
-            for ( var key in managed ) rows.append( { name: key, target: managed[key].target, state: config.configState( managed[key] ) } );
-           } else {
-            rows = config.journalEntries( cfgName );
-           }
-           if ( asJson ) {
-            println( jsonSerialize( rows ) );
-           } else if ( cfgVerb == "list" ) {
-            for ( var r in rows ) println( r.name & ": " & r.state & " (" & r.target & ")" );
-           } else {
-            for ( var r in rows ) println( r.id & " " & r.action & " " & r.name & " " & r.time );
-            if ( !rows.len() ) println( "No history." );
-           }
-           break;
-          }
-          if ( !structKeyExists( managed, cfgName ) ) {
-           println( "Unknown managed config: " & cfgName );
-           CLIExit( xit.usage() );
-          }
-          entry = managed[cfgName];
-          if ( cfgVerb == "diff" ) {
-           st = config.configState( entry );
-           println( cfgName & ": " & st );
-           if ( st == "outdated" || st == "drifted" ) {
-            tmpSrc = getTempDirectory() & "/bxrig-src-" & left( createUUID(), 8 );
-            fileWrite( tmpSrc, entry.content );
-            d = systemExecute( "diff", [ "-u", entry.target, tmpSrc ], 15, true );
-            println( d.output );
-            fileDelete( tmpSrc );
-           }
-           break;
-          }
-          if ( cfgVerb == "apply" ) {
-           CLIExit( config.configApply( entry, yes, dryRun, force ) );
-          }
-          if ( p.len() != 4 ) {
-           println( new bxrig.CommandSpec().usage( "config restore" ) );
-           CLIExit( xit.usage() );
-          }
-          CLIExit( config.configRestore( entry, p[4], yes, dryRun ) );
+          CLIExit( new bxrig.ConfigCmd( config ).run( p, args.options, asJson ) );
           break;
          case "setup":
           // Targets: plasma (HyprKwin tiling on KDE), hyprland (packages), undo plasma|hyprland, status.
@@ -921,24 +799,7 @@ class {
           CLIExit( initRun.wizard( structKeyExists( args.options, "dry-run" ), asJson, args.options.from ?: "", structKeyExists( args.options, "fresh" ) ? "fresh" : ( structKeyExists( args.options, "rerun" ) ? "rerun" : "tune" ) ) );
           break;
          case "wizard":
-          // The full-screen setup wizard on MatchBox's terminal canvas. It shows pages from a JSON file (--pages) or the
-          // built-in ones (--demo), optionally starting from earlier answers (--answers FILE), and writes the answers as
-          // JSON to --out FILE. It changes nothing on the machine. Exit: 0 answers written, 130 cancelled, 2 usage, 4 bad file.
-          if ( p.len() != 1 || ( !structKeyExists( args.options, "demo" ) && !structKeyExists( args.options, "pages" ) ) ) {
-           println( new bxrig.CommandSpec().usage( "wizard" ) );
-           CLIExit( xit.usage() );
-          }
-          try {
-           wzSpec = jsonDeserialize( structKeyExists( args.options, "demo" ) ? new bxrig.WizardData().demoPages() : fileRead( args.options.pages ) );
-           wzPreset = structKeyExists( args.options, "answers" ) ? jsonDeserialize( fileRead( args.options.answers ) ) : {};
-          } catch ( any e ) {
-           println( "bxrig wizard: cannot read the pages or answers: " & e.message );
-           CLIExit( xit.precondition() );
-          }
-          wzResult = new bxrig.Wizard( wzSpec, wzPreset ).run();
-          if ( wzResult.outcome != "done" ) CLIExit( 130 );
-          if ( structKeyExists( args.options, "out" ) ) fileWrite( args.options.out, jsonSerialize( wzResult.answers ) & chr( 10 ) );
-          CLIExit( xit.ok() );
+          CLIExit( new bxrig.WizardCmd().run( p, args.options ) );
           break;
          case "keys":
           // The shared shortcut table: keys show | keys render xremap|hyprland|plasma (pure, writes nothing).

@@ -22,7 +22,6 @@ class Pkg {
 
         // Letters, digits and . _ + - and spaces: safe to put in a URL path and a pacman pattern.
     function validText( t ) { return reFind( "^[A-Za-z0-9._+ -]{1,60}$", arguments.t ) > 0; }
-    function validName( n ) { return reFind( "^[a-z0-9@._+-]{1,100}$", arguments.n ) > 0; }
 
     // Names pacman has installed, as a set.
     function installedSet() {
@@ -124,7 +123,7 @@ class Pkg {
 
     function info( name, asJson ) {
         var cmd = "pkg info";
-        if ( !validName( arguments.name ) ) return variables.cli.fail( cmd, "usage", new bxrig.CommandSpec().usage( "pkg info" ), arguments.asJson );
+        if ( !new bxrig.util.Names().valid( "package", arguments.name ) ) return variables.cli.fail( cmd, "usage", new bxrig.CommandSpec().usage( "pkg info" ), arguments.asJson );
         var inst = installedSet();
         var o = origin( arguments.name );
         if ( !len( o ) ) return variables.cli.fail( cmd, "precondition", arguments.name & " was not found in the repos or the AUR", arguments.asJson );
@@ -145,7 +144,7 @@ class Pkg {
     function install( names, forceAur, yes, dryRun, asJson ) {
         var cmd = "pkg install";
         if ( !arguments.names.len() ) return variables.cli.fail( cmd, "usage", new bxrig.CommandSpec().usage( "pkg install" ), arguments.asJson );
-        for ( var n in arguments.names ) if ( !validName( n ) ) return variables.cli.fail( cmd, "usage", "Bad package name: " & n, arguments.asJson );
+        for ( var n in arguments.names ) if ( !new bxrig.util.Names().valid( "package", n ) ) return variables.cli.fail( cmd, "usage", "Bad package name: " & n, arguments.asJson );
         var inst = installedSet();
         var apps = [];
         var skipped = [];
@@ -187,7 +186,7 @@ class Pkg {
         var skipped = [];
         var blocked = [];
         for ( var n in arguments.names ) {
-            if ( !validName( n ) ) { blocked.append( { name: n, reason: "bad package name" } ); continue; }
+            if ( !new bxrig.util.Names().valid( "package", n ) ) { blocked.append( { name: n, reason: "bad package name" } ); continue; }
             if ( protectedName( n ) ) { blocked.append( { name: n, reason: "protected: the system needs it" } ); continue; }
             if ( !structKeyExists( inst, n ) ) { skipped.append( { name: n, reason: "not installed" } ); continue; }
             if ( !arrayFind( todo, n ) ) todo.append( n );

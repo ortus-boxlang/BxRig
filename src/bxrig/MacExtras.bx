@@ -23,7 +23,7 @@ class MacExtras {
     }
 
     function plasma() {
-        var d = lCase( getSystemSetting( "BXRIG_DESKTOP", getSystemSetting( "XDG_CURRENT_DESKTOP", "" ) ) );
+        var d = new bxrig.util.Desktop().name();
         return find( "kde", d ) > 0 || find( "plasma", d ) > 0;
     }
 

@@ -6,6 +6,9 @@ class Cli {
         return this;
     }
 
+    // The running version (from box.json, through the generated Version class).
+    function version() { return variables.version; }
+
     // One JSON object on stdout, nothing else.
     function envelope( command, exitCode, data, dryRun = false ) {
         return jsonSerialize( { schema: 1, command: command, version: variables.version, ok: exitCode == 0, exit: exitCode, dry_run: dryRun, data: data, warnings: [] } );

@@ -35,7 +35,6 @@ class Nas {
     function credFile( name ) { return credDir() & "/" & arguments.name & ".cred"; }
     function secretKey( name ) { return "BXRIG_NAS_" & uCase( replace( arguments.name, "-", "_", "all" ) ) & "_PASSWORD"; }
     function secrets() { return new bxrig.Secrets( variables.cli ); }
-    function validName( n ) { return reFind( "^[a-z][a-z0-9-]{0,30}$", arguments.n ) > 0; }
     function validHost( h ) { return reFind( "^[A-Za-z0-9]([A-Za-z0-9.:-]*[A-Za-z0-9])?$", arguments.h ) > 0; }
     function validShare( s ) { return reFind( "^/?[A-Za-z0-9][A-Za-z0-9 ._$/-]{0,100}$", arguments.s ) > 0 && find( "..", arguments.s ) == 0; }
     function validUser( u ) { return reFind( "^[A-Za-z0-9._@-]{1,64}$", arguments.u ) > 0; }
@@ -116,7 +115,7 @@ class Nas {
 
     // ---- records ----
     function addCmd( name, opts, yes, dry, asJson ) {
-        if ( !validName( arguments.name ) ) return variables.out.fail( "usage", "NAME is lower case letters, digits and dashes, starting with a letter (for example synology)", arguments.asJson );
+        if ( !new bxrig.util.Names().valid( "slug", arguments.name ) ) return variables.out.fail( "usage", "NAME is lower case letters, digits and dashes, starting with a letter (for example synology)", arguments.asJson );
         var host = arguments.opts.host ?: "";
         var proto = lCase( arguments.opts.protocol ?: "smb" );
         var user = arguments.opts.user ?: "";

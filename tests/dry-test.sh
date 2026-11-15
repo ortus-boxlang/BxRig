@@ -13,7 +13,7 @@ count 'function fail('             src/bxrig 2
 count 'function tryExec('          src/bxrig 0
 count 'function has('              src/bxrig 1
 count 'function merge('            src/bxrig 1
-count 'function validName('        src/bxrig 9
+count 'function validName('        src/bxrig 0
 count 'function dataHome('         src/bxrig 2
 count 'function home()'            src/bxrig 4
 count 'function env('              src/bxrig 1
@@ -29,6 +29,13 @@ for pat in '"pacman", "-' '"yay", "-' '"curl", "-' '"systemctl", "[-a-z]'; do
   n="$(grep -rnE "\[ *\"(sudo\", )?$pat" "$root/src" --include='*.bx' | grep -v '/util/' | grep -vE '^\S+:[0-9]+:\s*//' | wc -l)"
   (( n == 0 )) || { echo "FAIL: $n argv lists start a command ($pat) outside src/bxrig/util (use Pacman, Aur, Systemd or Http)"; fails=$((fails+1)); }
 done
+# one home each: the desktop (util/Desktop), first-party URLs (util/Urls), the version (generated util/Version)
+for pat in 'XDG_CURRENT_DESKTOP' 'HYPRLAND_INSTANCE_SIGNATURE'; do
+  n="$(grep -rn "getSystemSetting( \"$pat\"" "$root/src" --include='*.bx' | grep -v '/util/Desktop.bx' | wc -l)"
+  (( n == 0 )) || { echo "FAIL: $n reads of $pat outside src/bxrig/util/Desktop.bx"; fails=$((fails+1)); }
+done
+n="$(grep -rn '0\.11\.0\|"version" *=' "$root/src" --include='*.bx' | grep -v '/util/Version.bx' | wc -l)"
+(( n == 0 )) || { echo "FAIL: the version string is spelled outside util/Version.bx"; fails=$((fails+1)); }
 # exit codes are named (src/bxrig/util/Exit.bx): no number as the code argument of say( ) / fail( ), and no CLIExit( N ) in Main.bx except 130 (Ctrl+C)
 bare="$(grep -rhoE '(out)\.(say|fail)\( *[0-9]+ *,|(cli)\.(say|fail)\( *[^,()]+, *[0-9]+ *,' "$root/src/bxrig" | wc -l)"
 (( bare == 0 )) || { echo "FAIL: $bare say/fail calls pass a bare number as the exit code (use a name from Exit.bx)"; fails=$((fails+1)); }

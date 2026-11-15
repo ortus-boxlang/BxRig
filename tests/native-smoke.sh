@@ -2,7 +2,8 @@
 set -euo pipefail
 binary="${1:-./bxrig}"
 test -x "$binary"
-"$binary" version | grep -F 'BxRig 0.11.0-dev'
+want="$(sed -n 's/^ *"version": *"\([^"]*\)".*/\1/p' "$(dirname "$0")/../box.json" | head -1)"
+"$binary" version | grep -F "BxRig $want"
 "$binary" doctor | grep -F 'Java 21'
 has() { grep -Fq -- "$1"; }
 usage_exit2() { local out rc=0; out="$("$@" 2>&1)" || rc=$?; [[ "$rc" -eq 2 ]] || { echo "FAIL: $* exited $rc, wanted 2" >&2; exit 1; }; grep -Fq 'Usage:' <<<"$out" || { echo "FAIL: $*: no usage text" >&2; exit 1; }; }

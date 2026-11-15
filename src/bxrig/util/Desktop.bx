@@ -1,0 +1,34 @@
+// Which desktop is running: the one place that reads XDG_CURRENT_DESKTOP, HYPRLAND_INSTANCE_SIGNATURE and XDG_SESSION_TYPE.
+// BXRIG_DESKTOP overrides the desktop name so tests (and users) can steer every class the same way.
+class Desktop {
+    // XDG_CURRENT_DESKTOP as the session set it ("KDE", "Hyprland", ...), or BXRIG_DESKTOP when that is set.
+    function raw() {
+        return getSystemSetting( "BXRIG_DESKTOP", getSystemSetting( "XDG_CURRENT_DESKTOP", "" ) );
+    }
+
+    // raw() in lower case.
+    function name() { return lCase( raw() ); }
+
+    // The session type ("wayland", "x11" or "").
+    function session() { return getSystemSetting( "XDG_SESSION_TYPE", "" ); }
+
+    // True inside a Hyprland session (its instance signature is set).
+    function inHyprland() { return len( getSystemSetting( "HYPRLAND_INSTANCE_SIGNATURE", "" ) ) > 0; }
+
+    // True inside KDE Plasma.
+    function inPlasma() { return findNoCase( "KDE", raw() ) > 0 || findNoCase( "plasma", raw() ) > 0; }
+
+    // The shell a desktop name stands for: "hyprland", "plasma" or "" (pure, so tests can feed it names).
+    function shellOf( text ) {
+        var d = lCase( arguments.text ?: "" );
+        if ( find( "hyprland", d ) ) return "hyprland";
+        if ( find( "kde", d ) || find( "plasma", d ) ) return "plasma";
+        return "";
+    }
+
+    // The running shell: "hyprland", "plasma" or "".
+    function shell() {
+        if ( inHyprland() ) return "hyprland";
+        return shellOf( raw() );
+    }
+}

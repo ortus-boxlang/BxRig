@@ -1,0 +1,11 @@
+// First-party web addresses, spelled once. Environment overrides (BXRIG_BASE_URL, BXRIG_SKILLS_URL) are read by the class that owns the feature.
+class Urls {
+    function downloads() { return "https://downloads.ortussolutions.com/ortussolutions/bxrig"; }
+    function skillsHub() { return "https://skills.boxlang.io"; }
+    function docs() { return "https://bxcachy.boxlang.io/"; }
+    function commandsReference() { return docs() & "reference/commands/"; }
+    function bvm() { return "https://install-bvm.boxlang.io"; }
+    function tryBoxLang() { return "https://try.boxlang.io"; }
+    function boxlang() { return "https://boxlang.io"; }
+    function matchbox() { return "https://matchbox.boxlang.io"; }
+}

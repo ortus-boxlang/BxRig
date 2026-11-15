@@ -38,7 +38,7 @@ class Runner {
 
     // The defaults: Noctalia's launcher on Hyprland, the desktop's own runner elsewhere; Rofi for menus.
     function defaults( desktop = "" ) {
-        var d = len( arguments.desktop ) ? arguments.desktop : getSystemSetting( "XDG_CURRENT_DESKTOP", "" );
+        var d = len( arguments.desktop ) ? arguments.desktop : new bxrig.util.Desktop().raw();
         return { provider: findNoCase( "hyprland", d ) ? "noctalia" : "system", menu_provider: "rofi", launcher_commands: {}, menu_commands: {}, custom_command: [] };
     }
 
@@ -95,7 +95,7 @@ class Runner {
         var launcher = resolve( cfg.provider, cfg );
         var menu = menuCommand( cfg.menu_provider, cfg );
         return {
-            desktop: getSystemSetting( "XDG_CURRENT_DESKTOP", "unknown" ),
+            desktop: len( new bxrig.util.Desktop().raw() ) ? new bxrig.util.Desktop().raw() : "unknown",
             launcher: { provider: cfg.provider, command: launcher, owned_by_desktop: !launcher.len(), found: launcher.len() ? found( launcher[ 1 ] ) : true },
             menu: { provider: cfg.menu_provider, command: menu, found: found( menu[ 1 ] ) },
             shortcuts: "unchanged"

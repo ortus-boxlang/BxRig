@@ -24,16 +24,16 @@ class Boxlang {
 
     function links() {
         return [
-            { id: "try", title: "Try BoxLang", url: "https://try.boxlang.io", about: "Write and run BoxLang in the browser" },
-            { id: "boxlang", title: "BoxLang", url: "https://boxlang.io", about: "The language" },
+            { id: "try", title: "Try BoxLang", url: new bxrig.util.Urls().tryBoxLang(), about: "Write and run BoxLang in the browser" },
+            { id: "boxlang", title: "BoxLang", url: new bxrig.util.Urls().boxlang(), about: "The language" },
             { id: "docs", title: "BoxLang docs", url: "https://boxlang.ortusbooks.com", about: "The reference and guides" },
             { id: "ai", title: "BoxLang AI", url: "https://ai.boxlang.io", about: "The AI and agent framework (bx-ai)" },
             { id: "ai-docs", title: "BoxLang AI docs", url: "https://ai.ortusbooks.com", about: "The bx-ai book" },
             { id: "agents", title: "BoxLang Agents", url: "https://bxagents.ai", about: "Agents on BoxLang" },
             { id: "sites", title: "BoxLang Sites", url: "https://bxsites.io", about: "Sites on BoxLang (bx-sites)" },
-            { id: "matchbox", title: "MatchBox", url: "https://matchbox.boxlang.io", about: "Compile BoxLang to native binaries" },
+            { id: "matchbox", title: "MatchBox", url: new bxrig.util.Urls().matchbox(), about: "Compile BoxLang to native binaries" },
             { id: "forgebox", title: "ForgeBox", url: "https://forgebox.io", about: "The module and package registry" },
-            { id: "skills", title: "BoxLang skills", url: "https://skills.boxlang.io", about: "Agent skills for BoxLang" },
+            { id: "skills", title: "BoxLang skills", url: new bxrig.util.Urls().skillsHub(), about: "Agent skills for BoxLang" },
             { id: "academy", title: "BoxLang Academy", url: "https://academy.boxlang.io", about: "Free training" },
             { id: "plans", title: "BoxLang+", url: "https://boxlang.io/plans", about: "Support and premium modules" },
             { id: "github", title: "GitHub", url: "https://github.com/ortus-boxlang", about: "The source" },

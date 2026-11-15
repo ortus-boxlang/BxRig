@@ -11,7 +11,7 @@ run() { env HOME="$tmp/home" USER=ada XDG_DATA_HOME="$tmp/data" BXRIG_CONFIG_HOM
 f="$tmp/data/applications/bxrig-web-notion.desktop"
 
 # validation and plan
-[[ "$(code "$binary" web add 'no way' https://notion.so --yes)" == 4 ]] || fail 'a bad name exits 4'
+[[ "$(code "$binary" web add 'no way' https://notion.so --yes)" == 2 ]] || fail 'a bad name exits 2'
 [[ "$(code "$binary" web add notion notion.so --yes)" == 4 ]] || fail 'a URL needs a scheme'
 [[ "$(code "$binary" web add notion 'https://x.com/"; rm' --yes)" == 4 ]] || fail 'a URL with quotes is refused'
 [[ "$(code "$binary" web add notion https://www.notion.so --browser=lynx --yes)" == 4 ]] || fail 'an unknown browser exits 4'

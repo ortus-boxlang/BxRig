@@ -38,7 +38,7 @@ run "$binary" db engines --json | jq -e '.data.engines | map(select(.id=="milvus
 # bad input
 [[ "$(code "$binary" db start milvus --yes)" == 4 ]] || fail 'Milvus exits 4'
 [[ "$(code "$binary" db start nope --yes)" == 2 ]] || fail 'an unknown engine exits 2'
-[[ "$(code "$binary" db start postgres --name='bad name' --yes)" == 4 ]] || fail 'a bad name exits 4'
+[[ "$(code "$binary" db start postgres --name='bad name' --yes)" == 2 ]] || fail 'a bad name exits 2'
 [[ "$(code "$binary" db start postgres --port=80 --yes)" == 4 && "$(code "$binary" db start postgres --port=abc --yes)" == 4 ]] || fail 'a bad port exits 4'
 [[ "$(code "$binary" db start couchbase --port=9000 --yes)" == 4 ]] || fail 'Couchbase has fixed ports'
 [[ "$(code "$binary" db)" == 2 && "$(code "$binary" db bogus)" == 2 && "$(code "$binary" db start)" == 2 ]] || fail 'usage exits 2'

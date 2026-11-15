@@ -20,9 +20,8 @@ class AiShell {
 
     function backend( forced = "" ) {
         if ( len( arguments.forced ) ) return arguments.forced;
-        if ( len( getSystemSetting( "HYPRLAND_INSTANCE_SIGNATURE", "" ) ) ) return "hyprland";
-        if ( findNoCase( "KDE", getSystemSetting( "XDG_CURRENT_DESKTOP", "" ) ) ) return "yakuake";
-        return "";
+        var shell = new bxrig.util.Desktop().shell();
+        return shell == "plasma" ? "yakuake" : shell;
     }
 
     function detach( argv ) {

@@ -230,7 +230,7 @@ class Theme {
                 out.notes.append( "Noctalia did not answer (" & trim( a.output & " " & b.output ) & "). The palette file is written; run `bxrig theme set` again from the session." );
             }
         }
-        if ( findNoCase( "KDE", getSystemSetting( "XDG_CURRENT_DESKTOP", "" ) ) && variables.proc.has( "plasma-apply-colorscheme" ) ) {
+        if ( new bxrig.util.Desktop().inPlasma() && variables.proc.has( "plasma-apply-colorscheme" ) ) {
             var kp = variables.proc.exec( [ "plasma-apply-colorscheme", arguments.mode == "light" ? "BreezeLight" : "BreezeDark" ], 30 );
             out.plasma = kp.exitCode == 0 ? "applied" : "failed";
         }
@@ -240,7 +240,7 @@ class Theme {
             out.gtk = gs.exitCode == 0 ? "applied" : "failed";
             if ( gs.exitCode == 0 && ( directoryExists( "/usr/share/themes/adw-gtk3" ) || directoryExists( variables.environ.home() & "/.local/share/themes/adw-gtk3" ) ) ) variables.proc.exec( [ "gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", arguments.mode == "light" ? "adw-gtk3" : "adw-gtk3-dark" ], 15 );
         }
-        if ( len( getSystemSetting( "HYPRLAND_INSTANCE_SIGNATURE", "" ) ) && variables.proc.has( "hyprctl" ) ) {
+        if ( new bxrig.util.Desktop().inHyprland() && variables.proc.has( "hyprctl" ) ) {
             out.hyprland = variables.proc.exec( [ "hyprctl", "reload" ], 20 ).exitCode == 0 ? "reloaded" : "failed";
         }
         return out;
@@ -350,7 +350,6 @@ class Theme {
     function userDir() { return cfg() & "/bxrig/themes"; }
 
     // A theme name: lower case letters, digits and dashes (it becomes a folder name).
-    function validName( name ) { return reFind( "^[a-z0-9][a-z0-9-]{0,40}$", arguments.name ) > 0; }
 
     // omarchy-NAME-theme (the repository naming Omarchy asks for) becomes NAME.
     function nameFromSource( src ) {
@@ -364,7 +363,7 @@ class Theme {
 
     // Copies a theme folder (colors.toml and friends, no .git, no symlinks) into the user themes. Returns the exit code.
     function adopt( dir, name, force, asJson, via ) {
-        if ( !validName( arguments.name ) ) return variables.out.say( "usage", { error: "bad theme name " & arguments.name }, arguments.asJson, [ "error: the theme name must be lower case letters, digits and dashes (use --name=NAME)" ] );
+        if ( !new bxrig.util.Names().valid( "theme", arguments.name ) ) return variables.out.say( "usage", { error: "bad theme name " & arguments.name }, arguments.asJson, [ "error: the theme name must be lower case letters, digits and dashes (use --name=NAME)" ] );
         if ( !fileExists( arguments.dir & "/colors.toml" ) ) return variables.out.say( "precondition", { error: "no colors.toml" }, arguments.asJson, [ "error: " & arguments.dir & " has no colors.toml, so it is not a theme" ] );
         var p = variables.tc.parse( fileRead( arguments.dir & "/colors.toml" ) );
         if ( !p.ok ) return variables.out.say( "precondition", { error: "invalid theme", errors: p.errors }, arguments.asJson, [ "error: not a valid theme: " & p.errors.toList( ", " ) ] );
@@ -406,7 +405,7 @@ class Theme {
     // `remove NAME`: only a theme in your own folder; bundled and Omarchy ones cannot be removed, and neither can the current one.
     function remove( name, asJson ) {
         var all = discover();
-        if ( !validName( arguments.name ) || !structKeyExists( all, arguments.name ) ) return variables.out.say( "precondition", { error: "unknown theme" }, arguments.asJson, [ "error: unknown theme " & arguments.name ] );
+        if ( !new bxrig.util.Names().valid( "theme", arguments.name ) || !structKeyExists( all, arguments.name ) ) return variables.out.say( "precondition", { error: "unknown theme" }, arguments.asJson, [ "error: unknown theme " & arguments.name ] );
         if ( all[ arguments.name ].origin != "user" || all[ arguments.name ].dir != userDir() & "/" & arguments.name ) return variables.out.say( "precondition", { error: "not one of your themes" }, arguments.asJson, [ "error: " & arguments.name & " is " & all[ arguments.name ].origin & ", not one you installed, so it cannot be removed here" ] );
         if ( readState().name == arguments.name ) return variables.out.say( "precondition", { error: "current theme" }, arguments.asJson, [ "error: " & arguments.name & " is the current theme; set another one first" ] );
         variables.proc.exec( [ "rm", "-rf", userDir() & "/" & arguments.name ], 30 );

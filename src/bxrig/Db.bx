@@ -21,15 +21,20 @@ class Db {
     // ---- settings and paths ----
     function settingsFile() { return variables.config.cfgHome() & "/bxrig/db.json"; }
 
-    // The container engine program: podman (default) or docker.
+    // The engine chosen with `bxrig db engine` ("podman" or "docker"), or "" when none was chosen. Everyone who asks which engine asks here.
+    function engineSetting() {
+        if ( !fileExists( settingsFile() ) ) return "";
+        try { var s = jsonDeserialize( fileRead( settingsFile() ) ); return arrayFind( [ "podman", "docker" ], s.engine ?: "" ) ? s.engine : ""; } catch ( any e ) { return ""; }
+    }
+
+    // The container engine program: the chosen one, podman by default.
     function engineCli() {
-        if ( !fileExists( settingsFile() ) ) return "podman";
-        try { var s = jsonDeserialize( fileRead( settingsFile() ) ); return arrayFind( [ "podman", "docker" ], s.engine ?: "" ) ? s.engine : "podman"; } catch ( any e ) { return "podman"; }
+        var chosen = engineSetting();
+        return len( chosen ) ? chosen : "podman";
     }
 
     function containerName( engine, name ) { return "bxrig-db-" & arguments.engine & "-" & arguments.name; }
     function stateDir( container ) { return variables.environ.data() & "/databases/" & arguments.container; }
-    function validName( name ) { return reFind( "^[a-zA-Z0-9-]{1,40}$", arguments.name ) > 0; }
 
     // ---- small helpers ----
 
@@ -74,7 +79,7 @@ class Db {
         var e = variables.engines.get( arguments.engineId );
         if ( structIsEmpty( e ) ) return { error: "Unknown engine: " & arguments.engineId & " (use " & variables.engines.ids().toList( ", " ) & ")", code: 2 };
         if ( structKeyExists( e, "unsupported" ) ) return { error: e.title & ": " & e.unsupported, code: 4 };
-        if ( !validName( arguments.name ) ) return { error: "The name may only contain letters, digits and hyphens (up to 40 characters)", code: 4 };
+        if ( !new bxrig.util.Names().valid( "container", arguments.name ) ) return { error: "The name may only contain letters, digits and hyphens (up to 40 characters)", code: 2 };
         return { error: "", code: 0, engine: e, name: arguments.name, container: containerName( e.id, arguments.name ) };
     }
 

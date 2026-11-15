@@ -14,14 +14,6 @@ class Resolver {
      return [ "hyprland", "plasma", "all" ];
     }
 
-    // Detects the running shell from XDG_CURRENT_DESKTOP text: "hyprland", "plasma" or "" when unknown.
-    function detectShell( desktop ) {
-     var d = lCase( desktop ?: "" );
-     if ( find( "hyprland", d ) ) return "hyprland";
-     if ( find( "kde", d ) || find( "plasma", d ) ) return "plasma";
-     return "";
-    }
-
     // Web apps run in the catalog app `brave`. When a selected app is a web app and brave is neither selected nor
     // installed, brave is put first in the selection, so a plan and an install always include it.
     function withBrowser( out, byId, isInstalled ) {

@@ -46,9 +46,8 @@ class IconTheme {
         for ( var f in [ cfgHome() & "/gtk-3.0/settings.ini", cfgHome() & "/gtk-4.0/settings.ini" ] ) {
             if ( !fileExists( f ) ) continue;
             try {
-                for ( var line in listToArray( fileRead( f ), chr( 10 ) ) ) {
-                    var l = trim( line );
-                    if ( left( l, 19 ) == "gtk-icon-theme-name" && find( "=", l ) ) return trim( replace( mid( l, find( "=", l ) + 1, 200 ), '"', "", "all" ) );
+                for ( var kv in new bxrig.util.Props().pairs( fileRead( f ) ) ) {
+                    if ( compare( kv.key, "gtk-icon-theme-name" ) == 0 ) return trim( replace( left( kv.value, 200 ), '"', "", "all" ) );
                 }
             } catch ( any e ) {}
         }

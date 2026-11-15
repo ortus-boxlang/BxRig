@@ -16,7 +16,7 @@ class Screenshot {
     }
 
     function desktop() {
-        var d = lCase( getSystemSetting( "BXRIG_DESKTOP", getSystemSetting( "XDG_CURRENT_DESKTOP", "" ) ) );
+        var d = new bxrig.util.Desktop().name();
         return find( "kde", d ) || find( "plasma", d ) ? "plasma" : "hyprland";
     }
 

@@ -345,7 +345,7 @@ class MenuTree {
             ] ),
             sub( "Learn", [
                 spawn( "Shortcut cheat sheet", [ "keys", "sheet" ] ),
-                link( "BxRig docs", "https://bxcachy.boxlang.io/" ),
+                link( "BxRig docs", new bxrig.util.Urls().docs() ),
                 run( "BoxLang docs, sites and links", [ "boxlang", "links" ] ),
                 link( "Hyprland wiki", "https://wiki.hypr.land/" ),
                 link( "Noctalia docs", "https://docs.noctalia.dev/" ),

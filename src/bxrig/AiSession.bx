@@ -18,7 +18,6 @@ class AiSession {
 
     function prefix() { return "bxrig-"; }
 
-    function validPart( text ) { return reFind( "^[A-Za-z0-9_-]{1,40}$", arguments.text ) > 0; }
 
     // Full session name for what the user typed.
     function fullName( name ) {
@@ -46,7 +45,7 @@ class AiSession {
         if ( !len( pick ) ) return variables.cli.say( cmd, "precondition", { error: "No agent" }, arguments.asJson, [ "error: no agent given and no default set. Use: bxrig ai session start claude-code" ] );
         var a = variables.agents.find( pick );
         if ( structIsEmpty( a ) ) return variables.cli.say( cmd, "precondition", { error: "Unknown agent" }, arguments.asJson, [ "error: unknown agent " & pick & " (use " & variables.agents.ids().toList( ", " ) & ")" ] );
-        if ( len( arguments.name ) && !validPart( arguments.name ) ) return variables.cli.say( cmd, "precondition", { error: "Bad name" }, arguments.asJson, [ "error: a session name is letters, digits, - and _ (up to 40)" ] );
+        if ( len( arguments.name ) && !new bxrig.util.Names().valid( "label", arguments.name ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: a session name is letters, digits, - and _ (up to 40)" ] );
         if ( !hasTmux() ) return variables.cli.say( cmd, "precondition", { error: "tmux is not installed" }, arguments.asJson, [ "error: tmux is not installed. Install it: bxrig install tmux" ] );
         if ( !variables.ai.installed( a.command ) ) return variables.cli.say( cmd, "precondition", { error: a.id & " is not installed" }, arguments.asJson, [ "error: " & a.name & " is not installed. Install it first: bxrig install " & a.id ] );
         var folder = len( arguments.dir ) ? arguments.dir : getSystemSetting( "PWD", "." );
@@ -71,7 +70,7 @@ class AiSession {
     // `ai session attach NAME`
     function attach( name, asJson ) {
         var cmd = "ai session attach";
-        if ( !validPart( replace( arguments.name, prefix(), "" ) ) ) return variables.cli.say( cmd, "precondition", { error: "Bad name" }, arguments.asJson, [ "error: bad session name" ] );
+        if ( !new bxrig.util.Names().valid( "label", replace( arguments.name, prefix(), "" ) ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: bad session name" ] );
         if ( !hasTmux() ) return variables.cli.say( cmd, "precondition", { error: "tmux is not installed" }, arguments.asJson, [ "error: tmux is not installed. Install it: bxrig install tmux" ] );
         var session = fullName( arguments.name );
         if ( !arrayFind( names(), session ) ) return variables.cli.say( cmd, "precondition", { error: "No such session" }, arguments.asJson, [ "error: no session " & session & " (see: bxrig ai session list)" ] );
@@ -82,7 +81,7 @@ class AiSession {
     // `ai session stop NAME --yes`
     function stop( name, yes, asJson ) {
         var cmd = "ai session stop";
-        if ( !validPart( replace( arguments.name, prefix(), "" ) ) ) return variables.cli.say( cmd, "precondition", { error: "Bad name" }, arguments.asJson, [ "error: bad session name" ] );
+        if ( !new bxrig.util.Names().valid( "label", replace( arguments.name, prefix(), "" ) ) ) return variables.cli.say( cmd, "usage", { error: "Bad name" }, arguments.asJson, [ "error: bad session name" ] );
         var session = fullName( arguments.name );
         if ( !arrayFind( names(), session ) ) return variables.cli.say( cmd, "precondition", { error: "No such session" }, arguments.asJson, [ "error: no session " & session ] );
         if ( !arguments.yes ) return variables.cli.say( cmd, "plan", { session: session }, arguments.asJson, [ "Plan: end " & session & " and whatever is running in it.", "Nothing was changed. Add --yes to apply." ] );

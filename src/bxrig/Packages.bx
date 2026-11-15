@@ -38,7 +38,7 @@ class Packages {
 
     // The running shell ("hyprland", "plasma" or "" when unknown) from XDG_CURRENT_DESKTOP.
     function defaultShell() {
-        return new bxrig.Resolver().detectShell( getSystemSetting( "XDG_CURRENT_DESKTOP", "" ) );
+        return new bxrig.util.Desktop().shell();
     }
 
     // desktop-list, tui-list, web-list, optional-list: the catalog filtered by kind or tier.

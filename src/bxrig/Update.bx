@@ -41,7 +41,7 @@ class Update {
         fileWrite( file(), serializeJSON( arguments.d ) & chr( 10 ) );
     }
 
-    function base() { return getSystemSetting( "BXRIG_BASE_URL", "https://downloads.ortussolutions.com/ortussolutions/bxrig" ); }
+    function base() { return getSystemSetting( "BXRIG_BASE_URL", new bxrig.util.Urls().downloads() ); }
     function channels() { return [ "stable", "beta" ]; }
 
     function channel( name, asJson ) {
@@ -95,7 +95,7 @@ class Update {
                 signed = true;
             }
             var out = { ok: true, signed: signed };
-            for ( var l in listToArray( fileRead( dir & "/p" ), chr( 10 ) ) ) if ( find( "=", l ) ) out[ listFirst( l, "=" ) ] = trim( listRest( l, "=" ) );
+            for ( var kv in new bxrig.util.Props().pairs( fileRead( dir & "/p" ) ) ) out[ kv.key ] = kv.value;
             return out;
         } finally {
             try { directoryDelete( dir, true ); } catch ( any e ) {}

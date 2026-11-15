@@ -60,7 +60,6 @@ class BackupData {
         fileWrite( settingsFile(), jsonSerialize( arguments.s ) & chr( 10 ) );
     }
 
-    function validName( n ) { return reFind( "^[a-z][a-z0-9-]{0,30}$", arguments.n ) > 0; }
     function validPart( x ) { return reFind( "^[A-Za-z0-9._/:@+-]{1,200}$", arguments.x ) > 0 && find( "..", arguments.x ) == 0; }
     function validUrl( x ) { return reFind( "^https?://[A-Za-z0-9._:@/-]{1,200}$", arguments.x ) > 0; }
 
@@ -137,7 +136,7 @@ class BackupData {
     }
 
     function targetAdd( name, opts, yes, dry, asJson ) {
-        if ( !validName( arguments.name ) ) return variables.out.fail( "usage", "NAME is lower case letters, digits and dashes, starting with a letter", arguments.asJson );
+        if ( !new bxrig.util.Names().valid( "slug", arguments.name ) ) return variables.out.fail( "usage", "NAME is lower case letters, digits and dashes, starting with a letter", arguments.asJson );
         var ty = lCase( arguments.opts.type ?: "" );
         if ( !arrayFind( [ "local", "sftp", "rest", "s3", "b2", "azure", "gs", "rclone" ], ty ) ) return variables.out.fail( "usage", "--type is local, sftp, rest, s3, b2, azure, gs or rclone (a NAS: bxrig nas use)", arguments.asJson );
         var t = { type: ty };
@@ -157,7 +156,7 @@ class BackupData {
         var given = {};
         if ( structKeyExists( arguments.opts, "keys-file" ) ) {
             if ( !fileExists( arguments.opts[ "keys-file" ] ) ) return variables.out.fail( "precondition", "the keys file was not found", arguments.asJson );
-            for ( var line in listToArray( fileRead( arguments.opts[ "keys-file" ] ), chr( 10 ) ) ) { var ln = trim( line ); if ( len( ln ) && find( "=", ln ) ) given[ trim( listFirst( ln, "=" ) ) ] = trim( listRest( ln, "=" ) ); }
+            for ( var kv in new bxrig.util.Props().pairs( fileRead( arguments.opts[ "keys-file" ] ) ) ) given[ kv.key ] = kv.value;
         }
         var s = readAll();
         var d = { name: arguments.name, type: ty, repository: repositoryOf( arguments.name, t ), keys: keys.map( function( k ) { return secretFor( name, k ); } ) };

@@ -37,7 +37,7 @@ run "$binary" vm versions windows | grep -q 'UNOFFICIAL' || fail 'tiny11 is labe
 
 # usage and validation
 [[ "$(code "$binary" vm create linux)" == 2 ]] || fail 'a Linux desktop needs a name'
-[[ "$(code "$binary" vm create linux Bad_Name --yes)" == 4 ]] || fail 'bad name'
+[[ "$(code "$binary" vm create linux Bad_Name --yes)" == 2 ]] || fail 'bad name exits 2'
 [[ "$(code "$binary" vm create linux dev --tag=nope --yes)" == 4 ]] || fail 'unknown tag'
 [[ "$(code "$binary" vm create linux dev --version=11)" == 2 ]] || fail '--version is for Windows'
 [[ "$(code "$binary" vm create windows w1 --gpu=nvidia)" == 2 ]] || fail '--gpu is for Linux'

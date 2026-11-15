@@ -43,7 +43,7 @@ run "$binary" ai session list --json | jq -e '.data.sessions == ["bxrig-claude-c
 touch "$tmp/tm/other-session"; run "$binary" ai session list --json | jq -e '(.data.sessions | index("other-session")) == null' >/dev/null || fail "other tmux sessions are not listed"
 run "$binary" ai session attach claude-code-api | grep -q 'attached bxrig-claude-code-api' || fail 'attach by short name'
 [[ "$(code "$binary" ai session attach nope)" == 4 ]] || fail 'attach to a missing session exits 4'
-[[ "$(code "$binary" ai session start --name='a b')" == 4 ]] || fail 'a bad name exits 4'
+[[ "$(code "$binary" ai session start --name='a b')" == 2 ]] || fail 'a bad name exits 2'
 [[ "$(code "$binary" ai session start codex-cli)" == 4 ]] || fail 'an agent that is not installed exits 4'
 [[ "$(code "$binary" ai session stop claude-code-api)" == 2 ]] || fail 'stop without --yes exits 2'
 [[ -e "$tmp/tm/bxrig-claude-code-api" ]] || fail 'the plan ended the session'
@@ -57,7 +57,7 @@ run "$binary" ai models list | grep -q 'qwen3:8b' || fail 'models list'
 run "$binary" ai models ps --json | jq -e '.data.output | startswith("NAME")' >/dev/null || fail 'models ps --json'
 : > "$LOG"; run "$binary" ai models pull qwen3:8b | grep -q 'pulling qwen3:8b' || fail 'pull shows progress'
 grep -q '^ollama pull qwen3:8b$' "$LOG" || fail 'pull command'
-[[ "$(code "$binary" ai models pull 'a;rm -rf')" == 4 ]] || fail 'a bad model name exits 4'
+[[ "$(code "$binary" ai models pull 'a;rm -rf')" == 2 ]] || fail 'a bad model name exits 2'
 [[ "$(NO_SERVER=1 code "$binary" ai models pull qwen3:8b)" == 1 ]] || fail "pull returns ollama's exit code"
 [[ "$(code "$binary" ai models rm qwen3:8b)" == 2 ]] || fail 'rm without --yes exits 2'
 run "$binary" ai models rm qwen3:8b --yes | grep -q "deleted" || fail 'rm --yes'

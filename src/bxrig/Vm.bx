@@ -25,15 +25,10 @@ class Vm {
     function recordFile( name ) { return recordDir() & "/" & arguments.name & ".json"; }
     function dataDir( name ) { return variables.environ.data() & "/vms/" & arguments.name; }
     function containerName( name ) { return "bxrig-vm-" & arguments.name; }
-    function validName( name ) { return reFind( "^[a-z0-9][a-z0-9-]{0,30}$", arguments.name ) > 0; }
     function secretKey( name ) { return "BXRIG_VM_" & uCase( replace( arguments.name, "-", "_", "all" ) ) & "_PASSWORD"; }
 
     // The container engine: podman (default) or docker, as chosen with `bxrig db engine`.
-    function engineCli() {
-        var f = variables.config.cfgHome() & "/bxrig/db.json";
-        if ( !fileExists( f ) ) return "podman";
-        try { var s = jsonDeserialize( fileRead( f ) ); return arrayFind( [ "podman", "docker" ], s.engine ?: "" ) ? s.engine : "podman"; } catch ( any e ) { return "podman"; }
-    }
+    function engineCli() { return new bxrig.Db( variables.cli ).engineCli(); }
 
     function engineExec( args, timeout = 600 ) {
         var argv = [ engineCli() ];
@@ -299,7 +294,7 @@ class Vm {
         var nm = len( arguments.name ) ? arguments.name : ( arguments.kind == "windows" ? "windows" : "" );
         if ( !arrayFind( [ "windows", "linux" ], arguments.kind ) ) return variables.cli.fail( cmd, "usage", new bxrig.CommandSpec().usage( "vm" ), arguments.asJson );
         if ( !len( nm ) ) return variables.cli.fail( cmd, "usage", "A Linux desktop needs a name: bxrig vm create linux NAME [--tag=ubuntu-xfce]", arguments.asJson );
-        if ( !validName( nm ) ) return variables.cli.fail( cmd, "precondition", "The name may only contain lower case letters, digits and hyphens (up to 31 characters)", arguments.asJson );
+        if ( !new bxrig.util.Names().valid( "vm", nm ) ) return variables.cli.fail( cmd, "usage", "The name may only contain lower case letters, digits and hyphens (up to 31 characters)", arguments.asJson );
         if ( structKeyExists( readRecord( nm ), "name" ) ) return variables.cli.fail( cmd, "precondition", "A VM named " & nm & " already exists (bxrig vm list)", arguments.asJson );
         if ( arguments.kind == "windows" && len( o.gpu ?: "" ) ) return variables.cli.fail( cmd, "usage", "--gpu is for Linux desktops", arguments.asJson );
         if ( arguments.kind == "linux" && len( o.version ?: "" ) ) return variables.cli.fail( cmd, "usage", "--version is for Windows; Linux desktops use --tag", arguments.asJson );
@@ -398,7 +393,7 @@ class Vm {
 
     // ---- lifecycle ----
     function resolve( name ) {
-        if ( !validName( arguments.name ) ) return { error: "Bad VM name " & arguments.name, code: 4 };
+        if ( !new bxrig.util.Names().valid( "vm", arguments.name ) ) return { error: "Bad VM name " & arguments.name, code: 2 };
         var rec = readRecord( arguments.name );
         if ( !structKeyExists( rec, "name" ) ) return { error: "There is no VM named " & arguments.name & " (bxrig vm list)", code: 4 };
         return { error: "", code: 0, rec: rec, container: containerName( arguments.name ) };

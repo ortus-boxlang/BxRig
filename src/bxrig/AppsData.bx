@@ -339,7 +339,7 @@ class AppsData {
         if ( variables.demo ) return demoDetails( arguments.row );
         var r = arguments.row;
         var pkg = r.pkg ?: "";
-        if ( !len( pkg ) || !reFind( "^[a-z0-9@._+-]{1,100}$", pkg ) || !variables.pacman.available() ) return {};
+        if ( !len( pkg ) || !new bxrig.util.Names().valid( "package", pkg ) || !variables.pacman.available() ) return {};
         var q = variables.pacman.run( [ r.kind == "installed" || r.kind == "update" ? "-Qi" : "-Si", pkg ], 20 );
         if ( q.exitCode != 0 ) return {};
         var parsed = parseQi( q.output );
@@ -355,7 +355,7 @@ class AppsData {
             out.lines = [ "This also removes 3 unused dependencies that only " & p & " needed.", "Your files and settings in your home folder stay." ];
             return out;
         }
-        if ( !reFind( "^[a-z0-9@._+-]{1,100}$", p ) || !variables.pacman.available() ) return out;
+        if ( !new bxrig.util.Names().valid( "package", p ) || !variables.pacman.available() ) return out;
         var qi = parseQi( variables.pacman.run( [ "-Qi", p ], 20 ).output );
         if ( structKeyExists( qi, p ) && structKeyExists( qi[ p ], "requiredBy" ) ) out.dependents = qi[ p ].requiredBy.len();
         var rp = variables.pacman.run( [ "-Rns", "--print", "--print-format", "%n", p ], 20 );

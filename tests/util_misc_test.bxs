@@ -1,0 +1,31 @@
+// Names, Props, Urls, Version and Desktop. Run from src/: (cd src && matchbox ../tests/util_misc_test.bxs)
+testkit = new lib.Check( "util misc" );
+n = new bxrig.util.Names();
+testkit.check( "slug: lower case, starts with a letter", n.valid( "slug", "synology" ) && !n.valid( "slug", "1nas" ) && !n.valid( "slug", "Nas" ) );
+testkit.check( "vm may start with a digit", n.valid( "vm", "9vm" ) && !n.valid( "vm", "a_b" ) );
+testkit.check( "label allows underscore and capitals", n.valid( "label", "My_Remote-1" ) && !n.valid( "label", "a b" ) && !n.valid( "label", "" ) );
+testkit.check( "secret looks like an env name", n.valid( "secret", "ANTHROPIC_API_KEY" ) && !n.valid( "secret", "anthropic" ) );
+testkit.check( "package allows @ . + _", n.valid( "package", "gcc-libs" ) && n.valid( "package", "c++utilities" ) && !n.valid( "package", "Bad Name" ) );
+testkit.check( "model allows : and /", n.valid( "model", "qwen3:8b" ) && n.valid( "model", "lib/model:1" ) );
+testkit.check( "container and theme", n.valid( "container", "Db-1" ) && n.valid( "theme", "bxrig-green" ) && !n.valid( "theme", "Bxrig" ) );
+testkit.check( "every kind has a rule sentence", len( n.rule( "slug" ) ) > 10 && len( n.rule( "secret" ) ) > 10 );
+caught = false;
+try { n.valid( "nonsense", "x" ); } catch ( any e ) { caught = true; }
+testkit.check( "an unknown kind throws", caught );
+pr = new bxrig.util.Props();
+text = "## comment" & chr( 10 ) & "a=1" & chr( 10 ) & " b = two = 2 " & chr( 10 ) & "=nokey" & chr( 10 ) & "empty=" & chr( 10 ) & "noequals" & chr( 10 ) & "a=3";
+pairs = pr.pairs( text );
+testkit.check( "pairs skip comments, keyless and equals-less lines", pairs.len() == 4 );
+testkit.check( "the first = splits and values are trimmed", pairs[ 2 ].key == "b" && pairs[ 2 ].value == "two = 2" );
+testkit.check( "an empty value is an empty string", pairs[ 3 ].key == "empty" && pairs[ 3 ].value == "" );
+testkit.check( "parse: the last repeat wins", pr.parse( text ).a == "3" );
+testkit.check( "unquote strips one pair of quotes", pr.unquote( '"x y"' ) == "x y" && pr.unquote( "'z'" ) == "z" && pr.unquote( "plain" ) == "plain" );
+u = new bxrig.util.Urls();
+testkit.check( "urls end where the callers expect", left( u.downloads(), 8 ) == "https://" && right( u.docs(), 1 ) == "/" && find( "reference/commands", u.commandsReference() ) > 0 );
+v = new bxrig.util.Version().current();
+box = deserializeJSON( fileRead( expandPath( "../box.json" ) ) );
+testkit.check( "the version is the one in box.json", v == box.version );
+testkit.check( "Cli reports it", new bxrig.util.Cli( v ).version() == v );
+d = new bxrig.util.Desktop();
+testkit.check( "desktop shell is one of the known names", arrayFind( [ "hyprland", "plasma", "" ], d.shell() ) > 0 );
+testkit.done( "util misc tests passed" );

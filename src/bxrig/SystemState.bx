@@ -53,7 +53,7 @@ class SystemState {
     function defaultBrowser() {
         var out = "";
         try { out = trim( systemExecute( "xdg-settings", [ "get", "default-web-browser" ], 10, true ).output ); } catch ( any e ) { return ""; }
-        var dft = new bxrig.Defaults( new bxrig.util.Cli( "0" ) );
+        var dft = new bxrig.Defaults( new bxrig.util.Cli( new bxrig.util.Version().current() ) );
         for ( var id in [ "firefox", "chromium", "brave", "google-chrome", "edge" ] ) if ( len( dft.browserDesktop( id ) ) && dft.browserDesktop( id ) == out ) return id;
         return "";
     }
@@ -81,7 +81,7 @@ class SystemState {
         else if ( id == "launcher" ) res.value = readJson( cfgHome & "/runner.json" ).provider ?: "";
         else if ( id == "menu" ) res.value = readJson( cfgHome & "/runner.json" ).menu_provider ?: "";
         else if ( id == "container_engine" ) {
-            var db = readJson( cfgHome & "/db.json" ).engine ?: "";
+            var db = new bxrig.Db( new bxrig.util.Cli( new bxrig.util.Version().current() ) ).engineSetting();
             res.value = arrayFind( [ "podman", "docker" ], db ) ? db : ( structKeyExists( variables.names, "podman" ) ? "podman" : ( structKeyExists( variables.names, "docker" ) ? "docker" : "" ) );
         } else if ( q.type == "choice" && res.installed.len() == 1 && !arrayFind( [ "desktops", "shell", "terminal", "default_browser", "ai_default", "launcher", "menu", "container_engine" ], id ) ) res.value = res.installed[ 1 ];
         // no default set but exactly one terminal or browser installed: that is the one in use
