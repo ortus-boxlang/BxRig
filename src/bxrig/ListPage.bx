@@ -35,13 +35,16 @@ class ListPage {
 
     function usesLeft() { return variables.mode != "list"; }
 
-    function keys() {
-        if ( variables.mode != "list" ) return [ [ "Enter", "keep" ], [ "Esc", "clear" ] ];
-        var out = [ [ "↑↓", "move" ] ];
-        for ( var a in variables.p.actions() ) out.append( [ a.key, a.label ] );
-        out.append( [ "/", variables.spec.live() ? "search" : "filter" ] );
-        return out;
+    // The keys of the page: the table the footer shows and the keys dispatch from. Typing a filter or a search has its own two keys.
+    function keyMap() {
+        var m = new bxrig.KeyMap();
+        if ( variables.mode != "list" ) return m.bind( "Enter", "Enter", "keep", "keep" ).bind( "Esc", "Escape", "clear", "clear" );
+        m.bind( "↑↓", [ "Up", "k" ], "move", "up" ).bind( "", [ "Down", "j" ], "", "down" ).bind( "", "PageUp", "", "pageUp" ).bind( "", "PageDown", "", "pageDown" ).bind( "", "Home", "", "home" ).bind( "", "End", "", "end" ).bind( "", "r", "", "reload" );
+        for ( var a in variables.p.actions() ) m.bind( a.key, a.key, a.label, "act" );
+        return m.bind( "/", "/", variables.spec.live() ? "search" : "filter", "type" );
     }
+
+    function keys() { return keyMap().hints(); }
 
     function searchText( r ) {
         var t = "";
@@ -101,14 +104,15 @@ class ListPage {
             }
             return {};
         }
-        if ( k == "Up" || compare( k, "k" ) == 0 ) { variables.list.move( -1 ); return {}; }
-        if ( k == "Down" || compare( k, "j" ) == 0 ) { variables.list.move( 1 ); return {}; }
-        if ( k == "PageUp" ) { variables.list.page( -1, variables.rowsShown ); return {}; }
-        if ( k == "PageDown" ) { variables.list.page( 1, variables.rowsShown ); return {}; }
-        if ( k == "Home" ) { variables.list.home(); return {}; }
-        if ( k == "End" ) { variables.list.end(); return {}; }
-        if ( k == "/" ) { variables.mode = "input"; variables.input = variables.spec.live() ? variables.query : variables.list.query(); return {}; }
-        if ( compare( k, "r" ) == 0 ) { load(); return {}; }
+        var what = keyMap().match( k );
+        if ( what == "up" ) { variables.list.move( -1 ); return {}; }
+        if ( what == "down" ) { variables.list.move( 1 ); return {}; }
+        if ( what == "pageUp" ) { variables.list.page( -1, variables.rowsShown ); return {}; }
+        if ( what == "pageDown" ) { variables.list.page( 1, variables.rowsShown ); return {}; }
+        if ( what == "home" ) { variables.list.home(); return {}; }
+        if ( what == "end" ) { variables.list.end(); return {}; }
+        if ( what == "type" ) { variables.mode = "input"; variables.input = variables.spec.live() ? variables.query : variables.list.query(); return {}; }
+        if ( what == "reload" ) { load(); return {}; }
         return intentFor( k );
     }
 

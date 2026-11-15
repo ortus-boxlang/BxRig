@@ -1,6 +1,53 @@
-// The key rules of the boxes every terminal screen shows: the plan to confirm and the line of text to type. Pure, no state and no drawing.
-// ControlCenterApp and TimeMachineApp keep their own modes; they ask here what a key means.
+// The boxes every terminal screen shows over its page: the plan to confirm (confirm), a result to read (result) and a line of text to type (ask).
+// A Modal holds the box (kind, title, lines, the intent a confirm will run, the typed text) and the key rules; it never draws and never closes itself:
+// the app asks `key( k )` what the key meant and decides what happens next (`close()`). ControlCenterApp and TimeMachineApp use one each.
+//   confirm( title, lines, intent )   result( title, lines )   ask( title, prompt, make )   close()   kind() is "" while closed   open()   intent()   box()   field()
+//   key( k ) -> { answer, intent, value, make }
+//     result:  any key               answer "ok"
+//     confirm: y, Y, Enter           answer "yes" (intent is the confirm's intent with confirmed = true)
+//              n, N, Escape, q       answer "no"
+//     ask:     Enter                 answer "submit" (value is the trimmed text, make the callback that turns it into an intent)
+//              Escape                answer "cancel"; other keys edit the text
+//     any other key                  answer ""
 class Modal {
+    function init() {
+        close();
+        return this;
+    }
+
+    function confirm( title, body, intent ) { variables.st = { kind: "confirm", title: arguments.title, body: arguments.body, intent: arguments.intent, prompt: "", make: "", input: "" }; return this; }
+    function result( title, body ) { variables.st = { kind: "result", title: arguments.title, body: arguments.body, intent: {}, prompt: "", make: "", input: "" }; return this; }
+    function ask( title, prompt, make ) { variables.st = { kind: "ask", title: arguments.title, body: [], intent: {}, prompt: arguments.prompt, make: arguments.make, input: "" }; return this; }
+    function close() { variables.st = { kind: "", title: "", body: [], intent: {}, prompt: "", make: "", input: "" }; return this; }
+
+    function kind() { return variables.st.kind; }
+    function open() { return len( variables.st.kind ) > 0; }
+    function intent() { return variables.st.intent; }
+
+    // What the screens draw for a confirm or a result: { title, lines, intent }.
+    function box() { return { title: variables.st.title, lines: variables.st.body, intent: variables.st.intent }; }
+    // What the screen draws for a text box: { title, prompt, input }.
+    function field() { return { title: variables.st.title, prompt: variables.st.prompt, input: variables.st.input }; }
+
+    function key( key ) {
+        var k = arguments.key;
+        var res = { answer: "", intent: {}, value: "", make: "" };
+        if ( variables.st.kind == "result" ) { res.answer = "ok"; return res; }
+        if ( variables.st.kind == "confirm" ) {
+            var a = answer( k );
+            res.answer = a;
+            res.intent = variables.st.intent;
+            if ( a == "yes" ) res.intent.confirmed = true;
+            return res;
+        }
+        if ( variables.st.kind == "ask" ) {
+            if ( k == "Escape" ) { res.answer = "cancel"; return res; }
+            if ( k == "Enter" ) { res.answer = "submit"; res.value = trim( variables.st.input ); res.make = variables.st.make; return res; }
+            variables.st.input = typed( variables.st.input, k );
+        }
+        return res;
+    }
+
     // "yes" for y, Y and Enter; "no" for n, N, Escape and q; "" for any other key.
     function answer( key ) {
         var k = arguments.key;
@@ -18,8 +65,6 @@ class Modal {
         return arguments.text;
     }
 
-    // The lines of a text for a box (empty lines kept).
-    function lines( text ) {
-        return listToArray( arguments.text, chr( 10 ), true );
-    }
+    // The lines of a text for a box (split on newlines, empty lines kept).
+    function split( text ) { return listToArray( arguments.text, chr( 10 ), true ); }
 }

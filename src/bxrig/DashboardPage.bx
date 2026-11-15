@@ -27,16 +27,22 @@ class DashboardPage {
     }
 
     function state() { return { data: variables.data, attention: variables.att, cursor: variables.cursor }; }
-    function keys() { return [ [ "↑↓", "move" ], [ "Enter", "fix it" ], [ "r", "refresh" ], [ "b", "backups" ], [ "w", "wizard" ] ]; }
+    function keyMap() {
+        return new bxrig.KeyMap().bind( "↑↓", [ "Up", "k" ], "move", "up" ).bind( "", [ "Down", "j" ], "", "down" ).bind( "Enter", "Enter", "fix it", "fix" )
+            .bind( "r", "r", "refresh", "refresh" ).bind( "b", "b", "backups", "backups" ).bind( "w", "w", "wizard", "wizard" );
+    }
+
+    function keys() { return keyMap().hints(); }
 
     function onKey( key ) {
         var k = arguments.key;
-        if ( k == "Up" || compare( k, "k" ) == 0 ) { variables.cursor = max( 1, variables.cursor - 1 ); return {}; }
-        if ( k == "Down" || compare( k, "j" ) == 0 ) { variables.cursor = min( max( 1, variables.att.len() ), variables.cursor + 1 ); return {}; }
-        if ( compare( k, "r" ) == 0 ) { load(); return {}; }
-        if ( compare( k, "b" ) == 0 ) return { action: "launch", target: "timemachine" };
-        if ( compare( k, "w" ) == 0 ) return { action: "launch", target: "wizard" };
-        if ( k == "Enter" && variables.att.len() ) return variables.att[ variables.cursor ].action;
+        var what = keyMap().match( k );
+        if ( what == "up" ) { variables.cursor = max( 1, variables.cursor - 1 ); return {}; }
+        if ( what == "down" ) { variables.cursor = min( max( 1, variables.att.len() ), variables.cursor + 1 ); return {}; }
+        if ( what == "refresh" ) { load(); return {}; }
+        if ( what == "backups" ) return { action: "launch", target: "timemachine" };
+        if ( what == "wizard" ) return { action: "launch", target: "wizard" };
+        if ( what == "fix" && variables.att.len() ) return variables.att[ variables.cursor ].action;
         for ( var a in variables.att ) if ( len( a.key ) && compare( a.key, k ) == 0 ) return a.action;
         return {};
     }

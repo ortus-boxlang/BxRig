@@ -14,10 +14,8 @@ class ControlCenterApp {
         for ( var i = 1; i <= variables.pages.len(); i++ ) if ( variables.pages[ i ].id() == arguments.startId ) variables.idx = i;
         variables.focus = "page";
         variables.outcome = "running";
-        variables.modal = {};
-        variables.mode = "main";
+        variables.dialog = new bxrig.Modal();
         variables.message = "";
-        variables.ask = {};
         variables.loaded = {};
         variables.sidebar = arguments.sidebar != "off";
         variables.forced = arguments.sidebar == "on";
@@ -43,10 +41,19 @@ class ControlCenterApp {
     function index() { return variables.idx; }
     function page() { return variables.pages[ variables.idx ]; }
     function focus() { return variables.focus; }
-    function mode() { return variables.mode; }
-    function modal() { return variables.modal; }
+    // The keys of the Control Center itself, under the page's own: what the footer shows and what they do. Scope "free": only when the page is not
+    // taking text; "page": only when the focus is on the page (not the sidebar) and the page is not taking text.
+    function keyMap() {
+        return new bxrig.KeyMap().bind( "tab", "Tab", "pages", "next" ).bind( "", [ "Shift+Tab", "BackTab" ], "", "prev" ).bind( "", "Ctrl+b", "", "sidebar" )
+            .bind( chr( 92 ), chr( 92 ), "sidebar", "sidebar", "free" ).bind( "", "]", "", "next", "page" ).bind( "", "[", "", "prev", "page" )
+            .bind( "", "Left", "", "left", "page" ).bind( "q", [ "q", "Escape" ], "quit", "quit", "page" );
+    }
+
+    // "main", or the kind of the box that is open: "confirm", "result" or "ask".
+    function mode() { return variables.dialog.open() ? variables.dialog.kind() : "main"; }
+    function modal() { return variables.dialog.box(); }
     function message() { return variables.message; }
-    function ask() { return variables.ask; }
+    function ask() { return variables.dialog.field(); }
 
     function ensureLoaded() {
         var id = page().id();
@@ -65,14 +72,14 @@ class ControlCenterApp {
     }
 
     // The runner shows the plan of a command and later its result here.
-    function showPlan( title, lines, intent ) { variables.modal = { title: arguments.title, lines: arguments.lines, intent: arguments.intent }; variables.mode = "confirm"; }
-    function showResult( title, lines ) { variables.modal = { title: arguments.title, lines: arguments.lines }; variables.mode = "result"; page().load(); }
+    function showPlan( title, lines, intent ) { variables.dialog.confirm( arguments.title, arguments.lines, arguments.intent ); }
+    function showResult( title, lines ) { variables.dialog.result( arguments.title, arguments.lines ); page().load(); }
 
     function handleIntent( it ) {
         if ( !structCount( arguments.it ) ) return {};
         if ( arguments.it.action == "goto" ) { goto( arguments.it.page ); return {}; }
         if ( arguments.it.action == "reload" ) { page().load(); return {}; }
-        if ( arguments.it.action == "ask" ) { variables.ask = { title: arguments.it.title, prompt: arguments.it.prompt, make: arguments.it.make, input: "" }; variables.mode = "ask"; return {}; }
+        if ( arguments.it.action == "ask" ) { variables.dialog.ask( arguments.it.title, arguments.it.prompt, arguments.it.make ); return {}; }
         if ( arguments.it.action == "quit" ) { variables.outcome = "quit"; return {}; }
         if ( arguments.it.action == "sidebar" ) { toggleSidebar(); return {}; }
         if ( arguments.it.action == "launch" ) { variables.outcome = "launch:" & arguments.it.target; return {}; }
@@ -83,27 +90,19 @@ class ControlCenterApp {
         var k = arguments.key;
         if ( k == "Ctrl+c" ) { variables.outcome = "quit"; return {}; }
         variables.message = "";
-        if ( variables.mode == "result" ) { variables.mode = "main"; return {}; }
-        if ( variables.mode == "ask" ) {
-            if ( k == "Escape" ) { variables.mode = "main"; return {}; }
-            if ( k == "Enter" ) {
-                var v = trim( variables.ask.input );
-                variables.mode = "main";
-                return len( v ) ? variables.ask.make( v ) : {};
-            }
-            variables.ask.input = new bxrig.Modal().typed( variables.ask.input, k );
+        if ( variables.dialog.open() ) {
+            var r = variables.dialog.key( k );
+            if ( r.answer == "yes" ) { variables.dialog.close(); return r.intent; }
+            if ( r.answer == "submit" ) { variables.dialog.close(); return len( r.value ) ? r.make( r.value ) : {}; }
+            if ( len( r.answer ) ) variables.dialog.close();
             return {};
         }
-        if ( variables.mode == "confirm" ) {
-            var answer = new bxrig.Modal().answer( k );
-            if ( answer == "yes" ) { var it = variables.modal.intent; it.confirmed = true; variables.mode = "main"; return it; }
-            if ( answer == "no" ) variables.mode = "main";
-            return {};
-        }
-        if ( k == "Ctrl+b" ) { toggleSidebar(); return {}; }
-        if ( compare( k, chr( 92 ) ) == 0 && !pageCaptures() ) { toggleSidebar(); return {}; }
-        if ( k == "Tab" ) { step( 1 ); return {}; }
-        if ( k == "Shift+Tab" || k == "BackTab" ) { step( -1 ); return {}; }
+        var keys = keyMap();
+        var free = !pageCaptures();
+        var g = keys.match( k, free ? [ "any", "free" ] : [ "any" ] );
+        if ( g == "sidebar" ) { toggleSidebar(); return {}; }
+        if ( g == "next" ) { step( 1 ); return {}; }
+        if ( g == "prev" ) { step( -1 ); return {}; }
         if ( variables.focus == "sidebar" && sidebarOpen() ) {
             if ( k == "Up" || compare( k, "k" ) == 0 ) { step( -1 ); return {}; }
             if ( k == "Down" || compare( k, "j" ) == 0 ) { step( 1 ); return {}; }
@@ -111,11 +110,12 @@ class ControlCenterApp {
             if ( compare( k, "q" ) == 0 || k == "Escape" ) { variables.outcome = "quit"; return {}; }
             return {};
         }
-        if ( pageCaptures() ) return handleIntent( page().onKey( k ) );
-        if ( k == "]" ) { step( 1 ); return {}; }
-        if ( k == "[" ) { step( -1 ); return {}; }
-        if ( k == "Left" ) { if ( sidebarOpen() ) variables.focus = "sidebar"; else toggleSidebar(); return {}; }
-        if ( compare( k, "q" ) == 0 || k == "Escape" ) { variables.outcome = "quit"; return {}; }
+        if ( !free ) return handleIntent( page().onKey( k ) );
+        g = keys.match( k, [ "any", "free", "page" ] );
+        if ( g == "next" ) { step( 1 ); return {}; }
+        if ( g == "prev" ) { step( -1 ); return {}; }
+        if ( g == "left" ) { if ( sidebarOpen() ) variables.focus = "sidebar"; else toggleSidebar(); return {}; }
+        if ( g == "quit" ) { variables.outcome = "quit"; return {}; }
         return handleIntent( page().onKey( k ) );
     }
 
@@ -124,20 +124,20 @@ class ControlCenterApp {
 
     function act( hit ) {
         var h = arguments.hit;
-        if ( variables.mode == "confirm" ) {
+        if ( variables.dialog.kind() == "confirm" ) {
             if ( h.kind == "yes" ) return onKey( "y" );
             if ( h.kind == "no" ) return onKey( "n" );
             return {};
         }
-        if ( variables.mode == "result" ) { variables.mode = "main"; return {}; }
-        if ( variables.mode == "ask" ) { if ( h.kind == "askok" ) return onKey( "Enter" ); if ( h.kind == "askno" ) return onKey( "Escape" ); return {}; }
+        if ( variables.dialog.kind() == "result" ) return onKey( "Enter" );
+        if ( variables.dialog.kind() == "ask" ) { if ( h.kind == "askok" ) return onKey( "Enter" ); if ( h.kind == "askno" ) return onKey( "Escape" ); return {}; }
         if ( h.kind == "sidetoggle" ) { toggleSidebar(); return {}; }
         if ( h.kind == "nav" ) { variables.idx = h.n; variables.focus = "page"; ensureLoaded(); return {}; }
         return handleIntent( page().act( h ) );
     }
 
     function onScroll( dir ) {
-        if ( variables.mode != "main" ) return {};
+        if ( variables.dialog.open() ) return {};
         return handleIntent( page().onScroll( arguments.dir ) );
     }
 }
