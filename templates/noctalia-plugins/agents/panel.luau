@@ -26,6 +26,13 @@ local AGENT_GLYPHS = {
   ["gemini"] = "sparkles",
   ["copilot"] = "brand-github-copilot",
   ["github-copilot"] = "brand-github-copilot",
+  -- the ids `bxrig ai panel` uses
+  ["codex-cli"] = "brand-openai",
+  ["opencode-cli"] = "code",
+  ["gemini-cli"] = "sparkles",
+  ["copilot-cli"] = "brand-github-copilot",
+  ["cursor-agent"] = "cube",
+  ["grok-cli"] = "brand-x",
 }
 
 local function str(v)

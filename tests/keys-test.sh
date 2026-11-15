@@ -3,7 +3,7 @@
 . "$(dirname "$0")/lib/harness.sh"
 out="$("$binary" keys show)"
 [[ "$out" == *"Super+C"* && "$out" == *"Super+Shift+Q"* ]] || fail 'show lists the shortcuts'
-"$binary" keys show --json | jq -e '.command == "keys show" and .ok and (.data.shortcuts | length) == 55' >/dev/null || fail 'show --json envelope'
+"$binary" keys show --json | jq -e '.command == "keys show" and .ok and (.data.shortcuts | length) == 60' >/dev/null || fail 'show --json envelope'
 # one unbound row per Control Center page: no keys, not rendered, never a conflict
 "$binary" keys show --json | jq -e '[.data.shortcuts[] | select(.id | startswith("tui-"))] | length == 17 and all(.keys == "")' >/dev/null || fail 'tui rows are unbound'
 "$binary" keys render hyprland | grep -q 'tui databases' && fail 'an unbound row was rendered' || true

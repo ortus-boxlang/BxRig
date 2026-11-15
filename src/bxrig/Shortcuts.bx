@@ -128,6 +128,11 @@ class Shortcuts {
             { id: "screenshot-region", keys: "Super+Shift+4", action: "Screenshot: a region", kind: "hypr-bind", dispatch: execBxrig( "screenshot region" ) },
             { id: "screenshot-menu", keys: "Super+Shift+5", action: "Screenshot menu (region, window, OCR, QR, record)", kind: "hypr-bind", dispatch: execBxrig( "screenshot menu" ) },
             { id: "dnd", keys: "Super+Alt+N", action: "Do Not Disturb on or off", kind: "hypr-bind", dispatch: execBxrig( "notify dnd toggle" ) },
+            { id: "notify-latest", keys: "Super+Alt+Comma", action: "Notifications: act on the newest (open it or press its button)", kind: "hypr-bind", dispatch: 'hl.dsp.exec_cmd("noctalia msg notification-invoke-latest")' },
+            { id: "notify-all", keys: "Super+Ctrl+Comma", action: "Notifications: all of them, to read and act on", kind: "hypr-bind", dispatch: 'hl.dsp.exec_cmd("noctalia msg panel-toggle control-center notifications")' },
+            { id: "world-clock", keys: "Super+Alt+W", action: "World clock", kind: "hypr-bind", dispatch: 'hl.dsp.exec_cmd("noctalia msg panel-toggle bxrig/world-clock:panel")' },
+            { id: "agents-panel", keys: "Super+Alt+A", action: "Coding agents: launch one, see its limits", kind: "hypr-bind", dispatch: 'hl.dsp.exec_cmd("noctalia msg panel-toggle bxrig/agents:panel")' },
+            { id: "theme-switcher", keys: "Super+Alt+T", action: "Theme switcher (search, preview, Enter applies)", kind: "hypr-bind", dispatch: 'hl.dsp.exec_cmd("noctalia msg panel-toggle bxrig/themes:panel")' },
             { id: "all-apps", keys: "Super+Alt+Space", action: "All apps in one window (like Omarchy 4.5's app grid)", kind: "hypr-bind", dispatch: execBxrig( "apps" ) }
         ];
         // one unbound row per Control Center page (bind it in the keys editor): it opens that page alone in a terminal

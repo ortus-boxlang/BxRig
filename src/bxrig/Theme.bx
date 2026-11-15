@@ -61,7 +61,19 @@ class Theme {
     // Every bundled theme has its own wallpaper: ~/Pictures/BxRig/NAME.jpg, fetched and checked by bxrig.Wallpapers when missing.
     // "" when there is none (a theme without one, or offline with no local copy): then your wallpaper stays.
     function bundledWallpaper( name ) {
-        return new bxrig.Wallpapers( variables.proc.runner() ).ensure( arguments.name );
+        var w = new bxrig.Wallpapers( variables.proc.runner() );
+        return w.known( arguments.name ) ? w.target( arguments.name ) : "";
+    }
+    // The wallpaper to switch to: a bundled theme's own is fetched (and checked) when missing; "" when there is none.
+    function wallpaperFor( t ) {
+        var w = new bxrig.Wallpapers( variables.proc.runner() );
+        if ( arguments.t.origin != "user" && len( arguments.t.wallpaper ) && arguments.t.wallpaper == w.target( arguments.t.name ) ) return w.ensure( arguments.t.name );
+        return arguments.t.wallpaper;
+    }
+    // "tokyo-night" -> "Tokyo Night", "bxrig-light" -> "BxRig Light"
+    function label( name ) {
+        var words = listToArray( arguments.name, "-" ).map( function( x ) { return x == "bxrig" ? "BxRig" : uCase( left( x, 1 ) ) & mid( x, 2, len( x ) ); } );
+        return words.toList( " " );
     }
 
     // { found, name, origin, colorsText, neovimText, wallpaper }
@@ -198,7 +210,10 @@ class Theme {
         for ( var n in names() ) {
             var t = find( n );
             var p = variables.tc.parse( t.colorsText );
-            var row = { name: n, origin: t.origin, valid: p.ok, light: p.ok ? variables.tc.isLight( p.colors ) : false, current: n == cur };
+            var row = { name: n, label: label( n ), origin: t.origin, valid: p.ok, light: p.ok ? variables.tc.isLight( p.colors ) : false, current: n == cur, wallpaper: t.wallpaper };
+            // a screenshot of the theme, when one is there (the theme switcher shows the wallpaper otherwise)
+            var pv = variables.environ.data( "theme-previews/" & n & ".jpg" );
+            if ( fileExists( pv ) ) row.preview = pv;
             rows.append( row );
             lines.append( ( row.current ? "* " : "  " ) & n & "  (" & t.origin & ", " & ( !p.ok ? "invalid" : ( row.light ? "light" : "dark" ) ) & ")" );
         }
@@ -273,7 +288,7 @@ class Theme {
         var st = readState();
         var stateMode = len( arguments.mode ) ? arguments.mode : st.mode;
         var m = resolveMode( stateMode, p.colors );
-        var wall = arguments.keepWallpaper ? "" : t.wallpaper;
+        var wall = arguments.keepWallpaper ? "" : wallpaperFor( t );
         var entries = files( p.colors, t.neovimText );
         var data = { theme: t.name, origin: t.origin, light: variables.tc.isLight( p.colors ), mode: stateMode, applied_mode: m, wallpaper: wall, files: entries.map( function( e ) { return e.target; } ) };
         if ( arguments.dry ) return variables.out.say( "ok", data, arguments.asJson, [ "Plan: theme " & t.name & " (" & ( data.light ? "light" : "dark" ) & ", mode " & m & ")", "Files: " & entries.map( function( e ) { return e.target; } ).toList( ", " ), "Nothing was changed." ], true );

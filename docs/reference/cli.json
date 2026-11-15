@@ -2183,6 +2183,7 @@
       "ai list",
       "ai default [ID] [--yes]",
       "ai launch [ID] [--dry-run]",
+      "ai panel [--json]",
       "ai shell [toggle|status] [--backend=hyprland|yakuake] [--dry-run] [--json]"
      ],
      "examples": [

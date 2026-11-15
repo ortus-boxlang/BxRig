@@ -1299,6 +1299,7 @@ bxrig ai models enable [--yes] [--json]
 bxrig ai list
 bxrig ai default [ID] [--yes]
 bxrig ai launch [ID] [--dry-run]
+bxrig ai panel [--json]
 bxrig ai shell [toggle|status] [--backend=hyprland|yakuake] [--dry-run] [--json]
 ```
 

@@ -724,6 +724,7 @@ class {
           if ( aiSub == "list" && p.len() == 2 ) CLIExit( ai.list( asJson ) );
           if ( aiSub == "default" && p.len() <= 3 ) CLIExit( ai.setDefault( p.len() == 3 ? p[3] : "", structKeyExists( args.options, "yes" ), asJson ) );
           if ( aiSub == "launch" && p.len() <= 3 ) CLIExit( ai.launch( p.len() == 3 ? p[3] : "", structKeyExists( args.options, "dry-run" ), asJson ) );
+          if ( aiSub == "panel" && p.len() == 2 ) CLIExit( new bxrig.AiPanel( cli ).run( asJson ) );
           if ( aiSub == "shell" && p.len() <= 3 ) CLIExit( new bxrig.AiShell( cli ).run( p.len() == 3 ? p[3] : "toggle", args.options.backend ?: "", structKeyExists( args.options, "dry-run" ), asJson ) );
           if ( aiSub == "session" ) {
             aiSes = new bxrig.AiSession( cli );
