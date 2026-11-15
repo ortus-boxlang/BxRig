@@ -26,8 +26,8 @@
 
 	
 	
-		<meta name="description" content="Shortcut decisions &#x28;owner, 2026-11-14&#x29; Source&#x3a; the &amp;quot&#x3b;Shortcut styles&amp;quot&#x3b; comparison page &#x28;Omarchy 4.5 vs BxRig Traditional vs BxRig Mac&#x29;. Rows not listed&hellip;">
-		<meta property="og:description" content="Shortcut decisions &#x28;owner, 2026-11-14&#x29; Source&#x3a; the &amp;quot&#x3b;Shortcut styles&amp;quot&#x3b; comparison page &#x28;Omarchy 4.5 vs BxRig Traditional vs BxRig Mac&#x29;. Rows not listed&hellip;">
+		<meta name="description" content="Shortcut decisions &#x28;owner, merged 2026-11-15&#x29; Source&#x3a; the owner&#x27;s &amp;quot&#x3b;Shortcut styles&amp;quot&#x3b; page &#x28;Omarchy 4.5 vs BxRig Traditional vs BxRig Mac&#x29;, decisions&hellip;">
+		<meta property="og:description" content="Shortcut decisions &#x28;owner, merged 2026-11-15&#x29; Source&#x3a; the owner&#x27;s &amp;quot&#x3b;Shortcut styles&amp;quot&#x3b; page &#x28;Omarchy 4.5 vs BxRig Traditional vs BxRig Mac&#x29;, decisions&hellip;">
 	
 
 	
@@ -235,53 +235,108 @@
 		
 		
 		
-			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#decided">Decided</a></li><li class="toc-level-2"><a href="#consequences">Consequences</a></li></ul></details>
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#set-by-the-owner">Set by the owner</a></li><li class="toc-level-2"><a href="#not-touched-by-the-owner-the-page-proposal-applies">Not touched by the owner&#x3a; the page proposal applies</a></li><li class="toc-level-2"><a href="#consequences">Consequences</a></li><li class="toc-level-2"><a href="#open-questions-for-the-owner-nothing-guessed">Open questions for the owner &#x28;nothing guessed&#x29;</a></li><li class="toc-level-2"><a href="#class-api-written-before-the-code">Class API &#x28;written before the code&#x29;</a></li></ul></details>
 		
 
 		
-		<h1 id="shortcut-decisions-owner-2026-11-14"><a href="#shortcut-decisions-owner-2026-11-14" id="shortcut-decisions-owner-2026-11-14" name="shortcut-decisions-owner-2026-11-14" class="anchor"></a>Shortcut decisions (owner, 2026-11-14)</h1>
-<p>Source: the &quot;Shortcut styles&quot; comparison page (Omarchy 4.5 vs BxRig Traditional vs BxRig Mac). Rows not listed here follow the proposal on that page.
-Two styles: <strong>Traditional</strong> (Omarchy-like keys) and <strong>Mac</strong> (Cmd-style keys for apps; on a PC keyboard the Alt key acts as Cmd and the Win key as Option, with an Apple keyboard exempt). Same key assignments in both styles unless a row says otherwise.</p>
-<h2 id="decided"><a href="#decided" id="decided" name="decided" class="anchor"></a>Decided</h2>
+		<h1 id="shortcut-decisions-owner-merged-2026-11-15"><a href="#shortcut-decisions-owner-merged-2026-11-15" id="shortcut-decisions-owner-merged-2026-11-15" name="shortcut-decisions-owner-merged-2026-11-15" class="anchor"></a>Shortcut decisions (owner, merged 2026-11-15)</h1>
+<p>Source: the owner's &quot;Shortcut styles&quot; page (Omarchy 4.5 vs BxRig Traditional vs BxRig Mac), <code>decisions</code> collection, 19 rows set by the owner (r1 to r53). Rows the owner did not touch follow the proposal on that page. Ids below (r1, x1, ...) are the page's row ids.
+Two styles: <strong>Traditional</strong> (Omarchy-like keys) and <strong>Mac</strong> (Cmd-style keys for apps; on a PC keyboard the Alt key acts as Cmd and the Win key as Option, an Apple keyboard is exempt). Same key assignments in both styles unless a row says otherwise. Keys in this file are what Hyprland sees after the optional Alt/Win swap.</p>
+<h2 id="set-by-the-owner"><a href="#set-by-the-owner" id="set-by-the-owner" name="set-by-the-owner" class="anchor"></a>Set by the owner</h2>
 <div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
 <thead>
-<tr><th>Action</th><th>Traditional</th><th>Mac</th><th>Note</th></tr>
+<tr><th>Row</th><th>Action</th><th>Traditional</th><th>Mac</th><th>Note</th></tr>
 </thead>
 <tbody>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Open the BxRig menu (runner)</td><td><code>Super+Space</code></td><td><code>Super+Space</code></td><td>Moves from <code>Super+Alt+M</code></td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Launch apps</td><td><code>Super+Alt+Space</code></td><td><code>Super+Alt+Space</code></td><td>Moves from <code>Super+Space</code>; replaces the separate all-apps key</td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Clipboard manager</td><td><code>Super+Ctrl+V</code></td><td><code>Super+Ctrl+V</code></td><td><code>Super+Shift+V</code> is dropped</td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Copy, paste, cut, select all</td><td><code>Super+C/V/X/A</code></td><td><code>Super+C/V/X/A</code></td><td>Terminal aware</td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Screenshot</td><td><code>Super+Shift+3/4/5</code> and <code>Print</code></td><td>same</td><td>&quot;Keep Mac plus Print&quot;, assumed for both styles</td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Color picker</td><td><code>Super+Print</code></td><td><code>Super+Print</code></td><td>New: hyprpicker</td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Time, battery, weather notices</td><td><code>Super+Ctrl+Alt+T/B/W</code></td><td>same</td><td>New commands needed (earlier marked N/A)</td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Agent picker</td><td><code>Super+Shift+Ctrl+A</code></td><td>same</td><td> </td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Dictation toggle</td><td><code>Alt+Space</code></td><td>same</td><td>Replaces <code>Super+Ctrl+X</code></td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Input language switch</td><td><code>Super+I</code>, <code>Super+Shift+I</code></td><td><code>Super+Alt+I</code>, <code>Super+Alt+Shift+I</code></td><td><code>Super+I</code> is Italic in Mac mode</td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Lock</td><td><code>Super+Ctrl+L</code></td><td><code>Super+Ctrl+L</code></td><td>Replaces <code>Super+Ctrl+Q</code></td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Full screen desktop</td><td><code>Super+Ctrl+Alt+F</code></td><td>same</td><td> </td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Notification act, dismiss one, history</td><td>dropped</td><td>dropped</td><td> </td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Silence notifications (DND)</td><td><code>Super+Ctrl+Alt+Comma</code></td><td>same</td><td>Replaces <code>Super+Alt+N</code></td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Night light</td><td>no key (menu only)</td><td>no key (menu only)</td><td>Assumed from &quot;use Omarchy's&quot;; Omarchy has none</td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Close window</td><td><code>Super+W</code>, <code>Super+Q</code></td><td><code>Super+Q</code></td><td><code>Super+W</code> is Close tab in Mac mode</td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Float or tile</td><td><code>Super+T</code></td><td><code>Super+Alt+T</code></td><td><code>Super+T</code> is New tab in Mac mode</td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Quake console</td><td><code>Super+Shift+Grave</code></td><td><code>Super+Shift+Grave</code></td><td><code>Super+Grave</code> stays the pull-down AI shell</td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Minimize</td><td><code>Super+H</code></td><td><code>Super+H</code></td><td>Replaces <code>Super+M</code>; restore assumed <code>Super+Shift+H</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r1</td><td>Open the BxRig menu (runner)</td><td><code>Super+Space</code></td><td><code>Super+Space</code></td><td>Moves from <code>Super+Alt+M</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r2</td><td>Launch apps</td><td><code>Super+Alt+Space</code></td><td><code>Super+Alt+Space</code></td><td>Moves from <code>Super+Space</code>; the separate all-apps key goes away</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r8</td><td>Clipboard manager</td><td><code>Super+Ctrl+V</code></td><td><code>Super+Ctrl+V</code></td><td><code>Super+Shift+V</code> is dropped</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r9</td><td>Copy, paste, cut, select all</td><td><code>Super+C/V/X/A</code></td><td><code>Super+C/V/X/A</code></td><td>Terminal aware</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r10</td><td>Screenshot</td><td><code>Super+Shift+3/4/5</code> and <code>Print</code></td><td>same</td><td>Custom text &quot;keep Mac plus Print&quot;, read as both styles</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r13</td><td>Color picker</td><td><code>Super+Print</code></td><td><code>Super+Print</code></td><td>Custom with empty text: read as the page proposal. New: hyprpicker</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r17</td><td>Time, battery, weather notices</td><td><code>Super+Ctrl+Alt+T/B/W</code></td><td>same</td><td>New <code>bxrig notify time\|battery\|weather</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r22</td><td>Agent picker</td><td><code>Super+Shift+Ctrl+A</code></td><td>same</td><td>The pull-down AI shell stays on <code>Super+Grave</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r23</td><td>Dictation toggle</td><td><code>Alt+Space</code></td><td>same</td><td>Replaces <code>Super+Ctrl+X</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r25</td><td>Input language switch</td><td><code>Super+I</code>, <code>Super+Shift+I</code></td><td><code>Super+Alt+I</code>, <code>Super+Alt+Shift+I</code></td><td><code>Super+I</code> is Italic in Mac mode (see open questions)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r27</td><td>Lock</td><td><code>Super+Ctrl+L</code></td><td><code>Super+Ctrl+L</code></td><td>Replaces <code>Super+Ctrl+Q</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r31</td><td>Full screen desktop</td><td><code>Super+Ctrl+Alt+F</code></td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r33</td><td>Notification act, dismiss one, history, keyboard control</td><td>dropped</td><td>dropped</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r34</td><td>Silence notifications (DND)</td><td><code>Super+Ctrl+Alt+Comma</code></td><td>same</td><td>Replaces <code>Super+Alt+N</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r36</td><td>Night light</td><td>no key (menu only)</td><td>no key (menu only)</td><td>Omarchy has none; <code>Super+Alt+Shift+N</code> goes</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r39</td><td>Close window</td><td><code>Super+W</code>, <code>Super+Q</code></td><td><code>Super+Q</code></td><td>Custom &quot;Super w and super q&quot;; <code>Super+W</code> is Close tab in Mac mode (see open questions)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r43</td><td>Float or tile</td><td><code>Super+T</code></td><td><code>Super+Alt+T</code></td><td><code>Super+T</code> is New tab in Mac mode</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r52</td><td>Quake console</td><td><code>Super+Shift+Grave</code></td><td><code>Super+Shift+Grave</code></td><td>Not built here yet; the key is reserved</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r53</td><td>Minimize</td><td><code>Super+H</code></td><td><code>Super+H</code></td><td>Replaces <code>Super+M</code>; restore is <code>Super+Shift+H</code> (assumed)</td></tr>
+</tbody>
+</table></div>
+<h2 id="not-touched-by-the-owner-the-page-proposal-applies"><a href="#not-touched-by-the-owner-the-page-proposal-applies" id="not-touched-by-the-owner-the-page-proposal-applies" name="not-touched-by-the-owner-the-page-proposal-applies" class="anchor"></a>Not touched by the owner: the page proposal applies</h2>
+<div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
+<thead>
+<tr><th>Row</th><th>Action</th><th>Traditional</th><th>Mac</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r3</td><td>System menu</td><td><code>Super+Escape</code>, <code>XF86PowerOff</code></td><td>same</td><td>P1, needs <code>menu ROUTE</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r4</td><td>Capture, Toggle menus</td><td><code>Super+Ctrl+C</code>, <code>Super+Ctrl+O</code></td><td>same</td><td>P1, same dependency. No Hardware section exists in the BxRig menu, so no <code>Super+Ctrl+H</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r5, x3</td><td>Shortcut cheat sheet</td><td><code>Super+K</code></td><td><code>Super+K</code></td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r11, x2</td><td>Screen recording</td><td><code>Super+Shift+R</code>; region <code>Super+Alt+Shift+R</code></td><td>same</td><td>Omarchy's <code>Alt+Print</code> is not added</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r44</td><td>Full screen</td><td><code>Super+F</code></td><td><code>Super+Ctrl+F</code></td><td><code>Super+F</code> is Find in Mac mode</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r71</td><td>Browser; private</td><td><code>Super+B</code>, <code>Super+Shift+Return</code>; private <code>Super+Shift+Alt+B</code></td><td><code>Super+Shift+Return</code>; private <code>Super+Shift+Alt+B</code></td><td><code>Super+B</code> is Bold in Mac mode</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r72</td><td>File manager</td><td><code>Super+Shift+F</code>; in cwd <code>Super+Alt+Shift+F</code></td><td><code>Super+E</code>; in cwd <code>Super+Alt+Shift+F</code></td><td>in cwd is not built, so not bound</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r76</td><td>Log out</td><td>System menu</td><td><code>Super+Shift+Q</code></td><td>Omarchy uses it for the calculator. Kept on both styles (Plasma needs it)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r77, r78</td><td>Force quit, Overview</td><td><code>Super+Alt+Escape</code>, <code>Super+Ctrl+Up</code></td><td>same</td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r81</td><td>Noctalia settings window</td><td><code>Super+Ctrl+Comma</code></td><td><code>Super+Ctrl+Comma</code></td><td><code>Super+Comma</code> is Preferences in Mac mode</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>x1</td><td>Noctalia control center panel</td><td><code>Super+Alt+C</code></td><td><code>Super+Alt+C</code></td><td>Was <code>Super+S</code> (Save in Mac mode)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>r41, r49, r50, r56, r57, r63</td><td>Split, arrows, workspaces, swap, Alt+Tab, volume and brightness keys</td><td>as today</td><td>as today</td><td>Move from the starter file into the table</td></tr>
 </tbody>
 </table></div>
 <h2 id="consequences"><a href="#consequences" id="consequences" name="consequences" class="anchor"></a>Consequences</h2>
 <ul>
-<li>The five Mac collisions (<code>Super+B/F/V/S/Comma</code>) are resolved by the proposal on the page: browser <code>Super+Shift+Return</code> (Mac), fullscreen <code>Super+Ctrl+F</code> (Mac), float as above, control center panel <code>Super+Alt+C</code>, settings panel <code>Super+Ctrl+Comma</code>.</li>
-<li>Every hand-written bind (starter file and <code>bxrig.lua</code>) moves into the one shortcut table, which has a key set per style.</li>
-<li>Mac mode also swaps Alt and Win for PC keyboards (asked in the wizard; Apple keyboard: no swap).</li>
-<li>New runner entries: region record, dictation toggle, color picker, Shortcuts section (list, search, rebind, run).</li>
+<li>Every hand-written bind (starter <code>hyprland.lua</code> and <code>bxrig.lua</code>) moves into the one shortcut table, which has a key set per style.</li>
+<li>Mac mode also swaps Alt and Win on PC keyboards (asked in the wizard; Apple keyboard: no swap).</li>
+<li>New runner entries: region record, dictation toggle, color picker, time, battery and weather notices, a Shortcuts section (list, search, rebind, run).</li>
 </ul>
+<h2 id="open-questions-for-the-owner-nothing-guessed"><a href="#open-questions-for-the-owner-nothing-guessed" id="open-questions-for-the-owner-nothing-guessed" name="open-questions-for-the-owner-nothing-guessed" class="anchor"></a>Open questions for the owner (nothing guessed)</h2>
+<ol>
+<li>Panel keys <code>Super+Ctrl+A/B/N/P/D</code> (r18, P1): the Noctalia IPC docs list only <code>panel-toggle control-center</code> and <code>launcher</code>, so the panel ids are unknown. Not added.</li>
+<li>Screen recording with desktop or microphone audio (P1 menu gap): no decision row. Not added.</li>
+<li>r25 Mac: you chose &quot;use Omarchy's&quot; (<code>Super+I</code>), which is Italic in Mac mode. The table keeps the earlier answer <code>Super+Alt+I</code> for Mac. Confirm?</li>
+<li>r39 Mac: <code>Super+W</code> closes a tab with Mac keys, so Mac has only <code>Super+Q</code>. Do you want <code>Super+W</code> to close the window in Mac mode too (the tab remap would then lose that key)?</li>
+<li>r10: what should plain <code>Print</code> do? Implemented as the region screenshot, like Mac <code>Super+Shift+4</code>.</li>
+<li><code>Alt+Space</code> (dictation) on a PC keyboard with the Alt/Win swap is the physical <code>Win+Space</code>. Fine?</li>
+<li>Old starter files: a <code>hyprland.lua</code> written before this change still holds the binds that now live in <code>bxrig.lua</code>. They fire twice until those lines are deleted; <code>bxrig keys conflicts</code> lists them.</li>
+</ol>
+<h2 id="class-api-written-before-the-code"><a href="#class-api-written-before-the-code" id="class-api-written-before-the-code" name="class-api-written-before-the-code" class="anchor"></a>Class API (written before the code)</h2>
+<p>One table, two styles, renderers that only read the table. Quirks respected: <code>compare()</code> for exact-case strings, <code>var me = this</code> before a closure, no closure calls a class method, no <code>extends</code>.</p>
+<pre><code>KeyStyle                        // ~/.config/bxrig/keystyle.json: { style: traditional|mac, keyboard: pc|apple, swap: bool }
+  read() -&gt; { style, keyboard, swap }     // no file: mac when the xremap unit exists, else traditional; swap defaults to true on a PC keyboard
+  swapActive() -&gt; bool                    // style mac AND keyboard pc AND swap on (an Apple keyboard never swaps)
+  write( data ) -&gt; exit code              // through JsonStore (config service: backup, journal)
+
+LuaModule                       // the Lua text both the module and the starter need
+  optional( file, var, apply ) -&gt; [lines] // the &quot;load ~/.config/bxrig/theme/FILE.lua if present&quot; block, written once
+
+Shortcuts( overrides = &quot;&quot;, style = &quot;&quot; )   // style: &quot;traditional&quot; | &quot;mac&quot; | a KeyStyle struct; default KeyStyle.read()
+  table() -&gt; rows of { id, group, action, kind, keys, keysBy: { traditional, mac }, dispatch, words, opts }
+             kind: remap (xremap) | bind (Hyprland and Plasma) | hypr-bind (Hyprland only); keys &quot;&quot; = no key in this style
+  conflicts() -&gt; { within, remapShadows, user }       // table + remaps active in this style + hl.bind lines of your own files
+  render( &quot;xremap&quot; | &quot;hyprland&quot; | &quot;plasma&quot; )          // read only the table
+  argvOf( id ) -&gt; the bxrig argv a row runs (for `keys run ID`), [] for a pure Lua dispatch
+
+CLI additions (cli.json): keys style [traditional|mac] [--keyboard=pc|apple] [--swap=on|off] [--yes] | keys search TEXT | keys run ID
+                          notify time|battery|weather | screenshot color | dictation toggle | menu open ROUTE
+</code></pre>
+<ol start="8">
+<li><code>Super+Shift+3/4/5</code> are the screenshot keys (r10) and used to be &quot;send window to workspace 3/4/5&quot; too (both fired). The table leaves workspace moves 3 to 5 unbound. Which keys do you want for them?</li>
+<li>&quot;Full screen desktop&quot; (<code>Super+Ctrl+Alt+F</code>, r31): what should it do (Omarchy's meaning is not in the repo)? Not bound.</li>
+<li>Traditional copy, paste, cut and select all (r9) use xremap, like Mac style. The wizard installs xremap only when Mac keys are on. Should it always install it?</li>
+<li>Not built, so not bound: private browser window, file manager in the current directory, quake console, webcam, menu key <code>Super+Ctrl+H</code> (no Hardware section).</li>
+</ol>
 
 	
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/architecture/SHORTCUTS-DECISIONS.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/architecture/SHORTCUTS-DECISIONS.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 15, 2026, 2&#x3a;38&#x3a;55 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20SHORTCUTS%20DECISIONS&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Farchitecture%2FSHORTCUTS-DECISIONS%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/architecture/SHORTCUTS-DECISIONS.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/architecture/SHORTCUTS-DECISIONS.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 15, 2026, 4&#x3a;10&#x3a;10 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20SHORTCUTS%20DECISIONS&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Farchitecture%2FSHORTCUTS-DECISIONS%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
@@ -325,7 +380,7 @@ Two styles: <strong>Traditional</strong> (Omarchy-like keys) and <strong>Mac</st
 			
 			
 				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
-					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#decided">Decided</a></li><li class="toc-level-2"><a href="#consequences">Consequences</a></li></ul></nav>
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#set-by-the-owner">Set by the owner</a></li><li class="toc-level-2"><a href="#not-touched-by-the-owner-the-page-proposal-applies">Not touched by the owner&#x3a; the page proposal applies</a></li><li class="toc-level-2"><a href="#consequences">Consequences</a></li><li class="toc-level-2"><a href="#open-questions-for-the-owner-nothing-guessed">Open questions for the owner &#x28;nothing guessed&#x29;</a></li><li class="toc-level-2"><a href="#class-api-written-before-the-code">Class API &#x28;written before the code&#x29;</a></li></ul></nav>
 				</aside>
 			
 		</div>
