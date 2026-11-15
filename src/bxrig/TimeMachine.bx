@@ -91,6 +91,6 @@ class TimeMachine {
             function( tui ) { return new bxrig.TimeMachineView( tui ); },
             function( intent ) { me.handle( app, intent ); }
         );
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 }

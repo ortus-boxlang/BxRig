@@ -48,9 +48,9 @@ class Assets {
     // `assets list`
     function list( asJson ) {
         var rows = variables.data.names().map( function( n ) { return { name: n, target: target( n ), present: fileExists( target( n ) ) }; } );
-        if ( asJson ) { println( variables.cli.envelope( "assets list", 0, { assets: rows } ) ); return 0; }
+        if ( asJson ) { println( variables.cli.envelope( "assets list", 0, { assets: rows } ) ); return new bxrig.util.Exit().ok(); }
         for ( var r in rows ) println( r.name & " -> " & r.target & ( r.present ? " (present)" : "" ) );
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 
     // `assets install [--yes] [--dry-run]`: writes the images that are missing; never overwrites a file the user changed.
@@ -73,6 +73,6 @@ class Assets {
         writeMissing();
         if ( asJson ) println( variables.cli.envelope( "assets install", 0, { written: plan, present: kept } ) );
         else println( "Wrote " & plan.len() & " images, kept " & kept.len() & "." );
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 }

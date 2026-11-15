@@ -84,6 +84,6 @@ class ControlCenter {
             else if ( target == "wizard" ) new bxrig.Init( variables.cli ).wizard( false, false );
             else break;
         }
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 }

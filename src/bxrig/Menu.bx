@@ -213,37 +213,37 @@ class Menu {
 
     function pickAndRun( runner, e ) {
         var ch = choices( e.source );
-        if ( !ch.len() ) { note( arguments.runner, "Nothing to choose here" ); return 0; }
+        if ( !ch.len() ) { note( arguments.runner, "Nothing to choose here" ); return new bxrig.util.Exit().ok(); }
         var labels = ch.map( function( c ) { return ( c.current ? "✓ " : "  " ) & c.label; } );
         var pick = arguments.runner.select( e.label, labels );
-        if ( pick == 0 ) return 0;
+        if ( pick == 0 ) return new bxrig.util.Exit().ok();
         var chosen = ch[ pick ];
-        if ( structKeyExists( e, "confirm" ) && !confirm( arguments.runner, replace( e.confirm, "{}", chosen.value, "all" ) ) ) return 0;
+        if ( structKeyExists( e, "confirm" ) && !confirm( arguments.runner, replace( e.confirm, "{}", chosen.value, "all" ) ) ) return new bxrig.util.Exit().ok();
         return start( { kind: e.mode ?: "spawn", argv: sub( e.argv, chosen.value ) } );
     }
 
     function askAndRun( runner, e ) {
-        if ( !arguments.runner.inputSupported() ) { note( arguments.runner, "Your menu provider cannot take typed text. Run: bxrig " & e.argv.toList( " " ) ); return 0; }
+        if ( !arguments.runner.inputSupported() ) { note( arguments.runner, "Your menu provider cannot take typed text. Run: bxrig " & e.argv.toList( " " ) ); return new bxrig.util.Exit().ok(); }
         var text = arguments.runner.input( e.prompt );
-        if ( !len( text ) ) return 0;
+        if ( !len( text ) ) return new bxrig.util.Exit().ok();
         return start( { kind: e.mode ?: "run", argv: sub( e.argv, text ) } );
     }
 
     // Package search: ask for text, list the matches (repos and AUR), confirm, install in a terminal (sudo may ask for a password).
     function pkgSearchFlow( runner, e ) {
-        if ( !arguments.runner.inputSupported() ) { note( arguments.runner, "Your menu provider cannot take typed text. Run: bxrig pkg search TEXT" ); return 0; }
+        if ( !arguments.runner.inputSupported() ) { note( arguments.runner, "Your menu provider cannot take typed text. Run: bxrig pkg search TEXT" ); return new bxrig.util.Exit().ok(); }
         var text = arguments.runner.input( e.source == "aur" ? "Search the AUR" : "Search packages" );
-        if ( !len( text ) ) return 0;
+        if ( !len( text ) ) return new bxrig.util.Exit().ok();
         var r = exec( [ variables.environ.self(), "pkg", "search", text, "--source=" & e.source, "--limit=60", "--json" ], 90 );
         var rows = [];
         try { rows = jsonDeserialize( r.output ).data.results; } catch ( any x ) {}
-        if ( !rows.len() ) { note( arguments.runner, "No packages match " & text ); return 0; }
+        if ( !rows.len() ) { note( arguments.runner, "No packages match " & text ); return new bxrig.util.Exit().ok(); }
         var labels = rows.map( function( p ) { return ( p.installed ? "✓ " : "  " ) & p.repo & "/" & p.name & " " & p.version & ( len( p.description ) ? "  " & left( p.description, 70 ) : "" ); } );
         var pick = arguments.runner.select( "Install which package?", labels );
-        if ( pick == 0 ) return 0;
+        if ( pick == 0 ) return new bxrig.util.Exit().ok();
         var chosen = rows[ pick ];
-        if ( chosen.installed ) { note( arguments.runner, chosen.name & " is already installed" ); return 0; }
-        if ( !confirm( arguments.runner, "Install " & chosen.name & ( chosen.source == "aur" ? " from the AUR (a user-submitted build script)?" : "?" ) ) ) return 0;
+        if ( chosen.installed ) { note( arguments.runner, chosen.name & " is already installed" ); return new bxrig.util.Exit().ok(); }
+        if ( !confirm( arguments.runner, "Install " & chosen.name & ( chosen.source == "aur" ? " from the AUR (a user-submitted build script)?" : "?" ) ) ) return new bxrig.util.Exit().ok();
         var argv = [ "pkg", "install", chosen.name, "--yes" ];
         if ( chosen.source == "aur" ) argv.append( "--aur" );
         return start( { kind: "run", argv: argv } );
@@ -256,13 +256,13 @@ class Menu {
         var names = pk.installedNames();
         var apps = cat.apps.filter( function( a ) { return a.group == e.group; } );
         arraySort( apps, function( a, b ) { return compareNoCase( a.name, b.name ); } );
-        if ( !apps.len() ) { note( arguments.runner, "No apps in this group" ); return 0; }
+        if ( !apps.len() ) { note( arguments.runner, "No apps in this group" ); return new bxrig.util.Exit().ok(); }
         var labels = apps.map( function( a ) { return ( pk.isInstalled( a, names ) ? "✓ " : "  " ) & a.name & "  " & left( a.description ?: "", 70 ); } );
         var pick = arguments.runner.select( e.label, labels );
-        if ( pick == 0 ) return 0;
+        if ( pick == 0 ) return new bxrig.util.Exit().ok();
         var chosen = apps[ pick ];
-        if ( pk.isInstalled( chosen, names ) ) { note( arguments.runner, chosen.name & " is already installed" ); return 0; }
-        if ( !confirm( arguments.runner, "Install " & chosen.name & "?" ) ) return 0;
+        if ( pk.isInstalled( chosen, names ) ) { note( arguments.runner, chosen.name & " is already installed" ); return new bxrig.util.Exit().ok(); }
+        if ( !confirm( arguments.runner, "Install " & chosen.name & "?" ) ) return new bxrig.util.Exit().ok();
         return start( { kind: "run", argv: [ "install", chosen.id, "--yes" ] } );
     }
 
@@ -271,41 +271,41 @@ class Menu {
     function createWebApp( runner ) {
         if ( !arguments.runner.inputSupported() ) return start( { kind: "run", argv: [ "web", "add" ] } );
         var name = arguments.runner.input( "Web app name" );
-        if ( !len( name ) ) return 0;
+        if ( !len( name ) ) return new bxrig.util.Exit().ok();
         var url = arguments.runner.input( "URL (https://...)" );
-        if ( !len( url ) ) return 0;
+        if ( !len( url ) ) return new bxrig.util.Exit().ok();
         var r = variables.inst.proc().exec( [ variables.environ.self(), "web", "add", name, url, "--yes" ], 60 );
         arguments.runner.select( r.exitCode == 0 ? "Added " & name : "Could not add " & name & ": " & left( trim( r.output ), 120 ), [ "OK" ] );
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 
     // Remove a web app: pick one, confirm, delete.
     function removeWebApp( runner ) {
         var apps = new bxrig.Web( variables.cli, variables.inst.runner() ).apps();
-        if ( !apps.len() ) { note( arguments.runner, "No web apps yet" ); return 0; }
+        if ( !apps.len() ) { note( arguments.runner, "No web apps yet" ); return new bxrig.util.Exit().ok(); }
         var labels = apps.map( function( a ) { return a.name & "  " & a.url; } );
         var pick = arguments.runner.select( "Remove which web app?", labels );
-        if ( pick == 0 ) return 0;
-        if ( !confirm( arguments.runner, "Remove " & apps[ pick ].name & "?" ) ) return 0;
+        if ( pick == 0 ) return new bxrig.util.Exit().ok();
+        if ( !confirm( arguments.runner, "Remove " & apps[ pick ].name & "?" ) ) return new bxrig.util.Exit().ok();
         variables.inst.proc().exec( [ variables.environ.self(), "web", "rm", apps[ pick ].name, "--yes" ], 30 );
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 
     // Does one entry (anything but a submenu). Returns an exit code (0 keeps the menu open).
     function activate( runner, e ) {
         switch ( e.kind ) {
-            case "db": new bxrig.Db( variables.cli, variables.inst.runner() ).menu(); return 0;
+            case "db": new bxrig.Db( variables.cli, variables.inst.runner() ).menu(); return new bxrig.util.Exit().ok();
             case "webcreate": return createWebApp( arguments.runner );
             case "webrm": return removeWebApp( arguments.runner );
             case "pick": return pickAndRun( arguments.runner, e );
             case "ask": return askAndRun( arguments.runner, e );
             case "pkgsearch": return pkgSearchFlow( arguments.runner, e );
             case "catalog": return catalogFlow( arguments.runner, e );
-            case "open": detach( [ "xdg-open", e.url ] ); return 0;
+            case "open": detach( [ "xdg-open", e.url ] ); return new bxrig.util.Exit().ok();
             case "tui": return startTui( e );
             case "term": return startTerm( e );
         }
-        if ( structKeyExists( e, "confirm" ) && !confirm( arguments.runner, e.confirm ) ) return 0;
+        if ( structKeyExists( e, "confirm" ) && !confirm( arguments.runner, e.confirm ) ) return new bxrig.util.Exit().ok();
         return start( e );
     }
 
@@ -313,7 +313,7 @@ class Menu {
     function searchAll( runner, entries ) {
         var flat = flatten( arguments.entries );
         var pick = arguments.runner.select( "Search", flat.map( function( f ) { return f.path; } ) );
-        if ( pick == 0 ) return 0;
+        if ( pick == 0 ) return new bxrig.util.Exit().ok();
         return activate( arguments.runner, flat[ pick ].entry );
     }
 
@@ -336,13 +336,13 @@ class Menu {
             var tail = arguments.top ? { label: "Exit", icon: iconOf( "application-exit" ) } : { label: "Back", icon: iconOf( "go-previous" ) };
             labels.append( len( tail.icon ) ? tail : tail.label );
             var pick = arguments.runner.select( arguments.title, labels );
-            if ( pick == 0 || pick == labels.len() ) return 0;
+            if ( pick == 0 || pick == labels.len() ) return new bxrig.util.Exit().ok();
             if ( arguments.top && pick == 1 ) { var sc = searchAll( arguments.runner, arguments.entries ); if ( sc != 0 ) return sc; continue; }
             var e = arguments.entries[ pick - off ];
             if ( e.kind == "sub" ) { var inner = level( arguments.runner, e.label, e.children ); if ( inner != 0 ) return inner; }
             else { var rc = activate( arguments.runner, e ); if ( rc != 0 ) return rc; }
         }
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 
     function run() {

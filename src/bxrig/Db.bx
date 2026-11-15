@@ -338,7 +338,7 @@ class Db {
             var labels = supported.map( function( e ) { return e.title; } );
             labels.append( "Exit" );
             var pick = runner.select( "Databases", labels );
-            if ( pick == 0 || pick == labels.len() ) return 0;
+            if ( pick == 0 || pick == labels.len() ) return new bxrig.util.Exit().ok();
             var e = supported[ pick ];
             var al = actions.map( function( a ) { return a[ 1 ]; } );
             al.append( "Back" );
@@ -352,6 +352,6 @@ class Db {
             for ( var part in argv ) launch.append( part );
             variables.inst.proc().exec( launch, 10 );
         }
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 }

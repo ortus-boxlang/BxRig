@@ -190,7 +190,7 @@ class Setup {
             println( "plasma: HyprKwin " & ( data.plasma.hyprkwin ? "installed" : "not installed" ) );
             println( "hyprland: " & data.hyprland.installed & " of " & data.hyprland.wanted & " packages installed" );
         }
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 
     // Prints the plan (or the errors) and, with --yes, runs the steps. Returns the exit code.

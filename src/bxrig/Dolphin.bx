@@ -55,7 +55,7 @@ class Dolphin {
             if ( r.exitCode != 0 ) {
                 if ( arguments.asJson ) println( variables.cli.envelope( "dolphin doctor", 6, { error: "kbuildsycoca6 failed", checks: rows } ) );
                 else println( "error: kbuildsycoca6 --noincremental failed (exit " & r.exitCode & ")" );
-                return 6;
+                return new bxrig.util.Exit().failed();
             }
             fixed = true;
         }

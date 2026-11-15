@@ -126,7 +126,7 @@ class ConfigService {
      kind = pathKind( entry.target );
      if ( kind == "link" || kind == "other" ) {
       progress( entry.name & ": refusing to write, target is a symlink or special file: " & entry.target );
-      return 8;
+      return new bxrig.util.Exit().conflict();
      }
      progress( action & " " & entry.name & " -> " & entry.target );
      if ( !yes ) {
@@ -135,11 +135,11 @@ class ConfigService {
      }
      if ( dryRun ) {
       progress( "Dry run, nothing changed." );
-      return 0;
+      return new bxrig.util.Exit().ok();
      }
      if ( !lockTake() ) {
       progress( "Another BxRig run holds the lock: " & stateDir() & "/lock (a file; remove it if no run is active)" );
-      return 8;
+      return new bxrig.util.Exit().conflict();
      }
      code = 0;
      try {
@@ -168,11 +168,11 @@ class ConfigService {
      if ( st == "blocked" ) return configWrite( entry, entry.content, "apply", yes, dryRun );
      if ( st == "clean" ) {
       progress( entry.name & ": unchanged" );
-      return 0;
+      return new bxrig.util.Exit().ok();
      }
      if ( st == "drifted" && !force ) {
       progress( entry.name & ": target was changed outside BxRig. Run 'config diff " & entry.name & "', then --force to overwrite (a backup is kept)." );
-      return 8;
+      return new bxrig.util.Exit().conflict();
      }
      return configWrite( entry, entry.content, "apply", yes, dryRun );
     }
@@ -190,7 +190,7 @@ class ConfigService {
      old = fileRead( rec.backup );
      if ( hashOf( old ) != rec.before ) {
       progress( id & ": backup does not match its recorded hash, refusing" );
-      return 8;
+      return new bxrig.util.Exit().conflict();
      }
      return configWrite( entry, old, "restore", yes, dryRun );
     }

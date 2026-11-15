@@ -49,7 +49,7 @@ class Packages {
         } );
         if ( asJson ) println( variables.cli.envelope( command, 0, rows ) );
         else for ( var a in rows ) println( new bxrig.Catalog().row( a ) );
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 
     // profile-list: every catalog profile with how many default and optional apps it has.

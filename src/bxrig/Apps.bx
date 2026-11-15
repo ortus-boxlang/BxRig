@@ -37,8 +37,8 @@ class Apps {
             println( "error: " & err.message );
             return new bxrig.util.Exit().precondition();
         }
-        if ( pick == 0 ) return 0;
+        if ( pick == 0 ) return new bxrig.util.Exit().ok();
         variables.inst.proc().exec( [ "sh", "-c", 'setsid sh -c "$1" >/dev/null 2>&1 &', "_", rows[ pick ].exec ], 10 );
-        return 0;
+        return new bxrig.util.Exit().ok();
     }
 }
