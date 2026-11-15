@@ -93,6 +93,19 @@ bxrig default terminal ghostty --yes
 bxrig default filemanager strata --yes
 ```
 
+## Viewing images and PDFs
+
+A plain install gives you one app for each job, the way Preview does on a Mac.
+
+| You want to | Use | Mac |
+|---|---|---|
+| View, crop, rotate and annotate an image | **Gwenview** (the default for image files; HEIC and AVIF open through the image format plugins that are installed with it) | Preview |
+| Read a PDF | **Okular** (the default for PDF files) | Preview |
+| Sign a PDF or fill it in | **Signed** (from the AUR) | Preview (sign PDF) |
+| Annotate a screenshot | **Satty** | Preview markup, Screenshot |
+
+The wizard sets Gwenview and Okular as the default apps for those file types after it installs them (Basic mode, or when you tick them in Customize). To change it later, use your desktop's file type settings or `xdg-mime default`. imv stays in the catalog as an optional lightweight viewer. Quick Look (the space bar preview) is still Kiview.
+
 ## Files and sharing
 
 The default file manager is **Strata**; Dolphin is the alternative (`bxrig dolphin doctor` checks it works outside Plasma). `bxrig strata integrations` adds LocalSend and KDE Connect to Strata's *Send to* menu. `bxrig quicklook PATH` previews a file with Kiview.
