@@ -49,15 +49,19 @@ The code review of 2026-11-14 (`docs/architecture/CODE-REVIEW.md`) found the sam
 7. **Every file BxRig writes goes through `ConfigService`** (backup, atomic replace, journal), and the config folder comes from `Env`.
 8. **Respect the MatchBox quirks in shared code:** no base classes (compose and delegate), a class must not `new` its own class (stack overflow at load), no closures that call class methods, no postfix operators on indexes, build large struct literals stepwise, check a JSON key exists before reading it, and never name a variable like a function of the same class (`info = ...` hides `function info`).
 9. **Tests source `tests/lib/harness.sh`** and do not define `fail`, `code` or the temp-dir trap again (ratchet). Tests are found by name; `tests/run-all.sh` runs them all and `tests/dry-test.sh` fails when a test file is not listed in `.github/workflows/ci.yml`.
-10. **Generated files stay generated** (`*Data.bx`, `docs/reference/cli.json`, `TemplateData.bx`): change the source, run the `bootstrap/gen-*.sh`, commit both; CI runs them with `--check`.
+10. **Generated files stay generated** (`*Data.bx`, `HelpData.bx`, `CommandFlagData.bx`, `docs/reference/commands.md`, `command-flags.md`, `TemplateData.bx`): change the source (`docs/reference/cli.json` is the curated one), run the `bootstrap/gen-*.sh`, commit both; CI runs them with `--check`.
+11. **A new command is an entry in `docs/reference/cli.json`** (summary, usage, examples, flags with types, whether it needs `--yes`) and a `case` in `src/Main.bx`; `gen-docs.sh` fails when the two disagree. Usage text is `new bxrig.CommandSpec().usage( "name" )`, never a string.
+12. **Plans and dry runs are `Out.plan`** (`util/Mutation`): no wording of "Nothing was changed" outside it (ratchet). A command that changes none of your files and only starts a program or flips your own setting acts at once and documents it.
+13. **A key is a row of the one table in `Shortcuts.bx`**, with a Traditional and a Mac key; then run `keys conflicts` in both styles (`tests/shortcuts_test.bxs` does). A key that runs a command is `bx( ... )` with the words after `bxrig`, so `keys run ID` and the runner can run it, and the command gets a runner entry in `MenuTree`.
+14. **Start a program in the background with `Proc.detach`**, not another `setsid` string.
 
-Planned, not built yet (see the deferred list in the review): `Mutation` (one plan, `--yes`, `--dry-run` protocol), `JsonStore`, `Pacman`, `Systemd` and `Http` wrappers, `CommandSpec` (flags and usage generated from `cli.json`), `Names`, and the TUI `Modal`, `KeyMap` and `IntentRunner`. Until they exist, copy the nearest existing command's behaviour and wording exactly, and add nothing new to the ratchet list.
+The shared helpers are in `src/bxrig/util/`: `Cli`, `Out`, `Exit`, `Mutation`, `Proc`, `Env`, `Text`, `Fmt`, `Names`, `JsonStore`, `SystemFile`, `SystemdUnit`, `Systemd`, `Pacman`, `Aur`, `Http`, `Urls`, `Desktop`, `DesktopEntry`, `Ini`, `Props`, `Lua`, `Version`. The TUI helpers are `Modal`, `KeyMap` and `IntentRunner`. All of them are built; copy what they do, not the old copies.
 
 ## Running the tests
 
 ```bash
 bash scripts/dev-build.sh                 # build dist/bxrig with the local MatchBox
-bash tests/run-all.sh                     # every shell and .bxs test (JOBS=3 by default; wizard-test is timing sensitive, run it alone if it fails)
+bash tests/run-all.sh                     # every shell and .bxs test (the `.bxs` ones run from `src/` with `matchbox ../tests/NAME_test.bxs` and need no native build) (JOBS=3 by default; wizard-test is timing sensitive, run it alone if it fails)
 bash tests/time-test.sh dist/bxrig        # one test
 bash tests/dry-test.sh                    # the ratchet: banned patterns and the CI list
 ```

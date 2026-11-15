@@ -1,9 +1,26 @@
-# BxRig — Complete Engineering Plan and Migration Ledger
+# BxRig: Complete Engineering Plan and Migration Ledger
 
-> Canonical project plan, maintained on `development`. Last updated 2026-11-09.
+> Canonical project plan, maintained on `development`. Last updated 2026-11-15. Sections 1 to 18 are the original plan and its progress log (state of 2026-11-09 to 2026-11-10); the status block below and sections 19 and the contract (`docs/architecture/COMMAND-CONTRACT.md`) are current.
 > **Target changed 2026-11-09 (see section 19): BxRig builds an opinionated Hyprland + Noctalia desktop on CachyOS, in the spirit of Omarchy. KDE Plasma stays installed side by side and is never removed. Where sections 1 to 18 say "KDE-first" or describe KDE desktop work (M2, M5), section 19 supersedes them.**
 > Status labels: **Implemented** means code exists in the repository; **CI-reported passing** means the user reported a passing run; **Verified on CachyOS** requires a recorded real-machine acceptance test; **Planned** means not implemented. Do not confuse these levels.
-> The repository's existing docs use “Milestone 1 — native foundation,” while our working conversation has called the same foundational release “Milestone 0.” This plan normalizes it as **M0 — Foundation**, followed by M1+ workstreams. No legacy feature-parity claim is implied.
+> The repository's existing docs use “Milestone 1: native foundation,” while our working conversation has called the same foundational release “Milestone 0.” This plan normalizes it as **M0: Foundation**, followed by M1+ workstreams. No legacy feature-parity claim is implied.
+
+## 0. Status on 2026-11-15
+
+What exists, verified against the tree (version 0.11.0-dev, MatchBox 0.14.0 from the `bxcachy` branch):
+
+| Area | State |
+| --- | --- |
+| Program | `src/Main.bx` (entry class) plus 152 classes in `src/bxrig/` and 23 shared helpers in `src/bxrig/util/`; 96 commands in 7 groups, registered in `docs/reference/cli.json` (the one command registry; `gen-docs.sh` keeps `Main.bx` and it in step) |
+| Contract | plan before `--yes`, `--dry-run`, the `--json` envelope, argument arrays, exit codes 0 to 10 named in `util/Exit.bx` (`COMMAND-CONTRACT.md` sections 2 to 4) |
+| Desktop | Hyprland and Noctalia (plus KDE Plasma with HyprKwin), the one shortcut table in two styles (Traditional and Mac, with the Alt and Win swap on a PC keyboard), the menu with Shortcuts and Hardware sections, themes, appearance, display, power, time, capture, clipboard, dictation, notifications |
+| Install | the signed one-line installer, channels, `update`, `refresh`, `reinstall`, the setup wizard (13 pages) |
+| Developer | BoxLang, MatchBox, Java, databases, VMs, containers, agent skills, secrets, mail catcher |
+| Safety | config service (backup, journal, drift), snapshots, file backups, NAS, BxTimeMachine |
+| Tests | 75 shell tests with fake tools, 35 `.bxs` unit tests, the `dry-test.sh` ratchet, a real Arch container suite, CI that compiles and runs them |
+| Open | a clean-machine CachyOS acceptance run; everything that needs a live Hyprland, Noctalia, KWin, KVM or a GPU is tested against fakes only (`docs/architecture/PORT-STATUS.md`) |
+
+The M0 to M6 milestone checklists below record what was planned when the project started; unchecked boxes there are not a to-do list. Use the contract and the reference for what is built.
 
 ## 1. Mission and non-negotiable requirements
 
@@ -23,9 +40,9 @@ Core design principles:
 8. During early development, **commit and push directly to `development`; do not create PRs unless requested**.
 9. Defer the separate GUI Developer Control Center until core functionality is delivered and stable.
 
-## 2. Source-of-truth inventory and present state
+## 2. Source-of-truth inventory and present state (as of 2026-11-09; see section 0 for today)
 
-Repository: `ortus-boxlang/bxrig`. Active branch: `development`. Current CLI version string: `BxRig 0.11.0-dev`. Historical Python-based reference release: **v0.10.0**. The inventory document reports **45+ executable entrypoints and 20+ test files** in the legacy archive. The complete Python reference implementation is **not uploaded/ported to this new repository**, so parity cannot be certified until that inventory is recovered and mapped command-by-command.
+Repository: `ortus-boxlang/BxRig`. Active branch: `development`. Current CLI version string: `BxRig 0.11.0-dev`. Historical Python-based reference release: **v0.10.0**. The inventory document reports **45+ executable entrypoints and 20+ test files** in the legacy archive. The complete Python reference implementation is **not uploaded/ported to this new repository**, so parity cannot be certified until that inventory is recovered and mapped command-by-command.
 
 Current tracked implementation:
 
@@ -51,7 +68,7 @@ Current tracked implementation:
 - Important reproducibility gap: the **MVM installer is fetched from a moving `main` URL**, and the CI uses `archlinux:latest` and `rustup stable`. Pin all production-critical inputs, record checksums, and preserve update procedures.
 - User reported the most recent CI passing; no real CachyOS full-bootstrap verification has been recorded here.
 
-## 3. Engineering history — work already completed
+## 3. Engineering history: work already completed
 
 The following summarizes actual work and fixes, not a claim that every feature has shipped:
 
@@ -73,11 +90,11 @@ The following summarizes actual work and fixes, not a claim that every feature h
 
 Selected development history (use Git history for authoritative chronology): `d2d0eaa` smoke fix; `2401445` native installer; `243250e` native integration CI; `f1b109e` MatchBox pin; `2626b41` diagnostic smoke; `4b13a53` integration tracing; `b61b5f1` output capture; `1f2f075`/`665e85a` CLI option fix; `55005c9` config utility; `1f29806` config tests; `fc8e6b2` CI config tests; `aa86bf5` toolchain bootstrap; `b0e7f0c` bootstrap confirmation test. This list is illustrative, not a complete `git log`.
 
-## 4. Milestone M0 — Foundation and reproducible native bootstrap
+## 4. Milestone M0: Foundation and reproducible native bootstrap
 
 **Goal:** from a clean supported CachyOS/KDE machine, safely provision prerequisites, compile or install a reproducible native CLI, exercise its package/configuration operations, and recover from expected failures.
 
-### M0-A — Native command contract (implemented; hardening pending)
+### M0-A: Native command contract (implemented; hardening pending)
 
 - [x] BoxLang source compiles with MatchBox and exposes a Linux executable.
 - [x] Read-only discovery/planning commands.
@@ -92,7 +109,7 @@ Selected development history (use Git history for authoritative chronology): `d2
 - [ ] Add native tests for pacman failure, yay failure after pacman success, command timeout, already-installed no-op, duplicate packages, missing sudo, and user cancellation.
 - [ ] Record successful and failed packages separately; document manual recovery. Do not claim transactional rollback.
 
-### M0-B — Bootstrap/toolchain (partially implemented; **critical path**)
+### M0-B: Bootstrap/toolchain (partially implemented; **critical path**)
 
 - [x] Arch/CachyOS pacman detection and package presence check.
 - [x] Guard `--install --yes` and `--install-toolchains --yes`.
@@ -112,7 +129,7 @@ Selected development history (use Git history for authoritative chronology): `d2
 - [ ] Add mock-based bootstrap tests for missing Java, root execution, missing network, checksum mismatch, version mismatch, rerun, partial recovery and no-confirmation.
 - [ ] Execute a real clean CachyOS KDE VM/hardware bootstrap and record OS build, commands, versions, results and logs.
 
-### M0-C — Configuration and safety (partially implemented)
+### M0-C: Configuration and safety (partially implemented)
 
 - [x] Bash config apply and restore, backup, atomic replacement, idempotent no-op, symlink-destination rejection.
 - [x] Tests for apply/restore/idempotency/confirmation and basic unsafe paths.
@@ -124,7 +141,7 @@ Selected development history (use Git history for authoritative chronology): `d2
 - [ ] Make restore selection unambiguous and document retention/cleanup.
 - [ ] Add integration tests for concurrency, rollback of multi-file configurations and recovery from mid-apply failure.
 
-### M0-D — CI, release engineering and acceptance
+### M0-D: CI, release engineering and acceptance
 
 - [x] Single ordered CI with global supersession cancellation.
 - [x] Shell syntax checks, mocked package/bootstrap/config tests, Arch prerequisites, native compile, smoke/integration tests, artifact upload.
@@ -141,7 +158,7 @@ Selected development history (use Git history for authoritative chronology): `d2
 
 **M0 definition of done:** all M0 critical-path items above complete, all CI jobs green on the final `development` commit, verified clean CachyOS KDE install, idempotent rerun, native executable functional, verified backups/restore, no silent desktop changes, and documented recovery. **Current M0 status: IN PROGRESS** (passing CI was reported, but bootstrap and clean-machine gates remain).
 
-## 5. Milestone M1 — Developer applications, profiles and package management
+## 5. Milestone M1: Developer applications, profiles and package management
 
 **Goal:** fully usable developer-machine profiles, not merely print-only plans.
 
@@ -154,7 +171,7 @@ Selected development history (use Git history for authoritative chronology): `d2
 - Tests: profile expansion, source selection, idempotency, missing packages, user permissions, unsupported distro, no accidental package removal.
 - **Acceptance:** clean CachyOS machine can apply and verify a profile, rerun without unnecessary changes, and restore modified configuration.
 
-## 6. Milestone M2 — KDE Plasma desktop and Omarchy-style experience
+## 6. Milestone M2: KDE Plasma desktop and Omarchy-style experience
 
 **Goal:** cohesive keyboard-first workflow **inside KDE**, retaining native KDE behavior.
 
@@ -168,7 +185,7 @@ Selected development history (use Git history for authoritative chronology): `d2
 - Test in KDE Plasma on a real or VM desktop; verify minimize/maximize/close, panels, multi-monitor, suspend/resume and accessibility are unaffected.
 - **Acceptance:** all desktop actions are opt-in, reversible, tested on KDE, and never silently replace the session.
 
-## 7. Milestone M3 — Containers, local AI, databases, networking and virtualization
+## 7. Milestone M3: Containers, local AI, databases, networking and virtualization
 
 - Podman-first workflow with optional Docker CLI compatibility and explicit engine choice; diagnose storage driver, btrfs overlay/fuse-overlayfs, rootless permissions, sockets, volumes and registries.
 - Container templates for development services and reproducible start/stop/status/logs; avoid conflicting with existing Docker/Podman setups.
@@ -181,7 +198,7 @@ Selected development history (use Git history for authoritative chronology): `d2
 - Tests for privileged/rootless behavior, container storage, service start/stop, recovery and preservation of existing services.
 - **Acceptance:** profiles install only requested services, persistent data survives restarts, and failures do not corrupt host networking or existing containers.
 
-## 8. Milestone M4 — Cloud center, storage and developer services
+## 8. Milestone M4: Cloud center, storage and developer services
 
 - Provider-neutral cloud-center CLI with clear boundaries between local config and external account operations.
 - rclone/FUSE setup, mount/unmount/status, permissions, credential isolation and encrypted secret handling.
@@ -192,7 +209,7 @@ Selected development history (use Git history for authoritative chronology): `d2
 - Tests for missing credentials, expired tokens, disconnected network, remount and data-loss prevention.
 - **Acceptance:** mount/sync operations are explicit, credentials protected, and disconnection/recovery tested.
 
-## 9. Milestone M5 — Desktop productivity integrations
+## 9. Milestone M5: Desktop productivity integrations
 
 - Dolphin Quick Look preview: file-type support, keyboard activation, KDE compatibility, packaging and uninstall.
 - Dictation: microphone permissions, local versus remote STT options, model download, push-to-talk shortcut, insertion into focused application and privacy defaults.
@@ -202,7 +219,7 @@ Selected development history (use Git history for authoritative chronology): `d2
 - Tests on KDE Wayland/X11, multi-user setups, permissions and fallback behavior.
 - **Acceptance:** feature-level enable/disable, no regressions to standard KDE input/audio/file workflows.
 
-## 10. Milestone M6 — Legacy parity, stabilization and release
+## 10. Milestone M6: Legacy parity, stabilization and release
 
 - Recover the v0.10.0 source archive; enumerate every one of the 45+ entrypoints and 20+ tests, plus configs/assets.
 - Maintain a migration matrix: legacy command → native command/replacement → owner → implementation → tests → acceptance evidence.
@@ -217,27 +234,23 @@ Selected development history (use Git history for authoritative chronology): `d2
 
 **Explicitly deferred until core CLI and major workstreams are complete.** The planned GUI is a separate `bxrig-desktop` application with **Quasar + Vue 3 (JavaScript)**, **Tauri 2 + Rust native shell**, and a secure command bridge reusing the native BxRig services/CLI (not a second business-logic implementation). UX: polished macOS/Raycast-like dark/light interface, responsive navigation, status/health, catalog/profile installer, preview/apply/rollback, notifications, logs, cloud/AI/dev tooling panels and search/command palette. Preserve KDE controls and avoid embedding privileged shell execution in the renderer. Build signed/distributable Linux packages, accessibility and E2E tests after CLI APIs stabilize.
 
-## 12. Proposed code organization
+## 12. Code organization (the real layout on 2026-11-15; the 2026-11-09 proposal is in the git history)
 
 ```text
-plan.md                           # This canonical plan and decision log
-README.md                         # Supported install and current status
-src/bxrig.bxs                   # Current native entrypoint
-src/commands/                     # Proposed command handlers
-src/services/                     # Proposed package/config/doctor services
-src/catalog/                      # Proposed canonical package/profile data
-src/platform/                     # Proposed CachyOS/KDE/Arch adapters
-bootstrap/install.sh              # Minimal trusted first-run bootstrap
-scripts/package-manager.sh        # Existing transitional adapter
-scripts/config.sh                 # Existing transitional config helper
-tests/                            # Unit, mocks, native, Arch, KDE acceptance
-docs/NATIVE-MIGRATION-INVENTORY.md
-docs/PORT-STATUS.md
-docs/architecture/                # Proposed ADRs and threat model
-.github/workflows/ci.yml          # One ordered, globally superseding pipeline
+plan.md                           # This plan and decision log
+README.md                         # Install, commands, layout, status
+src/Main.bx, src/Application.bx   # The entry class and its listener
+src/bxrig/                        # One class per command or feature; generated *Data.bx classes
+src/bxrig/util/                   # Shared helpers (Cli, Out, Exit, Mutation, Proc, Env, ...)
+catalog/apps.json                 # The app catalog (embedded by bootstrap/gen-catalog.sh)
+templates/ themes/ assets/ skills/  # Starter configs, themes, images and wizard data, agent skills
+bootstrap/                        # install.sh, web-install.sh and the gen-*.sh embedders
+scripts/                          # dev-build.sh, get-matchbox.sh, config.sh, package-manager.sh
+tests/                            # *-test.sh (with the binary), *_test.bxs (with matchbox), lib/, arch/
+docs/                             # The documentation site; reference/cli.json is the command registry
+.github/workflows/                # ci.yml (ordered, one run wins), docs.yml, matchbox.yml
+artifacts/legacy/                 # The v0.10.0 source, reference only
 ```
-
-This is a **target structure**; only paths identified as existing above should be assumed to exist.
 
 ## 13. Testing and release matrix
 
@@ -255,7 +268,7 @@ This is a **target structure**; only paths identified as existing above should b
 
 Every bug fix should add a regression test; every mutating command should test success, no-op, invalid input, dependency failure, privilege rejection, and recovery. CI must execute tests rather than only parse scripts. Report exact failing command and exit code, avoiding pipelines that obscure failures.
 
-## 14. Immediate ordered execution backlog
+## 14. Immediate ordered execution backlog (2026-11-09; done, kept as the record)
 
 **Next work is M0, not M1.** Execute in small direct commits to `development` and verify CI after each coherent change.
 
@@ -289,7 +302,7 @@ Update this file in the same commit as any material scope/architecture/acceptanc
 **Current bottom line:** native CLI, safe package planning/install, configuration backup/restore, ordered CI, native compilation, and MatchBox bootstrap are implemented; the user reports CI passing. **Full BVM/BoxLang pinned bootstrap, real CachyOS validation, native configuration integration and complete legacy feature parity are still pending.**
 
 
-## 17. Audited historical v0.10.0 source archive — recovered 2026-11-08
+## 17. Audited historical v0.10.0 source archive: recovered 2026-11-08
 
 **New evidence:** The actual original file `BxRig-v0.10.0-integration-hardening.zip` was recovered from prior conversation artifacts and inspected, rather than inferred from README statements. The ZIP has **115 archive entries (including directories)**, including **44 executable files under `BxRig/bin/`** and **20 Python test files** (including two legacy tests). Its SHA-256 is `94e1722eb7d5e915a357a98f02fbbf3f7d2ae5dce01cdbdd1b20b1072a4e5819`. This is the precise historical reference to preserve. The current native CLI is **not** equivalent to those 44 entrypoints.
 
@@ -374,6 +387,8 @@ Canonical historical filename: `BxRig-v0.10.0-integration-hardening.zip`. Expect
 This audit combines the actual recovered v0.10.0 archive inventory and its documented behavior with accessible BxRig discussion history and the current repository. It is more complete than the initial plan, but it is **not yet a function-by-function diff of all 104 archived files**. Each row marked S/P needs a command-level behavioral test and a final owner/acceptance record. The historical ZIP must be preserved in the repository before deleting or replacing any external copy.
 
 ## 18. Progress log
+
+- 2026-11-15: the shortcut table became the one home of every key in two styles (Traditional, Mac) with the Alt and Win swap; xremap is always set up; new commands `notify time|battery|weather`, `menu open ROUTE`, `keys search|run`, `dictation toggle`, `screenshot color`, `appearance dock toggle`, `browser private`, `files here`, `webcam toggle`, `window quake [send]` and `record --audio`; the Hardware menu section; `runner-vs-omarchy.md` rewritten against Omarchy 4.5.0. Decisions: `docs/architecture/SHORTCUTS-DECISIONS.md`.
 
 - 2026-11-09: A1 legacy source tree committed (104 files, reference only). A2 to A4 real Arch container harness (`tests/arch/`) and CI stage 5; run 42539644723 green, 23/23 steps. Not yet verified on real CachyOS KDE. A5 draft command contract: [docs/architecture/COMMAND-CONTRACT.md](docs/architecture/COMMAND-CONTRACT.md), pending review.
 - 2026-11-09 decisions: legacy tree is the real source, kept untouched, never backed up or copied. Product config backup/restore/journal design stays (an earlier edit removing it was a misreading and is reverted). yay is installed by bootstrap only if absent. Exit codes 7 to 9 accepted. Catalog check design and first measurement in the command contract, section 8.

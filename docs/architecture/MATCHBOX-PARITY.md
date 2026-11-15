@@ -6,7 +6,7 @@ summary: Developer reference.
 
 # MatchBox parity work: class entry, mappings, Application.bx
 
-Source of truth: BoxLang JVM (`ortus-boxlang/boxlang`, read 2026-11-09 at b8ea0f0) and the BoxLang docs (CLI Scripting, Application.bx). MatchBox today (develop + our PRs) supports none of the three for scripts or native builds.
+Source of truth: BoxLang JVM (`ortus-boxlang/boxlang`, read 2026-11-09 at b8ea0f0) and the BoxLang docs (CLI Scripting, Application.bx). The `bxcachy` branch of MatchBox (0.14.0 in `box.json`) has all three and BxRig builds on them: `src/Main.bx` is the entry class (`main( args )`), `src/Application.bx` sets `this.mappings` (`/bxrig` to `src/bxrig`, so `new bxrig.util.Proc()` resolves) and `onError` (exit 9). Sections 1 to 3 are the JVM behaviour that was copied.
 
 ## 1. Class as entry point (`boxlang Task.bx a b`)
 
@@ -39,13 +39,13 @@ Settings read from `this`: `name`, `mappings`, `datasource`/`defaultDatasource`/
 
 Lifecycle for a script or class run (no web scopes): application defined on first use -> `onApplicationStart()` once (only if `this.name` is set; false aborts) -> `onRequestStart(targetPage)` (false aborts) -> run the script (`template.invoke`; `onRequest` is not used for scripts) or `main(args)` -> `onRequestEnd()` -> flush. Errors go to `onError(exception, eventName)`; `abort` to `onAbort(targetPage)`. `onApplicationEnd(applicationScope)` on shutdown. Session hooks never fire in CLI.
 
-## 4. Order of MatchBox work
+## 4. How BxRig uses them
 
-1. Class entry with `main(args)` (interpreter and native).
-2. Mappings: `boxlang.json`/`matchbox.toml` mappings plus `this.mappings` read from `Application.bx`; resolution wired into `new`, `import`, `extends`, `createObject`.
-3. Application.bx for scripts and classes, with the lifecycle above.
+1. Class entry with `main(args)` in the interpreter and in the native binary: `src/Main.bx`.
+2. Mappings from `this.mappings` in `Application.bx`: the `bxrig` package, including the nested `bxrig.util` package; tests run from `src/` so `bxrig.X` resolves, and `.bxs` tests find `lib.Check` next to the script.
+3. `Application.bx` lifecycle for the class run: `onError` turns an unexpected exception into exit 9.
 
-Native builds resolve classes at compile time, so mapped directories must exist when `matchbox --target native` runs; the Application.bx settings that affect compilation (mappings) are read at build time, and the lifecycle runs inside the binary.
+Native builds resolve classes at compile time, so the mapped directories must exist when `matchbox --target native` runs; the lifecycle runs inside the binary. A native build of the whole program does not fit in a 14 GB machine (see `CODE-REVIEW.md`, "Startup of the native binary"); the `.bxs` tests and the interpreter do.
 
 ## MatchBox VM fixes (PRs 156 to 160, in the `bxcachy` branch)
 
