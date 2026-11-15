@@ -1,9 +1,10 @@
 // `bxrig keys set|reset|conflicts`: change the keys of BxRig's bindings, safely.
 //   keys set ID KEYS [--yes] [--force]   e.g. keys set ai-shell Super+Alt+A. Only bindings can change (the Cmd-style remaps are xremap's).
-//                                         Refused (exit 4) when the combo is invalid or another binding already uses it; --force allows
+//                                         Refused (exit 4) when the combo is invalid, another binding already uses it or xremap rewrites it; --force allows
 //                                         a clash with a line in YOUR hyprland files (never with another BxRig binding).
 //   keys reset ID [--yes]                 back to the default keys
-//   keys conflicts [--json]               double use of a combo: inside the table, and between the table and your own hl.bind lines
+//   keys conflicts [--json]               double use of a combo: inside the table, a binding on a key xremap rewrites (only in the styles that remap it),
+//                                         and between the table, the remaps and your own hl.bind lines
 // Overrides live in ~/.config/bxrig/shortcuts.json (written through the config service). They take effect when `keys apply --yes`
 // rewrites the Hyprland module and the Plasma settings. Exit: 0 done, 2 plan without --yes, 4 invalid or a conflict, 6 write failed.
 // The scan of your own files is a best-effort read of `hl.bind( ... )` lines (mainMod and quoted names), not a Lua parser.
@@ -25,37 +26,26 @@ class KeysEditor {
         for ( var f in directoryList( dir, false, "name" ) ) {
             if ( right( f, 4 ) != ".lua" || f == "bxrig.lua" ) continue;
             for ( var b in new bxrig.util.Lua().binds( fileRead( dir & "/" & f ) ) ) {
-                var norm = b.tokens.len() > 1 ? variables.sc.normalize( b.tokens.toList( "+" ) ) : "";
+                var norm = b.tokens.len() > 0 ? variables.sc.normalize( b.tokens.toList( "+" ) ) : "";
                 if ( len( norm ) ) out.append( { combo: norm, file: f, line: b.line } );
             }
         }
         return out;
     }
 
-    // Conflicts of the current table: { within: [ { combo, ids } ], user: [ { id, combo, file, line } ] }.
+    // Conflicts of the current table (the style that is on): { within, remapShadows, user } (see Shortcuts.conflicts).
     function scan() {
-        var rows = variables.sc.editable();
-        var byCombo = {};
-        for ( var r in rows ) {
-            if ( !len( r.keys ) ) continue;
-            var c = variables.sc.normalize( r.keys );
-            if ( !structKeyExists( byCombo, c ) ) byCombo[ c ] = [];
-            byCombo[ c ].append( r.id );
-        }
-        var within = [];
-        for ( var c2 in structKeyArray( byCombo ) ) if ( byCombo[ c2 ].len() > 1 ) within.append( { combo: c2, ids: byCombo[ c2 ] } );
-        var user = [];
-        for ( var ub in userBinds() ) if ( structKeyExists( byCombo, ub.combo ) ) for ( var id in byCombo[ ub.combo ] ) user.append( { id: id, combo: ub.combo, file: ub.file, line: ub.line } );
-        return { within: within, user: user };
+        return variables.sc.conflicts( userBinds() );
     }
 
     function conflicts( asJson ) {
         var sc = scan();
         var lines = [];
         for ( var w in sc.within ) lines.append( "Two BxRig bindings share " & w.combo & ": " & w.ids.toList( ", " ) );
+        for ( var m in sc.remapShadows ) lines.append( m.id & " (" & m.combo & ") never fires: xremap turns that key into another one first (" & m.remap & ")" );
         for ( var u in sc.user ) lines.append( u.id & " (" & u.combo & ") is also bound in your " & u.file & " line " & u.line );
         if ( !lines.len() ) lines.append( "No conflicts." );
-        return variables.cli.say( "keys conflicts", "ok", { ok: !( sc.within.len() || sc.user.len() ), within: sc.within, user: sc.user }, arguments.asJson, lines );
+        return variables.cli.say( "keys conflicts", "ok", { ok: !( sc.within.len() || sc.remapShadows.len() || sc.user.len() ), style: variables.sc.style().style, within: sc.within, remapShadows: sc.remapShadows, user: sc.user }, arguments.asJson, lines );
     }
 
     function writeOverrides( data ) {
@@ -73,7 +63,11 @@ class KeysEditor {
         var parsed = variables.sc.parseKeys( arguments.keys );
         if ( !parsed.ok ) return variables.cli.say( cmd, "precondition", { error: parsed.error }, arguments.asJson, [ "error: " & parsed.error ] );
         var combo = variables.sc.normalize( arguments.keys );
-        for ( var other in variables.sc.table() ) if ( other.id != arguments.id && variables.sc.normalize( other.keys ) == combo ) return variables.cli.say( cmd, "precondition", { error: "Used by " & other.id }, arguments.asJson, [ "error: " & arguments.keys & " is already used by " & other.id & " (" & other.action & ")" ] );
+        for ( var other in variables.sc.table() ) {
+            if ( other.id == arguments.id || !len( other.keys ) || variables.sc.normalize( other.keys ) != combo ) continue;
+            if ( other.kind == "remap" ) return variables.cli.say( cmd, "precondition", { error: "Rewritten by xremap (" & other.id & ")" }, arguments.asJson, [ "error: " & arguments.keys & " is rewritten by xremap in the " & variables.sc.style().style & " style (" & other.action & "), so a binding on it would never fire" ] );
+            return variables.cli.say( cmd, "precondition", { error: "Used by " & other.id }, arguments.asJson, [ "error: " & arguments.keys & " is already used by " & other.id & " (" & other.action & ")" ] );
+        }
         var clash = userBinds().filter( function( ub ) { return ub.combo == combo; } );
         if ( clash.len() && !arguments.force ) return variables.cli.say( cmd, "precondition", { error: "Used in your files", file: clash[ 1 ].file, line: clash[ 1 ].line }, arguments.asJson, [ "error: " & arguments.keys & " is already bound in your " & clash[ 1 ].file & " line " & clash[ 1 ].line & " (add --force to use it anyway)" ] );
         var data = { id: arguments.id, keys: arguments.keys, was: row.keys };

@@ -1,6 +1,6 @@
 -- BxRig starter Hyprland config (Hyprland 0.55+, Lua). Written once by `bxrig setup hyprland`; from here on it is yours.
 -- Based on Hyprland's own example config. Reference: https://wiki.hypr.land/configuring/
--- The managed part (Noctalia autostart and panels, Alt+Tab switcher, logout) lives in bxrig.lua, loaded at the bottom.
+-- The managed part (Noctalia autostart, every key binding) lives in bxrig.lua, loaded at the bottom.
 
 ------------------
 ---- MONITORS ----
@@ -146,50 +146,9 @@ hl.gesture({
 ---------------------
 ---- KEYBINDINGS ----
 ---------------------
-local mainMod = "SUPER"
-
--- Windows (Super acts like Cmd; Super+C, Super+V and Super+Tab come from xremap, see `bxrig keys show`)
-hl.bind(mainMod .. " + Q", hl.dsp.window.close())
-hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal))
-hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(browser))
-hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
-hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
-hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
-hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))
-
--- Focus and move with the arrow keys
-hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
-hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }))
-hl.bind(mainMod .. " + up",    hl.dsp.focus({ direction = "up" }))
-hl.bind(mainMod .. " + down",  hl.dsp.focus({ direction = "down" }))
-hl.bind(mainMod .. " + SHIFT + left",  hl.dsp.window.move({ direction = "left" }))
-hl.bind(mainMod .. " + SHIFT + right", hl.dsp.window.move({ direction = "right" }))
-hl.bind(mainMod .. " + SHIFT + up",    hl.dsp.window.move({ direction = "up" }))
-hl.bind(mainMod .. " + SHIFT + down",  hl.dsp.window.move({ direction = "down" }))
-
--- Workspaces: Super+1..0 to switch, Super+Shift+1..0 to send the window there
-for i = 1, 10 do
-    local key = i % 10
-    hl.bind(mainMod .. " + " .. key,         hl.dsp.focus({ workspace = i }))
-    hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }))
-end
-hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
-hl.bind(mainMod .. " + mouse_up",   hl.dsp.focus({ workspace = "e-1" }))
-
--- Move and resize windows with the mouse
-hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
-hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
-
--- Screenshots (Super+Shift+3/4/5, like Cmd+Shift+3/4/5 on a Mac) come from the bxrig module below; lock (hyprlock)
-hl.bind(mainMod .. " + CTRL + Q", hl.dsp.exec_cmd("hyprlock"))
-
--- Media, volume and brightness keys
-hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true })
-hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),      { locked = true, repeating = true })
-hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),     { locked = true, repeating = true })
-hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),   { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessUp",  hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+"),                  { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessDown",hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-"),                  { locked = true, repeating = true })
+-- Every key (windows, workspaces, arrows, mouse, volume, screenshots, the menu) is a row of the BxRig shortcut table, in bxrig.lua below.
+-- See them with `bxrig keys show`, change one with `bxrig keys set ID KEYS --yes`, check clashes with `bxrig keys conflicts`.
+-- Keys you add here are yours; `bxrig keys conflicts` tells you when one is also used by the table.
 
 --------------------------------
 ---- WINDOWS AND WORKSPACES ----
@@ -210,5 +169,6 @@ hl.window_rule({
 ------------------------
 ---- BXRIG MODULE ----
 ------------------------
--- Noctalia autostart and panel keys, the Alt+Tab switcher, logout. Managed by `bxrig keys apply`.
+-- Noctalia autostart and every key binding. Managed by `bxrig keys apply`. It reads the programs chosen above.
+BXRIG_PROGRAMS = { terminal = terminal, browser = browser, fileManager = fileManager }
 require("bxrig")

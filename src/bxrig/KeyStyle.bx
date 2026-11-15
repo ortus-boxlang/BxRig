@@ -1,0 +1,40 @@
+// Which shortcut style is on: Traditional (Omarchy-like keys) or Mac (Cmd-style keys), and what keyboard you type on.
+// ~/.config/bxrig/keystyle.json: { "style": "traditional|mac", "keyboard": "pc|apple", "swap": true|false }.
+// On a PC keyboard the Mac style swaps Alt and Win (Alt acts as Cmd, Win as Option); an Apple keyboard already has Cmd where Win is, so it never swaps.
+// No file: the style is mac when the xremap unit exists (the Mac keys were switched on before this file existed), else traditional.
+class KeyStyle {
+    function init( file = "" ) {
+        variables.file = len( arguments.file ) ? arguments.file : new bxrig.util.Env().config( "keystyle.json" );
+        variables.store = new bxrig.util.JsonStore();
+        return this;
+    }
+
+    function file() { return variables.file; }
+    function styles() { return [ "traditional", "mac" ]; }
+    function keyboards() { return [ "pc", "apple" ]; }
+
+    function unitFile() { return new bxrig.ConfigService().quiet( true ).cfgHome() & "/systemd/user/xremap.service"; }
+
+    // { style, keyboard, swap }
+    function read() {
+        var d = { style: fileExists( unitFile() ) ? "mac" : "traditional", keyboard: "pc", swap: true };
+        var j = variables.store.read( variables.file, {} );
+        if ( structKeyExists( j, "style" ) && arrayFind( styles(), j.style ) ) d.style = j.style;
+        if ( structKeyExists( j, "keyboard" ) && arrayFind( keyboards(), j.keyboard ) ) d.keyboard = j.keyboard;
+        if ( structKeyExists( j, "swap" ) && isBoolean( j.swap ) ) d.swap = j.swap;
+        return d;
+    }
+
+    // Alt and Win are swapped only for the Mac style on a PC keyboard.
+    function swapActive( s ) {
+        var d = isStruct( arguments.s ) ? arguments.s : read();
+        return d.style == "mac" && d.keyboard == "pc" && d.swap;
+    }
+
+    // Writes the settings (a struct with any of style, keyboard, swap laid over what is there). Returns the config service's exit code.
+    function write( data ) {
+        var d = read();
+        for ( var k in [ "style", "keyboard", "swap" ] ) if ( structKeyExists( arguments.data, k ) ) d[ k ] = arguments.data[ k ];
+        return variables.store.write( "keystyle", variables.file, d );
+    }
+}

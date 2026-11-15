@@ -1,34 +1,82 @@
 // Shortcuts: the shared table and its renderings. Run from src/: (cd src && matchbox ../tests/shortcuts_test.bxs)
 testkit = new lib.Check( "shortcuts" );
-sc = new bxrig.Shortcuts();
-ids = sc.table().map( function( r ) { return r.id; } ).toList( "," );
-testkit.check( "the Hyprland-only bindings follow", ids == "copy,paste,mac-z,mac-x,mac-a,mac-s,mac-f,mac-t,mac-n,mac-o,mac-p,mac-r,mac-w,mac-l,mac-b,mac-i,mac-u,mac-comma,switch-windows,logout,ai-shell,clipboard-history,screen-record,screen-record-region,control-center,emoji,force-quit,minimize,unminimize,overview,dictation-toggle,night-shift,key-sheet,screenshot-screen,screenshot-region,screenshot-menu,dnd,all-apps,tui-dashboard,tui-apps,tui-boxlang,tui-java,tui-maven,tui-gradle,tui-versions,tui-ports,tui-packages,tui-shortcuts,tui-machines,tui-databases,tui-mail,tui-storage,tui-secrets,tui-themes,tui-logs" );
-x = sc.render( "xremap" );
+trad = new bxrig.Shortcuts( {}, "traditional" );
+mac = new bxrig.Shortcuts( {}, "mac" );
+function keyOf( sc, id ) { for ( var r in sc.table() ) if ( r.id == id ) return r.keys; return "?"; }
+function allKeys( sc ) { return sc.table().map( function( r ) { return r.keys; } ); }
+ids = trad.table().map( function( r ) { return r.id; } );
+seen = {};
+for ( i in ids ) seen[ i ] = 1;
+testkit.check( "both styles have the same rows", ids.toList( "," ) == mac.table().map( function( r ) { return r.id; } ).toList( "," ) );
+testkit.check( "row ids are unique", structCount( seen ) == ids.len() );
+testkit.check( "show lists every row", trad.show().len() == ids.len() && ids.len() > 100 );
+// ---- the decisions, per style ----
+testkit.check( "menu is Super+Space and launching apps is Super+Alt+Space", keyOf( trad, "menu" ) == "Super+Space" && keyOf( trad, "launcher" ) == "Super+Alt+Space" && keyOf( mac, "menu" ) == "Super+Space" );
+testkit.check( "clipboard is Super+Ctrl+V, lock Super+Ctrl+L, dictation Alt+Space", keyOf( mac, "clipboard-history" ) == "Super+Ctrl+V" && keyOf( mac, "lock" ) == "Super+Ctrl+L" && keyOf( mac, "dictation-toggle" ) == "Alt+Space" );
+testkit.check( "color picker Super+Print, screenshots keep Super+Shift+3/4/5 and Print", keyOf( mac, "color-picker" ) == "Super+Print" && keyOf( trad, "screenshot-print" ) == "Print" && keyOf( trad, "screenshot-menu" ) == "Super+Shift+5" );
+testkit.check( "notices Super+Ctrl+Alt+T/B/W, DND Super+Ctrl+Alt+Comma", keyOf( trad, "notify-time" ) == "Super+Ctrl+Alt+T" && keyOf( trad, "notify-battery" ) == "Super+Ctrl+Alt+B" && keyOf( trad, "notify-weather" ) == "Super+Ctrl+Alt+W" && keyOf( trad, "dnd" ) == "Super+Ctrl+Alt+Comma" );
+ks = allKeys( trad );
+testkit.check( "the old keys are gone: Super+Alt+M, Super+Ctrl+Q, Super+M, Super+Alt+N, Super+Alt+Shift+N", !arrayFind( ks, "Super+Alt+M" ) && !arrayFind( ks, "Super+Ctrl+Q" ) && !arrayFind( ks, "Super+M" ) && !arrayFind( ks, "Super+Alt+N" ) && !arrayFind( ks, "Super+Alt+Shift+N" ) && !arrayFind( ids, "night-shift" ) );
+testkit.check( "traditional: Super+B browser, Super+F fullscreen, Super+T float, Super+W and Super+Q close", keyOf( trad, "browser" ) == "Super+B" && keyOf( trad, "fullscreen" ) == "Super+F" && keyOf( trad, "float" ) == "Super+T" && keyOf( trad, "close" ) == "Super+Q" && keyOf( trad, "close-alt" ) == "Super+W" );
+testkit.check( "mac: Super+Shift+Return browser, Super+Ctrl+F fullscreen, Super+Alt+T float, Super+Q only", keyOf( mac, "browser" ) == "Super+Shift+Return" && keyOf( mac, "fullscreen" ) == "Super+Ctrl+F" && keyOf( mac, "float" ) == "Super+Alt+T" && keyOf( mac, "close" ) == "Super+Q" && keyOf( mac, "close-alt" ) == "" );
+testkit.check( "mac: control center panel Super+Alt+C, settings Super+Ctrl+Comma, AI shell Super+Grave, minimize Super+H", keyOf( mac, "control-center-panel" ) == "Super+Alt+C" && keyOf( mac, "noctalia-settings" ) == "Super+Ctrl+Comma" && keyOf( mac, "ai-shell" ) == "Super+Grave" && keyOf( mac, "minimize" ) == "Super+H" && keyOf( mac, "unminimize" ) == "Super+Shift+H" );
+testkit.check( "input language: Super+I on traditional, Super+Alt+I on mac", keyOf( trad, "input-language" ) == "Super+I" && keyOf( mac, "input-language" ) == "Super+Alt+I" && keyOf( mac, "input-language-prev" ) == "Super+Alt+Shift+I" );
+testkit.check( "arrows, workspaces and the media keys are rows", keyOf( trad, "focus-left" ) == "Super+Left" && keyOf( trad, "move-up" ) == "Super+Shift+Up" && keyOf( trad, "ws-10" ) == "Super+0" && keyOf( trad, "ws-move-3" ) == "" && keyOf( trad, "ws-move-6" ) == "Super+Shift+6" && keyOf( trad, "volume-up" ) == "XF86AudioRaiseVolume" && keyOf( trad, "window-switcher" ) == "Alt+Tab" );
+testkit.check( "remaps: copy, paste, cut, select all in both styles; the rest only in mac", keyOf( trad, "copy" ) == "Super+C" && keyOf( trad, "mac-a" ) == "Super+A" && keyOf( trad, "mac-b" ) == "" && keyOf( mac, "mac-b" ) == "Super+B" && keyOf( trad, "switch-windows" ) == "" && keyOf( mac, "switch-windows" ) == "Super+Tab" );
+// ---- xremap ----
+x = mac.render( "xremap" );
 testkit.check( "xremap: terminals send Ctrl+Shift+C/V", find( "Super-c: Ctrl-Shift-c", x ) > 0 && find( "Super-v: Ctrl-Shift-v", x ) > 0 );
 testkit.check( "xremap: elsewhere Ctrl+C/V and Alt-Tab", find( "Super-c: Ctrl-c", x ) > 0 && find( "Super-tab: Alt-Tab", x ) > 0 );
 testkit.check( "xremap: terminal rule uses only, general rule uses not", find( "only: [", x ) > 0 && find( "not: [", x ) > 0 && find( "'kitty'", x ) > 0 );
-h = sc.render( "hyprland" );
+tx = trad.render( "xremap" );
+testkit.check( "xremap traditional: only copy, paste, cut, select all", find( "Super-c: Ctrl-c", tx ) > 0 && find( "Super-a: Ctrl-a", tx ) > 0 && find( "Super-b:", tx ) == 0 && find( "Alt-Tab", tx ) == 0 );
+testkit.check( "xremap: no swap on traditional", find( "modmap", tx ) == 0 );
+testkit.check( "xremap: mac on a PC keyboard swaps Alt and Win", find( "Alt_L: Super_L", x ) > 0 && find( "Super_L: Alt_L", x ) > 0 && find( "modmap:", x ) < find( "keymap:", x ) );
+testkit.check( "xremap: mac on an Apple keyboard does not swap", find( "modmap", new bxrig.Shortcuts( {}, { style: "mac", keyboard: "apple", swap: true } ).render( "xremap" ) ) == 0 );
+testkit.check( "xremap: mac on a PC keyboard with swap off does not swap", find( "modmap", new bxrig.Shortcuts( {}, { style: "mac", keyboard: "pc", swap: false } ).render( "xremap" ) ) == 0 );
+// ---- hyprland ----
+h = trad.render( "hyprland" );
 testkit.check( "hyprland: Lua module, logout bind via uwsm", find( 'hl.dsp.exec_cmd("uwsm stop")', h ) > 0 && find( 'mainMod .. " + SHIFT + Q"', h ) > 0 );
 testkit.check( "hyprland: Noctalia autostart and launcher", find( 'hl.exec_cmd("noctalia")', h ) > 0 && find( "panel-toggle launcher", h ) > 0 );
 testkit.check( "hyprland: Alt+Tab opens the Noctalia window switcher", find( 'hl.bind("ALT + Tab"', h ) > 0 && find( "window-switcher hold", h ) > 0 );
-testkit.check( "hyprland: Super+Space follows the chosen launcher and falls back to Noctalia", find( "bxrig runner launch || noctalia msg panel-toggle launcher", h ) > 0 && find( '+Space", hl.dsp.exec_cmd(ipc', h ) == 0 );
+testkit.check( "hyprland: Super+Space opens the menu", find( 'hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; bxrig menu''', h ) > 0 );
+testkit.check( "hyprland: Super+Alt+Space follows the chosen launcher and falls back to Noctalia", find( "bxrig runner launch || noctalia msg panel-toggle launcher", h ) > 0 && find( 'hl.bind(mainMod .. " + ALT + Space"', h ) > 0 );
+testkit.check( "hyprland: starter binds are in the module (close, terminal, workspaces, arrows)", find( 'hl.bind(mainMod .. " + Q", hl.dsp.window.close())', h ) > 0 && find( "hl.dsp.exec_cmd(terminal)", h ) > 0 && find( "hl.dsp.focus({ workspace = 10 })", h ) > 0 && find( 'mainMod .. " + Left"', h ) > 0 );
+testkit.check( "hyprland: media keys keep locked and repeating", find( 'hl.bind("XF86AudioMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true, repeating = true })', h ) > 0 );
+testkit.check( "hyprland: mouse binds keep their option", find( 'hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })', h ) > 0 );
+testkit.check( "hyprland: programs come from BXRIG_PROGRAMS", find( 'rawget(_G, "BXRIG_PROGRAMS")', h ) > 0 );
 testkit.check( "hyprland: no hyprlang bind lines", find( "bind = ", h ) == 0 );
-testkit.check( "hyprland load line", sc.hyprlandLoadLine() == 'require("bxrig")' );
-testkit.check( "plasma: ksmserver Log Out is Meta+Shift+Q", find( "[ksmserver]", sc.render( "plasma" ) ) > 0 && find( "Log Out=Meta+Shift+Q", sc.render( "plasma" ) ) > 0 );
-testkit.check( "show lists every row", sc.show().len() == 55 );
+testkit.check( "hyprland: the optional theme, look and monitor files are loaded once each", find( "theme/hypr.lua", h ) > 0 && find( "theme/look.lua", h ) > 0 && find( "theme/monitors.lua", h ) > 0 && len( h ) - len( replace( h, "pcall(dofile", "", "all" ) ) == 3 * len( "pcall(dofile" ) );
+testkit.check( "hyprland load line", trad.hyprlandLoadLine() == 'require("bxrig")' );
+mh = mac.render( "hyprland" );
+testkit.check( "mac hyprland: fullscreen is Super+Ctrl+F", find( 'hl.bind(mainMod .. " + CTRL + F", hl.dsp.window.fullscreen', mh ) > 0 && find( 'hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen', mh ) == 0 );
+testkit.check( "plasma: ksmserver Log Out is Meta+Shift+Q", find( "[ksmserver]", trad.render( "plasma" ) ) > 0 && find( "Log Out=Meta+Shift+Q", trad.render( "plasma" ) ) > 0 );
 threw = false;
-try { sc.render( "bogus" ); } catch ( any e ) { threw = true; }
+try { trad.render( "bogus" ); } catch ( any e ) { threw = true; }
 testkit.check( "unknown target throws", threw );
+// ---- conflicts ----
+ct = trad.conflicts();
+cm = mac.conflicts();
+testkit.check( "traditional: no conflicts at all", ct.within.len() == 0 && ct.remapShadows.len() == 0 && ct.user.len() == 0 );
+testkit.check( "mac: no conflicts at all (the collisions are fixed)", cm.within.len() == 0 && cm.remapShadows.len() == 0 );
+bad = new bxrig.Shortcuts( { "ai-shell": "Super+B", "emoji": "Super+Return" }, "mac" ).conflicts();
+testkit.check( "a binding on a key xremap rewrites is a remap shadow in mac", bad.remapShadows.len() == 1 && bad.remapShadows[ 1 ].id == "ai-shell" && bad.remapShadows[ 1 ].remap == "mac-b" );
+testkit.check( "the same key in traditional is no shadow (Super+B is not remapped there)", new bxrig.Shortcuts( { "ai-shell": "Super+B" }, "traditional" ).conflicts().remapShadows.len() == 0 );
+testkit.check( "two bindings on one combo", bad.within.len() == 1 && bad.within[ 1 ].ids.len() == 2 );
+u = mac.conflicts( [ { combo: mac.normalize( "Super+Q" ), file: "hyprland.lua", line: 3 }, { combo: mac.normalize( "Super+C" ), file: "hyprland.lua", line: 9 }, { combo: mac.normalize( "Super+Alt+K" ), file: "hyprland.lua", line: 11 } ] );
+testkit.check( "user lines: a table binding and a remap are reported, a free key is not", u.user.len() == 2 && u.user[ 1 ].id == "close" && u.user[ 2 ].id == "copy" );
 // ---- key combos (the shortcut editor) ----
-testkit.check( "parseKeys: Super+Shift+V", sc.parseKeys( "Super+Shift+V" ).ok && sc.normalize( "Super+Shift+V" ) == "SHIFT+SUPER+V" );
-testkit.check( "parseKeys: order, case and spellings do not matter", sc.normalize( "shift+SUPER+v" ) == sc.normalize( "Super+Shift+V" ) && sc.normalize( "Meta+Alt+Enter" ) == sc.normalize( "Super+Alt+Return" ) );
-testkit.check( "parseKeys: a backtick is grave", sc.parseKeys( "Super+`" ).key == "grave" );
-testkit.check( "parseKeys rejects a bare key, an unknown modifier and an unknown key", !sc.parseKeys( "V" ).ok && !sc.parseKeys( "Hyper+V" ).ok && !sc.parseKeys( "Super+Banana" ).ok );
-testkit.check( "hyprExpr with and without Super", sc.hyprExpr( "Super+Shift+V" ) == 'mainMod .. " + SHIFT + V"' && sc.hyprExpr( "Ctrl+Alt+Q" ) == '"CTRL + ALT + Q"' );
-testkit.check( "qtKeys is Qt's spelling", sc.qtKeys( "Super+Shift+Q" ) == "Meta+Shift+Q" && sc.qtKeys( "Super+Alt+Space" ) == "Meta+Alt+Space" );
-over = new bxrig.Shortcuts( { "ai-shell": "Super+Alt+A", copy: "Super+Alt+C", bogus: "x" } );
-testkit.check( "an override changes a binding's keys, not a remap's, and an unknown id is ignored", over.table().filter( function( r ) { return r.id == "ai-shell"; } )[ 1 ].keys == "Super+Alt+A" && over.table()[ 1 ].keys == "Super+C" && over.table().len() == 55 );
+testkit.check( "parseKeys: Super+Shift+V", trad.parseKeys( "Super+Shift+V" ).ok && trad.normalize( "Super+Shift+V" ) == "SHIFT+SUPER+V" );
+testkit.check( "parseKeys: order, case and spellings do not matter", trad.normalize( "shift+SUPER+v" ) == trad.normalize( "Super+Shift+V" ) && trad.normalize( "Meta+Alt+Enter" ) == trad.normalize( "Super+Alt+Return" ) );
+testkit.check( "parseKeys: a backtick is grave", trad.parseKeys( "Super+`" ).key == "grave" );
+testkit.check( "parseKeys rejects a bare letter, an unknown modifier and an unknown key", !trad.parseKeys( "V" ).ok && !trad.parseKeys( "Hyper+V" ).ok && !trad.parseKeys( "Super+Banana" ).ok );
+testkit.check( "parseKeys accepts Print and the XF86 keys without a modifier", trad.parseKeys( "Print" ).ok && trad.parseKeys( "XF86AudioMute" ).ok && trad.hyprExpr( "XF86AudioMute" ) == '"XF86AudioMute"' );
+testkit.check( "hyprExpr with and without Super", trad.hyprExpr( "Super+Shift+V" ) == 'mainMod .. " + SHIFT + V"' && trad.hyprExpr( "Ctrl+Alt+Q" ) == '"CTRL + ALT + Q"' );
+testkit.check( "qtKeys is Qt's spelling", trad.qtKeys( "Super+Shift+Q" ) == "Meta+Shift+Q" && trad.qtKeys( "Super+Alt+Space" ) == "Meta+Alt+Space" );
+over = new bxrig.Shortcuts( { "ai-shell": "Super+Alt+A", copy: "Super+Alt+C", bogus: "x" }, "traditional" );
+testkit.check( "an override changes a binding's keys, not a remap's, and an unknown id is ignored", keyOf( over, "ai-shell" ) == "Super+Alt+A" && keyOf( over, "copy" ) == "Super+C" && over.table().len() == ids.len() );
 testkit.check( "an override reaches the rendered Hyprland text", find( 'hl.bind(mainMod .. " + ALT + A"', over.render( "hyprland" ) ) > 0 && find( '" + grave"', over.render( "hyprland" ) ) == 0 );
-testkit.check( "an override with bad keys is ignored", new bxrig.Shortcuts( { "ai-shell": "nonsense" } ).table().filter( function( r ) { return r.id == "ai-shell"; } )[ 1 ].keys == "Super+`" );
+testkit.check( "an override with bad keys is ignored", keyOf( new bxrig.Shortcuts( { "ai-shell": "nonsense" }, "traditional" ), "ai-shell" ) == "Super+Grave" );
+testkit.check( "argvOf: a bxrig binding has its argv, a Lua dispatch has none", trad.argvOf( "ai-shell" ).toList( " " ) == "ai shell" && trad.argvOf( "close" ).len() == 0 );
 
 testkit.done( "all passed" );

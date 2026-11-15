@@ -1,0 +1,15 @@
+// Lua text that the shortcut module writes more than once. One home for the "load a file another bxrig command wrote" block.
+class LuaModule {
+    function init() { return this; }
+
+    // The lines that run APPLY (Lua, uses VAR) with the table that ~/.config/bxrig/theme/FILE.lua returns, when that file exists and is valid.
+    function optional( file, variable, apply ) {
+        return [
+            "do",
+            '  local cfgdir = os.getenv("BXRIG_CONFIG_HOME") or os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.config")',
+            '  local ok, ' & arguments.variable & ' = pcall(dofile, cfgdir .. "/bxrig/theme/' & arguments.file & '.lua")',
+            '  if ok and type(' & arguments.variable & ') == "table" then ' & arguments.apply & ' end',
+            "end"
+        ];
+    }
+}

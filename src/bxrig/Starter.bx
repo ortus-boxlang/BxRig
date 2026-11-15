@@ -28,7 +28,7 @@ class Starter {
         var base = o.layout == "floating" ? "dwindle" : o.layout;
         t = replace( t, 'layout           = "dwindle",', 'layout           = "' & base & '",' );
         var rule = o.layout == "floating"
-            ? '-- Floating by default (layout: floating). Delete this rule, or press Super+V on a window, to tile.' & chr( 10 ) & 'hl.window_rule({ name = "bxrig-floating", match = { class = ".*" }, float = true })'
+            ? '-- Floating by default (layout: floating). Delete this rule, or press Super+T on a window (Super+Alt+T with the Mac style), to tile.' & chr( 10 ) & 'hl.window_rule({ name = "bxrig-floating", match = { class = ".*" }, float = true })'
             : '-- (Windows tile. To float every new window by default, add: hl.window_rule({ name = "floating", match = { class = ".*" }, float = true }))';
         t = replace( t, "-- BXRIG-FLOATING-RULE", rule );
         t = replace( t, "-- BXRIG-WORKSPACES", so.workspacesLua( o.workspaces ) );
