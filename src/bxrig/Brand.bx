@@ -51,11 +51,22 @@ class Brand {
         return w;
     }
 
+    // `bxrig version`: the logo and the tagline around the version on a terminal, one line otherwise, or the JSON envelope. Returns the exit code.
+    function show( cli, version, asJson, terminal ) {
+        if ( arguments.asJson ) println( arguments.cli.envelope( "version", 0, { name: name(), version: arguments.version } ) );
+        else {
+            if ( arguments.terminal ) { for ( var vl in ansi( large() ) ) println( vl ); println( "" ); }
+            println( name() & " " & arguments.version );
+            if ( arguments.terminal ) println( tagline() );
+        }
+        return new bxrig.util.Exit().ok();
+    }
+
     function hex( n ) { return right( "0" & formatBaseN( int( min( 255, max( 0, arguments.n ) ) ), 16 ), 2 ); }
 
     // Lines painted left to right from cyan to green with 24-bit colour escapes. Without a colour terminal (NO_COLOR set, or `plain`) the lines come back as they are.
     function ansi( lines, plain = false ) {
-        if ( arguments.plain || len( new bxrig.util.Env().named( "noColor" ) ) ) return arguments.lines;
+        if ( arguments.plain || len( new bxrig.util.Env().named( "noColor", "" ) ) ) return arguments.lines;
         var esc = chr( 27 );
         var w = 1;
         for ( var l in arguments.lines ) w = max( w, len( l ) );

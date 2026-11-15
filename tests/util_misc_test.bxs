@@ -50,4 +50,5 @@ testkit.check( "exports reads export lines, shell quotes and skips empty values"
 lua = "local mainMod = 'SUPER'" & chr( 10 ) & "hl.bind(mainMod .. " & chr( 34 ) & "+Q" & chr( 34 ) & ", hl.dsp.exec_cmd(" & chr( 34 ) & "x" & chr( 34 ) & "))" & chr( 10 ) & "hl.bind(" & chr( 34 ) & "ALT + Tab" & chr( 34 ) & ", function() end)";
 b = new bxrig.util.Lua().binds( lua );
 testkit.check( "Lua finds hl.bind lines with their tokens", b.len() == 2 && b[ 1 ].line == 2 && b[ 1 ].tokens.toList( "," ) == "Super,Q" && b[ 2 ].tokens.toList( "," ) == "ALT,Tab" );
+testkit.check( "Brand.show prints the version and exits 0", new bxrig.Brand().show( new bxrig.util.Cli( "9.9.9" ), "9.9.9", true, false ) == 0 && new bxrig.Brand().show( new bxrig.util.Cli( "9.9.9" ), "9.9.9", false, false ) == 0 );
 testkit.done( "util misc tests passed" );

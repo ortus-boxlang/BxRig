@@ -12,6 +12,13 @@ class Runner {
         return this;
     }
 
+    // `runner show`: the saved choice, as the JSON envelope or as one JSON line. Returns the exit code.
+    function show( asJson ) {
+        var cfg = load();
+        if ( arguments.asJson ) println( variables.cli.envelope( "runner show", 0, cfg ) ); else println( jsonSerialize( cfg ) );
+        return new bxrig.util.Exit().ok();
+    }
+
     function registry() { return new bxrig.RunnerProviders(); }
     function launcherProviders() { return registry().ids(); }
     function menuProviders() { return registry().menuIds(); }

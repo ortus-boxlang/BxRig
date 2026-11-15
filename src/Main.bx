@@ -35,12 +35,7 @@ class {
 
         switch ( cmd ) {
          case "version":
-          if ( asJson ) println( cli.envelope( "version", 0, { name: "BxRig", version: appVersion } ) );
-          else {
-           if ( CLIIsTerminal() ) { for ( var vl in new bxrig.Brand().ansi( new bxrig.Brand().large() ) ) println( vl ); println( "" ); }
-           println( "BxRig " & appVersion );
-           if ( CLIIsTerminal() ) println( new bxrig.Brand().tagline() );
-          }
+          new bxrig.Brand().show( cli, appVersion, asJson, CLIIsTerminal() );
           break;
          case "doctor":
          case "prerequisites":
@@ -708,9 +703,7 @@ class {
             CLIExit( xit.ok() );
            }
            if ( rnSub == "show" ) {
-            rnCfg = rn.load();
-            if ( asJson ) println( cli.envelope( "runner show", 0, rnCfg ) ); else println( jsonSerialize( rnCfg ) );
-            CLIExit( xit.ok() );
+            CLIExit( rn.show( asJson ) );
            }
            if ( rnSub == "doctor" ) {
             rnDoc = rn.doctor();
