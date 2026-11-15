@@ -11,6 +11,7 @@
 //   pkgsearch  asks for text, lists matching packages (source all, repo or aur), asks, then runs `pkg install`
 //   ask        asks for one line of text, then runs argv with {} replaced by it
 //   catalog    lists the catalog apps of one group (`group`), asks, then runs `install ID --yes`
+//   rebind     pick a shortcut from the table, type its new keys, then `keys set ID KEYS --yes` in a terminal
 //   db, webcreate, webrm   the existing special flows
 // `themeIcon` is a freedesktop icon name for providers that draw icons (Rofi, Fuzzel); each top-level section has a different one.
 // (`icon` on a tui entry is something else: the Nerd Font name the Control Center sidebar uses for that page.)
@@ -136,10 +137,18 @@ class MenuTree {
                     spawn( "Window", [ "screenshot", "window" ] ),
                     spawn( "Text (OCR)", [ "screenshot", "ocr" ] ),
                     spawn( "QR code", [ "screenshot", "qr" ] ),
-                    spawn( "Screen recording: start or stop", [ "record", "toggle" ] )
+                    spawn( "Screen recording: start or stop", [ "record", "toggle" ] ),
+                    spawn( "Record a region of the screen", [ "record", "toggle", "--region" ] ),
+                    spawn( "Color picker", [ "screenshot", "color" ] )
+                ] ),
+                sub( "Notices", [
+                    spawn( "Time", [ "notify", "time" ] ),
+                    spawn( "Battery", [ "notify", "battery" ] ),
+                    spawn( "Weather", [ "notify", "weather" ] )
                 ] ),
                 sub( "Toggle", [
                     spawn( "Do Not Disturb", [ "notify", "dnd", "toggle" ] ),
+                    spawn( "Dictation on or off", [ "dictation", "toggle" ] ),
                     spawn( "Snooze notifications for 30 minutes", [ "notify", "snooze", "30m" ] ),
                     spawn( "Snooze notifications for 2 hours", [ "notify", "snooze", "2h" ] ),
                     spawn( "Turn snooze off", [ "notify", "snooze", "off" ] ),
@@ -154,6 +163,21 @@ class MenuTree {
                 spawn( "Minimize window", [ "window", "minimize" ] ),
                 spawn( "Restore window", [ "window", "restore" ] ),
                 spawn( "Overview", [ "overview" ] )
+            ] ),
+            sub( "Shortcuts", [
+                run( "List the shortcuts", [ "keys", "show" ] ),
+                spawn( "Cheat sheet (search by typing)", [ "keys", "sheet" ] ),
+                { label: "Search the shortcuts", kind: "ask", prompt: "Search words or keys", argv: [ "keys", "search", "{}" ], mode: "run" },
+                { label: "Rebind a shortcut", kind: "rebind" },
+                pick( "Run a shortcut", "shortcuts-run", [ "keys", "run", "{}" ] ),
+                run( "Write the shortcuts to Hyprland and Plasma", [ "keys", "apply", "--yes" ] ),
+                run( "Check for conflicts", [ "keys", "conflicts" ] ),
+                sub( "Style", [
+                    run( "Show the style", [ "keys", "style" ] ),
+                    run( "Traditional keys (Omarchy-like)", [ "keys", "style", "traditional", "--yes" ] ),
+                    run( "Mac keys on a PC keyboard (Alt and Win swapped)", [ "keys", "style", "mac", "--keyboard=pc", "--yes" ] ),
+                    run( "Mac keys on an Apple keyboard", [ "keys", "style", "mac", "--keyboard=apple", "--yes" ] )
+                ] )
             ] ),
             sub( "Setup", [
                 sub( "Power", [
@@ -372,7 +396,7 @@ class MenuTree {
     function sectionIcons() {
         return {
             "Apps": "applications-other", "Setup wizard (re-run, prefilled)": "system-run", "Install": "system-software-install", "Remove": "edit-delete",
-            "Appearance": "preferences-desktop-theme", "Trigger": "input-keyboard", "Setup": "preferences-system", "Update": "system-software-update",
+            "Appearance": "preferences-desktop-theme", "Trigger": "input-keyboard", "Shortcuts": "preferences-desktop-keyboard-shortcuts", "Setup": "preferences-system", "Update": "system-software-update",
             "Develop": "applications-development", "Agent": "applications-science", "Learn": "help-browser", "About": "help-about",
             "System": "system-shutdown", "Control Center": "utilities-system-monitor"
         };

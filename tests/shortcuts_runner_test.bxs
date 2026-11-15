@@ -1,0 +1,43 @@
+// The runner's Shortcuts section, `menu open ROUTE`, `keys search|run`, and the notices. Run from src/: (cd src && matchbox ../tests/shortcuts_runner_test.bxs)
+testkit = new lib.Check( "shortcuts-runner" );
+cli = new bxrig.util.Cli( "0.0.0" );
+menu = new bxrig.Menu( cli );
+tree = menu.tree();
+routes = menu.routes( tree );
+paths = routes.map( function( r ) { return lCase( r.path ); } );
+testkit.check( "the Shortcuts section is in the runner", arrayFind( tree.map( function( e ) { return e.label; } ), "Shortcuts" ) > 0 );
+sec = tree.filter( function( e ) { return e.label == "Shortcuts"; } )[ 1 ];
+labels = sec.children.map( function( e ) { return e.label; } ).toList( "|" );
+testkit.check( "Shortcuts has list, search, rebind, run", find( "List the shortcuts", labels ) > 0 && find( "Search the shortcuts", labels ) > 0 && find( "Rebind a shortcut", labels ) > 0 && find( "Run a shortcut", labels ) > 0 );
+flat = menu.flatten( tree ).map( function( f ) { return f.path; } );
+testkit.check( "new runner entries: region record, dictation toggle, color picker, time, battery, weather", arrayFind( flat, "Trigger > Capture > Record a region of the screen" ) > 0 && arrayFind( flat, "Trigger > Toggle > Dictation on or off" ) > 0 && arrayFind( flat, "Trigger > Capture > Color picker" ) > 0 && arrayFind( flat, "Trigger > Notices > Time" ) > 0 && arrayFind( flat, "Trigger > Notices > Battery" ) > 0 && arrayFind( flat, "Trigger > Notices > Weather" ) > 0 );
+// every `menu open ROUTE` key points at a route that exists, and routes are unique by label
+sc = new bxrig.Shortcuts( {}, "traditional" );
+okRoutes = true;
+for ( r in sc.table() ) {
+    if ( left( r.words, 10 ) == "menu open " ) {
+        want = lCase( mid( r.words, 11, len( r.words ) ) );
+        n = routes.filter( function( x ) { return lCase( x.label ) == want || lCase( x.path ) == want; } ).len();
+        if ( n != 1 ) { okRoutes = false; println( "route " & want & " matches " & n ); }
+    }
+}
+testkit.check( "menu open: system, capture, toggle and agent each match exactly one submenu", okRoutes );
+testkit.check( "menu open with an unknown route exits 4", menu.open( "no-such-section", false ) == 4 );
+testkit.check( "menu open with no route lists the routes (exit 0)", menu.open( "", false ) == 0 );
+// the pick lists
+testkit.check( "the shortcut pick lists: all rows, and only the ones that run a command", menu.choices( "shortcuts" ).len() == sc.show().len() && menu.choices( "shortcuts-run" ).len() > 20 && menu.choices( "shortcuts-run" ).len() < menu.choices( "shortcuts" ).len() );
+// keys search and run
+kc = new bxrig.KeysCmd( cli, "", sc );
+testkit.check( "keys search finds a shortcut by words or keys, and says so when none match", kc.search( "screenshot", false ) == 0 && kc.search( "Super+Print", false ) == 0 && kc.search( "zzzz-nothing", false ) == 0 );
+testkit.check( "keys run: an unknown id exits 4, a window action has no command (exit 4)", kc.run( "nope", false ) == 4 && kc.run( "close", false ) == 4 );
+// notices
+dir = testkit.tmp();
+directoryCreate( dir & "/BAT0" );
+fileWrite( dir & "/BAT0/capacity", "73" & chr( 10 ) );
+fileWrite( dir & "/BAT0/status", "Discharging" & chr( 10 ) );
+directoryCreate( dir & "/AC" );
+nt = new bxrig.Notify( cli );
+testkit.check( "battery notice text from sysfs", nt.batteryText( dir ) == "73% (discharging)" && nt.batteries( dir ).len() == 1 );
+testkit.check( "no battery: empty text", nt.batteryText( dir & "/none" ) == "" );
+testkit.check( "an unknown notice is a usage error", new bxrig.Notify( cli, "" ).show( "bogus", false ) != 0 );
+testkit.done();

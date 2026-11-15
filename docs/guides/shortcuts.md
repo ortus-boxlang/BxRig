@@ -34,6 +34,10 @@ bxrig keys conflicts                    # the table, the remaps of the style tha
 
 Your changes live in `~/.config/bxrig/shortcuts.json` and apply to both styles. Remaps (the Cmd keys) are xremap's and cannot be changed this way. `keys set` refuses a key another binding uses or xremap rewrites. A `hyprland.lua` written by an older BxRig still holds the starter binds that now live in `bxrig.lua`; both fire until you delete the old lines, and `bxrig keys conflicts` lists them.
 
+## From the runner
+
+`Super+Space` opens the menu; its Shortcuts section lists every shortcut, searches them (`bxrig keys search TEXT`), rebinds one (it asks which one and for the new keys, then runs `keys set`), runs the command a shortcut stands for (`bxrig keys run ID`), writes the keys to Hyprland and Plasma, and switches the style. `Super+Escape`, `Super+Ctrl+C` and `Super+Ctrl+O` open the System, Capture and Toggle menus on their own (`bxrig menu open system`).
+
 ## The main ones
 
 | Keys | Does |

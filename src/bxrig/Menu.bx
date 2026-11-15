@@ -2,6 +2,8 @@
 //   menu                  interactive. The first entry searches every entry at once (your provider filters as you type); sections open in place
 //   menu items [--json]   the menu tree as data (what the menu shows), for scripts and tests
 //   menu search TEXT      the entries whose path contains TEXT, with the command each one runs (the CLI mirror of the search)
+//   menu open ROUTE       one section or submenu straight away (system, capture, toggle, agent, shortcuts, "trigger > capture"...); keys use it
+//   menu open             lists the routes
 // The tree is MenuTree (Omarchy's skeleton plus Develop for what is ours). Entry kinds: spawn (starts a command detached), run (in a terminal
 // window, waits for Enter), open (a URL), pick (choose from a live list, then run), ask (type a line, then run), pkgsearch (find a package in
 // the repos or the AUR, then install it), catalog (the apps of one catalog group), db, webcreate, webrm. `confirm` entries ask first.
@@ -50,6 +52,7 @@ class Menu {
             case "open": return "opens " & e.url;
             case "pick": return "choose from " & e.source & ", then: " & c;
             case "ask": return "asks for text, then: " & c;
+            case "rebind": return "pick a shortcut, type new keys, then: bxrig keys set ID KEYS --yes";
             case "pkgsearch": return "searches " & ( e.source == "aur" ? "the AUR" : "the repos and the AUR" ) & ", then: bxrig pkg install NAME --yes";
             case "catalog": return "lists the " & e.label & " apps, then: bxrig install ID --yes";
             case "db": return "opens the databases menu: bxrig db menu";
@@ -83,6 +86,34 @@ class Menu {
         var lines = rows.map( function( r ) { return r.path & "   (" & r.does & ")"; } );
         if ( !rows.len() ) lines.append( "No menu entry matches " & arguments.text );
         return variables.cli.say( "menu search", "ok", { query: arguments.text, results: rows }, arguments.asJson, lines );
+    }
+
+    // Every submenu with its path: [ { path, label, children } ].
+    function routes( entries, prefix = "" ) {
+        var out = [];
+        for ( var e in arguments.entries ) {
+            if ( e.kind != "sub" ) continue;
+            var path = ( len( arguments.prefix ) ? arguments.prefix & " > " : "" ) & e.label;
+            out.append( { path: path, label: e.label, children: e.children } );
+            for ( var c in routes( e.children, path ) ) out.append( c );
+        }
+        return out;
+    }
+
+    // `menu open ROUTE`: that submenu on its own (a label like "capture" or a path like "trigger > capture"). No route lists them.
+    function open( route, asJson ) {
+        var cmd = "menu open";
+        var want = lCase( trim( arguments.route ) );
+        var all = routes( tree() );
+        if ( !len( want ) ) return variables.cli.say( cmd, "ok", { routes: all.map( function( r ) { return r.path; } ) }, arguments.asJson, all.map( function( r ) { return r.path; } ) );
+        var hit = all.filter( function( r ) { return lCase( r.label ) == want || lCase( r.path ) == want; } );
+        if ( !hit.len() ) return variables.cli.say( cmd, "precondition", { error: "Unknown route " & arguments.route }, arguments.asJson, [ "error: no menu section called " & arguments.route & ". List them: bxrig menu open" ] );
+        try {
+            var runner = new bxrig.Runner( variables.cli, variables.inst.runner() );
+            return level( runner, hit[ 1 ].label, hit[ 1 ].children );
+        } catch ( any err ) {
+            return variables.cli.say( cmd, "precondition", { error: err.message }, arguments.asJson, [ "error: " & err.message ] );
+        }
     }
 
     // ---- live lists for pick entries ----
@@ -137,6 +168,8 @@ class Menu {
             for ( var mo in new bxrig.Display( variables.cli ).monitors() ) out.append( { label: mo.name & "  " & mo.width & "x" & mo.height & "  scale " & mo.scale, value: mo.name, current: false } );
         } else if ( src == "backgrounds" ) {
             for ( var im in new bxrig.Appearance( variables.cli ).images() ) out.append( { label: im.name, value: im.path, current: false } );
+        } else if ( src == "shortcuts" || src == "shortcuts-run" ) {
+            for ( var sr0 in new bxrig.Shortcuts().show() ) if ( src == "shortcuts" || sr0.runs ) out.append( { label: ( len( sr0.keys ) ? sr0.keys : "(no keys)" ) & "   " & sr0.action, value: sr0.id, current: false } );
         } else if ( src == "skills-installed" ) {
             var sr = exec( [ variables.environ.self(), "skills", "installed", "--json" ], 30 );
             try { for ( var s in jsonDeserialize( sr.output ).data.skills ) out.append( { label: s.name, value: s.name, current: false } ); } catch ( any e ) {}
@@ -229,6 +262,17 @@ class Menu {
         return start( { kind: e.mode ?: "run", argv: sub( e.argv, text ) } );
     }
 
+    // Rebind: pick a shortcut, ask for its new keys, then `keys set` in a terminal (it shows a conflict or the plan result).
+    function rebindFlow( runner, e ) {
+        if ( !arguments.runner.inputSupported() ) { note( arguments.runner, "Your menu program cannot take typed text. Run: bxrig keys set ID KEYS --yes" ); return new bxrig.util.Exit().ok(); }
+        var ch = choices( "shortcuts" );
+        var pick = arguments.runner.select( "Rebind which shortcut?", ch.map( function( c ) { return c.label; } ) );
+        if ( pick == 0 ) return new bxrig.util.Exit().ok();
+        var keys = arguments.runner.input( "New keys for " & trim( listLast( ch[ pick ].label, "   " ) ) & " (like Super+Alt+K)" );
+        if ( !len( keys ) ) return new bxrig.util.Exit().ok();
+        return start( { kind: "run", argv: [ "keys", "set", ch[ pick ].value, keys, "--yes" ] } );
+    }
+
     // Package search: ask for text, list the matches (repos and AUR), confirm, install in a terminal (sudo may ask for a password).
     function pkgSearchFlow( runner, e ) {
         if ( !arguments.runner.inputSupported() ) { note( arguments.runner, "Your menu provider cannot take typed text. Run: bxrig pkg search TEXT" ); return new bxrig.util.Exit().ok(); }
@@ -298,6 +342,7 @@ class Menu {
             case "webcreate": return createWebApp( arguments.runner );
             case "webrm": return removeWebApp( arguments.runner );
             case "pick": return pickAndRun( arguments.runner, e );
+            case "rebind": return rebindFlow( arguments.runner, e );
             case "ask": return askAndRun( arguments.runner, e );
             case "pkgsearch": return pkgSearchFlow( arguments.runner, e );
             case "catalog": return catalogFlow( arguments.runner, e );

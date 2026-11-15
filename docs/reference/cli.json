@@ -243,14 +243,15 @@
      "name": "menu",
      "summary": "The control center: every command as a menu on your launcher (Rofi, Walker, Wofi, Fuzzel or Vicinae).",
      "usage": [
-      "menu | menu items [--json] | menu search TEXT [--json]"
+      "menu | menu items [--json] | menu search TEXT [--json] | menu open [ROUTE] [--json]"
      ],
      "examples": [
       "bxrig menu",
-      "bxrig menu search 'time zone'"
+      "bxrig menu search 'time zone'",
+      "bxrig menu open capture"
      ],
      "mutates": false,
-     "note": "Bind it to a key; the first entry, Search, lists every entry as one flat list.",
+     "note": "Bind it to a key; the first entry, Search, lists every entry as one flat list. `menu open ROUTE` opens one submenu (system, capture, toggle, agent, shortcuts, trigger > capture); `menu open` lists the routes.",
      "flags": []
     },
     {
@@ -1017,12 +1018,14 @@
     },
     {
      "name": "keys",
-     "summary": "The shortcut table: show, rebind, check conflicts, apply to Hyprland and Plasma, Traditional or Mac style.",
+     "summary": "The shortcut table: show, search, run, rebind, check conflicts, apply to Hyprland and Plasma, Traditional or Mac style.",
      "usage": [
-      "keys show | style [traditional|mac] [--keyboard=pc|apple] [--swap=on|off] [--yes] | mac [on|off|status] [--yes] | set ID KEYS [--yes] [--force] | reset ID [--yes] | conflicts | sheet | render xremap|hyprland|plasma | check | apply [--yes] [--dry-run] [--force] [--json]"
+      "keys show | search TEXT | run ID | style [traditional|mac] [--keyboard=pc|apple] [--swap=on|off] [--yes] | mac [on|off|status] [--yes] | set ID KEYS [--yes] [--force] | reset ID [--yes] | conflicts | sheet | render xremap|hyprland|plasma | check | apply [--yes] [--dry-run] [--force] [--json]"
      ],
      "examples": [
       "bxrig keys show",
+      "bxrig keys search screenshot",
+      "bxrig keys run color-picker",
       "bxrig keys style mac --keyboard=pc --yes",
       "bxrig keys set emoji Super+Ctrl+E --yes",
       "bxrig keys mac on --yes",
@@ -1337,14 +1340,15 @@
     },
     {
      "name": "notify",
-     "summary": "Notifications through Noctalia: do not disturb, snooze, history, clear.",
+     "summary": "Notifications through Noctalia: do not disturb, snooze, clear, and notices for the time, battery and weather.",
      "usage": [
-      "notify dnd on|off|toggle|status | snooze [30m|2h|90s|off] | clear [--history] [--json]"
+      "notify dnd on|off|toggle|status | snooze [30m|2h|90s|off] | clear [--history] | time | battery | weather [--json]"
      ],
      "examples": [
       "bxrig notify dnd toggle",
       "bxrig notify snooze 2h",
-      "bxrig notify clear --history"
+      "bxrig notify clear --history",
+      "bxrig notify battery"
      ],
      "mutates": false,
      "flags": [
@@ -1352,7 +1356,8 @@
        "name": "history",
        "type": "bool"
       }
-     ]
+     ],
+     "note": "time, battery and weather show one notice through notify-send. weather asks wttr.in over the network."
     }
    ]
   },
@@ -2228,14 +2233,15 @@
    "commands": [
     {
      "name": "screenshot",
-     "summary": "Screenshots: screen, region, window, OCR text, QR codes, or a menu.",
+     "summary": "Screenshots: screen, region, window, OCR text, QR codes, a color picker, or a menu.",
      "usage": [
-      "screenshot screen|region|window [--edit] | ocr | qr | menu [--dry-run] [--json]"
+      "screenshot screen|region|window [--edit] | ocr | qr | color | menu [--dry-run] [--json]"
      ],
      "examples": [
       "bxrig screenshot region",
       "bxrig screenshot screen --edit",
-      "bxrig screenshot ocr"
+      "bxrig screenshot ocr",
+      "bxrig screenshot color"
      ],
      "mutates": false,
      "flags": [
@@ -2377,11 +2383,12 @@
      "name": "dictation",
      "summary": "Dictation with Superwhisper or Voxtype: setup and toggle.",
      "usage": [
-      "dictation setup [superwhisper|voxtype] [--yes] [--dry-run] | status | key [ENGINE] [--json]"
+      "dictation setup [superwhisper|voxtype] [--yes] | status | key [ENGINE] | toggle [--dry-run] [--json]"
      ],
      "examples": [
       "bxrig dictation setup voxtype --yes",
-      "bxrig dictation status"
+      "bxrig dictation status",
+      "bxrig dictation toggle"
      ],
      "mutates": false,
      "flags": []

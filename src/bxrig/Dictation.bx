@@ -1,7 +1,8 @@
-// `bxrig dictation setup|status|key`: voice dictation with Superwhisper (default) or Voxtype (the alternative, Omarchy's choice).
+// `bxrig dictation setup|status|key|toggle`: voice dictation with Superwhisper (default) or Voxtype (the alternative, Omarchy's choice).
 // BxRig installs the app and reports the shortcut the app itself ships; it does not add a shortcut of its own.
 //   superwhisper  hold Right Alt to talk, release to paste (Hyprland, KDE Plasma and GNOME Wayland sessions); change it in its Configuration
 //   voxtype       hold F9 to dictate (Omarchy's setup); `voxtype setup model` picks the speech model; settings in ~/.config/voxtype/config.toml
+//   toggle     starts or stops dictation now with Voxtype (`voxtype record toggle`); Superwhisper is push to talk and has no toggle. Key: Alt+Space
 // Exit: 0 ok, 2 plan without --yes, 4 precondition, 5/6/7 as `install`.
 class Dictation {
     variables.engines = [
@@ -57,5 +58,15 @@ class Dictation {
         var lines = [];
         for ( var e in list ) lines.append( e.name & ": " & e.key );
         return variables.out.say( "ok", { shortcuts: list.map( function( e ) { return { engine: e.id, shortcut: e.key }; } ) }, arguments.asJson, lines );
+    }
+
+    // `dictation toggle`: start or stop recording with Voxtype.
+    function toggle( dryRun, asJson ) {
+        var argv = [ "voxtype", "record", "toggle" ];
+        if ( !variables.proc.has( "voxtype" ) ) return variables.out.say( "precondition", { error: "voxtype is not installed" }, arguments.asJson, [ "error: voxtype is not installed. Set it up: bxrig dictation setup voxtype --yes" ] );
+        if ( arguments.dryRun ) return variables.out.say( "ok", { argv: argv }, arguments.asJson, [ "Dry run: " & argv.toList( " " ), "Nothing was started." ] );
+        var r = variables.proc.exec( argv, 30 );
+        if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+        return variables.out.say( "ok", { toggled: true }, arguments.asJson, [ "Dictation toggled." ] );
     }
 }

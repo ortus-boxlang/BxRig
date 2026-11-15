@@ -1,0 +1,35 @@
+// `bxrig keys search TEXT` and `bxrig keys run ID`: find a shortcut by words, keys or id; run the command a shortcut stands for.
+//   search   the rows of `keys show` whose action, keys or id contain TEXT (any case)
+//   run      runs the bxrig command of a row (`keys show --json` marks them `runs: true`) the way the key would; window actions in Lua (close,
+//            workspaces, focus) have no command and exit 4
+// Exit: 0 done, 4 unknown id or a row without a command, 6 the command failed.
+class KeysCmd {
+    function init( cli, runner = "", shortcuts = "" ) {
+        variables.cli = arguments.cli;
+        variables.proc = new bxrig.util.Proc( arguments.runner );
+        variables.sc = isSimpleValue( arguments.shortcuts ) ? new bxrig.Shortcuts() : arguments.shortcuts;
+        return this;
+    }
+
+    function search( text, asJson ) {
+        var t = lcase( trim( arguments.text ) );
+        var hits = variables.sc.show().filter( function( r ) { return findNoCase( t, r.action & " " & r.keys & " " & r.id ) > 0; } );
+        var lines = hits.map( function( r ) { return ( len( r.keys ) ? r.keys : "(no keys)" ) & "   " & r.action & "   (" & r.id & ")"; } );
+        if ( !lines.len() ) lines.append( "No shortcut matches " & arguments.text );
+        return variables.cli.say( "keys search", "ok", { query: arguments.text, shortcuts: hits }, arguments.asJson, lines );
+    }
+
+    function run( id, asJson ) {
+        var cmd = "keys run";
+        var want = arguments.id;
+        var known = variables.sc.show().filter( function( r ) { return compare( r.id, want ) == 0; } );
+        if ( !known.len() ) return variables.cli.say( cmd, "precondition", { error: "Unknown shortcut" }, arguments.asJson, [ "error: unknown shortcut " & arguments.id & ". See: bxrig keys show" ] );
+        var words = variables.sc.argvOf( arguments.id );
+        if ( !words.len() ) return variables.cli.say( cmd, "precondition", { error: "No command" }, arguments.asJson, [ "error: " & known[ 1 ].action & " is a window action, not a command. Press " & known[ 1 ].keys ] );
+        var argv = [ new bxrig.util.Env().self() ];
+        for ( var w in words ) argv.append( w );
+        var r = variables.proc.exec( argv, 120 );
+        if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { id: arguments.id, command: words, exit: r.exitCode, output: trim( r.output ) }, arguments.asJson, [ "error: bxrig " & words.toList( " " ) & " exited " & r.exitCode & ( len( trim( r.output ) ) ? ": " & trim( r.output ) : "" ) ] );
+        return variables.cli.say( cmd, "ok", { id: arguments.id, command: words, output: trim( r.output ) }, arguments.asJson, [ "Ran: bxrig " & words.toList( " " ) ] );
+    }
+}

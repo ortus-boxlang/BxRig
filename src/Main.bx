@@ -319,6 +319,7 @@ class {
           if ( p.len() <= 2 && arrayFind( [ "screen", "region", "window" ], ssMode ) ) CLIExit( ss.shot( ssMode, structKeyExists( args.options, "edit" ), ssDry, asJson ) );
           if ( p.len() <= 2 && ssMode == "ocr" ) CLIExit( ss.ocr( ssDry, asJson ) );
           if ( p.len() <= 2 && ssMode == "qr" ) CLIExit( ss.qrScan( ssDry, asJson ) );
+          if ( p.len() <= 2 && ssMode == "color" ) CLIExit( ss.color( ssDry, asJson ) );
           if ( p.len() <= 2 && ssMode == "menu" ) CLIExit( ss.menu( ssDry, asJson ) );
           println( new bxrig.CommandSpec().usage( "screenshot" ) );
           CLIExit( xit.usage() );
@@ -512,6 +513,7 @@ class {
           nt = new bxrig.Notify( cli );
           if ( ntSub == "dnd" && p.len() == 3 && arrayFind( [ "on", "off", "toggle", "status" ], p[3] ) ) CLIExit( nt.dnd( p[3], asJson ) );
           if ( ntSub == "snooze" && p.len() <= 3 ) CLIExit( nt.snooze( p.len() == 3 ? p[3] : "", asJson ) );
+          if ( arrayFind( [ "time", "battery", "weather" ], ntSub ) && p.len() == 2 ) CLIExit( nt.show( ntSub, asJson ) );
           if ( ntSub == "clear" && p.len() == 2 ) CLIExit( nt.clear( structKeyExists( args.options, "history" ), asJson ) );
           println( new bxrig.CommandSpec().usage( "notify" ) );
           CLIExit( xit.usage() );
@@ -534,6 +536,7 @@ class {
           dct = new bxrig.Dictation( cli );
           if ( dctSub == "setup" && p.len() <= 3 ) CLIExit( dct.setup( p.len() == 3 ? p[3] : "", structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
           if ( dctSub == "status" && p.len() == 2 ) CLIExit( dct.status( asJson ) );
+          if ( dctSub == "toggle" && p.len() == 2 ) CLIExit( dct.toggle( structKeyExists( args.options, "dry-run" ), asJson ) );
           if ( dctSub == "key" && p.len() <= 3 ) CLIExit( dct.key( p.len() == 3 ? p[3] : "", asJson ) );
           println( new bxrig.CommandSpec().usage( "dictation" ) );
           CLIExit( xit.usage() );
@@ -561,6 +564,7 @@ class {
           // The BxRig control center on the runner's menu provider. See COMMAND-CONTRACT.md 13.16.
           if ( p.len() == 1 ) CLIExit( new bxrig.Menu( cli ).run() );
           if ( p.len() == 2 && p[2] == "items" ) CLIExit( new bxrig.Menu( cli ).show( asJson ) );
+          if ( p.len() >= 2 && p[2] == "open" ) { mnRoute = []; for ( mnj = 3; mnj <= p.len(); mnj++ ) mnRoute.append( p[ mnj ] ); CLIExit( new bxrig.Menu( cli ).open( mnRoute.toList( " " ), asJson ) ); }
           if ( p.len() >= 3 && p[2] == "search" ) { mnWords = []; for ( mni = 3; mni <= p.len(); mni++ ) mnWords.append( p[ mni ] ); CLIExit( new bxrig.Menu( cli ).search( mnWords.toList( " " ), asJson ) ); }
           println( new bxrig.CommandSpec().usage( "menu" ) );
           CLIExit( xit.usage() );
@@ -820,6 +824,8 @@ class {
           if ( keysSub == "reset" && p.len() == 3 ) CLIExit( new bxrig.KeysEditor( cli ).reset( p[3], structKeyExists( args.options, "yes" ), asJson ) );
           if ( keysSub == "conflicts" && p.len() == 2 ) CLIExit( new bxrig.KeysEditor( cli ).conflicts( asJson ) );
           if ( keysSub == "style" && p.len() <= 3 ) CLIExit( new bxrig.MacKeys( cli ).style( p.len() == 3 ? p[3] : "", args.options.keyboard ?: "", args.options.swap ?: "", structKeyExists( args.options, "yes" ), asJson ) );
+          if ( keysSub == "search" && p.len() == 3 ) CLIExit( new bxrig.KeysCmd( cli ).search( p[3], asJson ) );
+          if ( keysSub == "run" && p.len() == 3 ) CLIExit( new bxrig.KeysCmd( cli ).run( p[3], asJson ) );
           if ( keysSub == "mac" && p.len() <= 3 ) {
            macAct = p.len() == 3 ? p[3] : "status";
            macSvc = new bxrig.MacKeys( cli );
