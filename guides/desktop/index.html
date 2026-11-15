@@ -235,7 +235,7 @@
 		
 		
 		
-			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#hyprland-and-noctalia">Hyprland and Noctalia</a></li><li class="toc-level-2"><a href="#kde-plasma">KDE Plasma</a></li><li class="toc-level-2"><a href="#everyday-tools">Everyday tools</a></li><li class="toc-level-2"><a href="#trackpads-and-apple-devices">Trackpads and Apple devices</a></li><li class="toc-level-2"><a href="#hot-corners">Hot corners</a></li></ul></details>
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#hyprland-and-noctalia">Hyprland and Noctalia</a></li><li class="toc-level-3"><a href="#the-bars-panels">The bar&#x27;s panels</a></li><li class="toc-level-2"><a href="#kde-plasma">KDE Plasma</a></li><li class="toc-level-2"><a href="#everyday-tools">Everyday tools</a></li><li class="toc-level-2"><a href="#trackpads-and-apple-devices">Trackpads and Apple devices</a></li><li class="toc-level-2"><a href="#hot-corners">Hot corners</a></li><li class="toc-level-2"><a href="#boot-splash">Boot splash</a></li></ul></details>
 		
 
 		
@@ -243,12 +243,26 @@
 <p>BxRig sets up <strong>Hyprland with Noctalia</strong> as the main desktop. <strong>KDE Plasma</strong> stays installed and gets tiling and a status panel; pick either (or both) at the login screen (<code>bxrig session set hyprland|plasma</code>).</p>
 <h2 id="hyprland-and-noctalia"><a href="#hyprland-and-noctalia" id="hyprland-and-noctalia" name="hyprland-and-noctalia" class="anchor"></a>Hyprland and Noctalia</h2>
 <p><code>bxrig setup hyprland</code> installs the packages one by one and writes the starter configuration once. <code>~/.config/hypr/hyprland.lua</code> is yours. BxRig owns <code>~/.config/hypr/bxrig.lua</code>, which it regenerates from the <a href="/guides/shortcuts/index.html">shortcut table</a>; never edit that file by hand.</p>
+<h3 id="the-bars-panels"><a href="#the-bars-panels" id="the-bars-panels" name="the-bars-panels" class="anchor"></a>The bar's panels</h3>
+<p>The Noctalia bar carries three BxRig panels and the notifications. Each opens from its button on the bar or a key.</p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th> </th><th> </th></tr>
+</thead>
+<tbody>
+<tr><td><img src="/assets/screenshots/panel-world-clock.webp"  alt="The world clock: every time zone, how far it is from you, and day or night" /><br><strong>World clock</strong> · the globe before the time, or <kbd>Super</kbd>+<kbd>Alt</kbd>+<kbd>W</kbd>. The zones are yours: <code>bxrig time world add Asia/Tokyo --yes</code></td><td><img src="/assets/screenshots/panel-agents.webp"  alt="The coding agents panel" /><br><strong>Coding agents</strong> · <kbd>Super</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd>. The agents you have installed, their accounts and limits; launch one with a click. <strong>Edit agents</strong> (or <code>bxrig ai panel add\|remove ID --yes</code>) chooses which show</td></tr>
+<tr><td><img src="/assets/screenshots/panel-theme-switcher.webp"  alt="The theme switcher" /><br><strong>Theme switcher</strong> · <kbd>Super</kbd>+<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>. See <a href="/guides/themes/index.html">Themes</a></td><td><img src="/assets/screenshots/notifications.webp"  alt="Stacked notifications" /><br><strong>Notifications</strong> stack in the top corner, rounded and in the theme's colors. <kbd>Super</kbd>+<kbd>Alt</kbd>+<kbd>,</kbd> acts on the newest, <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>,</kbd> opens them all</td></tr>
+</tbody>
+</table></div>
+<p><img src="/assets/screenshots/notification-center.webp"  alt="The notification center: every notification, by day" /></p>
 <h2 id="kde-plasma"><a href="#kde-plasma" id="kde-plasma" name="kde-plasma" class="anchor"></a>KDE Plasma</h2>
 <ul>
 <li><strong>Tiling:</strong> <code>bxrig setup plasma</code> installs HyprKwin. Layouts: dwindle, master, monocle, scrolling, stage. <code>bxrig tiling on|off|status|layout NAME</code>.</li>
 <li><strong>Panels:</strong> <code>bxrig plasma panels apply</code> replaces your panels with a top status panel (launcher, workspace pager, active window, clock, weather, media, system vitals, tray, in rounded islands with Panel Colorizer) and a bottom dock. Your old layout is backed up first: <code>bxrig plasma panels undo --yes</code> restores it. From Hyprland it is applied at your next Plasma login.</li>
 <li><strong>Virtual desktops:</strong> <code>bxrig plasma desktops 4</code>.</li>
+<li><strong>World clock:</strong> the panel clock reads <code>Nov 15 - 22:16</code>; click it for every time zone you chose in the wizard (<code>bxrig time world</code>).</li>
 </ul>
+<p><img src="/assets/screenshots/plasma-world-clock.webp"  alt="The Plasma panel clock with its time zones" /></p>
 <p>Look and hardware have their own pages: <a href="/guides/appearance/index.html">Appearance</a> for the bar, dock, windows and fonts, and <a href="/guides/system/index.html">Displays, power and time</a> for monitors, laptop power and the time zone. The <a href="/guides/menu/index.html">control center</a> has all of it as one menu.</p>
 <h2 id="everyday-tools"><a href="#everyday-tools" id="everyday-tools" name="everyday-tools" class="anchor"></a>Everyday tools</h2>
 <div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
@@ -287,13 +301,21 @@
 <h2 id="trackpads-and-apple-devices"><a href="#trackpads-and-apple-devices" id="trackpads-and-apple-devices" name="trackpads-and-apple-devices" class="anchor"></a>Trackpads and Apple devices</h2>
 <p><code>bxrig input gestures --yes</code> sets up three-finger swipes (workspaces, overview) with <code>libinput-gestures</code>. <code>bxrig input doctor</code> checks Magic Mouse and Magic Trackpad support (the kernel driver, Bluetooth, the <code>input</code> group). For Option-key characters like a Mac, pick the <strong>English (US, Macintosh)</strong> keyboard layout in the wizard. <code>bxrig airplay on</code> starts an AirPlay receiver.</p>
 <h2 id="hot-corners"><a href="#hot-corners" id="hot-corners" name="hot-corners" class="anchor"></a>Hot corners</h2>
-<p>Hot corners are left to you: on Plasma use System Settings → Screen Edges.</p>
+<p>Rest the pointer in a screen corner to run an action. The defaults are Mac-like: top left the overview, top right the notifications, bottom left the desktop, bottom right the lock screen. Change any corner, on Hyprland (Noctalia) and Plasma (KWin screen edges) alike:</p>
+<pre><code class="language-bash">bxrig hotcorners                                      # what each corner does
+bxrig hotcorners set top-left=launcher bottom-right=lock --yes
+bxrig hotcorners off --yes
+</code></pre>
+<p>Actions: <code>none</code>, <code>overview</code>, <code>notifications</code>, <code>desktop</code>, <code>lock</code>, <code>launcher</code>, <code>agents</code>, <code>themes</code>. Plasma has no corner action for notifications, agents and themes; those corners do nothing there and the command says so.</p>
+<h2 id="boot-splash"><a href="#boot-splash" id="boot-splash" name="boot-splash" class="anchor"></a>Boot splash</h2>
+<p><code>bxrig setup boot --yes</code> puts the BxRig splash on the boot screen (Plymouth): the laptop fades in over a soft glow while the dots pulse, and an encrypted disk asks for its password on the same screen. It shows the plan first, keeps a backup of <code>/etc/mkinitcpio.conf</code>, and tells you where to add <code>splash</code> for your boot loader. <code>bxrig setup undo boot --yes</code> puts the previous theme back.</p>
+<p><video src="../assets/clips/boot-splash.webm" poster="../assets/screenshots/boot-splash.webp" autoplay loop muted playsinline width="100%"></video></p>
 
 	
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/desktop.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/desktop.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 15, 2026, 10&#x3a;08&#x3a;43 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20The%20desktop&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fdesktop%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/desktop.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/desktop.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 15, 2026, 10&#x3a;31&#x3a;08 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20The%20desktop&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fdesktop%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
@@ -337,7 +359,7 @@
 			
 			
 				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
-					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#hyprland-and-noctalia">Hyprland and Noctalia</a></li><li class="toc-level-2"><a href="#kde-plasma">KDE Plasma</a></li><li class="toc-level-2"><a href="#everyday-tools">Everyday tools</a></li><li class="toc-level-2"><a href="#trackpads-and-apple-devices">Trackpads and Apple devices</a></li><li class="toc-level-2"><a href="#hot-corners">Hot corners</a></li></ul></nav>
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#hyprland-and-noctalia">Hyprland and Noctalia</a></li><li class="toc-level-3"><a href="#the-bars-panels">The bar&#x27;s panels</a></li><li class="toc-level-2"><a href="#kde-plasma">KDE Plasma</a></li><li class="toc-level-2"><a href="#everyday-tools">Everyday tools</a></li><li class="toc-level-2"><a href="#trackpads-and-apple-devices">Trackpads and Apple devices</a></li><li class="toc-level-2"><a href="#hot-corners">Hot corners</a></li><li class="toc-level-2"><a href="#boot-splash">Boot splash</a></li></ul></nav>
 				</aside>
 			
 		</div>

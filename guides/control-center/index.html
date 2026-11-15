@@ -241,6 +241,7 @@
 		
 		<h1 id="control-center"><a href="#control-center" id="control-center" name="control-center" class="anchor"></a>Control Center</h1>
 <p><code>bxrig tui</code> opens one terminal screen with a list of pages on the left and the open page on the right.</p>
+<p><img src="/assets/screenshots/control-center-dashboard.webp"  alt="The Control Center dashboard" /></p>
 <pre><code class="language-bash">bxrig tui                   # opens on the Dashboard, sidebar open
 bxrig tui databases         # one page on its own, sidebar collapsed
 bxrig tui list              # every page id and title (--json for scripts)
@@ -281,6 +282,15 @@ bxrig tui dashboard --json  # the page's data, no terminal needed
 <li><strong>Backups:</strong> how fresh each place is. Enter opens BxTimeMachine, and you come back to the Dashboard when you leave it.</li>
 </ul>
 <p>Each part is read on its own. If one cannot be read, the rest still shows.</p>
+<p><video src="../assets/clips/control-center.webm" poster="../assets/screenshots/control-center-dashboard.webp" autoplay loop muted playsinline width="100%"></video></p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th> </th><th> </th></tr>
+</thead>
+<tbody>
+<tr><td><img src="/assets/screenshots/control-center-apps.webp"  alt="The Apps page: installed apps with details" /><br><strong>Apps</strong></td><td><img src="/assets/screenshots/control-center-maven.webp"  alt="The Maven page: every version, install with one key" /><br><strong>Maven</strong> (Java, Gradle and BoxLang look the same)</td></tr>
+</tbody>
+</table></div>
 <h2 id="pages"><a href="#pages" id="pages" name="pages" class="anchor"></a>Pages</h2>
 <div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
 <thead>
@@ -316,7 +326,7 @@ bxrig tui dashboard --json  # the page's data, no terminal needed
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/control-center.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/control-center.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 15, 2026, 10&#x3a;08&#x3a;43 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Control%20Center&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fcontrol-center%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/control-center.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/control-center.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 15, 2026, 10&#x3a;31&#x3a;08 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Control%20Center&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fcontrol-center%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
