@@ -209,4 +209,14 @@ testkit.check( "a disk needs only a path; schedule off adds no timer", cmd( p, "
 p = ip.plan( { backup_layers: [ "data" ] } );
 testkit.check( "files without any place are told what to do", p.pending.len() == 1 && find( "no NAS or remote place", p.pending[ 1 ] ) > 0 );
 testkit.check( "nothing is added when nothing is asked", find( "nas-add", ids( ip.plan( {} ) ) ) == 0 && find( "backup-remote", ids( ip.plan( {} ) ) ) == 0 && find( "backup-config-off", ids( ip.plan( {} ) ) ) == 0 );
+// every password manager the wizard offers is a Security app of the catalog, and the plan installs it by that id
+cat = new bxrig.Catalog();
+pages = jsonDeserialize( new bxrig.WizardData().demoPages() ).pages;
+pmValues = [];
+for ( pg in pages ) for ( q in pg.questions ) if ( compare( q.id, "password_manager" ) == 0 ) for ( o in q.options ) pmValues.append( o.value );
+testkit.check( "the wizard offers ten password managers", pmValues.len() == 10 );
+allCatalog = true;
+for ( v in pmValues ) { app = cat.find( cat.load(), v ); if ( !structKeyExists( app, "category" ) || compare( app.category, "Security" ) != 0 ) allCatalog = false; }
+testkit.check( "every password manager option is a Security app of the catalog", allCatalog );
+for ( v in [ "proton-pass", "enpass", "nordpass", "keeper", "bitwarden-cli", "pass", "gopass" ] ) testkit.check( "password manager " & v & " installs by its catalog id", cmd( ip.plan( { password_manager: v } ), "apps" ) == "bxrig install " & v );
 testkit.done( "all passed" );

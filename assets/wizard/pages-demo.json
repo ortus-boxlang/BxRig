@@ -2343,6 +2343,41 @@
 							"value": "1password",
 							"label": "1Password",
 							"description": "Polished, subscription."
+						},
+						{
+							"value": "proton-pass",
+							"label": "Proton Pass",
+							"description": "Open source, from Proton (AUR)."
+						},
+						{
+							"value": "enpass",
+							"label": "Enpass",
+							"description": "Vault stays on your device (AUR)."
+						},
+						{
+							"value": "nordpass",
+							"label": "NordPass",
+							"description": "Subscription (AUR, Snap repack)."
+						},
+						{
+							"value": "keeper",
+							"label": "Keeper",
+							"description": "Subscription (AUR)."
+						},
+						{
+							"value": "bitwarden-cli",
+							"label": "Bitwarden CLI",
+							"description": "Terminal only, for your Bitwarden vault."
+						},
+						{
+							"value": "pass",
+							"label": "pass",
+							"description": "Terminal only, GPG files in git."
+						},
+						{
+							"value": "gopass",
+							"label": "gopass",
+							"description": "Terminal only, pass for teams."
 						}
 					]
 				},

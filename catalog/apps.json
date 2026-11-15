@@ -4517,6 +4517,68 @@
 			"repo": "extra"
 		},
 		{
+			"id": "bitwarden-cli",
+			"name": "Bitwarden CLI",
+			"description": "Bitwarden vault on the command line",
+			"description_source": "curated",
+			"kind": "tui",
+			"group": "everyday",
+			"category": "Security",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"bitwarden-cli"
+			],
+			"homepage": "https://bitwarden.com/help/cli/",
+			"macos": "Bitwarden CLI (same)",
+			"origin": [
+				"owner-request"
+			],
+			"verified_on": "2026-11-15",
+			"repo": "extra"
+		},
+		{
+			"id": "enpass",
+			"name": "Enpass",
+			"description": "Password manager that keeps the vault on your device, with optional sync",
+			"description_source": "curated",
+			"kind": "desktop",
+			"group": "everyday",
+			"category": "Security",
+			"tier": "optional",
+			"source": "aur",
+			"targets": [
+				"enpass-bin"
+			],
+			"homepage": "https://www.enpass.io/",
+			"macos": "Enpass (same)",
+			"origin": [
+				"owner-request"
+			],
+			"verified_on": "2026-11-15"
+		},
+		{
+			"id": "gopass",
+			"name": "gopass",
+			"description": "Password manager for teams on the command line, compatible with pass",
+			"description_source": "curated",
+			"kind": "tui",
+			"group": "everyday",
+			"category": "Security",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"gopass"
+			],
+			"homepage": "https://www.gopass.pw/",
+			"macos": "Passwords",
+			"origin": [
+				"owner-request"
+			],
+			"verified_on": "2026-11-15",
+			"repo": "extra"
+		},
+		{
 			"id": "keepassxc",
 			"name": "KeePassXC",
 			"description": "Local password manager, no account needed",
@@ -4536,6 +4598,87 @@
 			],
 			"verified_on": "2026-11-10",
 			"repo": "extra"
+		},
+		{
+			"id": "keeper",
+			"name": "Keeper",
+			"description": "Keeper password manager and digital vault",
+			"description_source": "curated",
+			"kind": "desktop",
+			"group": "everyday",
+			"category": "Security",
+			"tier": "optional",
+			"source": "aur",
+			"targets": [
+				"keeper-password-manager"
+			],
+			"homepage": "https://www.keepersecurity.com/",
+			"macos": "Keeper (same)",
+			"origin": [
+				"owner-request"
+			],
+			"verified_on": "2026-11-15"
+		},
+		{
+			"id": "nordpass",
+			"name": "NordPass",
+			"description": "NordPass password manager (repackaged Snap release)",
+			"description_source": "curated",
+			"kind": "desktop",
+			"group": "everyday",
+			"category": "Security",
+			"tier": "optional",
+			"source": "aur",
+			"targets": [
+				"nordpass-bin"
+			],
+			"homepage": "https://nordpass.com/",
+			"macos": "NordPass (same)",
+			"origin": [
+				"owner-request"
+			],
+			"verified_on": "2026-11-15"
+		},
+		{
+			"id": "pass",
+			"name": "pass",
+			"description": "The standard Unix password manager: GPG-encrypted files in a git folder",
+			"description_source": "curated",
+			"kind": "tui",
+			"group": "everyday",
+			"category": "Security",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"pass"
+			],
+			"homepage": "https://www.passwordstore.org/",
+			"macos": "Passwords",
+			"origin": [
+				"owner-request"
+			],
+			"verified_on": "2026-11-15",
+			"repo": "extra"
+		},
+		{
+			"id": "proton-pass",
+			"name": "Proton Pass",
+			"description": "Open source password manager from Proton, end-to-end encrypted",
+			"description_source": "curated",
+			"kind": "desktop",
+			"group": "everyday",
+			"category": "Security",
+			"tier": "optional",
+			"source": "aur",
+			"targets": [
+				"proton-pass-bin"
+			],
+			"homepage": "https://proton.me/pass",
+			"macos": "Proton Pass (same)",
+			"origin": [
+				"owner-request"
+			],
+			"verified_on": "2026-11-15"
 		},
 		{
 			"id": "maps",
