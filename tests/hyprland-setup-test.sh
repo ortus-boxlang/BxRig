@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # `bxrig setup hyprland --yes` end to end with fake pacman, sudo, id: packages, images, starter configs, shortcut files. Usage: hyprland-setup-test.sh [binary]
 . "$(dirname "$0")/lib/harness.sh"
+export BXRIG_WALLPAPER_DIR="$root/assets/wallpapers" BXRIG_BASE_URL=http://127.0.0.1:9   # the theme wallpapers come from the checkout, never the network
 mkdir -p "$tmp/bin" "$tmp/home"
 export LOG="$tmp/log"; : > "$LOG"
 cat > "$tmp/bin/pacman" <<'MOCK'
@@ -31,7 +32,7 @@ out="$(run "$binary" setup hyprland --yes --json)" || fail 'setup hyprland --yes
 echo "$out" | jq -e '.ok and (.data.done | map(.id) == ["packages","images","starter","keys"])' >/dev/null || fail "stdout is not one clean JSON envelope with all four steps done: $out"
 [[ "$(cat "$tmp/cfg/hypr/hyprland.lua")" == '-- mine' ]] || fail 'existing hyprland.lua was overwritten'
 grep -q 'pacman -S --needed --noconfirm hyprland' "$LOG" || fail 'packages installed'
-cmp "$tmp/home/Pictures/BxRig/box.jpg" "$root/assets/wallpapers/box.jpg" || fail 'wallpaper written'
+cmp "$tmp/home/Pictures/BxRig/bxrig.jpg" "$root/assets/wallpapers/bxrig.jpg" || fail "wallpaper written"
 grep -q 'custom_palette = "BxRig"' "$tmp/cfg/noctalia/config.toml" || fail 'noctalia config written'
 [[ -f "$tmp/cfg/noctalia/palettes/BxRig.json" ]] || fail 'palette written'
 [[ -f "$tmp/cfg/hypr/bxrig.lua" && -f "$tmp/cfg/xremap/config.yml" ]] || fail 'shortcut files written'

@@ -42,7 +42,11 @@ class Assets {
         var missing = variables.data.names().filter( function( n ) { return !fileExists( target( n ) ); } );
         var kept = variables.data.names().filter( function( n ) { return fileExists( target( n ) ); } );
         for ( var n in missing ) decode( n, target( n ) );
-        return { written: missing, present: kept };
+        // the theme wallpapers are not embedded: fetched from the install bundle's copy or the release downloads, each checked
+        var w = new bxrig.Wallpapers( variables.inst.runner() ).ensureAll();
+        for ( var x in w.written ) missing.append( "wallpapers/" & x & ".jpg" );
+        for ( var x in w.present ) kept.append( "wallpapers/" & x & ".jpg" );
+        return { written: missing, present: kept, failed: w.failed };
     }
 
     // `assets list`
@@ -70,9 +74,12 @@ class Assets {
             println( dryRun ? "Dry run, nothing changed." : "Nothing changed. Pass --yes to proceed." );
             return code;
         }
-        writeMissing();
-        if ( asJson ) println( variables.cli.envelope( "assets install", 0, { written: plan, present: kept } ) );
-        else println( "Wrote " & plan.len() & " images, kept " & kept.len() & "." );
+        var r = writeMissing();
+        if ( asJson ) println( variables.cli.envelope( "assets install", 0, { written: r.written, present: r.present, failed: r.failed } ) );
+        else {
+            println( "Wrote " & r.written.len() & " images, kept " & r.present.len() & "." );
+            if ( r.failed.len() ) println( "note: " & r.failed.len() & " theme wallpapers could not be fetched (offline?); `bxrig theme set` fetches each when it is used." );
+        }
         return 0;
     }
 }

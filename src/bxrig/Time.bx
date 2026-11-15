@@ -7,6 +7,9 @@
 //   time auto on|off [--yes]             follow your location by itself: installs geoclue and automatic-timezoned, writes the service and
 //                                        a geoclue drop-in, enables it. This sends your Wi-Fi networks or IP address to a location web service.
 //   time ntp on|off [--yes]              network time sync (timedatectl set-ntp)
+//   time world [--json]                  the world clock: your local time and each zone you follow (the data the bar's globe panel shows)
+//   time world set ZONE,ZONE... [--yes]  follow these zones (IANA names, e.g. Europe/Madrid); add ZONE, remove ZONE, off, on
+//                                        Saved in ~/.config/bxrig/worldclock.json: { "enabled": true, "zones": [ ... ] }
 // What `auto on` writes (the AUR package ships no unit; the daemon's README says it needs GeoClue to allow it without an agent):
 //   /etc/systemd/system/automatic-timezoned.service   runs the daemon as root (root may set the zone without a polkit rule)
 //   /etc/geoclue/conf.d/90-bxrig-timezone.conf      [agent] whitelist= (empty: no agent needed) and [automatic-timezoned] allowed, system, any user
@@ -161,6 +164,100 @@ class Time {
         return runPlan( "turn network time " & v, [ [ "sudo", "timedatectl", "set-ntp", v == "on" ? "true" : "false" ] ], arguments.yes, arguments.dry, arguments.asJson, { ntp: v == "on" } );
     }
 
+    // ---- world clock ----
+    function worldFile() { return variables.environ.config( "worldclock.json" ); }
+    function worldDefaults() { return { enabled: true, zones: [ "America/Los_Angeles", "America/New_York", "Europe/London", "Europe/Madrid" ] }; }
+    function worldRead() {
+        var w = worldDefaults();
+        if ( fileExists( worldFile() ) ) {
+            try {
+                var j = jsonDeserialize( fileRead( worldFile() ) );
+                if ( structKeyExists( j, "enabled" ) ) w.enabled = j.enabled == true;
+                if ( structKeyExists( j, "zones" ) && isArray( j.zones ) ) w.zones = j.zones;
+            } catch ( any e ) {}
+        }
+        return w;
+    }
+    function worldWrite( w ) {
+        directoryCreate( getDirectoryFromPath( worldFile() ), true, true );
+        fileWrite( worldFile(), jsonSerialize( { enabled: arguments.w.enabled, zones: arguments.w.zones } ) & chr( 10 ) );
+    }
+    // A zone is valid when the system has its zoneinfo file (BXRIG_ZONEINFO overrides /usr/share/zoneinfo for tests).
+    function zoneKnown( z ) {
+        if ( !len( arguments.z ) || find( "..", arguments.z ) ) return false;
+        return fileExists( variables.environ.get( "BXRIG_ZONEINFO", "/usr/share/zoneinfo" ) & "/" & arguments.z );
+    }
+    // The city part of a zone: Europe/Madrid -> Madrid, America/Argentina/Buenos_Aires -> Buenos Aires.
+    function zoneCity( z ) { return replace( listLast( arguments.z, "/" ), "_", " ", "all" ); }
+    // One `date` per zone, all at the same instant. Returns { zone: { hm, date, ymd, abbrev, offsetMin, minutes } }.
+    function clockAt( zones ) {
+        var epoch = trim( variables.proc.exec( [ "date", "+%s" ], 5 ).output );
+        var out = {};
+        for ( var z in arguments.zones ) {
+            var r = variables.proc.exec( [ "env", "TZ=" & z, "date", "-d", "@" & epoch, "+%H:%M|%a %b %-d|%Y-%m-%d|%Z|%z|%H|%M" ], 5 );
+            var f = listToArray( trim( r.output ), "|", true );
+            if ( r.exitCode != 0 || f.len() < 7 ) continue;
+            var sign = left( f[ 5 ], 1 ) == "-" ? -1 : 1;
+            var offMin = sign * ( val( mid( f[ 5 ], 2, 2 ) ) * 60 + val( mid( f[ 5 ], 4, 2 ) ) );
+            out[ z ] = { hm: f[ 1 ], date: f[ 2 ], ymd: f[ 3 ], abbrev: f[ 4 ], offsetMin: offMin, minutes: val( f[ 6 ] ) * 60 + val( f[ 7 ] ) };
+        }
+        return out;
+    }
+    // "+6h", "-3h", "+5:30h", "same time"
+    function offsetText( mins ) {
+        if ( arguments.mins == 0 ) return "same time";
+        var a = abs( arguments.mins );
+        var h = int( a / 60 ); var m = a - h * 60;
+        return ( arguments.mins > 0 ? "+" : "-" ) & h & ( m ? ":" & ( m < 10 ? "0" : "" ) & m : "" ) & "h";
+    }
+    function worldData() {
+        var w = worldRead();
+        var here = facts().timezone;
+        if ( !len( here ) ) here = variables.environ.get( "TZ", "UTC" );
+        var all = [ here ];
+        for ( var z in w.zones ) if ( !arrayFind( all, z ) ) all.append( z );
+        var c = clockAt( all );
+        var h = structKeyExists( c, here ) ? c[ here ] : { hm: "", date: "", ymd: "", abbrev: "", offsetMin: 0, minutes: 0 };
+        var data = { enabled: w.enabled, here: { city: zoneCity( here ), tz: here, time: h.hm, date: h.date, abbrev: h.abbrev }, zones: [] };
+        for ( var z in w.zones ) {
+            if ( !structKeyExists( c, z ) ) continue;
+            var x = c[ z ];
+            var rel = x.ymd == h.ymd ? "today" : ( x.ymd > h.ymd ? "tomorrow" : "yesterday" );
+            data.zones.append( { label: zoneCity( z ), tz: z, time: x.hm, date: x.date, relative_day: rel, abbrev: x.abbrev,
+                offset: offsetText( x.offsetMin - h.offsetMin ), day_fraction: round( x.minutes / 1440 * 1000 ) / 1000, is_day: x.minutes >= 420 && x.minutes < 1140 } );
+        }
+        return data;
+    }
+    function worldCmd( args, yes, dry, asJson ) {
+        var verb = arguments.args.len() ? arguments.args[ 1 ] : "";
+        if ( verb == "" || verb == "status" ) {
+            var d = worldData();
+            var lines = [ "It's " & d.here.time & " here in " & d.here.city & ( d.enabled ? "" : " (world clock off: bxrig time world on)" ) ];
+            for ( var z in d.zones ) lines.append( "  " & left( z.label & repeatString( " ", 18 ), 18 ) & z.time & "  " & z.date & ( z.relative_day != "today" ? " · " & z.relative_day : "" ) & "  " & z.abbrev & " " & z.offset );
+            return variables.out.say( "ok", d, arguments.asJson, lines );
+        }
+        var w = worldRead();
+        var want = [];
+        if ( verb == "set" || verb == "add" || verb == "remove" ) {
+            if ( arguments.args.len() < 2 ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "time world" ), arguments.asJson );
+            var given = [];
+            for ( var i = 2; i <= arguments.args.len(); i++ ) for ( var g in listToArray( arguments.args[ i ], "," ) ) given.append( trim( g ) );
+            if ( verb != "remove" ) for ( var g in given ) if ( !zoneKnown( g ) ) return variables.out.fail( "precondition", "Unknown time zone: " & g & " (an IANA name such as Europe/Madrid; bxrig time zone --list)", arguments.asJson );
+            if ( verb == "set" ) want = given;
+            else if ( verb == "add" ) { want = duplicate( w.zones ); for ( var g in given ) if ( !arrayFind( want, g ) ) want.append( g ); }
+            else want = w.zones.filter( function( z ) { return !arrayFind( given, z ); } );
+            w.zones = want; w.enabled = true;
+        } else if ( verb == "on" || verb == "off" ) {
+            w.enabled = verb == "on";
+        } else return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "time world" ), arguments.asJson );
+        var data = { enabled: w.enabled, zones: w.zones, file: worldFile() };
+        var summary = "world clock " & ( w.enabled ? "on: " & ( w.zones.len() ? w.zones.toList( ", " ) : "no zones" ) : "off" );
+        if ( arguments.dry ) return variables.out.say( "ok", data, arguments.asJson, [ "Plan: " & summary, "Nothing was changed." ], true );
+        if ( !arguments.yes ) return variables.out.say( "plan", data, arguments.asJson, [ "Plan: " & summary, "Nothing was changed. Add --yes to apply." ] );
+        worldWrite( w );
+        return variables.out.say( "ok", data, arguments.asJson, [ summary ] );
+    }
+
     function run( words, dry = false, yes = false, asJson = false ) {
         var verb = arguments.words.len() ? arguments.words[ 1 ] : "";
         var rest = [];
@@ -170,6 +267,7 @@ class Time {
         if ( verb == "sync" ) return syncCmd( arguments.yes, arguments.dry, arguments.asJson );
         if ( verb == "auto" ) return autoCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
         if ( verb == "ntp" ) return ntpCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
+        if ( verb == "world" ) return worldCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
         return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "time" ), arguments.asJson );
     }
 }

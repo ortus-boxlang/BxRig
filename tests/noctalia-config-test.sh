@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # The Noctalia starter files through `config apply`: valid TOML and JSON, safe re-runs, drift. Usage: noctalia-config-test.sh [binary]
 . "$(dirname "$0")/lib/harness.sh"
+export BXRIG_WALLPAPER_DIR="$root/assets/wallpapers" BXRIG_BASE_URL=http://127.0.0.1:9   # the theme wallpapers come from the checkout, never the network
 mkdir -p "$tmp/home"
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" "$@"; }
 run "$binary" config list | grep -q '^noctalia: missing' || fail 'config list shows noctalia as missing'
@@ -18,7 +19,7 @@ assert 'media' in c['bar']['main']['center'] and 'media' not in c['bar']['main']
 for name in ('clock-lax', 'clock-nyc', 'clock-lon', 'clock-mad'):
     assert name in c['bar']['main']['center'] and c['widget'][name]['type'] == 'clock' and c['widget'][name]['timezone']
 assert c['wallpaper']['directory'] == sys.argv[2] + '/Pictures/BxRig'
-assert c['wallpaper']['default']['path'].endswith('/box.jpg')
+assert c['wallpaper']['default']['path'].endswith('/bxrig.jpg')
 PY
 jq -e '.version == 2 and (.dark | has("primary","surface","hover")) and (.light | has("primary")) and (.dark.terminal.normal | length) == 8' "$tmp/cfg/noctalia/palettes/BxRig.json" >/dev/null || fail 'palette is not valid or lacks keys'
 run "$binary" config list | grep -q '^noctalia: clean' || fail 'config list shows noctalia clean'

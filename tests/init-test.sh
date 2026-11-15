@@ -43,12 +43,12 @@ bxrig ssh key --email=ada@example.com --yes
 bxrig session set plasma --yes'
 [[ "$(cat "$LOG")" == "$expected" ]] || fail "commands run were: $(cat "$LOG")"
 
-# a failing step stops the rest: exit 7 (some done), the others skipped
+# a failing step is reported and the rest still run: exit 7 (some done, one failed), nothing skipped
 : > "$LOG"
 rc=0; FAIL_SHELL=1 run "$binary" init --answers="$tmp/a.json" --yes --json > "$tmp/out.json" || rc=$?
 [[ "$rc" == 7 ]] || fail "exit was $rc, wanted 7"
-jq -e '(.data.done | map(.id) == ["hyprland","plasma","terminal"]) and (.data.failed[0].id == "shell") and (.data.skipped | length == 9)' "$tmp/out.json" >/dev/null || fail "failure report: $(cat "$tmp/out.json")"
-! grep -q 'session set' "$LOG" || fail 'a step ran after the failure'
+jq -e '(.data.done | map(.id) | index("terminal") != null) and (.data.failed | map(.id) == ["shell"]) and (.data.skipped | length == 0)' "$tmp/out.json" >/dev/null || fail "failure report: $(cat "$tmp/out.json")"
+grep -q 'session set' "$LOG" || fail 'the steps after the failure did not run'
 
 # bad input
 [[ "$(code "$binary" init --answers="$tmp/missing.json")" == 4 ]] || fail 'a missing answers file exits 4'

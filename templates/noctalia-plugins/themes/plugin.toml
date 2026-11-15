@@ -1,0 +1,40 @@
+# BxRig Themes: an Omarchy-style theme switcher. Search box, theme list on the
+# left (current one marked), preview + information on the right, Enter applies
+# with `bxrig theme set <name> --yes`.
+# Data: `bxrig theme list --json`, fetched each time the panel opens.
+# A panel rather than a launcher provider: launcher results cannot show an
+# image preview pane.
+# Open it from a keybind with:
+#   noctalia msg panel-toggle bxrig/themes:panel
+
+id = "bxrig/themes"
+name = "Themes (BxRig)"
+version = "1.0.0"
+plugin_api = 43
+author = "bxrig"
+license = "MIT"
+dependencies = ["bxrig"]
+tags = ["theme", "appearance", "bxrig"]
+icon = "palette"
+description = "Search, preview and apply BxRig desktop themes."
+
+[[setting]]
+key = "command"
+type = "string"
+label_key = "settings.command.label"
+description_key = "settings.command.description"
+default = "bxrig"
+
+[[widget]]
+id = "bar"
+entry = "bar.luau"
+
+[[panel]]
+id = "panel"
+entry = "panel.luau"
+width = 860
+height = 540
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter"]

@@ -282,7 +282,7 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then CHANNEL=stable; VERSION="${GITHUB_REF_NAME#v}"; else CHANNEL=beta; VERSION="$(jq -r .version box.json)"; fi
           sum="$(sha256sum dist/bxrig | awk '{print $1}')"
           bash -n bootstrap/web-install.sh
-          tar -czf bootstrap.tar.gz bootstrap/install.sh box.json
+          tar -czf bootstrap.tar.gz bootstrap/install.sh box.json assets/wallpapers/*.jpg
           bsum="$(sha256sum bootstrap.tar.gz | awk '{print $1}')"
           layout() {
             mkdir -p "$1"
@@ -293,6 +293,8 @@ jobs:
           layout "build/s3/$CHANNEL"
           if [[ "$CHANNEL" == beta ]]; then layout "build/s3/snapshots/${VERSION}-${GITHUB_SHA::7}"; else layout "build/s3/releases/${VERSION}"; fi
           cp bootstrap/web-install.sh build/s3/install.sh
+          # the theme wallpapers, shared by every channel: bxrig fetches a missing one and checks it against the SHA-256 it carries
+          mkdir -p build/s3/wallpapers && cp assets/wallpapers/*.jpg build/s3/wallpapers/
           echo "channel=$CHANNEL version=$VERSION"
       - name: Sign the release (Ed25519; the key is the secret BXRIG_SIGNING_KEY, the public key is keys/release.pub)
         env:

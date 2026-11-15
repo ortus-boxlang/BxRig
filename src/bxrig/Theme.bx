@@ -58,10 +58,10 @@ class Theme {
         return out;
     }
 
-    // The wallpaper each bundled BxRig theme goes with (files in ~/Pictures/BxRig); other bundled themes keep your wallpaper.
+    // Every bundled theme has its own wallpaper: ~/Pictures/BxRig/NAME.jpg, fetched and checked by bxrig.Wallpapers when missing.
+    // "" when there is none (a theme without one, or offline with no local copy): then your wallpaper stays.
     function bundledWallpaper( name ) {
-        var m = { bxrig: "box.jpg", "bxrig-light": "minimal.png", "bxrig-midnight": "grid.jpg", "bxrig-cyan": "aurora.jpg", "bxrig-forest": "box.jpg" };
-        return structKeyExists( m, arguments.name ) ? variables.environ.home() & "/Pictures/BxRig/" & m[ arguments.name ] : "";
+        return new bxrig.Wallpapers( variables.proc.runner() ).ensure( arguments.name );
     }
 
     // { found, name, origin, colorsText, neovimText, wallpaper }
@@ -133,8 +133,28 @@ class Theme {
         ];
         // Rofi reads config.rasi: a stub that imports the generated theme, written only when you have none.
         out.append( { name: "theme-rofi-config", target: cfg() & "/rofi/config.rasi", mode: "644", content: '@theme "' & d & '/rofi.rasi"' & chr( 10 ) } );
+        // btop only reads a theme named in btop.conf: the file is created when missing, otherwise only its color_theme line changes.
+        out.append( { name: "theme-btop-config", target: cfg() & "/btop/btop.conf", mode: "644", content: btopConfig( cfg() & "/btop/btop.conf" ) } );
         if ( len( arguments.neovimText ) ) out.append( { name: "theme-neovim", target: variables.config.stateDir() & "/current/theme/neovim.lua", mode: "644", content: arguments.neovimText } );
         return out;
+    }
+
+    // btop.conf with color_theme = "bxrig" and theme_background on: your file with those two lines set (or added), or a stub when you have none.
+    function btopConfig( path ) {
+        var want = { color_theme: '"bxrig"', theme_background: "True" };
+        if ( !fileExists( arguments.path ) ) return "# Created by `bxrig theme set`; btop adds its other settings on exit." & chr( 10 ) & 'color_theme = "bxrig"' & chr( 10 ) & "theme_background = True" & chr( 10 );
+        // Line by line (no regex): a line whose key, before the =, is one of ours is replaced; the rest is kept as it is.
+        var src = replace( fileRead( arguments.path ), chr( 13 ), "", "all" ).split( chr( 10 ) );
+        var lines = [];
+        var done = {};
+        for ( var line in src ) {
+            var key = trim( listFirst( line & " ", "=" ) );
+            if ( find( "=", line ) > 0 && structKeyExists( want, key ) ) { lines.append( key & " = " & want[ key ] ); done[ key ] = true; }
+            else lines.append( line );
+        }
+        while ( lines.len() > 0 && lines[ lines.len() ] == "" ) lines.deleteAt( lines.len() );
+        for ( var k in [ "color_theme", "theme_background" ] ) if ( !structKeyExists( done, k ) ) lines.append( k & " = " & want[ k ] );
+        return arrayToList( lines, chr( 10 ) ) & chr( 10 );
     }
 
     // What the managed hypr/bxrig.lua reads: the focused border runs from the accent to the bright cyan, unfocused is muted.
@@ -208,8 +228,6 @@ class Theme {
         if ( fileExists( tm ) && !findNoCase( "bxrig/theme/tmux.conf", fileRead( tm ) ) ) out.append( "tmux: add `source-file " & d & "/tmux.conf` to " & tm & " to follow the theme" );
         var rc = cfg() & "/rofi/config.rasi";
         if ( fileExists( rc ) && !findNoCase( "bxrig/theme/rofi.rasi", fileRead( rc ) ) ) out.append( 'rofi: add `@theme "' & d & '/rofi.rasi"` to ' & rc & " to follow the theme" );
-        var bt = cfg() & "/btop/btop.conf";
-        if ( fileExists( bt ) && !reFind( 'color_theme *= *"?bxrig', fileRead( bt ) ) ) out.append( 'btop: set color_theme = "bxrig" in ' & bt );
         return out;
     }
 

@@ -504,6 +504,12 @@ class {
           if ( structKeyExists( args.options, "list" ) ) tmWords.append( "--list" );
           CLIExit( new bxrig.Time( cli ).run( tmWords, structKeyExists( args.options, "dry-run" ), structKeyExists( args.options, "yes" ), asJson ) );
           break;
+         case "hotcorners":
+          // Hot corners: an action per screen corner (Noctalia on Hyprland, KWin screen edges on Plasma).
+          hcWords = [];
+          for ( hci = 2; hci <= p.len(); hci++ ) hcWords.append( p[ hci ] );
+          CLIExit( new bxrig.HotCorners( cli ).run( hcWords, structKeyExists( args.options, "dry-run" ), structKeyExists( args.options, "yes" ), asJson ) );
+          break;
          case "toggle":
          case "dns":
          case "kernel":

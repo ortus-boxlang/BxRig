@@ -35,7 +35,7 @@ class NoctaliaConfig {
     }
 
     // config.toml. home is the user's home directory (wallpaper paths are absolute).
-    function configToml( home, theme = "dark", wallpaper = "box" ) {
+    function configToml( home, theme = "dark", wallpaper = "bxrig" ) {
         var wpFile = new bxrig.StarterOptions().wallpapers()[ arguments.wallpaper ];
         var pics = arguments.home & "/Pictures/BxRig";
         return [
@@ -109,7 +109,7 @@ class NoctaliaConfig {
     }
 
     // The files bxrig manages for Noctalia, in the config service entry shape (name, target, mode, content).
-    function entries( cfgHome, home, theme = "dark", wallpaper = "box" ) {
+    function entries( cfgHome, home, theme = "dark", wallpaper = "bxrig" ) {
         return [
             { name: "noctalia", target: arguments.cfgHome & "/noctalia/config.toml", mode: "644", content: configToml( arguments.home, arguments.theme, arguments.wallpaper ) },
             { name: "noctalia-palette", target: arguments.cfgHome & "/noctalia/palettes/" & paletteName() & ".json", mode: "644", content: palette() }

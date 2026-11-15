@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generates the BxRig brand SVGs (icon, logo, four wallpapers). The mark is drawn here; the Ortus icons in assets/brand/ stay for the Powered by BoxLang note.
+"""Generates the BxRig brand SVGs (icon and logo). The mark is drawn here; the Ortus icons in assets/brand/ stay for the Powered by BoxLang note.
 Run: python3 assets/build.py && node assets/render.js
 Palette: Ortus Brand Book 2025 (main #00FF78, second #00DBFF, accent #FFF500, dark #303446) on Catppuccin Frappe neutrals."""
 import base64, os
@@ -53,31 +53,4 @@ open('icons/bxrig.svg', 'w').write(icon_svg(LAPTOP_INNER))
 open('icons/bxrig-small.svg', 'w').write(icon_svg(SMALL_INNER))
 # logo: icon + wordmark, for dark backgrounds
 open('logo.svg', 'w').write(svg(720, 200, f'{mark(14, 20, 160)}{word(200, 124, 96, "start")}'))
-# 1 icon: centered icon, wordmark and tagline
-open('wallpapers/box.svg', 'w').write(svg(W, H, f'''<defs><radialGradient id="bg" cx="0.5" cy="0.42" r="0.85"><stop offset="0" stop-color="#3a3f58"/><stop offset="0.55" stop-color="{BASE}"/><stop offset="1" stop-color="{CRUST}"/></radialGradient></defs>
-<rect width="{W}" height="{H}" fill="url(#bg)"/>
-{mark(1280-260, 230, 520)}
-{word(1280, 1010, 130)}
-<text x="1280" y="1090" text-anchor="middle" {FONT} font-size="34" fill="{SUB}" letter-spacing="9">YOUR DEV RIG. BEAUTIFUL BY DEFAULT.</text>
-<text x="1280" y="1370" text-anchor="middle" {FONT} font-size="26" fill="{SUB}" opacity="0.7" letter-spacing="5">BOXLANG  +  MATCHBOX  +  CACHYOS</text>'''))
-# 2 grid: perspective grid in the brand gradient
-lines = ''
-for i in range(-20, 21):
-    lines += f'<line x1="{1280+i*60}" y1="800" x2="{1280+i*420}" y2="{H}" stroke="url(#g)" stroke-opacity="0.38" stroke-width="2"/>'
-for k in range(1, 12):
-    y = 800 + (k / 11) ** 2 * (H - 800)
-    lines += f'<line x1="0" y1="{y:.1f}" x2="{W}" y2="{y:.1f}" stroke="url(#g)" stroke-opacity="{0.16+0.03*k:.2f}" stroke-width="2"/>'
-open('wallpapers/grid.svg', 'w').write(svg(W, H, f'''<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{CRUST}"/><stop offset="0.55" stop-color="{BASE}"/><stop offset="1" stop-color="{CRUST}"/></linearGradient></defs>
-<rect width="{W}" height="{H}" fill="url(#sky)"/>{lines}
-{mark(1280-170, 180, 340)}
-<text x="1280" y="660" text-anchor="middle" {FONT} font-size="62" font-weight="700" fill="{TEXT}" letter-spacing="16">BXRIG</text>'''))
-# 3 aurora: soft brand-colour glows, icon and name bottom right
-def blob(i, cx, cy, rx, ry, color, op):
-    return f'<radialGradient id="a{i}"><stop offset="0" stop-color="{color}" stop-opacity="{op}"/><stop offset="1" stop-color="{color}" stop-opacity="0"/></radialGradient><ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="url(#a{i})"/>'
-open('wallpapers/aurora.svg', 'w').write(svg(W, H, f'''<rect width="{W}" height="{H}" fill="{CRUST}"/>
-{blob(1, 700, 520, 950, 580, G1, 0.42)}{blob(2, 1800, 900, 1000, 600, G2, 0.42)}{blob(3, 1500, 200, 700, 300, "#ca9ee6", 0.22)}
-{mark(2060, 1170, 150)}{word(2040, 1275, 58, "end")}'''))
-# 4 minimal: mono icon, nearly flat
-open('wallpapers/minimal.svg', 'w').write(svg(W, H, f'''<rect width="{W}" height="{H}" fill="{CRUST}"/>
-{mark(1280-170, 420, 340, mono=True)}
-<text x="1280" y="900" text-anchor="middle" {FONT} font-size="40" fill="{SUB}" letter-spacing="12">BXRIG</text>'''))
+# The wallpapers are photographs made per theme (assets/wallpapers/<theme>.jpg, see assets/wallpapers/README.md), not drawn here.

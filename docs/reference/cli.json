@@ -1208,6 +1208,22 @@
      ]
     },
     {
+     "name": "hotcorners",
+     "summary": "Hot corners: an action for each screen corner (overview, notifications, show desktop, lock, launcher, agents, themes).",
+     "usage": [
+      "hotcorners [status] [--json]",
+      "hotcorners set CORNER=ACTION... [--yes]",
+      "hotcorners off [--yes]"
+     ],
+     "examples": [
+      "bxrig hotcorners set top-left=overview bottom-right=lock --yes",
+      "bxrig hotcorners off --yes"
+     ],
+     "flags": [],
+     "mutates": true,
+     "note": "CORNER is top-left, top-right, bottom-left or bottom-right. Hyprland uses Noctalia's hot corners; Plasma uses KWin screen edges (notifications, agents and themes have no Plasma edge action)."
+    },
+    {
      "name": "display",
      "summary": "Monitors: scale, rotation, mode, position, mirroring the laptop panel, turning it off, brightness.",
      "usage": [
@@ -1252,18 +1268,20 @@
     },
     {
      "name": "time",
-     "summary": "The time zone: show, set, set from your IP after travelling, follow your location, network time.",
+     "summary": "The time zone: show, set, set from your IP after travelling, follow your location, network time, and the world clock.",
      "usage": [
       "time status [--json]",
       "time zone [--list | ZONE] [--yes]",
       "time sync [--yes]",
       "time auto on|off|status [--yes]",
-      "time ntp on|off [--yes]"
+      "time ntp on|off [--yes]",
+      "time world [status | set ZONE,ZONE... | add ZONE | remove ZONE | on | off] [--yes] [--json]"
      ],
      "examples": [
       "bxrig time zone Europe/Madrid --yes",
       "bxrig time sync --yes",
-      "bxrig time auto on --yes"
+      "bxrig time auto on --yes",
+      "bxrig time world set Europe/Madrid,America/New_York --yes"
      ],
      "mutates": true,
      "note": "`time auto on` sends your Wi-Fi networks or IP address to a location web service; the plan says so first.",

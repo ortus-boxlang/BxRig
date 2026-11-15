@@ -1,0 +1,37 @@
+# BxRig Agents: a robot in the bar that opens the AI agents panel (plans,
+# usage meters with reset countdowns, launch buttons).
+# Data: `bxrig ai panel --json` every 60 s while open; launch: `bxrig ai launch <id>`.
+# Open the panel from a keybind with:
+#   noctalia msg panel-toggle bxrig/agents:panel
+
+id = "bxrig/agents"
+name = "Agents (BxRig)"
+version = "1.0.0"
+plugin_api = 43
+author = "bxrig"
+license = "MIT"
+dependencies = ["bxrig"]
+tags = ["ai", "agents", "bxrig"]
+icon = "robot"
+description = "AI coding agents at a glance: accounts, plans, usage limits and one-click launch, fed by bxrig."
+
+[[setting]]
+key = "command"
+type = "string"
+label_key = "settings.command.label"
+description_key = "settings.command.description"
+default = "bxrig"
+
+[[widget]]
+id = "bar"
+entry = "bar.luau"
+
+[[panel]]
+id = "panel"
+entry = "panel.luau"
+width = 380
+height = "content"
+max_height = 720
+placement = "attached"
+position = "auto"
+open_near_click = true

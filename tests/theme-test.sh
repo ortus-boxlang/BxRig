@@ -7,8 +7,8 @@ for t in noctalia plasma-apply-colorscheme hyprctl; do logger $t; done
 chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
 
-# list: 15 bundled themes, both origins, nothing current yet
-run "$binary" theme list --json | jq -e '.ok and (.data.themes | length == 15) and (.data.themes | map(select(.valid)) | length == 15) and (.data.themes | map(select(.light)) | map(.name) | sort == ["bxrig-light","catppuccin-latte","flexoki-light","rose-pine"])' >/dev/null || fail 'list'
+# list: 20 bundled themes (10 BxRig: 5 dark, 5 light; 10 from Omarchy), both origins, nothing current yet
+run "$binary" theme list --json | jq -e '.ok and (.data.themes | length == 20) and (.data.themes | map(select(.valid)) | length == 20) and (.data.themes | map(select(.light)) | map(.name) | sort == ["bxrig-dawn","bxrig-light","bxrig-mint","bxrig-paper","bxrig-sky","catppuccin-latte","flexoki-light","rose-pine"])' >/dev/null || fail 'list'
 run "$binary" theme show bxrig | grep -q 'accent #00ff78' || fail 'show'
 [[ "$(code "$binary" theme show nope)" == 4 ]] || fail 'unknown theme exits 4'
 [[ "$(code "$binary" theme set nope)" == 4 ]] || fail 'set unknown exits 4'
@@ -16,7 +16,7 @@ run "$binary" theme show bxrig | grep -q 'accent #00ff78' || fail 'show'
 [[ "$(code "$binary" theme)" == 2 ]] || fail 'usage exits 2'
 
 # dry run changes nothing
-run "$binary" theme set catppuccin --dry-run --json | jq -e '.dry_run and (.data.files | length == 18)' >/dev/null || fail 'dry run plan'
+run "$binary" theme set catppuccin --dry-run --json | jq -e '.dry_run and (.data.files | length == 19)' >/dev/null || fail 'dry run plan'
 [[ ! -e "$tmp/cfg" ]] || fail 'dry run wrote files'
 
 # set a dark theme: files, then the desktop is told
@@ -31,13 +31,18 @@ grep -q 'noctalia msg color-scheme-set custom BxRigTheme' "$LOG" && grep -q 'noc
 jq -e '.name == "catppuccin" and .mode == "theme"' "$tmp/cfg/bxrig/theme.json" >/dev/null || fail 'state file'
 
 # the same theme again: nothing rewritten; a light theme sets light; KDE gets Breeze; Hyprland reloads
-run "$binary" theme set catppuccin --json | jq -e '(.data.written | length == 0) and (.data.unchanged | length == 18)' >/dev/null || fail 'second set is a no-op'
+run "$binary" theme set catppuccin --json | jq -e '(.data.written | length == 0) and (.data.unchanged | length == 19)' >/dev/null || fail 'second set is a no-op'
 : > "$LOG"; XDG_CURRENT_DESKTOP=KDE HYPRLAND_INSTANCE_SIGNATURE=x run "$binary" theme set catppuccin-latte --json | jq -e '.data.applied_mode == "light" and .data.plasma == "applied" and .data.hyprland == "reloaded"' >/dev/null || fail 'light theme on KDE and Hyprland'
 grep -q 'noctalia msg theme-mode-set light' "$LOG" && grep -q 'plasma-apply-colorscheme BreezeLight' "$LOG" && grep -q 'hyprctl reload' "$LOG" || fail "light: $(cat "$LOG")"
 
 # bundled BxRig themes bring a wallpaper (only when the file exists); --keep-wallpaper skips it
-mkdir -p "$tmp/home/Pictures/BxRig"; : > "$tmp/home/Pictures/BxRig/aurora.jpg"; : > "$LOG"
-run "$binary" theme set bxrig-cyan >/dev/null; grep -q "noctalia msg wallpaper-set $tmp/home/Pictures/BxRig/aurora.jpg" "$LOG" || fail "wallpaper: $(cat "$LOG")"
+mkdir -p "$tmp/home/Pictures/BxRig"; : > "$LOG"
+# every bundled theme has its own wallpaper: fetched from a local copy (checked against its SHA-256) when missing
+BXRIG_WALLPAPER_DIR="$root/assets/wallpapers" run "$binary" theme set bxrig-cyan >/dev/null; grep -q "noctalia msg wallpaper-set $tmp/home/Pictures/BxRig/bxrig-cyan.jpg" "$LOG" || fail "wallpaper: $(cat "$LOG")"
+cmp "$tmp/home/Pictures/BxRig/bxrig-cyan.jpg" "$root/assets/wallpapers/bxrig-cyan.jpg" || fail "the wallpaper copy differs"
+# a copy that does not match its SHA-256 is never used: no file, no wallpaper change
+mkdir -p "$tmp/bad"; echo nope > "$tmp/bad/nord.jpg"; rm -f "$tmp/home/Pictures/BxRig/nord.jpg"; : > "$LOG"
+BXRIG_WALLPAPER_DIR="$tmp/bad" BXRIG_BASE_URL=http://127.0.0.1:9 run "$binary" theme set nord >/dev/null; [[ ! -e "$tmp/home/Pictures/BxRig/nord.jpg" ]] || fail "a bad copy was used"; ! grep -q "wallpaper-set" "$LOG" || fail "wallpaper changed with no good copy"
 : > "$LOG"; run "$binary" theme set bxrig-cyan --keep-wallpaper >/dev/null; ! grep -q wallpaper-set "$LOG" || fail 'keep wallpaper'
 
 # mode: pinned, auto, back to the theme's own
@@ -49,7 +54,7 @@ run "$binary" theme mode theme >/dev/null; jq -e '.mode == "theme"' "$tmp/cfg/bx
 [[ "$(code "$binary" theme mode sideways)" == 2 ]] || fail 'bad mode value'
 
 # status, next, random
-run "$binary" theme status --json | jq -e '.data.name == "catppuccin" and (.data.files | map(select(.state == "clean")) | length == 18)' >/dev/null || fail 'status'
+run "$binary" theme status --json | jq -e '.data.name == "catppuccin" and (.data.files | map(select(.state == "clean")) | length == 19)' >/dev/null || fail 'status'
 run "$binary" theme next --json | jq -e '.ok and .data.theme != "catppuccin"' >/dev/null || fail 'next'
 before="$(jq -r .name "$tmp/cfg/bxrig/theme.json")"; run "$binary" theme random >/dev/null; [[ "$(jq -r .name "$tmp/cfg/bxrig/theme.json")" != "$before" ]] || fail 'random picks another theme'
 
@@ -80,12 +85,21 @@ echo "accent = nope" > "$tmp/cfg/omarchy/themes/mine/colors.toml"
 [[ "$(code "$binary" theme set mine)" == 4 ]] || fail 'an invalid theme is rejected before anything is written'
 
 # a terminal config of yours without the include gets a hint, never an edit; with the include it is quiet
-mkdir -p "$tmp/cfg/ghostty" "$tmp/cfg/btop"; echo 'font-size = 12' > "$tmp/cfg/ghostty/config"; echo 'color_theme = "Default"' > "$tmp/cfg/btop/btop.conf"
-run "$binary" theme set nord --json | jq -e '(.data.hints | length == 2) and (.data.hints[0] | test("ghostty: add .config-file = \\?")) and (.data.hints[1] | test("btop"))' >/dev/null || fail "hints: $(run "$binary" theme set nord --json | jq -c .data.hints)"
+mkdir -p "$tmp/cfg/ghostty" "$tmp/cfg/btop"; echo 'font-size = 12' > "$tmp/cfg/ghostty/config"; printf 'color_theme = "Default"\nupdate_ms = 1500\n' > "$tmp/cfg/btop/btop.conf"
+run "$binary" theme set nord --json | jq -e '(.data.hints | length == 1) and (.data.hints[0] | test("ghostty: add .config-file = \\?"))' >/dev/null || fail "hints: $(run "$binary" theme set nord --json | jq -c .data.hints)"
 [[ "$(cat "$tmp/cfg/ghostty/config")" == 'font-size = 12' ]] || fail 'your ghostty config was edited'
-echo "config-file = ?$tmp/cfg/bxrig/theme/ghostty" >> "$tmp/cfg/ghostty/config"; echo 'color_theme = "bxrig"' > "$tmp/cfg/btop/btop.conf"
+# btop: only color_theme and theme_background change in your btop.conf; your other settings stay
+grep -qx 'color_theme = "bxrig"' "$tmp/cfg/btop/btop.conf" || fail "btop.conf color_theme not set: $(cat "$tmp/cfg/btop/btop.conf")"
+grep -qx 'theme_background = True' "$tmp/cfg/btop/btop.conf" || fail 'btop.conf theme_background not added'
+grep -qx 'update_ms = 1500' "$tmp/cfg/btop/btop.conf" || fail 'btop.conf lost your setting'
+[[ "$(grep -c color_theme "$tmp/cfg/btop/btop.conf")" == 1 ]] || fail 'btop.conf color_theme duplicated'
+echo "config-file = ?$tmp/cfg/bxrig/theme/ghostty" >> "$tmp/cfg/ghostty/config"
 run "$binary" theme set nord --json | jq -e '.data.hints | length == 0' >/dev/null || fail 'no hints once the includes are there'
 rm -rf "$tmp/cfg/ghostty" "$tmp/cfg/btop"
+# btop: no btop.conf yet, one is created that selects the theme
+run "$binary" theme set nord --json >/dev/null
+grep -qx 'color_theme = "bxrig"' "$tmp/cfg/btop/btop.conf" || fail 'btop.conf not created'
+rm -rf "$tmp/cfg/btop"
 
 # install from git (fake git: the clone is an Omarchy-format folder), import from a folder, remove
 cat > "$tmp/bin/git" <<'FAKE'

@@ -1,0 +1,62 @@
+// The wallpapers of the bundled themes: one per theme, ~/Pictures/BxRig/NAME.jpg. They are not inside the binary (too big to compile in);
+// each one is checked against the SHA-256 in WallpaperData before it is used. Where a missing one comes from, first match wins:
+//   1. a folder of them: BXRIG_WALLPAPER_DIR (tests, a checkout's assets/wallpapers), then ~/.local/share/bxrig/wallpapers (install.sh
+//      copies the ones of the signed install bundle there)
+//   2. the release downloads: BASE/wallpapers/NAME.jpg (BXRIG_BASE_URL overrides https://downloads.ortussolutions.com/ortussolutions/bxrig)
+// A file that does not match its SHA-256 is never used (a download that does not match is deleted).
+class Wallpapers {
+    function init( runner = "" ) {
+        variables.environ = new bxrig.util.Env();
+        variables.proc = new bxrig.util.Proc( arguments.runner );
+        variables.http = new bxrig.util.Http( variables.proc );
+        variables.data = new bxrig.WallpaperData();
+        return this;
+    }
+
+    function names() { return variables.data.names(); }
+    function known( name ) { return arrayFind( names(), arguments.name ) > 0; }
+    function dir() { return variables.environ.home() & "/Pictures/BxRig"; }
+    function target( name ) { return dir() & "/" & arguments.name & ".jpg"; }
+    function base() { return variables.environ.get( "BXRIG_BASE_URL", "https://downloads.ortussolutions.com/ortussolutions/bxrig" ); }
+    function sources() {
+        var out = [];
+        var d = variables.environ.get( "BXRIG_WALLPAPER_DIR", "" );
+        if ( len( d ) ) out.append( d );
+        out.append( variables.environ.data( "wallpapers" ) );
+        return out;
+    }
+
+    function shaOf( file ) {
+        var r = variables.proc.exec( [ "sha256sum", arguments.file ], 30 );
+        return r.exitCode == 0 ? listFirst( trim( r.output ), " " ) : "";
+    }
+    function matches( name, file ) { return fileExists( arguments.file ) && shaOf( arguments.file ) == variables.data.sha256( arguments.name ); }
+
+    // The path of the theme's wallpaper, fetched when missing; "" when there is none (unknown name, offline and not in a local folder).
+    // A wallpaper you replaced at the same path is kept as it is (only a missing file is fetched).
+    function ensure( name ) {
+        if ( !known( arguments.name ) ) return "";
+        var t = target( arguments.name );
+        if ( fileExists( t ) ) return t;
+        directoryCreate( dir(), true, true );
+        for ( var s in sources() ) {
+            var f = s & "/" & arguments.name & ".jpg";
+            if ( matches( arguments.name, f ) ) { fileCopy( f, t ); return t; }
+        }
+        var tmp = t & ".download";
+        var r = variables.http.download( base() & "/wallpapers/" & arguments.name & ".jpg", tmp, 120 );
+        if ( r.exitCode == 0 && matches( arguments.name, tmp ) ) { fileMove( tmp, t ); return t; }
+        if ( fileExists( tmp ) ) fileDelete( tmp );
+        return "";
+    }
+
+    // Every wallpaper that is missing; returns { written, present, failed }.
+    function ensureAll() {
+        var out = { written: [], present: [], failed: [] };
+        for ( var n in names() ) {
+            if ( fileExists( target( n ) ) ) { out.present.append( n ); continue; }
+            if ( len( ensure( n ) ) ) out.written.append( n ); else out.failed.append( n );
+        }
+        return out;
+    }
+}

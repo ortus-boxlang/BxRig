@@ -11,7 +11,7 @@ class InitPlan {
 
     // Answers that shape the Hyprland starter (applied by `setup hyprland`; pending when Hyprland is not being set up).
     function hyprlandKeys() {
-        return [ "workspaces", "natural_scroll", "layouts", "theme", "wallpaper" ];
+        return [ "workspaces", "natural_scroll", "layouts", "theme", "wallpaper", "bar_position", "dock" ];
     }
 
     // The value of an answer, or a fallback when it was not answered.
@@ -53,6 +53,11 @@ class InitPlan {
         if ( len( desktops ) && !arrayFind( [ "hyprland", "plasma", "both" ], desktops ) ) out.errors.append( "desktops: unknown value " & desktops );
         var terminal = pick( a, "terminal" );
         var layout = pick( a, "layout" );
+        // the colour theme (a Dark/Light answer of Light with the default theme picks the light BxRig theme); its wallpaper is the starting one
+        var themeName = pick( a, "theme_name" );
+        if ( themeName == "bxrig" && pick( a, "theme" ) == "light" ) themeName = "bxrig-light";
+        var walls = new bxrig.StarterOptions().wallpapers();
+        var wallpaper = structKeyExists( walls, pick( a, "wallpaper" ) ) ? a.wallpaper : ( structKeyExists( walls, themeName ) ? themeName : "" );
         var wantsHypr = desktops == "hyprland" || desktops == "both";
         var wantsPlasma = desktops == "plasma" || desktops == "both";
         if ( wantsHypr ) {
@@ -63,7 +68,7 @@ class InitPlan {
             if ( isSet( pick( a, "natural_scroll", false ) ) ) argv.append( "--natural-scroll" );
             if ( pick( a, "layouts", [] ).len() ) argv.append( "--layouts=" & a.layouts.toList( "," ) );
             if ( len( pick( a, "theme" ) ) ) argv.append( "--theme=" & a.theme );
-            if ( len( pick( a, "wallpaper" ) ) ) argv.append( "--wallpaper=" & a.wallpaper );
+            if ( len( wallpaper ) ) argv.append( "--wallpaper=" & wallpaper );
             out.steps.append( { id: "hyprland", title: "set up Hyprland + Noctalia" & ( len( terminal ) ? " (" & terminal & " on Super+Enter" & ( len( layout ) ? ", " & layout & " layout" : "" ) & ")" : "" ), argv: argv } );
         }
         if ( wantsPlasma ) out.steps.append( { id: "plasma", title: "set up KDE Plasma tiling (HyprKwin)", argv: [ "bxrig", "setup", "plasma" ] } );
@@ -74,10 +79,8 @@ class InitPlan {
             if ( extras.len() ) targv.append( "--also=" & extras.toList( "," ) );
             out.steps.append( { id: "terminal", title: "install and configure terminals (" & ( len( terminal ) ? terminal : "default" ) & ( extras.len() ? " and " & extras.toList( ", " ) : "" ) & ")", argv: targv } );
         }
-        // the colour theme goes after the terminals, so their starter configs and the generated theme files exist; a Dark/Light answer
-        // of Light with the default theme picks the light BxRig theme. Optional: the desktop may not be running during the install.
-        var themeName = pick( a, "theme_name" );
-        if ( themeName == "bxrig" && pick( a, "theme" ) == "light" ) themeName = "bxrig-light";
+        // the colour theme goes after the terminals, so their starter configs and the generated theme files exist.
+        // Optional: the desktop may not be running during the install.
         // a chosen launcher or menu program is themed too (the rofi, fuzzel and wofi files are part of `theme set`), so it is never stock after setup,
         // even with the default BxRig theme
         var runnerChosen = len( pick( a, "launcher" ) ) > 0 || len( pick( a, "menu" ) ) > 0;
@@ -86,11 +89,30 @@ class InitPlan {
             if ( pick( a, "theme" ) == "auto" ) thargv.append( "--mode=auto" );
             out.steps.append( { id: "theme", title: "apply the " & themeName & " colour theme", argv: thargv, optional: true } );
         }
+        // the bar and the dock (Noctalia, so Hyprland only); optional: Noctalia may not be running during the install
+        if ( wantsHypr && len( pick( a, "bar_position" ) ) ) out.steps.append( { id: "bar", title: "put the bar at the " & a.bar_position, argv: [ "bxrig", "appearance", "bar", "position", a.bar_position ], optional: true } );
+        if ( wantsHypr && structKeyExists( a, "dock" ) ) out.steps.append( { id: "dock", title: ( isSet( a.dock ) ? "show" : "hide" ) & " the dock", argv: [ "bxrig", "appearance", "dock", isSet( a.dock ) ? "show" : "hide" ], optional: true } );
+        // world clock: the globe and the zones you follow, or off
+        if ( structKeyExists( a, "world_clock" ) ) {
+            var zones = pick( a, "world_clock_zones", [] );
+            if ( isSet( a.world_clock ) && zones.len() ) out.steps.append( { id: "world-clock", title: "world clock: " & zones.toList( ", " ), argv: [ "bxrig", "time", "world", "set", zones.toList( "," ) ], optional: true } );
+            else if ( !isSet( a.world_clock ) ) out.steps.append( { id: "world-clock", title: "no world clock", argv: [ "bxrig", "time", "world", "off" ], optional: true } );
+        }
+        // hot corners: one action per corner
+        var corners = [];
+        for ( var c in [ { k: "hot_corner_tl", n: "top-left" }, { k: "hot_corner_tr", n: "top-right" }, { k: "hot_corner_bl", n: "bottom-left" }, { k: "hot_corner_br", n: "bottom-right" } ] ) {
+            if ( len( pick( a, c.k ) ) ) corners.append( c.n & "=" & a[ c.k ] );
+        }
+        if ( corners.len() ) {
+            var hargv = [ "bxrig", "hotcorners", "set" ];
+            for ( var hc in corners ) hargv.append( hc );
+            out.steps.append( { id: "hot-corners", title: "hot corners: " & corners.toList( ", " ), argv: hargv, optional: true } );
+        }
         var shell = pick( a, "shell" );
         if ( len( shell ) ) out.steps.append( { id: "shell", title: "set up " & shell & " with the Starship prompt", argv: [ "bxrig", "setup", "shell", "--shell=" & shell ] } );
         if ( isSet( pick( a, "mac_keys", false ) ) ) {
             var build = desktops == "plasma" ? "kde" : "hypr";
-            out.steps.append( { id: "xremap", title: "Cmd-style keys (xremap, " & build & ")", argv: [ "bxrig", "setup", "xremap", "--build=" & build ] } );
+            out.steps.append( { id: "xremap", title: "Cmd-style keys (xremap, " & build & ")", argv: [ "bxrig", "setup", "xremap", "--build=" & build ], optional: true } );
         }
         // toolchains: one catalog profile each (java is the jvm profile: JDK 21, Maven, Gradle); Laravel's installer comes from Composer
         var profiles = { java: "jvm", php: "php", python: "python", go: "go" };
@@ -154,6 +176,8 @@ class InitPlan {
         var dictation = pick( a, "dictation" );
         if ( dictation == "superwhisper" ) { if ( !arrayFind( chosenApps, "superwhisper" ) ) chosenApps.append( "superwhisper" ); }
         else if ( dictation == "voxtype" ) { for ( var dapp in [ "voxtype", "wtype" ] ) if ( !arrayFind( chosenApps, dapp ) ) chosenApps.append( dapp ); }
+        var presentations = pick( a, "presentations" );
+        if ( arrayFind( [ "hype", "onlyoffice" ], presentations ) && !arrayFind( chosenApps, presentations ) ) chosenApps.append( presentations );
         var browser = pick( a, "default_browser" );
         if ( len( browser ) && !arrayFind( chosenApps, browser ) ) chosenApps.append( browser );
         // everything else that is one package each goes in a single install
