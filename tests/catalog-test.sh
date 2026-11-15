@@ -4,7 +4,6 @@
 code() { set +e; "$@" >/dev/null 2>&1; local rc=$?; set -e; echo "$rc"; }
 cat="$root/catalog/apps.json"
 # The source of truth and the embedded copy agree.
-"$root/bootstrap/gen-catalog.sh" --check >/dev/null || fail 'embedded catalog is stale'
 [[ "$("$binary" catalog version --json | jq -r .data.apps)" == "$(jq '.apps|length' "$cat")" ]] || fail 'app count differs'
 [[ "$("$binary" catalog list --json | jq '.data|length')" == "$(jq '.apps|length' "$cat")" ]] || fail 'list count'
 [[ "$("$binary" catalog list --tier=default --json | jq '.data|length')" == "$(jq '[.apps[]|select(.tier=="default")]|length' "$cat")" ]] || fail 'tier filter'

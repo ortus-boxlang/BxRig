@@ -418,7 +418,7 @@ if [[ "$mode" == --install-binary ]]; then
       echo "Nothing to do: $installed is already $want (use --force to rebuild)."; copy_wallpapers; exit 0
     fi
     [[ "$(tool_version matchbox)" == "$MATCHBOX_VERSION" ]] || { echo "MatchBox $MATCHBOX_VERSION is required (found: $(tool_version matchbox || true)). Run install.sh toolchains --yes first." >&2; exit 1; }
-    cp -r "$root/src" "$work/src"; chmod -R u+rwX,go+rX "$work/src"
+    cp -rL "$root/src" "$work/src"; chmod -R u+rwX,go+rX "$work/src"   # -L: src/resources links to the data folders
     echo "Building bxrig with MatchBox $MATCHBOX_VERSION"
     if ! ( cd "$work" && PATH="$probe_path" matchbox --target native --output "$work/bxrig" src/Main.bx ) > "$work/build.log" 2>&1; then
       echo "Build failed; the installed copy was not touched. Last lines of the build log:" >&2; tail -n 20 "$work/build.log" >&2; exit 1

@@ -1,7 +1,6 @@
-// The brand images (logo, icon, wallpapers) embedded in the binary (AssetData) and written to the user's disk.
-// MatchBox's fileWrite writes text (a binary value is turned into a string), so each image is written as base64 text and decoded with coreutils `base64 -d` into the target file.
+// The brand images (logo, icons, boot splash) packed with BxRig (AssetData, resources) and written to the user's disk byte for byte; the wallpapers come from bxrig.Wallpapers.
 //
-// Exit codes: list 0; install 0 done, 2 without --yes, 4 precondition (root, no base64).
+// Exit codes: list 0; install 0 done, 2 without --yes, 4 precondition (root).
 class Assets {
     function init( cli, runner = "" ) {
         variables.environ = new bxrig.util.Env();
@@ -31,13 +30,10 @@ class Assets {
     // The app icon files (every size and the scalable SVG), as embedded names.
     function iconNames() { return variables.data.names().filter( function( n ) { return left( n, 6 ) == "icons/"; } ); }
 
-    // Writes one embedded image to a path (via a .b64 text file and `base64 -d`).
+    // Writes one packed image to a path, byte for byte.
     function decode( name, dest ) {
         directoryCreate( getDirectoryFromPath( dest ), true, true );
-        fileWrite( dest & ".b64", variables.data.base64( name ) );
-        var r = variables.inst.proc().exec( [ "sh", "-c", 'base64 -d "$1" > "$2"', "sh", dest & ".b64", dest ], 60 );
-        fileDelete( dest & ".b64" );
-        if ( r.exitCode != 0 ) throw( type = "Assets.decode", message = "base64 -d failed for " & name );
+        fileWrite( dest, variables.data.binary( name ) );
     }
 
     // Writes the images that are missing (never overwrites) and returns { written, present }. No output.
@@ -62,8 +58,8 @@ class Assets {
 
     // `assets install [--yes] [--dry-run]`: writes the images that are missing; never overwrites a file the user changed.
     function install( yes, dryRun, asJson ) {
-        if ( variables.inst.isRoot() || !variables.inst.hasCommand( "base64" ) ) {
-            var msg = variables.inst.isRoot() ? "Run as a regular user" : "base64 (coreutils) was not found";
+        if ( variables.inst.isRoot() ) {
+            var msg = "Run as a regular user";
             if ( asJson ) println( variables.cli.envelope( "assets install", 4, { errors: [ msg ] } ) ); else println( "error: " & msg );
             return new bxrig.util.Exit().precondition();
         }

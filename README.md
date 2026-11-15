@@ -105,7 +105,7 @@ Layout:
 | `docs/` | The documentation site; `docs/architecture/COMMAND-CONTRACT.md` is the design record |
 | `tests/` | 75 script tests (`*-test.sh`, with fake tools) and 35 unit tests (`*_test.bxs`); `tests/lib/` holds the shared harness |
 
-Generated classes (`CatalogData`, `TemplateData`, `ThemeData`, `SkillData`, `WizardData`, `AssetData`, `ReleaseKey`, `Version`, `HelpData`, `CommandFlagData`) and `docs/reference/commands.md` and `command-flags.md` are rebuilt by the matching `bootstrap/gen-*.sh`; CI runs each with `--check`.
+Data files (the catalog, templates, themes, skills, wizard pages, brand images, the release key, `cli.json`, `box.json`) are packed into the binary as MatchBox resources: `src/resources/` links to them, `bxrig.util.Res` reads them, and running from source reads the same files from disk. Only `Version`, `WallpaperData` and `CommandFlagData` and `docs/reference/commands.md` and `command-flags.md` are still generated, by the matching `bootstrap/gen-*.sh`; CI runs each with `--check`.
 
 Changes follow the contract in `docs/architecture/COMMAND-CONTRACT.md`: plan before `--yes`, `--dry-run`, the `--json` envelope, argument arrays instead of shell strings, and the exit codes above.
 

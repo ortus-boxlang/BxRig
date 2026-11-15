@@ -203,7 +203,7 @@ class SetupPlan {
     // The steps for `toolchain node`: nvm from its pinned official installer (box.json toolchain.nvm; an external script, shown and
     // run, that adds nvm to your shell startup files), then Node.js through nvm and made the default. Skips what is already there.
     function node( facts ) {
-        var pin = jsonDeserialize( new bxrig.TemplateData().text( "nvm.json" ) );
+        var pin = jsonDeserialize( new bxrig.util.Res().trimmed( "box.json" ) ).toolchain.nvm;
         var out = { target: "node", errors: [], warnings: [], notes: [], steps: [] };
         if ( arguments.facts.isRoot ) out.errors.append( "Run as a regular user; nvm installs into your home directory" );
         if ( !arguments.facts.hasCurl && !arguments.facts.hasNvm ) out.errors.append( "curl is required to download nvm but was not found" );
