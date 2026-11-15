@@ -152,10 +152,10 @@ class AiPanel {
     function data() {
         var agents = [];
         var tokens = 0;
-        var c = choices();
+        var picked = choices();
         for ( var a in new bxrig.AiAgents().all() ) {
             var row = { id: a.id, name: a.name, installed: installed( a.command ), accounts: [] };
-            if ( !shown( a.id, row.installed, c ) ) continue;
+            if ( !shown( a.id, row.installed, picked ) ) continue;
             // an agent that is installed has at least its default account; one that is not shows only its name
             if ( row.installed ) row.accounts = [ { name: "Default", plan: "", active: true, meters: [] } ];
             if ( row.installed ) {

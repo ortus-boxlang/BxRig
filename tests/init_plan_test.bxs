@@ -63,8 +63,8 @@ testkit.check( "dotfiles: the command takes the repo, the method is detected", c
 testkit.check( "an empty repo answer adds nothing", find( "dotfiles", ids( ip.plan( { dotfiles_repo: "" } ) ) ) == 0 );
 testkit.check( "no databases picked: nothing starts (Podman needs no setting)", ids( ip.plan( { container_engine: "podman", databases: [] } ) ) == "containers" );
 testkit.check( "Docker without databases is still remembered", cmd( ip.plan( { container_engine: "docker", databases: [] } ), "db-engine" ) == "bxrig db engine docker" );
-p = ip.plan( { desktops: "hyprland", workspaces: 4, natural_scroll: true, layouts: [ "us-intl", "es" ], theme: "light", wallpaper: "aurora" } );
-testkit.check( "the Hyprland starter takes workspaces, natural scroll, layouts, theme and wallpaper", cmd( p, "hyprland" ) == "bxrig setup hyprland --workspaces=4 --natural-scroll --layouts=us-intl,es --theme=light --wallpaper=aurora" && p.pending.len() == 0 );
+p = ip.plan( { desktops: "hyprland", workspaces: 4, natural_scroll: true, layouts: [ "us-intl", "es" ], theme: "light", wallpaper: "nord" } );
+testkit.check( "the Hyprland starter takes workspaces, natural scroll, layouts, theme and wallpaper", cmd( p, "hyprland" ) == "bxrig setup hyprland --workspaces=4 --natural-scroll --layouts=us-intl,es --theme=light --wallpaper=nord" && p.pending.len() == 0 );
 p = ip.plan( { desktops: "plasma", workspaces: 4, theme: "light" } );
 testkit.check( "those answers are pending when Hyprland is not set up", p.pending.toList( "," ) == "workspaces,theme" );
 p = ip.plan( { desktops: "hyprland", theme_name: "nord" } );
