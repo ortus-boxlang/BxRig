@@ -24,20 +24,20 @@ Two styles: **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys for 
 | r36 | Night light | no key (menu only) | no key (menu only) | Omarchy has none; `Super+Alt+Shift+N` goes |
 | r39 | Close window | `Super+W`, `Super+Q` | `Super+Q` | `Super+W` is the Close tab remap in Mac mode |
 | r43 | Float or tile | `Super+T` | `Super+Alt+T` | `Super+T` is New tab in Mac mode |
-| r52 | Quake console | `Super+Shift+Grave` | `Super+Shift+Grave` | Not built here yet; the key is reserved |
+| r52 | Quake console | `Super+Shift+Grave` | `Super+Shift+Grave` | Built in the second round (`window quake`); sending a window there is `Super+Ctrl+Grave` |
 | r53 | Minimize | `Super+H` | `Super+H` | Replaces `Super+M`; restore is `Super+Shift+H` (assumed) |
 
 ## Not touched by the owner: the page proposal applies
 
 | Row | Action | Traditional | Mac | Note |
 |---|---|---|---|---|
-| r3 | System menu | `Super+Escape`, `XF86PowerOff` | same | P1, needs `menu ROUTE` |
+| r3 | System menu | `Super+Escape`, `XF86PowerOff` | same | `menu open system` |
 | r4 | Capture, Toggle, Hardware menus | `Super+Ctrl+C`, `Super+Ctrl+O`, `Super+Ctrl+H` | same | The Hardware section was added in the second round (below) |
 | r5, x3 | Shortcut cheat sheet | `Super+K` | `Super+K` | |
-| r11, x2 | Screen recording | `Super+Shift+R`; region `Super+Alt+Shift+R` | same | Omarchy's `Alt+Print` is not added |
+| r11, x2 | Screen recording | `Super+Shift+R`; region `Super+Alt+Shift+R`; with desktop audio `Alt+Print` | same | `Alt+Print` was added in the second round |
 | r44 | Full screen | `Super+F` | `Super+Ctrl+F` | `Super+F` is Find in Mac mode |
-| r71 | Browser; private | `Super+B`, `Super+Shift+Return`; private `Super+Shift+Alt+B` | `Super+Shift+Return`; private `Super+Shift+Alt+B` | `Super+B` is Bold in Mac mode |
-| r72 | File manager | `Super+Shift+F`; in cwd `Super+Alt+Shift+F` | `Super+E`; in cwd `Super+Alt+Shift+F` | in cwd is not built, so not bound |
+| r71 | Browser; private | `Super+B`, `Super+Shift+Return`; private `Super+Alt+Shift+B` | `Super+Shift+Return`; private `Super+Shift+N` | `Super+B` is Bold in Mac mode. The Mac private key changed in the second round (Cmd+Shift+N) |
+| r72 | File manager | `Super+Shift+F`; in cwd `Super+Alt+Shift+F` | `Super+E`; in cwd `Super+Alt+Shift+F` | in cwd is `files here` (second round) |
 | r76 | Log out | System menu | `Super+Shift+Q` | Omarchy uses it for the calculator. Kept on both styles (Plasma needs it) |
 | r77, r78 | Force quit, Overview | `Super+Alt+Escape`, `Super+Ctrl+Up` | same | |
 | r81 | Noctalia settings window | `Super+Ctrl+Comma` | `Super+Ctrl+Comma` | `Super+Comma` is Preferences in Mac mode |
@@ -48,7 +48,7 @@ Two styles: **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys for 
 
 - Every hand-written bind (starter `hyprland.lua` and `bxrig.lua`) moves into the one shortcut table, which has a key set per style.
 - Mac mode also swaps Alt and Win on PC keyboards (asked in the wizard; Apple keyboard: no swap).
-- New runner entries: region record, dictation toggle, color picker, time, battery and weather notices, a Shortcuts section (list, search, rebind, run).
+- New runner entries: region record, dictation toggle, color picker, time, battery and weather notices, a Shortcuts section (list, search, rebind, run); second round: recording with audio, quake console, private browser window, file manager here, webcam, and a top-level Hardware section.
 
 ## Owner answers to the open questions (2026-11-15)
 
