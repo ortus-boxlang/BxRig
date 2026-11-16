@@ -69,7 +69,8 @@ echo '{' > "$tmp/cfg/bxrig/runner.json"; [[ "$(code "$binary" runner list)" == 4
 # Super+Alt+Space: the bound command opens whichever launcher is chosen, and falls back to Noctalia when it cannot
 mkdir -p "$tmp/home/.local/bin"; cp "$binary" "$tmp/home/.local/bin/bxrig"
 printf '#!/usr/bin/env bash\necho "rofi $*" >> "$LOG"\n' > "$tmp/bin/rofi"; chmod +x "$tmp/bin/rofi"
-bound="$("$binary" keys render hyprland | sed -n 's/.*ALT + Space.*\[\[\(.*\)\]\].*/\1/p')"
+# the Super+Alt+Space line only (Alt+Space alone is dictation)
+bound="$("$binary" keys render hyprland | sed -n 's/.*mainMod \.\. " + ALT + Space".*\[\[\(.*\)\]\].*/\1/p')"
 [[ -n "$bound" ]] || fail 'no Super+Alt+Space bind found in the Hyprland module'
 press() { : > "$LOG"; rm -f "$tmp/cfg/bxrig/runner.json"; [[ -z "${1:-}" ]] || hypr "$binary" runner set "$1" >/dev/null; hypr sh -c "$bound" >/dev/null 2>&1; for _ in 1 2 3 4 5 6 7 8 9 10; do [[ -s "$LOG" ]] && break; sleep 0.3; done; cat "$LOG"; }
 [[ "$(press)" == "noctalia msg panel-toggle launcher" ]] || fail 'Super+Alt+Space opens Noctalia by default'

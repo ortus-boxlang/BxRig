@@ -49,6 +49,10 @@ rc=0; env HOME="$tmp/home" PATH="$tmp/nobin" "$binary" notify dnd on >/dev/null 
 
 # keys sheet: the same rows as `keys show`, and the new shortcuts are in it
 run "$binary" keys sheet --json | jq -e '(.data.lines | length) > 100 and (.data.lines | map(select(startswith("Super+K "))) | length) == 1' >/dev/null || fail 'keys sheet json'
-run "$binary" keys sheet | grep -q 'Super+Shift+4   Screenshot: a region' || fail 'keys sheet text'
+# screenshots: Print in the Traditional style (the default); the Mac style keeps Super+Shift+3/4/5
+run "$binary" keys sheet | grep -q '^Print   Screenshot: a region' || fail 'keys sheet text: Print takes a region (Traditional)'
+run "$binary" keys style mac --yes >/dev/null
+run "$binary" keys sheet | grep -q 'Super+Shift+4   Screenshot: a region' || fail 'keys sheet text: Super+Shift+4 takes a region (Mac)'
+run "$binary" keys style traditional --yes >/dev/null
 run "$binary" keys render hyprland | grep -q 'screenshot region' || fail 'Hyprland module binds the screenshot keys'
 echo "capture-notify-test ok"
