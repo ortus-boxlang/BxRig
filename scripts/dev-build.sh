@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Build bxrig with the local MatchBox integration branch (branch `bxrig` in /home/user/matchbox,
-# pushed to ortus-boxlang/matchbox) instead of the pinned release, so fixes that are still in review
-# can be used now. Output: ./dist/bxrig
-#   MATCHBOX=/path/to/matchbox  override the compiler (default: the local debug build)
+# Build bxrig with the MatchBox chosen by scripts/setup-local.sh (saved in .cache/dev.env).
+# Output: ./dist/bxrig
+#   MATCHBOX=/path/to/matchbox  override the compiler
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
-mb="${MATCHBOX:-/home/user/matchbox/target/debug/matchbox}"
-[[ -x "$mb" ]] || { echo "MatchBox not found at $mb (build it: cd /home/user/matchbox && cargo build --features bif-tui)" >&2; exit 4; }
+[[ -z "${MATCHBOX:-}" && -f "$root/.cache/dev.env" ]] && source "$root/.cache/dev.env"
+mb="${MATCHBOX:-}"
+[[ -n "$mb" && -x "$mb" ]] || { echo "No MatchBox set up (run scripts/setup-local.sh, or set MATCHBOX)" >&2; exit 4; }
 mkdir -p "$root/dist"
 "$root/bootstrap/gen-assets.sh" >/dev/null
 "$root/bootstrap/gen-version.sh" >/dev/null
