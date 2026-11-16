@@ -128,7 +128,7 @@ testkit.check( "update channel and notifications", cmd( p, "update-channel" ) ==
 p = ip.plan( { app_mode: "defaults", agent_skills: [ "bxrig", "boxlang" ] } );
 testkit.check( "agent skills are one optional step", cmd( p, "agent-skills" ) == "bxrig skills install bxrig boxlang" );
 p = ip.plan( { app_mode: "defaults", dictation: "none" } );
-testkit.check( "dictation none adds nothing", ids( p ) == "apps-basic" );
+testkit.check( "dictation none adds nothing", ids( p ) == "apps-basic,default-images,default-pdf" );
 p = ip.plan( { desktops: "plasma", app_mode: "defaults", workspaces: 4, plasma_panels: "bxrig" } );
 testkit.check( "Plasma: the panel layout step with 4 desktops, and its widgets are installed", cmd( p, "plasma-panels" ) == "bxrig plasma panels apply --desktops=4" && find( "panel-colorizer", cmd( p, "apps" ) ) > 0 && find( "window-title", cmd( p, "apps" ) ) > 0 && find( "kvitals", cmd( p, "apps" ) ) > 0 && find( "kdeplasma-addons", cmd( p, "apps" ) ) > 0 );
 p = ip.plan( { desktops: "plasma", app_mode: "defaults", workspaces: 3, plasma_panels: "bxrig", plasma_weather: false, plasma_agenda: true } );
@@ -141,7 +141,7 @@ testkit.check( "Plasma without a panels answer adds no panel step", cmd( p, "pla
 p = ip.plan( { desktops: "hyprland", app_mode: "defaults" } );
 testkit.check( "Hyprland only: no Plasma panel steps", cmd( p, "plasma-panels" ) == "" && cmd( p, "plasma-desktops" ) == "" );
 p = ip.plan( { app_mode: "defaults", default_browser: "firefox" } );
-testkit.check( "in Basic mode a different default browser is added to the install", ids( p ) == "apps-basic,apps,default-browser" && cmd( p, "apps" ) == "bxrig install firefox" );
+testkit.check( "in Basic mode a different default browser is added to the install", ids( p ) == "apps-basic,apps,default-browser,default-images,default-pdf" && cmd( p, "apps" ) == "bxrig install firefox" );
 testkit.check( "the default terminal follows the terminal answer", cmd( ip.plan( { terminal: "kitty" } ), "default-terminal" ) == "bxrig default terminal kitty" );
 
 // ---- AI: agents, keys, default ----
