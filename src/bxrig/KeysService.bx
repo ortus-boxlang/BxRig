@@ -66,6 +66,11 @@ class KeysService {
 			return new bxrig.util.Exit().precondition();
 		}
 		if ( asJson ) { variables.quiet = true; variables.config.quiet( true ); }
+		// With no keystyle.json the style is read from whether the xremap unit exists (an old install had the Mac keys
+		// then). This apply writes that unit, so the style in effect now is saved first; otherwise the next run would read
+		// Mac and find every file it just wrote outdated.
+		var keyStyle = new bxrig.KeyStyle();
+		if ( yes && !dryRun && !fileExists( keyStyle.file() ) ) keyStyle.write( {} );
 		var worst = 0;
 		for ( var e in variables.sc.entries( variables.config.cfgHome() ) ) {
 			var c = variables.config.configApply( e, yes, dryRun, force );

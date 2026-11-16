@@ -47,6 +47,8 @@ LUA
 [[ "$(code "$binary" keys set menu Super+Shift+Y --yes --force)" == 0 ]] || fail '--force allows a clash with your own line'
 k conflicts --json | jq -e '.data.ok == false and (.data.user | length) == 2 and .data.user[0].id == "menu" and .data.user[0].line == 2 and .data.user[1].id == "volume-mute"' >/dev/null || fail "conflicts: $(k conflicts --json)"
 k reset menu --yes >/dev/null
+k conflicts | grep -q 'hyprland.lua line 4' && ! k conflicts | grep -q 'line 2' || fail 'after the reset only your own mute line still clashes'
+sed -i '/XF86AudioMute/d' "$tmp/cfg/hypr/hyprland.lua"
 k conflicts | grep -q 'No conflicts' || fail 'clean table and no clash'
 # two bindings can end up sharing a combo only by editing the file by hand: the scan still reports it
 echo '{"ai-shell":"Super+Alt+K","menu":"super+alt+k"}' > "$tmp/cfg/bxrig/shortcuts.json"
