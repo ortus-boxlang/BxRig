@@ -85,7 +85,8 @@ The full list (96 commands) is in the [command reference](https://bxcachy.boxlan
 ## Development
 
 ```bash
-scripts/dev-build.sh                         # builds dist/bxrig with a local MatchBox (see the script)
+scripts/setup-local.sh                       # one time: asks stable, edge or source MatchBox, builds, smoke test
+scripts/dev-build.sh                         # rebuilds dist/bxrig with that MatchBox
 tests/run-all.sh                             # every test by discovery: *-test.sh with the binary, *_test.bxs with matchbox
 bash tests/theme-test.sh dist/bxrig        # script tests, one per area (fake tools, no root needed)
 (cd src && matchbox ../tests/init_plan_test.bxs)   # unit tests (35 `.bxs` files; they need no native build)

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Runs every test by discovery: tests/*-test.sh (with the binary) and tests/*_test.bxs (with matchbox, from src/).
 # Usage: tests/run-all.sh [BINARY] [filter]     JOBS=3 sets the parallelism (default 3; wizard-test is timing-sensitive, run it alone with JOBS=1 if it fails).
-# BINARY defaults to dist/bxrig; MATCHBOX to the local debug build or `matchbox` on PATH. Skips native-package-integration.sh (needs a sandbox with strata).
+# BINARY defaults to dist/bxrig; MATCHBOX to the one in .cache/dev.env (scripts/setup-local.sh) or `matchbox` on PATH. Skips native-package-integration.sh (needs a sandbox with strata).
 # Prints one line per test and a summary; exit 1 on any failure.
 root="$(cd "$(dirname "$0")/.." && pwd)"
 binary="$(realpath "${1:-$root/dist/bxrig}")"
 filter="${2:-}"
 jobs="${JOBS:-3}"
 mb="${MATCHBOX:-}"
-[[ -z "$mb" && -x /home/user/matchbox/target/debug/matchbox ]] && mb=/home/user/matchbox/target/debug/matchbox
+[[ -z "$mb" && -f "$root/.cache/dev.env" ]] && mb="$(source "$root/.cache/dev.env"; echo "${MATCHBOX:-}")"
 [[ -z "$mb" ]] && mb="$(command -v matchbox || true)"
 logdir="$(mktemp -d)"; trap 'rm -rf "${logdir:?}"' EXIT
 run_one() { # name, command...   (runs in a subshell, writes $logdir/NAME.result)
