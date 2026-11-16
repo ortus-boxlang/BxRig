@@ -132,8 +132,8 @@ else
 	step real-keys-render-all             0               bash -c "for t in xremap hyprland plasma; do '$BIN' keys render \$t | grep -q . || exit 1; done"
 	step real-setup-hyprland              0               "$BIN" setup hyprland --yes
 	step real-hyprland-noctalia-installed 0               pacman -Q hyprland noctalia uwsm hyprlock
-	step real-starter-files-written       0               bash -c 'for f in .config/hypr/hyprland.lua .config/hypr/bxrig.lua .config/noctalia/config.toml .config/noctalia/palettes/BxRig.json .config/xremap/config.yml Pictures/BxRig/box.jpg; do test -s "$HOME/$f" || { echo "missing $f"; exit 1; }; done'
-	step real-wallpapers-byte-identical   0               bash -c 'for w in box.jpg grid.jpg aurora.jpg minimal.png; do cmp "$HOME/Pictures/BxRig/$w" "assets/wallpapers/$w" || exit 1; done'
+	step real-starter-files-written       0               bash -c 'for f in .config/hypr/hyprland.lua .config/hypr/bxrig.lua .config/noctalia/config.toml .config/noctalia/palettes/BxRig.json .config/xremap/config.yml Pictures/BxRig/bxrig.jpg; do test -s "$HOME/$f" || { echo "missing $f"; exit 1; }; done'
+	step real-wallpapers-byte-identical   0               bash -c 'for w in assets/wallpapers/*.jpg; do cmp "$HOME/Pictures/BxRig/${w##*/}" "$w" || exit 1; done'
 	step real-noctalia-config-valid-toml  0               python3 -c "import sys,tomllib; tomllib.load(open(sys.argv[1],'rb'))" "$HOME/.config/noctalia/config.toml"
 	step real-keys-check-clean            0               "$BIN" keys check
 	step real-setup-hyprland-rerun        0               "$BIN" setup hyprland --yes
