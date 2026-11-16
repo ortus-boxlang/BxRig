@@ -29,10 +29,15 @@ finish() {  # FILE SOURCE COMMIT
 	echo "MatchBox $want ($2${3:+, $3}) -> $dest"
 }
 
-# The evergreen file can be served stale by the CDN, so the build is taken from its immutable folder
-# (<version>-<commit>/) named in version-latest.properties; without that file the evergreen folder is used.
+# The evergreen files can be served stale by the CDN (version-latest.properties too, for about a day), so the build is taken
+# from its immutable folder (<version>-<commit>/): first the one for the commit the branch is on now (git ls-remote), then the one
+# named in version-latest.properties; without either the evergreen folder is used.
 build_base() {
-	local props v c
+	local props v c head
+	if [[ -n "$repo" && -n "$ref" ]] && command -v git >/dev/null; then
+		head="$(git ls-remote "$repo" "refs/heads/$ref" 2>/dev/null | awk '{print substr($1, 1, 7); exit}')" || head=""
+		if [[ -n "$head" ]] && curl -fsSL -m 30 -o /dev/null "$base/$want-$head/version.properties" 2>/dev/null; then echo "$base/$want-$head"; return; fi
+	fi
 	props="$(curl -fsSL -m 30 "$base/version-latest.properties" 2>/dev/null)" || { echo "$base"; return; }
 	v="$(sed -n 's/^version=//p' <<<"$props" | head -n1)"; c="$(sed -n 's/^commit=//p' <<<"$props" | head -n1)"
 	if [[ -n "$v" && -n "$c" ]]; then echo "$base/$v-$c"; else echo "$base"; fi
