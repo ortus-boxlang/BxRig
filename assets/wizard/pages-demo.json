@@ -61,7 +61,7 @@
 					"type": "choice",
 					"id": "layout",
 					"label": "How should windows behave in Hyprland?",
-					"help": "The default layout. You can change it later in hyprland.lua.",
+					"help": "The default layout. Change it later in the menu (Appearance, Windows, Layout), or per workspace with Super+Shift+J.",
 					"default": "dwindle",
 					"when": {
 						"id": "desktops",
@@ -82,9 +82,19 @@
 							"description": "One big window on the left, the others stacked beside it."
 						},
 						{
+							"value": "columns",
+							"label": "Three columns",
+							"description": "Windows sit in three even columns, the main one in the middle. Hyprland's master layout, centred."
+						},
+						{
 							"value": "scrolling",
 							"label": "Scrolling (carousel)",
 							"description": "Windows sit in columns on a strip you scroll sideways, like niri."
+						},
+						{
+							"value": "monocle",
+							"label": "One window at a time",
+							"description": "Every window full size; switch between them with Alt+Tab or Super and the arrow keys."
 						},
 						{
 							"value": "floating",

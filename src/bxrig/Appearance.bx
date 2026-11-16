@@ -2,9 +2,9 @@
 //   appearance status [--json]
 //   appearance bar show|hide|toggle | position top|bottom|left|right | style opaque|glassy|clear | clock ID | battery on|off
 //   appearance dock show|hide|toggle | mode autohide|always|off | position top|bottom|left|right
-//   appearance windows gaps on|off | corners theme|sharp|rounded | opacity opaque|transparent|glassy | one-window-ratio on|off
+//   appearance windows gaps on|off | corners theme|sharp|rounded | opacity opaque|transparent|glassy | one-window-ratio on|off | snap on|off
 //   appearance animations on|off
-//   appearance layout dwindle|scrolling|floating
+//   appearance layout dwindle|master|columns|scrolling|monocle|floating   (HyprLayout)
 //   appearance font list | NAME | install NAME [--yes]        NAME is a font id from `font list` or an installed family
 //   appearance background list | set NAME_OR_PATH | next | random
 // Where each one lands (and nothing here edits a file you wrote):
@@ -94,7 +94,9 @@ class Appearance {
 		var o = structKeyExists( op, w.opacity ?: "" ) ? op[ w.opacity ] : {};
 		var general = [];
 		if ( gaps ) { general.append( "gaps_in = 0" ); general.append( "gaps_out = 0" ); general.append( "border_size = 0" ); }
-		if ( len( s.layout ) && arrayFind( [ "dwindle", "scrolling" ], s.layout ) ) general.append( 'layout = "' & s.layout & '"' );
+		var hl = new bxrig.HyprLayout();
+		if ( len( s.layout ) && hl.valid( s.layout ) && s.layout != "floating" ) general.append( 'layout = "' & hl.base( s.layout ) & '"' );
+		if ( ( w.snap ?: "on" ) == "off" ) general.append( "snap = { enabled = false }" );
 		var deco = [];
 		if ( structKeyExists( w, "corners" ) && w.corners == "sharp" ) deco.append( "rounding = 0" );
 		if ( structKeyExists( w, "corners" ) && w.corners == "rounded" ) { deco.append( "rounding = 14" ); deco.append( "rounding_power = 2" ); }
@@ -102,6 +104,7 @@ class Appearance {
 		var out = [];
 		if ( general.len() ) out.append( "general = { " & general.toList( ", " ) & " }" );
 		if ( deco.len() ) out.append( "decoration = { " & deco.toList( ", " ) & " }" );
+		if ( len( s.layout ) && len( hl.masterFields( s.layout ) ) ) out.append( "master = { " & hl.masterFields( s.layout ) & " }" );
 		if ( s.animations == "off" ) out.append( "animations = { enabled = false }" );
 		if ( ( w.one_window_ratio ?: "off" ) == "on" ) out.append( "layout = { single_window_aspect_ratio = { 1, 1 } }" );
 		lines.append( "return { " & ( out.len() ? chr( 10 ) & "  " & out.toList( "," & chr( 10 ) & "  " ) & chr( 10 ) : "" ) & "}" );
@@ -219,6 +222,7 @@ class Appearance {
 		}
 		else if ( v == "opacity" && structKeyExists( opacities(), x ) ) { s.windows.opacity = x; label = "window opacity"; }
 		else if ( v == "one-window-ratio" && arrayFind( [ "on", "off" ], x ) ) { s.windows.one_window_ratio = x; label = "one-window ratio"; }
+		else if ( v == "snap" && arrayFind( [ "on", "off" ], x ) ) { s.windows.snap = x; label = "window snapping"; }
 		else return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "appearance" ), arguments.asJson );
 		if ( arguments.dry ) { applied.hyprland = "would write " & lookFile() & " and run hyprctl reload"; return result( label, x, applied, notes, arguments.asJson, true ); }
 		writeState( s );
@@ -240,7 +244,7 @@ class Appearance {
 	}
 
 	function layoutCmd( args, dry, asJson ) {
-		if ( arguments.args.len() != 1 || !arrayFind( [ "dwindle", "scrolling", "floating" ], arguments.args[ 1 ] ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "appearance layout" ), arguments.asJson );
+		if ( arguments.args.len() != 1 || !new bxrig.HyprLayout().valid( arguments.args[ 1 ] ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "appearance layout" ), arguments.asJson );
 		var l = arguments.args[ 1 ];
 		var applied = {};
 		if ( l == "floating" ) {
@@ -355,7 +359,7 @@ class Appearance {
 		var lines = [ "Font:       " & ( len( s.font ) ? s.font : "(default)" ),
 			"Bar:        position " & ( s.bar.position ?: "(default)" ) & ", style " & ( s.bar.style ?: "(default)" ) & ", clock " & ( s.bar.clock ?: "(default)" ) & ", battery % " & ( s.bar.battery_percent ?: "(default)" ),
 			"Dock:       mode " & ( s.dock.mode ?: "(default)" ) & ", position " & ( s.dock.position ?: "(default)" ),
-			"Windows:    gaps " & ( s.windows.gaps ?: "on" ) & ", corners " & ( s.windows.corners ?: "theme" ) & ", opacity " & ( s.windows.opacity ?: "(default)" ) & ", one-window ratio " & ( s.windows.one_window_ratio ?: "off" ),
+			"Windows:    gaps " & ( s.windows.gaps ?: "on" ) & ", corners " & ( s.windows.corners ?: "theme" ) & ", opacity " & ( s.windows.opacity ?: "(default)" ) & ", one-window ratio " & ( s.windows.one_window_ratio ?: "off" ) & ", snap " & ( s.windows.snap ?: "on" ),
 			"Animations: " & ( len( s.animations ) ? s.animations : "on" ),
 			"Layout:     " & ( len( s.layout ) ? s.layout : "dwindle" ) ];
 		return variables.out.say( "ok", s, arguments.asJson, lines );

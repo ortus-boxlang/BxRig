@@ -53,6 +53,8 @@ lua() { rm -rf "$tmp/cfg"; run "$binary" setup hyprland "$@" --yes >/dev/null ||
 l="$(lua)"; grep -q 'layout           = "dwindle"' <<<"$l" || fail 'dwindle is the default layout'; ! grep -q '^hl.window_rule({ name = "bxrig-floating"' <<<"$l" || fail 'tiling must not float windows'
 l="$(lua --layout=master)"; grep -q 'layout           = "master"' <<<"$l" || fail 'master layout'
 l="$(lua --layout=scrolling)"; grep -q 'layout           = "scrolling"' <<<"$l" || fail 'scrolling layout'
+l="$(lua --layout=columns)"; grep -q 'layout           = "master"' <<<"$l" && grep -qF 'hl.config({ master    = { new_status = "master", orientation = "center", mfact = 0.34 } })' <<<"$l" || fail 'columns is the centred master'
+l="$(lua --layout=monocle)"; grep -q 'layout           = "monocle"' <<<"$l" || fail 'monocle layout'
 l="$(lua --layout=floating)"; grep -q 'layout           = "dwindle"' <<<"$l" && grep -q '^hl.window_rule({ name = "bxrig-floating", match = { class = ".\*" }, float = true })' <<<"$l" || fail 'floating keeps dwindle underneath and floats new windows'
 [[ "$(code "$binary" setup hyprland --layout=carousel --yes)" == 4 ]] || fail 'an unknown layout exits 4'
 # the other starter choices: workspaces, natural scroll, keyboard layouts, theme, wallpaper

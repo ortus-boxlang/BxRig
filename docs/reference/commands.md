@@ -489,7 +489,7 @@ Hyprland with Noctalia, or KDE Plasma beside it: the session, the keys, the defa
 Set up a desktop: Hyprland with Noctalia, Plasma with HyprKwin tiling, terminals, keyboards, status.
 
 ```text
-bxrig setup plasma [--keys | --undo-keys] | hyprland [--terminal=ghostty|kitty|alacritty|foot|konsole] [--layout=dwindle|master|scrolling|floating] [--workspaces=N] [--natural-scroll] [--layouts=us-intl,es] [--theme=dark|light|auto] [--wallpaper=box|grid|aurora|minimal] | terminal [--default=ghostty] [--also=a,b] | shell [--shell=zsh|fish|bash] | keyboard [--layouts=us-intl,es] | xremap [--build=hypr|kde] | undo plasma|hyprland|xremap | status [--yes] [--dry-run] [--json]
+bxrig setup plasma [--keys | --undo-keys] | hyprland [--terminal=ghostty|kitty|alacritty|foot|konsole] [--layout=dwindle|master|columns|scrolling|monocle|floating] [--workspaces=N] [--natural-scroll] [--layouts=us-intl,es] [--theme=dark|light|auto] [--wallpaper=box|grid|aurora|minimal] | terminal [--default=ghostty] [--also=a,b] | shell [--shell=zsh|fish|bash] | keyboard [--layouts=us-intl,es] | xremap [--build=hypr|kde] | undo plasma|hyprland|xremap | status [--yes] [--dry-run] [--json]
 bxrig setup boot [status] | setup undo boot [--yes] [--dry-run] [--json]
 ```
 
@@ -698,8 +698,9 @@ bxrig appearance windows gaps on|off
 bxrig appearance windows corners theme|rounded|sharp
 bxrig appearance windows opacity opaque|glassy
 bxrig appearance windows one-window-ratio on|off
+bxrig appearance windows snap on|off
 bxrig appearance animations on|off
-bxrig appearance layout dwindle|scrolling|floating
+bxrig appearance layout dwindle|master|columns|scrolling|monocle|floating
 bxrig appearance font list
 bxrig appearance font ID
 bxrig appearance font install ID [--yes]
@@ -712,6 +713,7 @@ bxrig appearance background random
 ```bash
 bxrig appearance bar position bottom
 bxrig appearance windows gaps off
+bxrig appearance layout columns
 bxrig appearance font install cascadia --yes
 bxrig appearance background random
 ```
@@ -1475,11 +1477,12 @@ bxrig forcequit
 
 ### `bxrig window` {#bxrig-window}
 
-Minimize and restore windows, and the quake console.
+Minimize, restore and snap windows, and the quake console.
 
 ```text
 bxrig window minimize|restore|quake [--json]
 bxrig window quake send [--json]
+bxrig window snap left|right [--json]
 ```
 
 ```bash
@@ -1487,9 +1490,10 @@ bxrig window minimize
 bxrig window restore
 bxrig window quake
 bxrig window quake send
+bxrig window snap left
 ```
 
-> quake shows or hides the special workspace qconsole (the default terminal starts there the first time); quake send moves the focused window onto it. Hyprland only.
+> quake shows or hides the special workspace qconsole (the default terminal starts there the first time); quake send moves the focused window onto it. snap left|right floats the focused window onto that half of its monitor. Hyprland only.
 
 ### `bxrig overview` {#bxrig-overview}
 

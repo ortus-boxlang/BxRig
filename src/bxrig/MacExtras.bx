@@ -1,8 +1,9 @@
-// Mac-style helpers: `emoji`, `forcequit`, `window minimize|restore|quake [send]`, `overview [setup]`, `nightshift ...`, `gpu doctor`, `input doctor|gestures`,
+// Mac-style helpers: `emoji`, `forcequit`, `window minimize|restore|quake [send]|snap left|right`, `overview [setup]`, `nightshift ...`, `gpu doctor`, `input doctor|gestures`,
 // `airplay on|off|status`. Each is a thin wrapper over a tool whose command is documented:
 //   emoji        `rofimoji` (picks an emoji and types or copies it; Omarchy uses Walker's symbols mode on Super+Ctrl+E)
 //   forcequit    Hyprland `hyprctl kill` (click the window to kill); Plasma `org.kde.KWin /KWin killWindow` over D-Bus
-//   window       Hyprland `hyprctl dispatch movetoworkspacesilent special:minimized` / `togglespecialworkspace minimized`;
+//   window       Hyprland `hyprctl dispatch movetoworkspacesilent special:minimized` / `togglespecialworkspace minimized` (then the Lua form);
+//                snap left|right: floats the focused window onto half of its monitor (`hyprctl monitors -j`, then Lua dispatches);
 //                quake: `togglespecialworkspace qconsole` (the default terminal starts there the first time), quake send: `movetoworkspacesilent special:qconsole`
 //   overview     Hyprland `hyprctl dispatch hyprexpo:expo toggle` (the hyprexpo plugin, installed by `overview setup` with hyprpm);
 //                Plasma KWin Overview through `org.kde.kglobalaccel invokeShortcut Overview`
@@ -57,11 +58,72 @@ class MacExtras {
 
 	function window( action, asJson ) {
 		if ( !variables.proc.has( "hyprctl" ) ) return need( "window", "hyprctl", "This needs Hyprland.", arguments.asJson );
-		if ( arguments.action == "minimize" ) return run( "window", [ "hyprctl", "dispatch", "movetoworkspacesilent", "special:minimized" ], "", arguments.asJson );
-		if ( arguments.action == "restore" ) return run( "window", [ "hyprctl", "dispatch", "togglespecialworkspace", "minimized" ], "", arguments.asJson );
-		if ( arguments.action == "quake-send" ) return run( "window", [ "hyprctl", "dispatch", "movetoworkspacesilent", "special:" & quakeWorkspace() ], "", arguments.asJson );
+		if ( arguments.action == "minimize" ) return dispatch( "window", [ "movetoworkspacesilent", "special:minimized" ], 'hl.dsp.window.move({ workspace = "special:minimized", follow = false })', arguments.asJson );
+		if ( arguments.action == "restore" ) return dispatch( "window", [ "togglespecialworkspace", "minimized" ], 'hl.dsp.workspace.toggle_special("minimized")', arguments.asJson );
+		if ( arguments.action == "quake-send" ) return dispatch( "window", [ "movetoworkspacesilent", "special:" & quakeWorkspace() ], 'hl.dsp.window.move({ workspace = "special:' & quakeWorkspace() & '", follow = false })', arguments.asJson );
 		if ( arguments.action == "quake" ) return quake( arguments.asJson );
+		if ( arguments.action == "snap-left" ) return snap( "left", arguments.asJson );
+		if ( arguments.action == "snap-right" ) return snap( "right", arguments.asJson );
 		return variables.cli.say( "window", "usage", {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "window" ) ] );
+	}
+
+	// `hyprctl dispatch` with the legacy dispatcher words, then, when that fails, the Lua form (a Hyprland 0.55+ Lua session reads
+	// `hyprctl dispatch ARG` as `hl.dispatch(ARG)`, wiki: using-hyprctl).
+	function dispatch( command, legacy, lua, asJson ) {
+		var argv = [ "hyprctl", "dispatch" ];
+		for ( var w in arguments.legacy ) argv.append( w );
+		var r = variables.proc.exec( argv, 10 );
+		if ( r.exitCode != 0 ) { argv = [ "hyprctl", "dispatch", arguments.lua ]; r = variables.proc.exec( argv, 10 ); }
+		if ( r.exitCode != 0 ) return variables.cli.say( arguments.command, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: hyprctl failed (exit " & r.exitCode & ")" ] );
+		return variables.cli.say( arguments.command, "ok", { argv: argv }, arguments.asJson, [] );
+	}
+
+	// ---- snapping: the focused window floats onto the left or right half of its monitor ----
+	// The gap kept around and between the halves: the starter hyprland.lua's gaps_out.
+	function snapGap() { return 12; }
+
+	// Where a snapped window goes: { x, y, w, h } in Hyprland's layout coordinates, from one `hyprctl monitors -j` entry
+	// (x, y, width, height in pixels, scale, reserved = [ left, top, right, bottom ] for the bar).
+	function snapBox( mon, side ) {
+		var sc = val( arguments.mon.scale ?: 1 );
+		if ( sc <= 0 ) sc = 1;
+		var res = isArray( arguments.mon.reserved ?: "" ) && arguments.mon.reserved.len() == 4 ? arguments.mon.reserved : [ 0, 0, 0, 0 ];
+		var g = snapGap();
+		var ux = arguments.mon.x + res[ 1 ] + g;
+		var uy = arguments.mon.y + res[ 2 ] + g;
+		var uw = int( arguments.mon.width / sc ) - res[ 1 ] - res[ 3 ] - 2 * g;
+		var uh = int( arguments.mon.height / sc ) - res[ 2 ] - res[ 4 ] - 2 * g;
+		var w = int( ( uw - g ) / 2 );
+		return { x: arguments.side == "left" ? ux : ux + uw - w, y: uy, w: w, h: uh };
+	}
+
+	// `window snap left|right`
+	function snap( side, asJson ) {
+		var cmd = "window snap";
+		var mr = variables.proc.exec( [ "hyprctl", "monitors", "-j" ], 10 );
+		var ar = variables.proc.exec( [ "hyprctl", "activewindow", "-j" ], 10 );
+		if ( mr.exitCode != 0 || ar.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: "hyprctl failed" }, arguments.asJson, [ "error: could not read the monitors or the window from hyprctl" ] );
+		var mon = {};
+		var win = {};
+		try {
+			win = jsonDeserialize( ar.output );
+			for ( var m in jsonDeserialize( mr.output ) ) if ( m.focused ?: false ) mon = m;
+		} catch ( any e ) {
+			return variables.cli.say( cmd, "failed", { error: "unreadable hyprctl output" }, arguments.asJson, [ "error: hyprctl gave output BxRig cannot read" ] );
+		}
+		if ( !isStruct( win ) || !structKeyExists( win, "address" ) ) return variables.cli.say( cmd, "precondition", { error: "no focused window" }, arguments.asJson, [ "error: no window has the focus" ] );
+		if ( structIsEmpty( mon ) ) return variables.cli.say( cmd, "precondition", { error: "no focused monitor" }, arguments.asJson, [ "error: no monitor has the focus" ] );
+		var b = snapBox( mon, arguments.side );
+		var steps = [
+			'hl.dsp.window.float({ action = "set" })',
+			"hl.dsp.window.resize({ x = " & b.w & ", y = " & b.h & ", relative = false })",
+			"hl.dsp.window.move({ x = " & b.x & ", y = " & b.y & ", relative = false })"
+		];
+		for ( var st in steps ) {
+			var r = variables.proc.exec( [ "hyprctl", "dispatch", st ], 10 );
+			if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ), step: st }, arguments.asJson, [ "error: hyprctl dispatch failed (exit " & r.exitCode & ")" ] );
+		}
+		return variables.cli.say( cmd, "ok", { side: arguments.side, box: b }, arguments.asJson, [] );
 	}
 
 	// ---- the quake console: the special workspace `qconsole` ----

@@ -291,6 +291,7 @@ class {
 			case "window":
 				if ( p.len() == 2 ) CLIExit( new bxrig.MacExtras( cli ).window( p[2], asJson ) );
 				if ( p.len() == 3 && p[2] == "quake" && p[3] == "send" ) CLIExit( new bxrig.MacExtras( cli ).window( "quake-send", asJson ) );
+				if ( p.len() == 3 && p[2] == "snap" && arrayFind( [ "left", "right" ], p[3] ) ) CLIExit( new bxrig.MacExtras( cli ).window( "snap-" & p[3], asJson ) );
 				println( new bxrig.CommandSpec().usage( "window" ) ); CLIExit( xit.usage() ); break;
 				case "overview": CLIExit( new bxrig.MacExtras( cli ).overview( p.len() == 2 && p[2] == "setup", asJson ) ); break;
 			case "nightshift":

@@ -79,6 +79,13 @@ run "$binary" appearance windows gaps off --dry-run --json | jq -e '.dry_run and
 hypr "$binary" appearance layout scrolling >/dev/null; lookhas 'layout = "scrolling"' || fail 'layout scrolling'
 : > "$LOG"; run "$binary" appearance layout floating >/dev/null; has 'self layout float' || fail 'layout floating runs `layout float`'
 [[ "$(code "$binary" appearance layout masonry)" == 2 ]] || fail 'bad layout'
+hypr "$binary" appearance layout columns >/dev/null; lookhas 'layout = "master"' && lookhas 'master = { orientation = "center", mfact = 0.34 }' || fail 'layout columns is the centred master'
+hypr "$binary" appearance layout master >/dev/null; lookhas 'layout = "master"' && ! lookhas 'orientation' || fail 'layout master drops the centring'
+hypr "$binary" appearance layout monocle >/dev/null; lookhas 'layout = "monocle"' || fail 'layout monocle'
+# ---- snapping: on by default (in the keys module), `windows snap off` writes it off ----
+hypr "$binary" appearance windows snap off >/dev/null; lookhas 'snap = { enabled = false }' || fail 'windows snap off'
+hypr "$binary" appearance windows snap on >/dev/null; ! lookhas 'snap' || fail 'windows snap on leaves the default'
+[[ "$(code "$binary" appearance windows snap maybe)" == 2 ]] || fail 'bad snap value'
 
 # ---- the font: list, install, set (Noctalia + the terminal starters you have not changed) ----
 run "$binary" appearance font list --json | jq -e '(.data.fonts | length == 7) and (.data.fonts | map(select(.id == "cascadia" and .installed)) | length == 1) and (.data.fonts | map(select(.id == "victor" and (.installed | not))) | length == 1)' >/dev/null || fail 'font list'

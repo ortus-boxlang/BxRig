@@ -38,6 +38,14 @@ class MenuTree {
 	function link( label, url ) { return { label: arguments.label, kind: "open", url: arguments.url }; }
 	function sub( label, children ) { return { label: arguments.label, kind: "sub", children: arguments.children }; }
 
+	// One entry per Hyprland layout (HyprLayout), each running `appearance layout NAME`.
+	function layoutItems() {
+		var hl = new bxrig.HyprLayout();
+		var items = [];
+		for ( var n in hl.names() ) items.append( spawn( hl.label( n ), [ "appearance", "layout", n ] ) );
+		return items;
+	}
+
 	function pick( label, source, argv, mode = "spawn", confirm = "" ) {
 		var e = { label: arguments.label, kind: "pick", source: arguments.source, argv: arguments.argv, mode: arguments.mode };
 		if ( len( arguments.confirm ) ) e.confirm = arguments.confirm;
@@ -128,7 +136,8 @@ class MenuTree {
 							sub( "Corners", [ spawn( "Follow the theme", [ "appearance", "windows", "corners", "theme" ] ), spawn( "Rounded", [ "appearance", "windows", "corners", "rounded" ] ), spawn( "Sharp", [ "appearance", "windows", "corners", "sharp" ] ) ] ),
 							sub( "Opacity", [ spawn( "Opaque", [ "appearance", "windows", "opacity", "opaque" ] ), spawn( "Glassy", [ "appearance", "windows", "opacity", "glassy" ] ) ] ),
 							sub( "Single window aspect ratio", [ spawn( "Square (1:1)", [ "appearance", "windows", "one-window-ratio", "on" ] ), spawn( "Full", [ "appearance", "windows", "one-window-ratio", "off" ] ) ] ),
-							sub( "Layout", [ spawn( "Dwindle", [ "appearance", "layout", "dwindle" ] ), spawn( "Scrolling", [ "appearance", "layout", "scrolling" ] ), spawn( "Floating", [ "appearance", "layout", "floating" ] ) ] )
+							sub( "Snap floating windows", [ spawn( "On", [ "appearance", "windows", "snap", "on" ] ), spawn( "Off", [ "appearance", "windows", "snap", "off" ] ) ] ),
+							sub( "Layout", layoutItems() )
 						] ),
 					sub( "Animations", [ spawn( "On", [ "appearance", "animations", "on" ] ), spawn( "Off", [ "appearance", "animations", "off" ] ) ] ),
 					run( "Appearance status", [ "appearance", "status" ] ),

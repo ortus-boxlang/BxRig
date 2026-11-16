@@ -57,6 +57,10 @@ Look and hardware have their own pages: [Appearance](appearance.md) for the bar,
 | Force quit | `bxrig forcequit` | `Super+Alt+Escape` |
 | Overview | `bxrig overview` | `Super+Ctrl+Up` |
 | Minimize / restore | `bxrig window minimize\|restore` | `Super+H` / `Super+Shift+H` |
+| Maximize | (Hyprland binding) | `Super+M` |
+| Snap to a half | `bxrig window snap left\|right` | `Super+Alt+Left` / `Right` |
+| Next layout on this workspace | (Hyprland binding) | `Super+Shift+J` |
+| Narrower / wider column | (Hyprland binding) | `Super+Minus` / `Super+Equal` |
 | Quake console | `bxrig window quake`, `window quake send` | `Super+Shift+Grave` / `Super+Ctrl+Grave` |
 | Private browser window | `bxrig browser private [URL]` | `Super+Alt+Shift+B` (Mac style `Super+Shift+N`) |
 | File manager in this folder | `bxrig files here [DIR]` | `Super+Alt+Shift+F` |

@@ -20,6 +20,21 @@ run "$binary" window minimize; grep -q 'hyprctl dispatch movetoworkspacesilent s
 run "$binary" window restore; grep -q 'hyprctl dispatch togglespecialworkspace minimized' "$LOG" || fail 'restore'
 run "$binary" window quake send; grep -q 'hyprctl dispatch movetoworkspacesilent special:qconsole' "$LOG" || fail 'quake send'
 [[ "$(code "$binary" window quake nope)" == 2 ]] || fail 'window quake with an unknown word exits 2'
+# snap: a 2560x1440 monitor with a 40 px bar on top; the window floats onto a half, 12 px gaps (Lua dispatches)
+mkdir -p "$tmp/snap"; cat > "$tmp/snap/hyprctl" <<'FAKE'
+#!/usr/bin/env bash
+echo "hyprctl $*" >> "$LOG"
+case "$1" in
+  monitors) echo '[{"id":0,"x":0,"y":0,"width":2560,"height":1440,"scale":1.0,"reserved":[0,40,0,0],"focused":true}]' ;;
+  activewindow) echo '{"address":"0xabc","floating":false}' ;;
+esac
+FAKE
+chmod +x "$tmp/snap/hyprctl"
+snap() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" PATH="$tmp/snap:$tmp/bin:$PATH" LOG="$LOG" "$@"; }
+: > "$LOG"; snap "$binary" window snap left >/dev/null || fail 'snap left'
+grep -qF 'hyprctl dispatch hl.dsp.window.float({ action = "set" })' "$LOG" && grep -qF 'hl.dsp.window.resize({ x = 1262, y = 1376, relative = false })' "$LOG" && grep -qF 'hl.dsp.window.move({ x = 12, y = 52, relative = false })' "$LOG" || fail "snap left: $(cat "$LOG")"
+: > "$LOG"; snap "$binary" window snap right --json | jq -e '.ok and .data.box.x == 1286 and .data.box.w == 1262' >/dev/null || fail 'snap right'
+[[ "$(code "$binary" window snap up)" == 2 ]] || fail 'window snap up exits 2'
 run "$binary" overview; grep -q 'hyprctl dispatch hyprexpo:expo toggle' "$LOG" || fail 'overview'
 BXRIG_DESKTOP=KDE run "$binary" overview; grep -q 'invokeShortcut Overview' "$LOG" || fail 'plasma overview'
 run "$binary" overview setup >/dev/null; grep -q 'hyprpm enable hyprexpo' "$LOG" || fail 'overview setup'
