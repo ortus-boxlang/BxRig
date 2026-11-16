@@ -235,7 +235,7 @@
 		
 		
 		
-			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#these-docs">These docs</a></li><li class="toc-level-2"><a href="#versions">Versions</a></li><li class="toc-level-2"><a href="#languages">Languages</a></li><li class="toc-level-2"><a href="#releases">Releases</a></li><li class="toc-level-2"><a href="#writing-code-that-stays-dry">Writing code that stays DRY</a></li><li class="toc-level-2"><a href="#running-the-tests">Running the tests</a></li></ul></details>
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#these-docs">These docs</a></li><li class="toc-level-2"><a href="#versions">Versions</a></li><li class="toc-level-2"><a href="#languages">Languages</a></li><li class="toc-level-2"><a href="#releases">Releases</a></li><li class="toc-level-2"><a href="#writing-code-that-stays-dry">Writing code that stays DRY</a></li><li class="toc-level-2"><a href="#local-setup">Local setup</a></li><li class="toc-level-2"><a href="#running-the-tests">Running the tests</a></li></ul></details>
 		
 
 		
@@ -276,18 +276,38 @@ boxlang bxSites build           # build to site/
 <li><strong>Start a program in the background with <code>Proc.detach</code></strong>, not another <code>setsid</code> string.</li>
 </ol>
 <p>The shared helpers are in <code>src/bxrig/util/</code>: <code>Cli</code>, <code>Out</code>, <code>Exit</code>, <code>Mutation</code>, <code>Proc</code>, <code>Env</code>, <code>Text</code>, <code>Fmt</code>, <code>Names</code>, <code>JsonStore</code>, <code>SystemFile</code>, <code>SystemdUnit</code>, <code>Systemd</code>, <code>Pacman</code>, <code>Aur</code>, <code>Http</code>, <code>Urls</code>, <code>Desktop</code>, <code>DesktopEntry</code>, <code>Ini</code>, <code>Props</code>, <code>Lua</code>, <code>Version</code>. The TUI helpers are <code>Modal</code>, <code>KeyMap</code> and <code>IntentRunner</code>. All of them are built; copy what they do, not the old copies.</p>
+<h2 id="local-setup"><a href="#local-setup" id="local-setup" name="local-setup" class="anchor"></a>Local setup</h2>
+<p>BxRig needs a MatchBox that has the fixes from the MatchBox <code>bxrig</code> branch. One script sets it up:</p>
+<pre><code class="language-bash">scripts/setup-local.sh                      # asks which MatchBox to use
+scripts/setup-local.sh --matchbox edge      # or pick one without the question
+</code></pre>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Choice</th><th>What it does</th><th>Needs</th></tr>
+</thead>
+<tbody>
+<tr><td><code>stable</code></td><td>Installs the released MatchBox with <code>mvm install latest</code>. It cannot build BxRig until the <code>bxrig</code> fixes ship.</td><td><code>mvm</code></td></tr>
+<tr><td><code>edge</code></td><td>Downloads the <code>bxrig</code> branch build CI publishes (<code>scripts/get-matchbox.sh</code>) into <code>.cache/matchbox/</code>.</td><td><code>curl</code>, <code>jq</code></td></tr>
+<tr><td><code>source</code></td><td>Clones <code>../matchbox</code> on branch <code>bxrig</code>, or reuses it, and builds it with <code>cargo build --features bif-tui</code>. A clean <code>bxrig</code> checkout is pulled first; any other branch or local changes are built as they are.</td><td><code>git</code>, Rust</td></tr>
+</tbody>
+</table></div>
+<p>The script saves the choice in <code>.cache/dev.env</code> (gitignored), builds <code>dist/bxrig</code> and runs a smoke test. <code>--no-build</code> only saves the choice. Run it again to switch. <code>scripts/dev-build.sh</code> and <code>tests/run-all.sh</code> read <code>.cache/dev.env</code>; a <code>MATCHBOX=/path/to/matchbox</code> variable overrides it.</p>
+<p>Use <code>source</code> when you also work on MatchBox: change <code>../matchbox</code>, rebuild it with <code>cargo build --features bif-tui</code>, then rebuild BxRig.</p>
 <h2 id="running-the-tests"><a href="#running-the-tests" id="running-the-tests" name="running-the-tests" class="anchor"></a>Running the tests</h2>
-<pre><code class="language-bash">bash scripts/dev-build.sh                 # build dist/bxrig with the local MatchBox
-bash tests/run-all.sh                     # every shell and .bxs test (the `.bxs` ones run from `src/` with `matchbox ../tests/NAME_test.bxs` and need no native build) (JOBS=3 by default; wizard-test is timing sensitive, run it alone if it fails)
-bash tests/time-test.sh dist/bxrig        # one test
+<pre><code class="language-bash">scripts/dev-build.sh                      # rebuild dist/bxrig after a change
+tests/run-all.sh                          # every shell and .bxs test (JOBS=3 by default)
+tests/run-all.sh dist/bxrig theme         # only the tests whose name contains &quot;theme&quot;
+bash tests/time-test.sh dist/bxrig        # one shell test
+tests/run-all.sh dist/bxrig init_plan     # one .bxs test (runs from source, no build needed)
 bash tests/dry-test.sh                    # the ratchet: banned patterns and the CI list
 </code></pre>
+<p>Shell tests (<code>*-test.sh</code>) run the binary against fake tools and need no root, so rebuild before running them. The <code>.bxs</code> unit tests run from <code>src/</code> and need no build. <code>wizard-test</code> is timing sensitive; run it alone with <code>JOBS=1</code> if it fails. Try a command by hand with <code>dist/bxrig COMMAND --dry-run</code>.</p>
 
 	
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/contributing.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/contributing.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 16, 2026, 1&#x3a;25&#x3a;46 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Contributing%20and%20docs%20versions&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fcontributing%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/contributing.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/contributing.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 16, 2026, 1&#x3a;28&#x3a;10 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Contributing%20and%20docs%20versions&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fcontributing%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
@@ -331,7 +351,7 @@ bash tests/dry-test.sh                    # the ratchet: banned patterns and the
 			
 			
 				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
-					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#these-docs">These docs</a></li><li class="toc-level-2"><a href="#versions">Versions</a></li><li class="toc-level-2"><a href="#languages">Languages</a></li><li class="toc-level-2"><a href="#releases">Releases</a></li><li class="toc-level-2"><a href="#writing-code-that-stays-dry">Writing code that stays DRY</a></li><li class="toc-level-2"><a href="#running-the-tests">Running the tests</a></li></ul></nav>
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#these-docs">These docs</a></li><li class="toc-level-2"><a href="#versions">Versions</a></li><li class="toc-level-2"><a href="#languages">Languages</a></li><li class="toc-level-2"><a href="#releases">Releases</a></li><li class="toc-level-2"><a href="#writing-code-that-stays-dry">Writing code that stays DRY</a></li><li class="toc-level-2"><a href="#local-setup">Local setup</a></li><li class="toc-level-2"><a href="#running-the-tests">Running the tests</a></li></ul></nav>
 				</aside>
 			
 		</div>

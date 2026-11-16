@@ -58,11 +58,34 @@ The code review of 2026-11-14 (`docs/architecture/CODE-REVIEW.md`) found the sam
 
 The shared helpers are in `src/bxrig/util/`: `Cli`, `Out`, `Exit`, `Mutation`, `Proc`, `Env`, `Text`, `Fmt`, `Names`, `JsonStore`, `SystemFile`, `SystemdUnit`, `Systemd`, `Pacman`, `Aur`, `Http`, `Urls`, `Desktop`, `DesktopEntry`, `Ini`, `Props`, `Lua`, `Version`. The TUI helpers are `Modal`, `KeyMap` and `IntentRunner`. All of them are built; copy what they do, not the old copies.
 
+## Local setup
+
+BxRig needs a MatchBox that has the fixes from the MatchBox `bxrig` branch. One script sets it up:
+
+```bash
+scripts/setup-local.sh                      # asks which MatchBox to use
+scripts/setup-local.sh --matchbox edge      # or pick one without the question
+```
+
+| Choice | What it does | Needs |
+|---|---|---|
+| `stable` | Installs the released MatchBox with `mvm install latest`. It cannot build BxRig until the `bxrig` fixes ship. | `mvm` |
+| `edge` | Downloads the `bxrig` branch build CI publishes (`scripts/get-matchbox.sh`) into `.cache/matchbox/`. | `curl`, `jq` |
+| `source` | Clones `../matchbox` on branch `bxrig`, or reuses it, and builds it with `cargo build --features bif-tui`. A clean `bxrig` checkout is pulled first; any other branch or local changes are built as they are. | `git`, Rust |
+
+The script saves the choice in `.cache/dev.env` (gitignored), builds `dist/bxrig` and runs a smoke test. `--no-build` only saves the choice. Run it again to switch. `scripts/dev-build.sh` and `tests/run-all.sh` read `.cache/dev.env`; a `MATCHBOX=/path/to/matchbox` variable overrides it.
+
+Use `source` when you also work on MatchBox: change `../matchbox`, rebuild it with `cargo build --features bif-tui`, then rebuild BxRig.
+
 ## Running the tests
 
 ```bash
-bash scripts/dev-build.sh                 # build dist/bxrig with the local MatchBox
-bash tests/run-all.sh                     # every shell and .bxs test (the `.bxs` ones run from `src/` with `matchbox ../tests/NAME_test.bxs` and need no native build) (JOBS=3 by default; wizard-test is timing sensitive, run it alone if it fails)
-bash tests/time-test.sh dist/bxrig        # one test
+scripts/dev-build.sh                      # rebuild dist/bxrig after a change
+tests/run-all.sh                          # every shell and .bxs test (JOBS=3 by default)
+tests/run-all.sh dist/bxrig theme         # only the tests whose name contains "theme"
+bash tests/time-test.sh dist/bxrig        # one shell test
+tests/run-all.sh dist/bxrig init_plan     # one .bxs test (runs from source, no build needed)
 bash tests/dry-test.sh                    # the ratchet: banned patterns and the CI list
 ```
+
+Shell tests (`*-test.sh`) run the binary against fake tools and need no root, so rebuild before running them. The `.bxs` unit tests run from `src/` and need no build. `wizard-test` is timing sensitive; run it alone with `JOBS=1` if it fails. Try a command by hand with `dist/bxrig COMMAND --dry-run`.
