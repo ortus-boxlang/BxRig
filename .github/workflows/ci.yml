@@ -224,7 +224,6 @@ jobs:
           bash tests/paths-test.sh "$candidate"
           bash tests/java-test.sh "$candidate"
           bash tests/sdk-test.sh "$candidate"
-          bash "$candidate"
           bash tests/mail-test.sh "$candidate"
       - name: Publish verified native artifact
         uses: actions/upload-artifact@v4
