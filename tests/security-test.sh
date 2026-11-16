@@ -16,6 +16,14 @@ printf '#!/usr/bin/env bash\necho "systemctl $*" >> "$LOG"\n[[ "$1" == is-active
 printf '#!/usr/bin/env bash\necho "visudo $*" >> "$LOG"\n! grep -q BROKEN "$2"\n' > "$tmp/bin/visudo"
 printf '#!/usr/bin/env bash\necho "fprintd-enroll $*" >> "$LOG"\n' > "$tmp/fprintd-enroll.real"
 printf '#!/usr/bin/env bash\necho "pamu2fcfg $*" >> "$LOG"\necho "mykey" \n' > "$tmp/pamu2fcfg.real"
+# install: logged, then the real one without -o/-g (the fake sudo does not make the test root, and a CI runner is not root)
+cat > "$tmp/bin/install" <<'FAKE'
+#!/usr/bin/env bash
+echo "install $*" >> "$LOG"
+args=(); skip=0
+for a in "$@"; do if (( skip )); then skip=0; continue; fi; case "$a" in -o|-g) skip=1 ;; *) args+=("$a") ;; esac; done
+exec /usr/bin/install "${args[@]}"
+FAKE
 stub_id
 chmod +x "$tmp/bin"/* "$tmp"/*.real
 run() { env HOME="$tmp/home" USER="${SUSER:-dev}" BXRIG_PAM_DIR="$tmp/pam" BXRIG_SUDOERS_DIR="$tmp/sudoers" PATH="$tmp/bin:$PATH" LOG="$LOG" ACTIVE="${ACTIVE:-3}" "$@"; }
