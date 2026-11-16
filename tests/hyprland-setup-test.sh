@@ -16,6 +16,8 @@ esac
 MOCK
 stub_sudo
 stub_id
+# systemctl: logs what it is asked; the Bluetooth service starts out not enabled
+stub systemctl 'echo "systemctl $*" >> "$LOG"; [[ " $* " == *" is-enabled "* ]] && exit 1; exit 0'
 printf '#!/usr/bin/env bash\necho x86_64\n' > "$tmp/bin/uname"
 chmod +x "$tmp/bin/"*
 printf 'ID=cachyos\n' > "$tmp/os"
@@ -29,7 +31,8 @@ run "$binary" setup hyprland --dry-run --json | jq -e '.ok and (.data.steps | ma
 # a hyprland.lua the user already has is never touched
 mkdir -p "$tmp/cfg/hypr"; echo '-- mine' > "$tmp/cfg/hypr/hyprland.lua"
 out="$(run "$binary" setup hyprland --yes --json)" || fail 'setup hyprland --yes --json failed'
-echo "$out" | jq -e '.ok and (.data.done | map(.id) == ["packages","images","starter","keys"])' >/dev/null || fail "stdout is not one clean JSON envelope with all four steps done: $out"
+echo "$out" | jq -e '.ok and (.data.done | map(.id) == ["packages","bluetooth","images","starter","keys"])' >/dev/null || fail "stdout is not one clean JSON envelope with all five steps done: $out"
+grep -q '^systemctl enable --now bluetooth.service' "$LOG" || fail "the Bluetooth service is turned on: $(grep systemctl "$LOG")"
 [[ "$(cat "$tmp/cfg/hypr/hyprland.lua")" == '-- mine' ]] || fail 'existing hyprland.lua was overwritten'
 grep -q 'pacman -S --needed --noconfirm hyprland' "$LOG" || fail 'packages installed'
 cmp "$tmp/home/Pictures/BxRig/bxrig.jpg" "$root/assets/wallpapers/bxrig.jpg" || fail "wallpaper written"

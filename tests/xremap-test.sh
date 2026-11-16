@@ -14,7 +14,8 @@ esac
 MOCK
 printf '#!/usr/bin/env bash\n[[ "$1" == --version ]] && exit 0\necho "yay $*" >> "$LOG"\necho "${@: -1}" > "$LOG.installed"\n' > "$tmp/bin/yay"
 printf '#!/usr/bin/env bash\n[[ "$1" == --version ]] && exit 0\necho "sudo $*" >> "$LOG"\n[[ "$2" == -Rs || "$1" == pacman ]] && exec "$@"\nexit 0\n' > "$tmp/bin/sudo"
-printf '#!/usr/bin/env bash\n[[ "$1" == --version ]] && exit 0\necho "systemctl $*" >> "$LOG"\n' > "$tmp/bin/systemctl"
+# systemctl: is-enabled only reads (always enabled), so it is not logged
+printf '#!/usr/bin/env bash\n[[ "$1" == --version || "$1" == is-enabled ]] && exit 0\necho "systemctl $*" >> "$LOG"\n' > "$tmp/bin/systemctl"
 printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo "${MOCK_UID:-1000}"; elif [[ "$1" == -nG ]]; then echo "dev wheel"; else /usr/bin/id "$@"; fi\n' > "$tmp/bin/id"
 printf '#!/usr/bin/env bash\necho x86_64\n' > "$tmp/bin/uname"
 chmod +x "$tmp/bin/"*
@@ -23,7 +24,7 @@ run() { env BXRIG_OS_RELEASE="$tmp/os" BXRIG_STATE_HOME="$tmp/state" BXRIG_CONFI
 
 [[ "$(code "$binary" setup xremap)" == 2 ]] || fail 'no --yes exits 2'
 [[ "$(code "$binary" setup xremap --dry-run)" == 0 ]] || fail 'dry run exits 0'
-[[ ! -s "$LOG" ]] || fail 'plan or dry run ran something'
+[[ ! -s "$LOG" ]] || fail "plan or dry run ran something: $(cat "$LOG")"
 [[ "$(MOCK_UID=0 code "$binary" setup xremap --yes)" == 4 ]] || fail 'root exits 4'
 [[ "$(DESKTOP= code "$binary" setup xremap --yes)" == 4 ]] || fail 'unknown desktop exits 4'
 [[ "$(code "$binary" setup xremap --yes)" == 0 ]] || fail 'setup xremap --yes exits 0'

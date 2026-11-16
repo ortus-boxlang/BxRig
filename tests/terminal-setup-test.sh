@@ -16,6 +16,8 @@ esac
 MOCK
 stub_sudo
 stub_id
+# systemctl: setup hyprland turns on Bluetooth; the service starts out not enabled
+stub systemctl '[[ " $* " == *" is-enabled "* ]] && exit 1; exit 0'
 printf '#!/usr/bin/env bash\necho x86_64\n' > "$tmp/bin/uname"
 chmod +x "$tmp/bin/"*
 printf 'ID=cachyos\n' > "$tmp/os"
