@@ -40,7 +40,14 @@ cat > "$tmp/makepkg" <<'MOCK'
 [[ -z "${MOCK_MAKEPKG_FAIL:-}" ]] || exit 1
 printf 'makepkg %s in %s\n' "$*" "$PWD" >> "$INSTALL_TEST_LOG"
 MOCK
-chmod +x "$tmp/pacman" "$tmp/yay" "$tmp/sudo" "$tmp/id" "$tmp/git" "$tmp/makepkg"
+# curl for the vendor installers (source "script", e.g. strata in the default tier): it answers with a script that only logs
+cat > "$tmp/curl" <<'MOCK'
+#!/usr/bin/env bash
+url="${@: -1}"
+[[ "$url" == https://* ]] || exit 9
+printf 'printf "script %%s %%s\\n" "%s" "$*" >> "$INSTALL_TEST_LOG"\n' "$url"
+MOCK
+chmod +x "$tmp/pacman" "$tmp/yay" "$tmp/sudo" "$tmp/id" "$tmp/git" "$tmp/makepkg" "$tmp/curl"
 export PATH="$tmp:$PATH" INSTALL_TEST_LOG="$tmp/installed.log" HOME="$tmp/home"
 mkdir -p "$HOME"
 reset() { : > "$INSTALL_TEST_LOG"; }
@@ -103,6 +110,7 @@ grep -Fq 'Exec=brave --app=https://mail.google.com' "$launcher" || fail 'launche
 reset
 [[ "$(code "$binary" install --yes)" == 0 ]] || fail 'default install exits 0'
 grep -Fq neovim "$INSTALL_TEST_LOG" || fail 'default install ran pacman'
+grep -Fq 'script https://raw.githubusercontent.com/lgse/strata/' "$INSTALL_TEST_LOG" || fail 'default install ran the strata installer (mocked curl)'
 # a PKGBUILD app is cloned at its pinned commit and built as the normal user
 reset
 "$binary" install hype --yes >/dev/null 2>&1 || fail 'install hype'
