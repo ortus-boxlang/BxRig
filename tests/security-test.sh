@@ -53,7 +53,10 @@ run "$binary" security fido2 on --yes >/dev/null; grep -q '^auth sufficient pam_
 run "$binary" security fido2 off --yes >/dev/null; ! grep -q pam_u2f "$tmp/pam/sudo" || fail 'fido2 off'
 
 # ---- ssh server ----
-: > "$LOG"; run "$binary" security ssh-server on --yes >/dev/null; has 'pacman -S --needed --noconfirm openssh' && has 'systemctl enable --now sshd.service' || fail "ssh on: $(cat "$LOG")"
+# openssh is installed only when sshd is not there yet (a CI runner or a machine with openssh already has it)
+: > "$LOG"; run "$binary" security ssh-server on --yes >/dev/null; has 'systemctl enable --now sshd.service' || fail "ssh on: $(cat "$LOG")"
+if run bash -c 'command -v sshd' >/dev/null; then ! has 'pacman -S --needed --noconfirm openssh' || fail 'ssh on installs openssh although sshd is there'
+else has 'pacman -S --needed --noconfirm openssh' || fail "ssh on installs openssh: $(cat "$LOG")"; fi
 run "$binary" security ssh-server off --yes >/dev/null; has 'systemctl disable --now sshd.service' || fail 'ssh off'
 [[ "$(code "$binary" security ssh-server on)" == 2 ]] || fail 'ssh on without --yes is a plan'
 
