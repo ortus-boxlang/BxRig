@@ -34,6 +34,8 @@ snap() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" PATH="$tmp/snap:$tmp/
 : > "$LOG"; snap "$binary" window snap left >/dev/null || fail 'snap left'
 grep -qF 'hyprctl dispatch hl.dsp.window.float({ action = "set" })' "$LOG" && grep -qF 'hl.dsp.window.resize({ x = 1262, y = 1376, relative = false })' "$LOG" && grep -qF 'hl.dsp.window.move({ x = 12, y = 52, relative = false })' "$LOG" || fail "snap left: $(cat "$LOG")"
 : > "$LOG"; snap "$binary" window snap right --json | jq -e '.ok and .data.box.x == 1286 and .data.box.w == 1262' >/dev/null || fail 'snap right'
+: > "$LOG"; snap "$binary" window snap top --json | jq -e '.ok and .data.box == {"x":12,"y":52,"w":2536,"h":682}' >/dev/null || fail 'snap top'
+: > "$LOG"; snap "$binary" window snap bottom --json | jq -e '.data.box.y == 746 and .data.box.h == 682' >/dev/null || fail 'snap bottom'
 [[ "$(code "$binary" window snap up)" == 2 ]] || fail 'window snap up exits 2'
 run "$binary" overview; grep -q 'hyprctl dispatch hyprexpo:expo toggle' "$LOG" || fail 'overview'
 BXRIG_DESKTOP=KDE run "$binary" overview; grep -q 'invokeShortcut Overview' "$LOG" || fail 'plasma overview'

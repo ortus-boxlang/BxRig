@@ -2405,7 +2405,7 @@
 					"usage": [
 						"window minimize|restore|quake [--json]",
 						"window quake send [--json]",
-						"window snap left|right [--json]"
+						"window snap left|right|top|bottom [--json]"
 					],
 					"examples": [
 						"bxrig window minimize",
@@ -2416,7 +2416,7 @@
 					],
 					"mutates": false,
 					"flags": [],
-					"note": "quake shows or hides the special workspace qconsole (the default terminal starts there the first time); quake send moves the focused window onto it. snap left|right floats the focused window onto that half of its monitor. Hyprland only."
+					"note": "quake shows or hides the special workspace qconsole (the default terminal starts there the first time); quake send moves the focused window onto it. snap left|right|top|bottom floats the focused window onto that half of its monitor. Hyprland only."
 				},
 				{
 					"name": "overview",
