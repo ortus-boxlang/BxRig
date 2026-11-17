@@ -28,6 +28,12 @@ class Proc {
 		}
 	}
 
+	// Why a run failed, for people: the last lines of what it printed, then of its error stream (the real error text; a custom runner may have no error stream).
+	function why( r ) {
+		var text = ( structKeyExists( arguments.r, "output" ) ? arguments.r.output & "" : "" ) & chr( 10 ) & ( structKeyExists( arguments.r, "error" ) ? arguments.r.error & "" : "" );
+		return new bxrig.util.Text().tail( text );
+	}
+
 	// True when `name` is on the PATH (`command -v`, with the name passed as an argument, not pasted into a shell string).
 	function has( name ) {
 		return exec( [ "sh", "-c", 'command -v "$1"', "_", arguments.name ], 10 ).exitCode == 0;

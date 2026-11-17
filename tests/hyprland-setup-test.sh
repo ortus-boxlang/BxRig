@@ -21,7 +21,8 @@ stub systemctl 'echo "systemctl $*" >> "$LOG"; [[ " $* " == *" is-enabled "* ]] 
 printf '#!/usr/bin/env bash\necho x86_64\n' > "$tmp/bin/uname"
 chmod +x "$tmp/bin/"*
 printf 'ID=cachyos\n' > "$tmp/os"
-run() { env BXRIG_OS_RELEASE="$tmp/os" BXRIG_STATE_HOME="$tmp/state" BXRIG_CONFIG_HOME="$tmp/cfg" HOME="$tmp/home" USER=dev PATH="$tmp/bin:$PATH" XDG_CURRENT_DESKTOP=Hyprland LOG="$LOG" "$@"; }
+mkdir -p "$tmp/sysd"
+run() { env BXRIG_SYSTEMD_RUN_DIR="${SYSD_DIR:-$tmp/sysd}" BXRIG_OS_RELEASE="$tmp/os" BXRIG_STATE_HOME="$tmp/state" BXRIG_CONFIG_HOME="$tmp/cfg" HOME="$tmp/home" USER=dev PATH="$tmp/bin:$PATH" XDG_CURRENT_DESKTOP=Hyprland LOG="$LOG" "$@"; }
 
 # plan only: nothing written
 [[ "$(code "$binary" setup hyprland)" == 2 ]] || fail 'no --yes exits 2'
@@ -39,6 +40,13 @@ cmp "$tmp/home/Pictures/BxRig/bxrig.jpg" "$root/assets/wallpapers/bxrig.jpg" || 
 grep -q 'custom_palette = "BxRig"' "$tmp/cfg/noctalia/config.toml" || fail 'noctalia config written'
 [[ -f "$tmp/cfg/noctalia/palettes/BxRig.json" ]] || fail 'palette written'
 [[ -f "$tmp/cfg/hypr/bxrig.lua" && -f "$tmp/cfg/xremap/config.yml" ]] || fail 'shortcut files written'
+
+# no systemd running (a container): the Bluetooth service step is skipped with the reason, not failed, and systemctl is not asked to enable it
+: > "$LOG"; out="$(SYSD_DIR="$tmp/no-such-dir" run "$binary" setup hyprland --yes --json)" || fail "setup in a container failed: $out"
+echo "$out" | jq -e '.ok and (.data.skipped | map(select(.id == "bluetooth" and (.reason | test("systemd is not running")))) | length == 1) and (.data.failed | length == 0) and (.data.warnings | any(test("systemd is not running")))' >/dev/null || fail "the Bluetooth step is skipped with a reason: $out"
+grep -q 'systemctl enable' "$LOG" && fail 'systemctl enable ran without systemd'
+txt="$(SYSD_DIR="$tmp/no-such-dir" run "$binary" setup hyprland --yes 2>&1)"
+grep -q '^Skipped: bluetooth (systemd is not running here' <<<"$txt" || fail "the text output names the skipped step and why: $txt"
 
 # fresh machine: hyprland.lua is created, loads the module; a changed Noctalia file is kept on re-run
 rm -rf "$tmp/cfg" "$tmp/home/Pictures" "$tmp/state"

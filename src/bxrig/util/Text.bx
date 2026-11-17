@@ -27,6 +27,17 @@ class Text {
 		return out;
 	}
 
+	// The last `n` non-empty lines of a command's output, trimmed, joined with newlines and cut to the last `maxChars` characters: the real error text of a failed step.
+	function tail( s, n = 5, maxChars = 800 ) {
+		var keep = [];
+		for ( var l in lines( arguments.s ) ) if ( len( trim( l ) ) ) keep.append( trim( l ) );
+		var from = max( 1, keep.len() - arguments.n + 1 );
+		var out = [];
+		for ( var i = from; i <= keep.len(); i++ ) out.append( keep[ i ] );
+		var t = out.toList( chr( 10 ) );
+		return len( t ) > arguments.maxChars ? "..." & right( t, arguments.maxChars ) : t;
+	}
+
 	function nl() {
 		return chr( 10 );
 	}

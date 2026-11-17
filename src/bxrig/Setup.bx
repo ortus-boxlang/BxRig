@@ -94,6 +94,7 @@ class Setup {
 			hyprlandAdded: hyprlandAdded(),
 			plasmaBluetooth: plasmaBluetooth(),
 			bluetoothEnabled: new bxrig.util.Systemd( variables.inst.runner() ).enabled( new bxrig.SetupPlan().bluetoothUnit() ),
+			systemdRunning: new bxrig.util.Systemd( variables.inst.runner() ).running(),
 			isRoot: variables.inst.isRoot(),
 			hasSudo: variables.inst.hasCommand( "sudo" ),
 			kwinVersion: kwinVersion(),
@@ -221,6 +222,9 @@ class Setup {
 			else for ( var e in plan.errors ) println( "error: " & e );
 			return new bxrig.util.Exit().precondition();
 		}
+		// the systemd steps cannot run where systemd is not the running init (a container, a chroot): they are skipped with the reason, not failed
+		var noSystemd = structKeyExists( facts, "systemdRunning" ) && !facts.systemdRunning;
+		if ( noSystemd && plan.steps.filter( function( st ) { return st.kind == "systemd"; } ).len() ) plan.warnings.append( "systemd is not running here (no /run/systemd/system): the systemd steps are skipped" );
 		if ( !yes || dryRun ) {
 			var code = dryRun ? 0 : 2;
 			if ( asJson ) { println( variables.cli.envelope( command, code, data, dryRun ) ); return code; }
@@ -237,7 +241,10 @@ class Setup {
 		var stopped = false; var firstKind = "";
 		for ( var step in plan.steps ) {
 			if ( stopped ) { data.skipped.append( { id: step.id, reason: "an earlier step failed" } ); continue; }
+			if ( noSystemd && step.kind == "systemd" ) { data.skipped.append( { id: step.id, reason: "systemd is not running here (no /run/systemd/system); on a real system run: " & step.commands[ 1 ].toList( " " ) } ); continue; }
 			var problem = "";
+			var detail = "";
+			var failedCmd = [];
 			if ( step.kind == "keys" && new bxrig.KeysService( variables.cli, variables.inst.runner(), asJson ).apply( true, false, false, false ) != 0 ) problem = "failed";
 			if ( step.kind == "assets" ) {
 				try { new bxrig.Assets( variables.cli, variables.inst.runner() ).writeMissing(); } catch ( any e ) { problem = "failed: " & e.message; }
@@ -261,16 +268,28 @@ class Setup {
 				if ( len( problem ) ) continue;
 				var r = variables.inst.proc().exec( cmd, 1800 );
 				if ( r.timeout ) problem = "timed out";
-				else if ( r.exitCode != 0 ) problem = "failed (exit " & r.exitCode & ")";
+				else if ( r.exitCode != 0 ) { problem = "failed (exit " & r.exitCode & ")"; detail = variables.inst.proc().why( r ); }
+				if ( len( problem ) ) failedCmd = cmd;
 			}
-			if ( len( problem ) ) { data.failed.append( { id: step.id, error: step.title & " " & problem } ); stopped = true; firstKind = step.kind; }
+			if ( len( problem ) ) {
+				var bad = { id: step.id, error: step.title & " " & problem };
+				// the real error text (the last lines of what the command printed), in the text output and in --json
+				if ( len( detail ) ) bad.output = detail;
+				if ( failedCmd.len() ) bad.command = failedCmd.toList( " " );
+				data.failed.append( bad );
+				stopped = true; firstKind = step.kind;
+			}
 			else data.done.append( { id: step.id } );
 		}
 		if ( directoryExists( facts.workDir ) ) { try { directoryDelete( facts.workDir, true ); } catch ( any e ) {} }
 		var exit = !data.failed.len() ? 0 : ( data.done.len() ? 7 : ( firstKind == "pacman" ? 5 : 6 ) );
 		if ( asJson ) { println( variables.cli.envelope( command, exit, data ) ); return exit; }
 		for ( var d in data.done ) println( "Done: " & d.id );
-		for ( var f in data.failed ) println( "Failed: " & f.id & ": " & f.error );
+		for ( var f in data.failed ) {
+			println( "Failed: " & f.id & ": " & f.error );
+			if ( structKeyExists( f, "command" ) ) println( "  command: " & f.command );
+			if ( structKeyExists( f, "output" ) ) for ( var ol in new bxrig.util.Text().lines( f.output ) ) println( "  | " & ol );
+		}
 		for ( var k in data.skipped ) println( "Skipped: " & k.id & " (" & k.reason & ")" );
 		if ( !data.failed.len() ) for ( var n in plan.notes ) println( "Note: " & n );
 		return exit;

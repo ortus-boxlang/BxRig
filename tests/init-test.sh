@@ -50,6 +50,10 @@ rc=0; FAIL_SHELL=1 run "$binary" init --answers="$tmp/a.json" --yes --json > "$t
 [[ "$rc" == 7 ]] || fail "exit was $rc, wanted 7"
 jq -e '(.data.done | map(.id) | index("terminal") != null) and (.data.failed | map(.id) == ["shell"]) and (.data.skipped | length == 0)' "$tmp/out.json" >/dev/null || fail "failure report: $(cat "$tmp/out.json")"
 grep -q 'session set' "$LOG" || fail 'the steps after the failure did not run'
+# the failed step carries its real error text (what it printed), in --json and in the text report
+jq -e '(.data.failed[0].output == "boom") and (.data.failed[0].command | test("setup shell")) and .data.failed[0].exit == 3' "$tmp/out.json" >/dev/null || fail "the failed step's error text: $(jq -c .data.failed "$tmp/out.json")"
+txt="$(FAIL_SHELL=1 run "$binary" init --answers="$tmp/a.json" --yes 2>&1 || true)"
+grep -q '^Failed: shell (exit 3)' <<<"$txt" && grep -q '^  | boom' <<<"$txt" || fail "the text report shows the error: $txt"
 
 # bad input
 [[ "$(code "$binary" init --answers="$tmp/missing.json")" == 4 ]] || fail 'a missing answers file exits 4'

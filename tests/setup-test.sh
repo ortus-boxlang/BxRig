@@ -19,7 +19,7 @@ printf 'git %s\n' "$*" >> "$SETUP_LOG"
 [[ -z "${MOCK_GIT_FAIL:-}" ]] || exit 1
 if [[ "$1" == clone ]]; then
   d="${@: -1}"; mkdir -p "$d/tools"
-  printf '#!/usr/bin/env bash\n[ -z "$MOCK_INSTALL_FAIL" ] || exit 1\necho "INSTALL in $PWD" >> "$SETUP_LOG"\n' > "$d/tools/install.sh"
+  printf '#!/usr/bin/env bash\n[ -z "$MOCK_INSTALL_FAIL" ] || { echo "install.sh: cannot write /usr/lib/kwin: permission denied" >&2; exit 1; }\necho "INSTALL in $PWD" >> "$SETUP_LOG"\n' > "$d/tools/install.sh"
   printf '#!/usr/bin/env bash\necho "UNINSTALL in $PWD" >> "$SETUP_LOG"\n' > "$d/tools/uninstall.sh"
   printf 'import os,sys\nopen(os.environ["SETUP_LOG"],"a").write("SHORTCUTS %%s\\n" %% " ".join(sys.argv[1:]))\n' > "$d/tools/hyprkwin-shortcuts.py"
   chmod +x "$d/tools/install.sh" "$d/tools/uninstall.sh"
@@ -34,7 +34,8 @@ stub_id
 chmod +x "$tmp/bin/"*
 export SETUP_LOG="$tmp/setup.log"
 printf 'NAME="CachyOS Linux"\nID=cachyos\nID_LIKE=arch\n' > "$tmp/os-cachyos"; printf 'ID=ubuntu\n' > "$tmp/os-ubuntu"
-run() { env BXRIG_OS_RELEASE="${OS_FILE:-$tmp/os-cachyos}" BXRIG_STATE_HOME="$tmp/state-home" HOME="$tmp/home" PATH="$tmp/bin:$PATH" XDG_CURRENT_DESKTOP=KDE XDG_SESSION_TYPE=wayland SETUP_LOG="$SETUP_LOG" MOCK_INSTALL_FAIL="${MOCK_INSTALL_FAIL:-}" "$@"; }
+mkdir -p "$tmp/sysd"   # systemd is "running" for the steps below (BXRIG_SYSTEMD_RUN_DIR names /run/systemd/system)
+run() { env BXRIG_SYSTEMD_RUN_DIR="${SYSD_DIR:-$tmp/sysd}" BXRIG_OS_RELEASE="${OS_FILE:-$tmp/os-cachyos}" BXRIG_STATE_HOME="$tmp/state-home" HOME="$tmp/home" PATH="$tmp/bin:$PATH" XDG_CURRENT_DESKTOP=KDE XDG_SESSION_TYPE=wayland SETUP_LOG="$SETUP_LOG" MOCK_INSTALL_FAIL="${MOCK_INSTALL_FAIL:-}" "$@"; }
 reset() { : > "$SETUP_LOG"; rm -rf "$tmp/home/.local" "$tmp/state-home"; }
 leftovers() { { ls -d /tmp/bxrig-hyprkwin-* 2>/dev/null || true; } | wc -l; }
 before="$(leftovers)"; reset
@@ -77,6 +78,11 @@ reset; [[ "$(MOCK_INSTALL_FAIL=1 code "$binary" setup plasma --keys --yes)" == 7
 grep -Fq 'SHORTCUTS' "$SETUP_LOG" && fail 'the keys step must be skipped after a failed install'
 out="$(MOCK_INSTALL_FAIL=1 run "$binary" setup plasma --keys --yes --json 2>/dev/null || true)"
 [[ "$(jq -r '.data.skipped[0].id' <<<"$out")" == keys-apply && "$(jq -r '.data.failed[0].id' <<<"$out")" == install ]] || fail 'json failed and skipped lists'
+# the real error text of the failed step, in --json and in the text output (not only "exit 1")
+jq -e '.data.failed[0].output | test("permission denied")' <<<"$out" >/dev/null || fail "the failed step's error text is in --json: $out"
+jq -e '.data.failed[0].command | test("install.sh")' <<<"$out" >/dev/null || fail 'the failed command is in --json'
+txt="$(MOCK_INSTALL_FAIL=1 run "$binary" setup plasma --keys --yes 2>&1 || true)"
+grep -q '| install.sh: cannot write /usr/lib/kwin: permission denied' <<<"$txt" || fail "the failed step's error text is printed: $txt"
 reset; [[ "$(MOCK_GIT_FAIL=1 code "$binary" setup plasma --yes)" == 6 ]] || fail 'a failed checkout with nothing done exits 6'
 [[ "$(leftovers)" == "$before" ]] || fail 'no checkout left after a failure'
 

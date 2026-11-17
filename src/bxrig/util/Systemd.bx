@@ -36,6 +36,12 @@ class Systemd {
 
 	// ---- queries and actions (they run) ----
 
+	// True when systemd is the running init (the directory /run/systemd/system exists: sd_booted()). In a container or a chroot it does not,
+	// and `systemctl enable --now` there fails with "System has not been booted with systemd". BXRIG_SYSTEMD_RUN_DIR replaces the path in tests.
+	function running() {
+		return directoryExists( new bxrig.util.Env().named( "systemdRunDir", "/run/systemd/system" ) );
+	}
+
 	// True when the unit is active (`is-active --quiet`, the exit code answers).
 	function active( unit, user = false ) {
 		var a = argv( "is-active", [ arguments.unit ], arguments.user, false, [ "--quiet" ] );
