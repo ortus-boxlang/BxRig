@@ -24,7 +24,7 @@ Status: **decided** means the owner chose it; **planned** means it is agreed and
 | Brightness, weather | Noctalia built-ins, not on the bar | decided |
 | VPN | Its own bar icon; NordVPN, NordLayer, Tailscale and NetworkManager profiles in one pick-one list with adapters; an allow-several toggle | planned |
 | System popover | Updates and Backups | planned |
-| Developer panel | Separate from System: databases, containers, VMs | planned |
+| Developer panel | Separate from System: databases, containers, VMs (plugin `bxrig/dev`, `bxrig containers list\|start\|stop\|restart\|logs`) | decided |
 | Capture icon | On Standard and Dense | decided |
 | Noctalia control center | Reused, not extended (tabs cannot be added); only the screen-time tab is hidden | decided |
 | Panel keys | `Super+Ctrl+A/B/N/P/D` fixed (they open the control center) | decided |

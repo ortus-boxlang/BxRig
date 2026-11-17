@@ -118,6 +118,6 @@ The default file manager is **Strata**; Dolphin is the alternative (`bxrig dolph
 | Databases | `bxrig db list\|start ENGINE\|stop\|status\|logs` (Podman first; HeidiSQL and DBeaver are in the catalog) |
 | Cloud storage as folders | `bxrig cloud remotes\|configure\|mount NAME\|status` (RClone Browser is the GUI) |
 | VPN | `bxrig vpn nordvpn setup` |
-| Containers | `bxrig containers doctor\|socket enable\|docker-compat` |
+| Containers | `bxrig containers doctor\|socket enable\|docker-compat\|list\|start\|stop\|restart\|logs` |
 | Editor | `bxrig editor lazyvim` |
 | GPU drivers | `bxrig gpu doctor` |

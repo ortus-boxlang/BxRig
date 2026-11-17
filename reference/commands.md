@@ -1298,16 +1298,21 @@ bxrig db info postgres
 
 ### `bxrig containers` {#bxrig-containers}
 
-Podman helpers: doctor, rootless socket, docker compatibility wrappers.
+Containers on the configured engine (Podman or Docker): list, start, stop, restart, logs; Podman helpers: doctor, rootless socket, docker compatibility.
 
 ```text
 bxrig containers doctor | socket enable [--yes] | docker-compat [--yes] [--json]
+bxrig containers list [--json]
+bxrig containers start|stop|restart NAME [--json]
+bxrig containers logs NAME [--lines=N] [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
 
 ```bash
 bxrig containers doctor
+bxrig containers list --json
+bxrig containers logs web --lines=100
 ```
 
 ### `bxrig vm` {#bxrig-vm}
