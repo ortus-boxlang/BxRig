@@ -9,6 +9,18 @@ class TemplateData {
 		out.append( "plymouth/bxrig.script" );
 		return out;
 	}
+	// The BxRig Noctalia plugins (clock, agents, system, quick settings, dev, power, vpn) as config service entries: Noctalia finds them in its local plugin
+	// folder and config.toml enables them. Written by the starter and, when missing, by the bar commands.
+	function pluginEntries() {
+		var out = [];
+		var plugins = new bxrig.util.Env().xdgData( "noctalia/plugins" );
+		for ( var n in names() ) {
+			if ( left( n, 17 ) != "noctalia-plugins/" ) continue;
+			var rel = mid( n, 18, len( n ) );
+			out.append( { name: "noctalia-plugin-" & replace( replace( rel, "/", "-", "all" ), ".", "-", "all" ), target: plugins & "/" & rel, mode: "644", content: text( n ) } );
+		}
+		return out;
+	}
 	// A template's text ("" for a name that is not one).
 	function text( name ) {
 		var res = new bxrig.util.Res();

@@ -123,11 +123,13 @@ nopower() { run env BXRIG_CONFIG_HOME="$tmp/cfg2" BXRIG_POWER_DIR="$tmp/nopower"
 withpower() { run env BXRIG_CONFIG_HOME="$tmp/cfg2" BXRIG_POWER_DIR="$tmp/power" "$@"; }
 nopower "$binary" appearance bar layout status --json | jq -e '.data.layout == "standard" and .data.dock == true and .data.battery == false and (.data.zones.end | last) == "control-center"' >/dev/null || fail 'layout status: Standard by default'
 [[ "$(code "$binary" appearance bar layout)" == 2 && "$(code "$binary" appearance bar layout huge)" == 2 ]] || fail 'bad layout exits 2'
-: > "$LOG"; nopower "$binary" appearance bar layout minimal --dry-run --json | jq -e '.dry_run and .data.config.state == "would-write" and .data.layout == "minimal"' >/dev/null || fail 'layout dry run'
+: > "$LOG"; rm -rf "$tmp/home/.local/share/noctalia/plugins"; nopower "$binary" appearance bar layout minimal --dry-run --json | jq -e '.dry_run and .data.config.state == "would-write" and .data.layout == "minimal"' >/dev/null || fail 'layout dry run'
 [[ ! -e "$cfgtoml" ]] || fail 'a dry run wrote config.toml'
+[[ ! -e "$tmp/home/.local/share/noctalia/plugins/vpn/plugin.toml" ]] || fail 'a dry run wrote plugin files'
 nopower "$binary" appearance bar layout minimal --json | jq -e '.ok and .data.config.state == "written" and .data.layout == "minimal"' >/dev/null || fail "layout minimal: $(nopower "$binary" appearance bar layout minimal)"
 [[ "$(tomlget bar.main.center)" == bxrig-clock && "$(tomlget bar.main.end)" == "tray network volume notifications bxrig-quick control-center" ]] || fail "minimal bar: $(grep -n '^center\|^end' "$cfgtoml")"
 has 'noctalia msg config-reload' || fail 'a running Noctalia is told to reload'
+for p in system dev vpn quick power clock agents; do [[ -f "$tmp/home/.local/share/noctalia/plugins/$p/plugin.toml" ]] || fail "the $p plugin file was not installed by the bar layout"; done
 [[ -f "$tmp/home/.local/share/bxrig/plates/bxrig-menu.svg" && -f "$tmp/home/.local/share/bxrig/plates/bxrig-grid.svg" ]] || fail 'the plates were not written'
 nopower "$binary" appearance bar layout status --json | jq -e '.data.layout == "minimal"' >/dev/null || fail 'the layout is remembered'
 withpower "$binary" appearance bar layout dense --json | jq -e '.ok' >/dev/null || fail 'layout dense'

@@ -95,6 +95,8 @@ class BarSettings {
 		if ( st == "drifted" && !arguments.yes ) { res.state = "needs-yes"; res.code = new bxrig.util.Exit().plan(); return res; }
 		if ( arguments.dry ) { res.state = "would-write"; return res; }
 		new bxrig.Assets( variables.cli ).ensurePlates();
+		// the layouts name BxRig plugins (system, dev, vpn, quick, power): a machine set up by an older BxRig lacks their files, so the missing ones are written (never an existing one)
+		for ( var pe in new bxrig.TemplateData().pluginEntries() ) if ( variables.config.configState( pe ) == "missing" ) variables.config.configWrite( pe, pe.content, "bar", true, false );
 		var code = variables.config.configWrite( e, e.content, "bar", true, false );
 		if ( code != 0 ) { res.state = "failed"; res.code = code; return res; }
 		res.state = "written";
