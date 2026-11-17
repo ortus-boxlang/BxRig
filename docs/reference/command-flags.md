@@ -43,6 +43,8 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `wizard` | `--pages` | value |  |
 | `update` | `--notify` | bool |  |
 | `apps` | `--name` | any |  |
+| `help` | `--help` | bool |  |
+| `help` | `--h` | bool |  |
 | `install` | `--default` | any |  |
 | `install` | `--optional` | bool |  |
 | `install` | `--profile` | any |  |

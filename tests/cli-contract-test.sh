@@ -18,4 +18,12 @@ done
 "$binary" desktop-list | grep -Fq 'Visual Studio Code' || fail 'plain list rows'
 set +e; "$binary" nosuchcommand >/dev/null 2>&1; c=$?; set -e; [[ $c == 2 ]] || fail "an unknown command exits 2 (got $c)"
 set +e; "$binary" version --nosuchflag >/dev/null 2>&1; c=$?; set -e; [[ $c == 2 ]] || fail "an unknown flag exits 2 (got $c)"
+# --help and -h are `bxrig help`: the same text, exit 0
+"$binary" help > "$tmp/help.txt"; [[ -s "$tmp/help.txt" ]] || fail 'help prints nothing'
+for h in --help -h; do
+	"$binary" $h > "$tmp/h.txt" 2>&1 || fail "bxrig $h does not exit 0"
+	cmp -s "$tmp/help.txt" "$tmp/h.txt" || fail "bxrig $h differs from bxrig help"
+done
+[[ "$("$binary" --help --json | jq -r .command)" == help ]] || fail '--help --json is the help envelope'
+[[ "$(code "$binary" --nosuchflag)" == 2 ]] || fail 'an unknown flag without a command still exits 2'
 echo 'cli contract tests passed'

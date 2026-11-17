@@ -69,7 +69,7 @@ bxrig tui apps                # find, install and remove software, Windows easy
 bxrig tui databases           # one page on its own, like an app (bxrig tui list shows them all)
 bxrig launchers on --yes      # optional: an application-menu entry per page
 bxrig mail start --yes        # a local inbox for your app's mail
-bxrig help                    # every command, or: bxrig help appearance
+bxrig help                    # every command, or: bxrig help appearance (also bxrig --help, bxrig -h)
 bxrig vm create linux dev     # a Linux desktop in a container
 bxrig db start postgres --yes
 bxrig skills install --yes    # BxRig, BoxLang and MatchBox skills for your agents

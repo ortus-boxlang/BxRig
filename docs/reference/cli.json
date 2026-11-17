@@ -273,7 +273,7 @@
 				},
 				{
 					"name": "help",
-					"summary": "This list, or the usage of one command.",
+					"summary": "This list, or the usage of one command. `bxrig --help` and `bxrig -h` print the same list.",
 					"usage": [
 						"help [COMMAND]"
 					],
@@ -282,7 +282,16 @@
 						"bxrig help appearance"
 					],
 					"mutates": false,
-					"flags": []
+					"flags": [
+						{
+							"name": "help",
+							"type": "bool"
+						},
+						{
+							"name": "h",
+							"type": "bool"
+						}
+					]
 				}
 			]
 		},

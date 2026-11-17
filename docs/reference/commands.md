@@ -211,7 +211,7 @@ bxrig apps list
 
 ### `bxrig help` {#bxrig-help}
 
-This list, or the usage of one command.
+This list, or the usage of one command. `bxrig --help` and `bxrig -h` print the same list.
 
 ```text
 bxrig help [COMMAND]
