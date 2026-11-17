@@ -126,12 +126,12 @@ nopower "$binary" appearance bar layout status --json | jq -e '.data.layout == "
 : > "$LOG"; nopower "$binary" appearance bar layout minimal --dry-run --json | jq -e '.dry_run and .data.config.state == "would-write" and .data.layout == "minimal"' >/dev/null || fail 'layout dry run'
 [[ ! -e "$cfgtoml" ]] || fail 'a dry run wrote config.toml'
 nopower "$binary" appearance bar layout minimal --json | jq -e '.ok and .data.config.state == "written" and .data.layout == "minimal"' >/dev/null || fail "layout minimal: $(nopower "$binary" appearance bar layout minimal)"
-[[ "$(tomlget bar.main.center)" == bxrig-clock && "$(tomlget bar.main.end)" == "tray network volume notifications bxrig-themes control-center" ]] || fail "minimal bar: $(grep -n '^center\|^end' "$cfgtoml")"
+[[ "$(tomlget bar.main.center)" == bxrig-clock && "$(tomlget bar.main.end)" == "tray network volume notifications bxrig-quick control-center" ]] || fail "minimal bar: $(grep -n '^center\|^end' "$cfgtoml")"
 has 'noctalia msg config-reload' || fail 'a running Noctalia is told to reload'
 [[ -f "$tmp/home/.local/share/bxrig/plates/bxrig-menu.svg" && -f "$tmp/home/.local/share/bxrig/plates/bxrig-grid.svg" ]] || fail 'the plates were not written'
 nopower "$binary" appearance bar layout status --json | jq -e '.data.layout == "minimal"' >/dev/null || fail 'the layout is remembered'
 withpower "$binary" appearance bar layout dense --json | jq -e '.ok' >/dev/null || fail 'layout dense'
-[[ "$(tomlget bar.main.center)" == "bxrig-clock weather media" ]] && tomlget bar.main.end | grep -q 'brightness caffeine battery notifications bxrig-themes control-center' || fail 'dense bar on a laptop'
+[[ "$(tomlget bar.main.center)" == "bxrig-clock weather media" ]] && tomlget bar.main.end | grep -q 'brightness battery notifications bxrig-quick control-center' || fail 'dense bar on a laptop'
 [[ "$(tomlget widget.battery.show_label)" == True && "$(tomlget widget.battery.label_content)" == percent ]] || fail 'the laptop battery shows the percentage'
 nopower "$binary" appearance bar layout standard >/dev/null; ! grep -q '^\[widget.battery\]' "$cfgtoml" || fail 'a desktop has no battery widget'
 # the theme and wallpaper of the file survive a bar change

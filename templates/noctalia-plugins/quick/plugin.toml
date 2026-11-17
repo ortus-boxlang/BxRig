@@ -1,0 +1,50 @@
+# BxRig Quick settings: the switches and pickers people change most, in one popover from the bar, and the theme switcher as its second page.
+# Page 1 (panel `panel`): Caffeine, Do Not Disturb, Dark/Light/Auto, Night light, Battery percentage, Dock, App grid style, Top bar layout,
+#   Clock format, and a button that opens the BxRig Control Center. Each control runs a bxrig command with --yes.
+# Page 2 (panel `themes`): an Omarchy-style theme switcher. Search box, theme list on the left (current one marked), preview on the right,
+#   Enter applies with `bxrig theme set <name> --yes`. Data: `bxrig theme list --json`, fetched each time the panel opens.
+# Open them from a keybind with:
+#   noctalia msg panel-toggle bxrig/quick:panel
+#   noctalia msg panel-toggle bxrig/quick:themes
+
+id = "bxrig/quick"
+name = "Quick settings (BxRig)"
+version = "1.0.0"
+plugin_api = 43
+author = "bxrig"
+license = "MIT"
+dependencies = ["bxrig"]
+tags = ["settings", "theme", "appearance", "bxrig"]
+icon = "adjustments-horizontal"
+description = "Caffeine, Do Not Disturb, light or dark, dock, bar layout, clock format and the theme switcher, driven by bxrig."
+
+[[setting]]
+key = "command"
+type = "string"
+label_key = "settings.command.label"
+description_key = "settings.command.description"
+default = "bxrig"
+
+[[widget]]
+id = "bar"
+entry = "bar.luau"
+
+[[panel]]
+id = "panel"
+entry = "panel.luau"
+width = 420
+height = "content"
+max_height = 760
+placement = "attached"
+position = "auto"
+open_near_click = true
+
+[[panel]]
+id = "themes"
+entry = "themes.luau"
+width = 860
+height = 580
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter"]

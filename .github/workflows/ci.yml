@@ -146,6 +146,7 @@ jobs:
           (cd src && matchbox ../tests/hardware_status_test.bxs)
           (cd src && matchbox ../tests/noctalia_config_test.bxs)
           (cd src && matchbox ../tests/bar_settings_test.bxs)
+          (cd src && matchbox ../tests/plugin_quick_power_test.bxs)
           (cd src && matchbox ../tests/catalog_check.bxs)
           (cd src && matchbox ../tests/wizard_app_test.bxs)
           (cd src && matchbox ../tests/wizard_view_test.bxs)
