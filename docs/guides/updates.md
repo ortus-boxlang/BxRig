@@ -38,11 +38,32 @@ bxrig update notifications off
 
 The notification covers BxRig and pending system packages.
 
+## See what is waiting
+
+```bash
+bxrig system updates            # counts, the package list and whether a restart is needed
+bxrig system updates --json     # the same as data for scripts and the System panel in the bar
+```
+
+It reads only: repository packages from `checkupdates` (the `pacman-contrib` package) and AUR packages from `yay -Qua` or `paru -Qua`. It exits 0 even when updates are waiting, and 4 when `checkupdates` is missing or cannot reach the mirrors.
+
+A restart is called for in two cases, and `needs_reboot` is true for either:
+
+- **Pending.** An update in the list replaces a kernel (`linux`, `linux-lts`, `linux-zen`, `linux-cachyos` and the other flavours, not their `-headers` or `-docs`), `systemd`, `glibc`, `linux-firmware`, a CPU microcode package (`intel-ucode`, `amd-ucode`) or the NVIDIA driver. `reboot_pending` is true.
+- **Stale.** The kernel that runs is gone from `/usr/lib/modules`, which means an update already replaced it. `reboot_stale` is true.
+
+`reboot_reasons` says why in words. The last full system upgrade comes from `/var/log/pacman.log`.
+
 ## Update the system
 
 ```bash
+bxrig system update             # the plan: the snapshot step, then the update steps (exit 2)
 bxrig system update --yes       # snapshot first (snapper or timeshift), then pacman -Syu and yay -Sua
+bxrig system update --repo --yes   # the snapshot and the repository packages only
+bxrig system update --aur --yes    # the snapshot and the AUR packages only (yay, else paru; exit 4 without one)
 ```
+
+`--all` is the default. Every scope takes the snapshot first, and says so when snapper and timeshift are both missing. In a terminal each step is named as it starts, and a restart is mentioned at the end when the kernel was replaced.
 
 ## Agent skills
 

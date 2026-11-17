@@ -3,6 +3,8 @@
 //   backup snapshots ...   see BackupSnapshots
 //   backup data ...        see BackupData
 //   backup send|export ... see BackupMove
+//   backup status         one row per kind of backup: last run, next run, size, health (see BackupStatus)
+//   backup timeline       every backup in one list (see BackupTimeline)
 // More layers are added as they are built. Exit codes are the ones of each layer.
 class Backup {
 	function init( cli, runner = "" ) {
@@ -16,6 +18,7 @@ class Backup {
 		var rest = [];
 		for ( var i = 2; i <= arguments.words.len(); i++ ) rest.append( arguments.words[ i ] );
 		if ( layer == "config" ) return new bxrig.BackupConfig( variables.cli, variables.runner ).run( rest, arguments.opts, arguments.yes, arguments.dry, arguments.asJson );
+		if ( layer == "status" && rest.len() == 0 ) return new bxrig.BackupStatus( variables.cli, variables.runner ).run( arguments.asJson );
 		if ( layer == "timeline" ) return new bxrig.BackupTimeline( variables.cli, variables.runner ).run( arguments.opts, arguments.asJson );
 		if ( layer == "send" ) return new bxrig.BackupMove( variables.cli, variables.runner ).sendCmd( rest, arguments.opts, arguments.yes, arguments.dry, arguments.asJson );
 		if ( layer == "export" ) return new bxrig.BackupMove( variables.cli, variables.runner ).exportCmd( rest, arguments.opts, arguments.yes, arguments.dry, arguments.asJson );

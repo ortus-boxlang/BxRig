@@ -1,0 +1,176 @@
+// `bxrig backup status [--json]`: one row per kind of backup, with when it last ran, when it runs next, how big it is and whether it is healthy.
+// The Noctalia System panel (Backups tab) draws this. Everything here is read from the layers that already exist, nothing is duplicated:
+//   config   BackupTimeline.configRow (the snapshots of your setup) and BackupConfig settings (auto before updates)
+//   system   BackupTimeline.systemRow (snapper snapshots) and the snapper timeline timer; Timeshift keeps its own schedule and is not read
+//   data     BackupData targets and the last run it records for each target (data.runs in backup.json, written by `backup data run`), the
+//            restic schedule and its user timer. No restic or network call is made here, so it is quick enough for a panel to poll.
+// Row: { id, label, kind, tool, configured, count, last, last_epoch, last_ago, next, next_epoch, size, size_text, health, note, action, action_text }
+//   health  ok: recent and nothing failed | warn: older than the limit below, or the last run failed | none: nothing to judge (not set up, never run)
+//   limits  config 30 days; system 2 days when the snapper timeline timer is on, else 14 days; data 6 hours (hourly schedule), 2 days (daily), 14 days (off)
+//   next    the timer's next time ("in 25m"), "before the next update" (config, when automatic snapshots are on), "manual", or "none"
+//   size    bytes, 0 when not known (only the config snapshots are measured); size_text is "" then
+//   action  the argv words of `bxrig` that back this up now, [] when it cannot be done yet. The commands already exist (there is no `backup now`):
+//           config `backup config now`, system `backup snapshots create --yes`, data `backup data run --all --yes`.
+// Data: { now, rows, health (the worst row), warn_count }. Exit 0.
+class BackupStatus {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.runner = arguments.runner;
+		variables.out = new bxrig.util.Out( variables.cli, "backup" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.systemd = new bxrig.util.Systemd( variables.proc );
+		variables.fmt = new bxrig.util.Fmt();
+		variables.clock = new bxrig.BackupTimeline( variables.cli, arguments.runner );
+		return this;
+	}
+
+	// ---- pure rules ----
+
+	// How old the newest backup may be, in seconds, before the row is a warning. schedule is hourly, daily or off.
+	function limit( kind, timerOn, schedule = "off" ) {
+		var day = 86400;
+		if ( compare( arguments.kind, "config" ) == 0 ) return 30 * day;
+		if ( compare( arguments.kind, "system" ) == 0 ) return arguments.timerOn ? 2 * day : 14 * day;
+		if ( compare( arguments.schedule, "hourly" ) == 0 ) return 6 * 3600;
+		if ( compare( arguments.schedule, "daily" ) == 0 ) return 2 * day;
+		return 14 * day;
+	}
+
+	// The worst health of a list of rows: warn, else ok, else none.
+	function worst( rows ) {
+		var seen = "none";
+		for ( var r in arguments.rows ) {
+			if ( compare( r.health, "warn" ) == 0 ) return "warn";
+			if ( compare( r.health, "ok" ) == 0 ) seen = "ok";
+		}
+		return seen;
+	}
+
+	// "in 25m" for a time ahead, "none" when there is none.
+	function inText( epoch, now ) {
+		if ( arguments.epoch <= 0 ) return "none";
+		return "in " & variables.fmt.span( max( 0, arguments.epoch - arguments.now ) );
+	}
+
+	function row( id, label, kind, tool, now ) {
+		return { id: arguments.id, label: arguments.label, kind: arguments.kind, tool: arguments.tool, configured: false, count: 0, last: "", last_epoch: 0, last_ago: "",
+			next: "none", next_epoch: 0, size: 0, size_text: "", health: "none", note: "", action: [], action_text: "" };
+	}
+
+	// Sets the time fields of a row from the newest backup's epoch.
+	function withLast( r, epoch, now ) {
+		var x = arguments.r;
+		x.last_epoch = arguments.epoch;
+		if ( arguments.epoch > 0 ) {
+			x.last_ago = variables.fmt.age( arguments.now - arguments.epoch );
+			x.last = new bxrig.util.Clock().iso( arguments.epoch );
+		}
+		return x;
+	}
+
+	function withAction( r, words ) {
+		var x = arguments.r;
+		x.action = arguments.words;
+		x.action_text = "bxrig " & arguments.words.toList( " " );
+		return x;
+	}
+
+	// Health from the age of the newest backup: ok within the limit, else warn with the age in the note.
+	function judge( r, ageSeconds, limitSeconds ) {
+		var x = arguments.r;
+		if ( arguments.ageSeconds > arguments.limitSeconds ) { x.health = "warn"; x.note = "the last backup is " & variables.fmt.age( arguments.ageSeconds ) & ", older than " & variables.fmt.span( arguments.limitSeconds ); }
+		else x.health = "ok";
+		return x;
+	}
+
+	// ---- the three rows ----
+
+	function configRow( now ) {
+		var r = row( "config", "Config snapshots", "config", "bxrig", arguments.now );
+		var pts = variables.clock.configRow( arguments.now ).points;
+		var auto = new bxrig.BackupConfig( variables.cli, variables.runner ).readSettings().config.auto;
+		r.configured = true;
+		r.count = pts.len();
+		var total = 0;
+		for ( var p in pts ) total += p.size ?: 0;
+		r.size = total;
+		r.size_text = total > 0 ? variables.fmt.bytes( total ) : "";
+		r.next = auto ? "before the next update" : "manual";
+		r = withAction( r, [ "backup", "config", "now" ] );
+		if ( !pts.len() ) { r.note = "no snapshot yet"; return r; }
+		r = withLast( r, pts[ 1 ].epoch, arguments.now );
+		return judge( r, arguments.now - pts[ 1 ].epoch, limit( "config", false ) );
+	}
+
+	function systemRow( now ) {
+		var sn = new bxrig.BackupSnapshots( variables.cli, variables.runner );
+		var tool = sn.tool();
+		var r = row( "system", "System snapshots", "system", tool, arguments.now );
+		if ( !len( tool ) ) { r.note = "no snapshot tool: bxrig backup snapshots setup --yes"; return r; }
+		if ( compare( tool, "timeshift" ) == 0 ) { r.configured = true; r.note = "Timeshift keeps its own schedule; its last run is not read here"; return withAction( r, [ "backup", "snapshots", "create", "--yes" ] ); }
+		if ( !sn.configs().len() ) { r.note = "snapper has no configuration yet: bxrig backup snapshots setup --yes"; return r; }
+		r.configured = true;
+		r = withAction( r, [ "backup", "snapshots", "create", "--yes" ] );
+		var timerOn = sn.active( "snapper-timeline.timer" );
+		var next = timerOn ? variables.systemd.nextRun( "snapper-timeline.timer" ) : 0;
+		r.next_epoch = next;
+		r.next = inText( next, arguments.now );
+		var pts = variables.clock.systemRow( arguments.now ).points;
+		r.count = pts.len();
+		if ( !pts.len() ) { r.note = "no snapshot yet"; return r; }
+		r = withLast( r, pts[ 1 ].epoch, arguments.now );
+		return judge( r, arguments.now - pts[ 1 ].epoch, limit( "system", timerOn ) );
+	}
+
+	function dataRow( now ) {
+		var bd = new bxrig.BackupData( variables.cli, variables.runner );
+		var s = bd.readAll();
+		var r = row( "data", "Files", "data", "restic", arguments.now );
+		var names = structKeyArray( s.targets );
+		arraySort( names, "text" );
+		r.targets = names;
+		r.schedule = s.data.schedule;
+		if ( !names.len() ) { r.note = "no backup place yet: bxrig backup data target add NAME --type=local --path=DIR"; return r; }
+		r.configured = true;
+		r.count = names.len();
+		r = withAction( r, [ "backup", "data", "run", "--all", "--yes" ] );
+		var timerOn = compare( s.data.schedule, "off" ) != 0;
+		var next = timerOn ? variables.systemd.nextRun( "bxrig-backup.timer", true ) : 0;
+		r.next_epoch = next;
+		r.next = timerOn ? inText( next, arguments.now ) : "manual";
+		var lastOk = 0;
+		var failed = "";
+		for ( var n in names ) {
+			var run = structKeyExists( s.data.runs, n ) ? s.data.runs[ n ] : {};
+			var ok = run.ok ?: 0;
+			if ( ok > lastOk ) lastOk = ok;
+			if ( ( run.failed ?: 0 ) > ok && !len( failed ) ) failed = n;
+		}
+		if ( !variables.proc.has( "restic" ) ) { r.health = "warn"; r.note = "restic is not installed: bxrig install restic"; return r; }
+		if ( lastOk > 0 ) r = withLast( r, lastOk, arguments.now );
+		if ( len( failed ) ) { r.health = "warn"; r.note = "the last backup to " & failed & " failed"; return r; }
+		if ( timerOn && compare( variables.systemd.state( "bxrig-backup.service", true ), "failed" ) == 0 ) { r.health = "warn"; r.note = "the scheduled backup failed: journalctl --user -u bxrig-backup"; return r; }
+		if ( lastOk == 0 ) { r.note = "no backup has run yet: bxrig backup data run --all --yes"; return r; }
+		return judge( r, arguments.now - lastOk, limit( "data", timerOn, s.data.schedule ) );
+	}
+
+	function build() {
+		var now = variables.clock.nowEpoch();
+		var rows = [ configRow( now ), systemRow( now ), dataRow( now ) ];
+		var warns = 0;
+		for ( var r in rows ) if ( compare( r.health, "warn" ) == 0 ) warns++;
+		return { now: now, rows: rows, health: worst( rows ), warn_count: warns };
+	}
+
+	function run( asJson ) {
+		var d = build();
+		var lines = [];
+		for ( var r in d.rows ) {
+			var line = r.label & ": " & r.health & ", last " & ( len( r.last_ago ) ? r.last_ago : "never" ) & ", next " & r.next;
+			if ( len( r.size_text ) ) line &= ", " & r.size_text;
+			if ( len( r.note ) ) line &= " (" & r.note & ")";
+			lines.append( line );
+		}
+		return variables.out.say( "ok", d, arguments.asJson, lines );
+	}
+}

@@ -1,0 +1,146 @@
+// `bxrig system updates [--json]`: what is waiting to be updated, and whether a restart is needed. Read-only; the Noctalia System panel reads it.
+//   repo packages   `checkupdates` (pacman-contrib; it syncs a temporary copy of the databases, so no root and nothing is changed)
+//   AUR packages    `yay -Qua` or `paru -Qua`, when a helper is installed (without one there are simply none)
+//   last upgrade    the last "starting full system upgrade" line of /var/log/pacman.log
+// Data: { total, repo_count, aur_count, packages: [ { name, old, new, repo } ], needs_reboot, reboot_pending, reboot_stale, reboot_reasons,
+//   last_update (the log's time text), last_update_epoch, last_update_ago, aur_helper, snapshot_tool, error }. `repo` of a package is "repo" or "aur".
+// When to restart (a style rule, the same one for the whole panel):
+//   reboot_pending  an update waiting in the list touches something only a restart loads: a kernel (linux, linux-lts, linux-zen, linux-cachyos
+//                   and the other flavours, not their -headers, -docs or module packages), systemd, glibc, linux-firmware, a CPU microcode
+//                   package (intel-ucode, amd-ucode) or the NVIDIA driver (nvidia, nvidia-open, nvidia-dkms, nvidia-utils, ...).
+//   reboot_stale    the kernel that runs is no longer installed: /usr/lib/modules/<uname -r> is gone (pacman removes the old modules when it
+//                   installs a new kernel). This is how a restart that is already overdue shows after an update.
+//   needs_reboot    reboot_pending or reboot_stale. reboot_reasons says why, in words.
+// Exit: 0 (also when something is waiting), 4 when pacman or checkupdates is missing or checkupdates failed (no network).
+class SystemUpdates {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( variables.cli, "system" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.pacman = new bxrig.util.Pacman( variables.proc );
+		variables.aur = new bxrig.util.Aur( variables.proc );
+		variables.fmt = new bxrig.util.Fmt();
+		variables.clock = new bxrig.util.Clock();
+		return this;
+	}
+
+	// ---- the restart rule (pure) ----
+
+	// True for a kernel package: linux, or linux- plus a flavour (lts, zen, hardened, rt, cachyos, cachyos-lts, cachyos-bore, ...), but not
+	// the headers, docs, API headers, firmware or tools, and not the driver modules built for a kernel (nvidia, zfs, ...).
+	function isKernel( name ) {
+		var n = arguments.name;
+		if ( compare( n, "linux" ) == 0 ) return true;
+		if ( !reFind( "^linux-(lts|zen|hardened|rt|rt-lts|mainline|surface|xanmod|cachyos)([a-z0-9-]*)$", n ) ) return false;
+		return !reFind( "-(headers|docs|api-headers|firmware|tools|nvidia|nvidia-open|nvidia-dkms|zfs|r8168|r8125|virtualbox-modules)$", n );
+	}
+
+	// Why updating this package needs a restart ("kernel", "systemd", "glibc", "firmware", "microcode", "nvidia driver") or "".
+	function rebootKind( name ) {
+		var n = arguments.name;
+		if ( isKernel( n ) ) return "kernel";
+		if ( compare( n, "systemd" ) == 0 ) return "systemd";
+		if ( compare( n, "glibc" ) == 0 ) return "glibc";
+		if ( compare( n, "linux-firmware" ) == 0 ) return "firmware";
+		if ( compare( n, "intel-ucode" ) == 0 || compare( n, "amd-ucode" ) == 0 ) return "microcode";
+		if ( reFind( "^nvidia(-open|-lts|-dkms|-open-dkms|-utils|-open-lts)?$", n ) ) return "nvidia driver";
+		return "";
+	}
+
+	// The restart reasons of a package list: [ "linux-cachyos (kernel)", "systemd" ].
+	function pendingReasons( packages ) {
+		var out = [];
+		for ( var p in arguments.packages ) {
+			var k = rebootKind( p.name );
+			if ( len( k ) ) out.append( compare( k, p.name ) == 0 ? p.name : p.name & " (" & k & ")" );
+		}
+		return out;
+	}
+
+	// ---- the running kernel ----
+
+	// True when the kernel that runs was replaced on disk: its module folder is gone. False when it cannot be told.
+	function rebootStale() {
+		var r = variables.proc.exec( [ "uname", "-r" ], 10 );
+		var release = trim( r.output );
+		if ( r.exitCode != 0 || !len( release ) ) return false;
+		var dir = new bxrig.util.Env().named( "modulesDir", "/usr/lib/modules" );
+		return !directoryExists( dir & "/" & release );
+	}
+
+	// ---- the last upgrade ----
+
+	// Seconds since 1970 of a pacman.log stamp: "[2026-11-15T21:42:10+0100]" or the old "[2026-11-15 21:42]". 0 when it is not a stamp.
+	function logEpoch( line ) {
+		var m = reFind( "^\[([0-9]{4}-[0-9]{2}-[0-9]{2})[T ]([0-9]{2}:[0-9]{2})(:[0-9]{2})?([+-][0-9]{4})?\]", arguments.line, 1, true );
+		if ( m.pos[ 1 ] == 0 ) return 0;
+		var date = mid( arguments.line, m.pos[ 2 ], m.len[ 2 ] );
+		var hm = mid( arguments.line, m.pos[ 3 ], m.len[ 3 ] );
+		var sec = m.pos[ 4 ] > 0 && m.len[ 4 ] > 0 ? mid( arguments.line, m.pos[ 4 ], m.len[ 4 ] ) : ":00";
+		var e = variables.clock.epoch( date & "T" & hm & sec );
+		if ( m.pos[ 5 ] > 0 && m.len[ 5 ] > 0 ) {
+			var z = mid( arguments.line, m.pos[ 5 ], m.len[ 5 ] );
+			var off = int( val( mid( z, 2, 2 ) ) ) * 3600 + int( val( mid( z, 4, 2 ) ) ) * 60;
+			e = left( z, 1 ) == "-" ? e + off : e - off;
+		}
+		return e;
+	}
+
+	// The last full system upgrade: { text, epoch } (empty and 0 when the log has none).
+	function lastUpgrade() {
+		var log = new bxrig.util.Env().named( "pacmanLog", "/var/log/pacman.log" );
+		var r = variables.proc.exec( [ "grep", "-a", "starting full system upgrade", log ], 30 );
+		var last = "";
+		for ( var l in listToArray( r.output, chr( 10 ) ) ) if ( find( "starting full system upgrade", l ) > 0 ) last = trim( l );
+		if ( !len( last ) ) return { text: "", epoch: 0 };
+		return { text: mid( last, 2, find( "]", last ) - 2 ), epoch: logEpoch( last ) };
+	}
+
+	// ---- the report ----
+
+	// The whole answer, without printing it. A struct with `ok` false and `error` when the tools are missing or checkupdates failed.
+	function report() {
+		if ( !variables.pacman.available() ) return { ok: false, error: "pacman is not installed (this is not an Arch based system)" };
+		if ( !variables.pacman.canCheckUpdates() ) return { ok: false, error: "checkupdates is not installed (sudo pacman -S pacman-contrib)" };
+		var repo = variables.pacman.pendingUpdates();
+		if ( !repo.ok ) return { ok: false, error: repo.error };
+		var packages = [];
+		for ( var p in repo.rows ) packages.append( { name: p.name, old: p.old, new: p.new, repo: "repo" } );
+		var helper = variables.aur.updateHelper();
+		var aurError = "";
+		if ( len( helper ) ) {
+			var a = variables.aur.pendingUpdates( helper );
+			if ( a.ok ) { for ( var q in a.rows ) packages.append( { name: q.name, old: q.old, new: q.new, repo: "aur" } ); } else aurError = a.error;
+		}
+		var pending = pendingReasons( packages );
+		var stale = rebootStale();
+		var reasons = [];
+		for ( var x in pending ) reasons.append( x & " is updated" );
+		if ( stale ) reasons.append( "the running kernel was replaced by an update" );
+		var last = lastUpgrade();
+		var now = variables.clock.nowEpoch();
+		var snap = variables.proc.has( "snapper" ) ? "snapper" : ( variables.proc.has( "timeshift" ) ? "timeshift" : "" );
+		var repoCount = 0;
+		for ( var k in packages ) if ( compare( k.repo, "repo" ) == 0 ) repoCount++;
+		return { ok: true, total: packages.len(), repo_count: repoCount, aur_count: packages.len() - repoCount, packages: packages, needs_reboot: pending.len() > 0 || stale,
+			reboot_pending: pending.len() > 0, reboot_stale: stale, reboot_reasons: reasons, last_update: last.text, last_update_epoch: last.epoch,
+			last_update_ago: last.epoch > 0 ? variables.fmt.age( now - last.epoch ) : "", aur_helper: helper, aur_error: aurError, snapshot_tool: snap };
+	}
+
+	function run( asJson ) {
+		var d = report();
+		if ( !d.ok ) return variables.out.precondition( d.error, arguments.asJson );
+		structDelete( d, "ok" );
+		var lines = [];
+		if ( d.total == 0 ) lines.append( "The system is up to date." );
+		else {
+			lines.append( d.total & " updates waiting: " & d.repo_count & " repository, " & d.aur_count & " AUR." );
+			for ( var p in d.packages ) lines.append( "  " & p.name & " " & p.old & " -> " & p.new & "   (" & p.repo & ")" );
+		}
+		if ( len( d.aur_error ) ) lines.append( "The AUR check failed: " & d.aur_error );
+		if ( d.needs_reboot ) lines.append( "A restart is needed: " & d.reboot_reasons.toList( "; " ) & "." );
+		lines.append( len( d.last_update ) ? "Last system upgrade: " & d.last_update_ago & " (" & d.last_update & ")." : "No system upgrade found in the pacman log." );
+		if ( d.total > 0 ) lines.append( "Update: bxrig system update" & ( len( d.snapshot_tool ) ? " (a " & d.snapshot_tool & " snapshot is taken first)" : "" ) );
+		return variables.out.say( "ok", d, arguments.asJson, lines );
+	}
+}

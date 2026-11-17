@@ -20,7 +20,21 @@ class Cli {
 		var n = variables.exit.code( arguments.code );
 		if ( arguments.asJson ) println( envelope( arguments.command, n, arguments.data, arguments.dry ) );
 		else for ( var l in arguments.lines ) println( l );
+		record( arguments.command, n );
 		return n;
+	}
+
+	// One line per command result in MatchBox's `bxrig` log (`~/.matchbox/logs/bxrig.log`, written as `[bxrig] command exit N`). Which lines
+	// are kept is MatchBox's choice: its default level is WARN, so a normal run writes nothing and a precondition or a failure is
+	// recorded. Set `logging.loggers.bxrig.level` in `~/.matchbox/config/boxlang.json` to INFO or DEBUG to see every command.
+	// Levels: exit 0 information; 2 (usage or plan) and 10 (update available) debug; 1, 3 and 4 warning; anything else error.
+	// A MatchBox without a runtime home ignores writeLog, and a logging problem never changes a command's result.
+	function record( command, code ) {
+		var type = arguments.code == 0 ? "information" : ( arguments.code == 2 || arguments.code == 10 ) ? "debug" : ( arguments.code == 1 || arguments.code == 3 || arguments.code == 4 ) ? "warning" : "error";
+		try {
+			writeLog( text = arguments.command & " exit " & arguments.code, type = type, log = "bxrig" );
+		} catch ( any e ) {
+		}
 	}
 
 	// An error result: { error: msg } in JSON, "error: msg" for people. Returns the exit code.

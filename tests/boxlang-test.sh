@@ -25,10 +25,13 @@ grep -q '^bvm use 1.19.0' "$LOG" && ! grep -q '^bvm install 1.19.0' "$LOG" || fa
 unset MATCHBOX_HOME  # a developer's own MatchBox home must not leak into the test
 mb="$tmp/home/.matchbox"; mkdir -p "$tmp/proj"
 run_in() { local d="$1"; shift; (cd "$d" && env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" PATH="$tmp/bin:$PATH" LOG="$LOG" PWD="$d" "$@"); }
-run_in "$tmp/proj" "$binary" boxlang matchbox status --json | jq -e '.data.home_exists == false and .data.config_exists == false and .data.env_user_exists == false and (.data.logs | length) == 0' >/dev/null || fail "matchbox status before a first run: $(run_in "$tmp/proj" "$binary" boxlang matchbox status --json)"
+# A MatchBox with a runtime home creates it when this very command starts, an older one does not: status must agree with the disk either way.
+st="$(run_in "$tmp/proj" "$binary" boxlang matchbox status --json | jq -c .data)"
+want_home=false; [[ -d "$mb" ]] && want_home=true
+echo "$st" | jq -e --arg home "$mb" --argjson want "$want_home" '.home == $home and .home_exists == $want and .env_user_exists == false' >/dev/null || fail "matchbox status agrees with the disk: $st"
 echo '{}' > "$tmp/proj/boxlang.json"; echo 'A=1' > "$tmp/proj/.env"; mkdir -p "$mb/config" "$mb/logs"; : > "$mb/logs/application.log"; : > "$mb/logs/runtime.log"
 printf '// keep\n{\n\t"logging": {\n\t\t// level\n\t\t"rootLevel":"WARN", "maxLogDays": 90\n\t}\n}\n' > "$mb/config/boxlang.json"
-run_in "$tmp/proj" "$binary" boxlang matchbox status --json | jq -e '.data.home_exists and .data.config_exists and .data.project_config_exists and .data.env_project_exists and (.data.env_user_exists | not) and (.data.logs == ["application.log","runtime.log"])' >/dev/null || fail "matchbox status after a first run: $(run_in "$tmp/proj" "$binary" boxlang matchbox status --json | jq -c .data)"
+run_in "$tmp/proj" "$binary" boxlang matchbox status --json | jq -e '.data.home_exists and .data.config_exists and .data.project_config_exists and .data.env_project_exists and (.data.env_user_exists | not) and (.data.logs | contains(["application.log","runtime.log"]))' >/dev/null || fail "matchbox status after a first run: $(run_in "$tmp/proj" "$binary" boxlang matchbox status --json | jq -c .data)"
 # log-level: a plan first, then the one value changes and the comments stay
 rc=0; run_in "$tmp/proj" "$binary" boxlang matchbox log-level debug >/dev/null || rc=$?; [[ "$rc" == 2 ]] || fail "log-level without --yes is a plan (got $rc)"
 grep -q '"rootLevel":"WARN"' "$mb/config/boxlang.json" || fail 'a plan changes nothing'
@@ -56,6 +59,23 @@ run "$binary" boxlang matchbox env unset TOKEN --yes >/dev/null; [[ "$(cat "$f")
 [[ "$(code "$binary" boxlang matchbox env set K "it's \"x\"" --yes)" == 4 ]] || fail 'a value with both quote characters exits 4'
 [[ "$(code "$binary" boxlang matchbox env set K $'a\nb' --yes)" == 4 ]] || fail 'a value with a line break exits 4'
 [[ "$(code "$binary" boxlang matchbox nope)" == 2 ]] || fail 'an unknown matchbox action exits 2'
+# logging: every command's exit is written to MatchBox's `bxrig` log (`[bxrig] boxlang exit 4`). MatchBox keeps WARN and above by default, so a
+# precondition shows and a normal run does not until `logging.loggers.bxrig.level` is INFO. A MatchBox without a runtime home (an older build)
+# ignores writeLog, so the checks run only when this binary's MatchBox made a home.
+LH="$tmp/loghome"; mkdir -p "$LH"
+run_home() { env HOME="$LH" BXRIG_CONFIG_HOME="$tmp/cfg" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
+run_home "$binary" boxlang status >/dev/null
+run_home "$binary" boxlang use 'a;b' >/dev/null 2>&1 || true
+if [[ -d "$LH/.matchbox/modules" ]]; then
+	blog="$LH/.matchbox/logs/bxrig.log"
+	grep -q '\[WARN\] \[bxrig\] boxlang exit 4' "$blog" || fail "a precondition is a warning in the bxrig log: $(cat "$blog" 2>&1)"
+	! grep -q 'boxlang exit 0' "$blog" || fail "a normal run is below the default level: $(cat "$blog")"
+	printf '{ "logging": { "loggers": { "bxrig": { "level": "INFO" } } } }\n' > "$LH/.matchbox/config/boxlang.json"
+	run_home "$binary" boxlang status >/dev/null
+	grep -q '\[INFO\] \[bxrig\] boxlang exit 0' "$blog" || fail "logging.loggers.bxrig.level INFO logs every command: $(cat "$blog")"
+else
+	echo "note: this MatchBox has no runtime home; the bxrig log check is skipped"
+fi
 # modules: the live ForgeBox list, then bx-module
 run "$binary" boxlang modules list | grep -q 'bx-ai  3.7.0  AI integration' || fail 'forgebox list'
 grep -q 'entries/boxlang-modules?orderBy=popular&max=50&offset=0' "$LOG" || fail 'forgebox api url'

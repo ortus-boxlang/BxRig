@@ -52,7 +52,20 @@ class BackupData {
 		if ( !structKeyExists( d, "retention" ) ) d.retention = { daily: 7, weekly: 4, monthly: 6 };
 		if ( !structKeyExists( d, "schedule" ) ) d.schedule = "off";
 		if ( !structKeyExists( d, "default" ) ) d.default = "";
+		if ( !structKeyExists( d, "runs" ) ) d.runs = {};
 		return s;
+	}
+
+	// Remembers how the last run of a target ended: data.runs[NAME] = { ok: epoch of the last success, failed: epoch of the last failure }.
+	// `backup status` reads it, so it needs no network. Never stops the backup.
+	function markRun( name, ok ) {
+		try {
+			var s = readAll();
+			var r = structKeyExists( s.data.runs, arguments.name ) ? s.data.runs[ arguments.name ] : {};
+			r[ arguments.ok ? "ok" : "failed" ] = new bxrig.util.Clock().nowEpoch();
+			s.data.runs[ arguments.name ] = r;
+			writeAll( s );
+		} catch ( any e ) {}
 	}
 
 	function writeAll( s ) {
@@ -242,6 +255,7 @@ class BackupData {
 		if ( structKeyExists( env, "__unmounted" ) ) return variables.out.fail( "precondition", "the NAS share is not mounted (bxrig nas mount " & pt.target.nas & " " & pt.target.share & " --yes)", arguments.asJson );
 		if ( !len( env.RESTIC_PASSWORD ) ) return variables.out.fail( "precondition", "this target is not initialized (bxrig backup data init " & pt.name & " --yes)", arguments.asJson );
 		var r = restic( env, argv );
+		markRun( pt.name, r.exitCode == 0 );
 		if ( r.exitCode != 0 ) {
 			if ( arguments.scheduled ) notify( "Backup to " & pt.name & " failed", trim( listLast( trim( r.output ), chr( 10 ) ) ) );
 			return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: the backup failed: " & trim( r.output ) ] );

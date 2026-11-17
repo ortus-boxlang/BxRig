@@ -1,0 +1,42 @@
+# BxRig System: updates and backups in one popover from the bar.
+# Bar widget: a bare glyph with the number of waiting updates beside it (the number is hidden when there are none).
+#   Data: `bxrig system updates --json` every 10 min in the background (the panel refreshes it every 60 s while open and shares the count).
+# Panel, tab Updates: repo and AUR counts, the package list (old -> new), a restart-needed banner, and "Update all", which runs
+#   `bxrig system update --yes` in a terminal so the snapshot and the progress are visible.
+# Panel, tab Backups: one row per kind (config snapshots, system snapshots, files) with last run, next run, size and health from
+#   `bxrig backup status --json` every 60 s while open; "Back up now" runs the rows' own commands in a terminal; "Open Time Machine"
+#   runs `bxrig timemachine` in a terminal.
+# Open the panel from a keybind with:
+#   noctalia msg panel-toggle bxrig/system:panel
+
+id = "bxrig/system"
+name = "System (BxRig)"
+version = "1.0.0"
+plugin_api = 43
+author = "bxrig"
+license = "MIT"
+dependencies = ["bxrig"]
+tags = ["system", "updates", "backup", "bxrig"]
+icon = "device-desktop-cog"
+description = "Waiting updates (repo and AUR), restart needed, and your backups at a glance, with one-click update and back up, fed by bxrig."
+
+[[setting]]
+key = "command"
+type = "string"
+label_key = "settings.command.label"
+description_key = "settings.command.description"
+default = "bxrig"
+
+[[widget]]
+id = "bar"
+entry = "bar.luau"
+
+[[panel]]
+id = "panel"
+entry = "panel.luau"
+width = 420
+height = "content"
+max_height = 720
+placement = "attached"
+position = "auto"
+open_near_click = true

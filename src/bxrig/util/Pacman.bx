@@ -96,6 +96,30 @@ class Pacman {
 	// Package names that match a pattern in the sync repositories (pacman -Ssq).
 	function searchNames( pattern ) { return names( [ "-Ssq", arguments.pattern ], 30 ); }
 
+	// ---- pending updates ----
+
+	// True when `checkupdates` (pacman-contrib) is on the PATH.
+	function canCheckUpdates() { return variables.proc.has( "checkupdates" ); }
+
+	// The text of `checkupdates` or `yay -Qua` ("name 1.0-1 -> 1.1-1" per line) as rows: [ { name, old, new } ]. Other lines are skipped.
+	function parseUpgrades( text ) {
+		var rows = [];
+		for ( var l in listToArray( arguments.text, chr( 10 ) ) ) {
+			var w = listToArray( trim( l ), " " );
+			if ( w.len() >= 4 && compare( w[ 3 ], "->" ) == 0 ) rows.append( { name: w[ 1 ], old: w[ 2 ], new: w[ 4 ] } );
+		}
+		return rows;
+	}
+
+	// The repository packages that have a newer version: { ok, rows, error }. checkupdates syncs a temporary copy of the databases and
+	// exits 0 with updates, 2 with none, 1 on an error (no network). It never touches the real database, so no root is needed.
+	function pendingUpdates() {
+		var r = variables.proc.exec( [ "checkupdates" ], 120 );
+		if ( r.exitCode == 0 ) return { ok: true, rows: parseUpgrades( r.output ), error: "" };
+		if ( r.exitCode == 2 ) return { ok: true, rows: [], error: "" };
+		return { ok: false, rows: [], error: len( trim( variables.proc.why( r ) ) ) ? trim( variables.proc.why( r ) ) : "checkupdates failed (exit " & r.exitCode & ")" };
+	}
+
 	// ---- inner ----
 	function run( args, timeout = 30 ) {
 		var argv = [ "pacman" ];

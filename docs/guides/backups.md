@@ -16,6 +16,25 @@ BxRig protects three different things, and you can use any of them:
 
 Everything shows a plan first and needs `--yes`. The setup wizard has a **NAS** page, a **Remote backups** page and a **Backups** page, in that order.
 
+## Status at a glance
+
+```bash
+bxrig backup status          # one line per kind: health, last run, next run, size
+bxrig backup status --json   # the same as data (the System panel in the bar reads it)
+```
+
+There is one row for each kind of backup: **config** snapshots, **system** snapshots (snapper) and **files** (restic). Each shows when it last ran, when it runs next (from its timer, or "before the next update" for config snapshots), its size (known for config snapshots only) and a health:
+
+| Health | Meaning |
+|---|---|
+| `ok` | The newest backup is within the limit and the last run did not fail. |
+| `warn` | It is older than the limit, the last run failed, or restic is missing. |
+| `none` | Nothing to judge yet: not set up, or never run. |
+
+The limits are 30 days for config snapshots; 2 days for system snapshots while the snapper timeline timer is on (14 without it); and for files 6 hours with an hourly schedule, 2 days with a daily one and 14 days with none. The time of the last files backup is the one `backup data run` records for each place, so the status makes no network call. Timeshift keeps its own schedule and its last run is not read.
+
+There is no separate "back up now" command: the row's own command does it, `backup config now`, `backup snapshots create --yes` or `backup data run --all --yes` (the JSON says which in `action`).
+
 ## BxTimeMachine
 
 ```bash

@@ -1,4 +1,4 @@
-// The AUR through its helper (yay) and its web API. Repository packages are Pacman.bx. Argv arrays only.
+// The AUR through its helper (yay; paru too for updates) and its web API. Repository packages are Pacman.bx. Argv arrays only.
 class Aur {
 	function init( proc = "" ) {
 		variables.proc = isSimpleValue( arguments.proc ) ? new bxrig.util.Proc( arguments.proc ) : arguments.proc;
@@ -6,11 +6,20 @@ class Aur {
 		return this;
 	}
 
-	// The helper program that builds AUR packages.
+	// The helper program that installs AUR packages.
 	function helper() { return "yay"; }
 
-	// True when the helper is installed.
+	// True when that helper is installed.
 	function available() { return variables.proc.has( helper() ); }
+
+	// For updates only, paru is accepted too: the helpers that can list and upgrade AUR packages (`-Qua`, `-Sua`), in the order they are preferred.
+	function updateHelpers() { return [ "yay", "paru" ]; }
+
+	// The first of updateHelpers() that is installed, or "" when there is none.
+	function updateHelper() {
+		for ( var h in updateHelpers() ) if ( variables.proc.has( h ) ) return h;
+		return "";
+	}
 
 	// yay -S --needed --noconfirm PKG...
 	function installArgv( pkgs ) {
@@ -19,8 +28,17 @@ class Aur {
 		return argv;
 	}
 
-	// yay -Sua --noconfirm (upgrade the AUR packages)
-	function upgradeArgv() { return [ helper(), "-Sua", "--noconfirm" ]; }
+	// yay -Sua --noconfirm (upgrade the AUR packages); program is the helper to use (updateHelper()), yay when not given.
+	function upgradeArgv( program = "" ) { return [ len( arguments.program ) ? arguments.program : helper(), "-Sua", "--noconfirm" ]; }
+
+	// The AUR packages that have a newer version (`yay -Qua`, same for paru; program says which): { ok, rows, error }. Like pacman -Qu it exits 1 and prints
+	// nothing when there are none, which is not an error. Rows: [ { name, old, new } ].
+	function pendingUpdates( program = "" ) {
+		var r = variables.proc.exec( [ len( arguments.program ) ? arguments.program : helper(), "-Qua" ], 120 );
+		var rows = new bxrig.util.Pacman( variables.proc ).parseUpgrades( r.output );
+		if ( r.exitCode == 0 || rows.len() || !len( trim( r.output ) ) ) return { ok: true, rows: rows, error: "" };
+		return { ok: false, rows: [], error: trim( variables.proc.why( r ) ) };
+	}
 
 	// The RPC base URL (BXRIG_AUR_URL for tests).
 	function baseUrl() { return new bxrig.util.Env().named( "aurUrl", "https://aur.archlinux.org/rpc/v5" ); }

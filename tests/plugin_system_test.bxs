@@ -1,0 +1,112 @@
+// The BxRig Noctalia plugin system (bxrig/system): manifest, files, translations, a structural check of the Luau and the bxrig commands it runs.
+// Run from src/: (cd src && matchbox ../tests/plugin_system_test.bxs)
+// There is no Luau interpreter in CI, so this reads the scripts as text: every file the manifest names exists, the blocks balance
+// (function/if/for/while ... end), the commands the panel runs are the ones the CLI has (checked against docs/reference/cli.json), and no em dash is in any file.
+testkit = new lib.Check( "system plugin" );
+root = expandPath( "../templates/noctalia-plugins" );
+
+// The script text without comments and string literals, so a keyword inside a message does not count.
+function bare( text ) {
+	var out = "";
+	var lines = listToArray( text, chr( 10 ), true );
+	for ( var line in lines ) {
+		var t = line;
+		var i = 1;
+		var res = "";
+		var q = "";
+		while ( i <= len( t ) ) {
+			var ch = mid( t, i, 1 );
+			if ( len( q ) ) {
+				if ( compare( ch, "\" ) == 0 ) { i += 2; continue; }
+				if ( compare( ch, q ) == 0 ) q = "";
+			} else if ( compare( ch, '"' ) == 0 || compare( ch, "'" ) == 0 ) { q = ch; res &= '""'; }
+			else if ( compare( ch, "-" ) == 0 && compare( mid( t, i, 2 ), "--" ) == 0 ) break;
+			else res &= ch;
+			i++;
+		}
+		out &= res & chr( 10 );
+	}
+	return out;
+}
+
+// Opens minus closes of Luau blocks: function, if...then, for...do, while...do, repeat...until, `do` blocks all close with end (repeat with until).
+function balance( text ) {
+	var s = " " & reReplace( bare( text ), "[^A-Za-z_0-9]", " ", "all" ) & " ";
+	var words = listToArray( s, " ", false );
+	var depth = 0;
+	var loopHead = 0; // a for or while waits for its `do`, which opens the block (so the for/while itself must not count twice)
+	for ( var w in words ) {
+		if ( compare( w, "function" ) == 0 || compare( w, "if" ) == 0 ) depth++;
+		else if ( compare( w, "for" ) == 0 || compare( w, "while" ) == 0 ) { loopHead++; }
+		else if ( compare( w, "do" ) == 0 ) { if ( loopHead > 0 ) loopHead--; depth++; }
+		else if ( compare( w, "elseif" ) == 0 ) { /* no new block: the `if` it continues is open, and its `then` is not counted */ }
+		else if ( compare( w, "end" ) == 0 ) depth--;
+	}
+	return depth;
+}
+
+function textOf( rel ) { return fileRead( root & "/" & rel ); }
+
+p = "system";
+dir = root & "/" & p;
+testkit.check( "the folder exists", directoryExists( dir ) );
+manifest = textOf( "system/plugin.toml" );
+testkit.check( "id bxrig/system, plugin_api 43, author bxrig", find( 'id = "bxrig/system"', manifest ) > 0 && find( "plugin_api = 43", manifest ) > 0 && find( 'author = "bxrig"', manifest ) > 0 );
+testkit.check( "the plugin-level command setting", find( 'key = "command"', manifest ) > 0 && find( 'default = "bxrig"', manifest ) > 0 );
+ok = true; entries = 0;
+for ( line in listToArray( manifest, chr( 10 ) ) ) {
+	if ( reFind( '^entry = "', trim( line ) ) ) {
+		entries++;
+		f = listFirst( listRest( trim( line ), '"' ), '"' );
+		if ( !fileExists( dir & "/" & f ) ) { ok = false; println( "  missing " & f ); }
+	}
+}
+testkit.check( "every entry script of the manifest exists (" & entries & ")", ok && entries == 2 );
+testkit.check( "a bar widget and an attached panel near the click", find( 'id = "bar"', manifest ) > 0 && find( 'id = "panel"', manifest ) > 0 && find( 'placement = "attached"', manifest ) > 0 && find( "open_near_click = true", manifest ) > 0 );
+testkit.check( "bxrig.luau is the shared helper, byte for byte", compare( textOf( "system/bxrig.luau" ), textOf( "agents/bxrig.luau" ) ) == 0 );
+tr = jsonDeserialize( textOf( "system/translations/en.json" ) );
+testkit.check( "translations/en.json has the command setting texts and a title", structKeyExists( tr, "title" ) && structKeyExists( tr.settings.command, "label" ) && structKeyExists( tr.settings.command, "description" ) );
+ok = true;
+for ( f in directoryList( dir, false, "name" ) ) {
+	if ( right( f, 5 ) == ".luau" ) {
+		t = textOf( "system/" & f );
+		if ( compare( left( t, 12 ), "--!nonstrict" ) != 0 ) { ok = false; println( "  no --!nonstrict in " & f ); }
+		if ( balance( t ) != 0 ) { ok = false; println( "  unbalanced blocks in " & f & " (" & balance( t ) & ")" ); }
+	}
+}
+testkit.check( "every script is nonstrict and its blocks balance", ok );
+ok = true;
+for ( f in directoryList( dir, true, "path" ) ) {
+	if ( !directoryExists( f ) && find( chr( 8212 ), fileRead( f ) ) ) { ok = false; println( "  em dash in " & f ); }
+}
+testkit.check( "no em dash in any file", ok );
+
+// ---- what it runs ----
+bar = textOf( "system/bar.luau" );
+pn = textOf( "system/panel.luau" );
+testkit.check( "bar: the glyph in a palette role, the count hidden at 0, the panel toggled, the count shared by noctalia.state",
+	find( "device-desktop-cog", bar ) > 0 && find( 'color = reboot and "tertiary" or "secondary"', bar ) > 0 && find( "count > 0", bar ) > 0 && find( 'togglePanel("bxrig/system:panel")', bar ) > 0 && find( 'noctalia.state.watch("updates"', bar ) > 0 );
+testkit.check( "bar: 10 minutes in the background", find( "REFRESH_MS = 600000", bar ) > 0 && find( "setUpdateInterval(REFRESH_MS)", bar ) > 0 );
+testkit.check( "panel: 60 seconds while open", find( "REFRESH_MS = 60000", pn ) > 0 && find( "setWantsSecondTicks(true)", pn ) > 0 );
+// the commands, as the words the Luau passes: each must be a variant of its command in the registry
+usage = new bxrig.CommandSpec();
+for ( c in [ [ '"system", "updates", "--json"', "system updates" ], [ '"system", "update", "--yes"', "system update" ], [ '"backup", "status", "--json"', "backup status" ], [ '{ "timemachine" }', "timemachine" ] ] ) {
+	testkit.check( "the panel runs " & c[ 1 ] & " and the CLI has `" & c[ 2 ] & "`", ( find( c[ 1 ], pn ) > 0 || find( c[ 1 ], bar ) > 0 ) && find( "Usage: bxrig", usage.usage( c[ 2 ] ) ) > 0 && find( c[ 2 ], usage.usage( c[ 2 ] ) ) > 0 );
+}
+testkit.check( "bar: reads system updates --json", find( '"system", "updates", "--json"', bar ) > 0 );
+testkit.check( "Update all runs in a terminal and closes the panel", find( 'inTerminal({ bx({ "system", "update", "--yes" }) })', pn ) > 0 && find( "runInTerminal", pn ) > 0 );
+testkit.check( "Back up now runs each row's own action in a terminal; Time Machine runs in a terminal too", find( "bx(action)", pn ) > 0 && find( 'inTerminal({ bx({ "timemachine" }) })', pn ) > 0 );
+testkit.check( "the terminal command quotes the executable and every word, and waits for Enter", find( "local function shq", pn ) > 0 && find( "shq(bxrig.command())", pn ) > 0 && find( "read -r _", pn ) > 0 );
+testkit.check( "a missing checkupdates offers to install pacman-contrib", find( "pacman-contrib", pn ) > 0 && find( "sudo pacman -S pacman-contrib", pn ) > 0 );
+testkit.check( "the panel has the Updates and Backups tabs, the restart banner and the three health glyphs", find( "tab-updates", pn ) > 0 && find( "tab-backups", pn ) > 0 && find( "refresh-alert", pn ) > 0 && find( "circle-check", pn ) > 0 && find( "alert-triangle", pn ) > 0 && find( "circle-dashed", pn ) > 0 );
+testkit.check( "the panel shows the snapshot-first note", find( "snapshot is taken first", pn ) > 0 );
+// the fields it reads exist in what the CLI answers: read them from the sources
+su = fileRead( expandPath( "../src/bxrig/SystemUpdates.bx" ) );
+bs = fileRead( expandPath( "../src/bxrig/BackupStatus.bx" ) );
+for ( fld in [ "total", "repo_count", "aur_count", "packages", "needs_reboot", "reboot_stale", "reboot_reasons", "last_update_ago", "aur_error", "snapshot_tool" ] ) {
+	testkit.check( "system updates provides " & fld & ", which the panel reads", find( fld, su ) > 0 && find( fld, pn & bar ) > 0 );
+}
+for ( fld in [ "rows", "warn_count", "label", "kind", "health", "last_ago", "next", "size_text", "note", "action" ] ) {
+	testkit.check( "backup status provides " & fld & ", which the panel reads", find( fld, bs ) > 0 && find( fld, pn ) > 0 );
+}
+testkit.done( "all passed" );

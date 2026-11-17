@@ -68,4 +68,26 @@ rm -rf "$tmp/srv/beta"; [[ "$(code "$binary" update check)" == 5 ]] || fail 'unr
 [[ "$(code "$binary" system update)" == 2 ]] || fail 'system update without --yes exits 2'
 : > "$LOG"; run "$binary" system update --yes >/dev/null
 [[ "$(sed -n 1p "$LOG")" == sudo\ snapper* ]] && grep -q 'sudo pacman -Syu --noconfirm' "$LOG" && grep -q 'yay -Sua --noconfirm' "$LOG" || fail "system update order: $(cat "$LOG")"
+# scopes: --repo is the snapshot and pacman only, --aur the snapshot and the AUR helper only, --all (the default) both
+: > "$LOG"; run "$binary" system update --repo --yes >"$tmp/o.txt" 2>&1 || fail "repo run: $(cat "$tmp/o.txt")"
+[[ "$(sed -n 1p "$LOG")" == sudo\ snapper* ]] && grep -q 'sudo pacman -Syu --noconfirm' "$LOG" && ! grep -q 'yay' "$LOG" || fail "system update --repo: $(cat "$LOG")"
+: > "$LOG"; run "$binary" system update --aur --yes >/dev/null
+[[ "$(sed -n 1p "$LOG")" == sudo\ snapper* ]] && grep -q 'yay -Sua --noconfirm' "$LOG" && ! grep -q 'pacman -Syu' "$LOG" || fail "system update --aur: $(cat "$LOG")"
+: > "$LOG"; run "$binary" system update --all --yes >/dev/null
+grep -q 'pacman -Syu' "$LOG" && grep -q 'yay -Sua' "$LOG" || fail "system update --all: $(cat "$LOG")"
+: > "$LOG"; [[ "$(code "$binary" system update --repo)" == 2 ]] || fail 'a scoped plan without --yes exits 2'
+{ run "$binary" system update --aur --json || true; } | jq -e '.exit == 2 and .data.scope == "aur" and .data.snapshot == true and (.data.steps | length == 2) and .data.steps[1] == "yay -Sua --noconfirm"' >/dev/null || fail "aur plan json: $(run "$binary" system update --aur --json || true)"
+[[ -z "$(cat "$LOG")" ]] || fail "a plan ran something: $(cat "$LOG")"
+[[ "$(code "$binary" system update --repo --dry-run)" == 0 ]] || fail '--dry-run exits 0'
+[[ "$(code "$binary" system update --repo --aur --yes)" == 2 ]] || fail 'two scopes are a usage error'
+[[ -z "$(cat "$LOG")" ]] || fail "two scopes ran something: $(cat "$LOG")"
+# --aur without a helper: exit 4 and nothing runs
+mkdir -p "$tmp/nohelper"; cp "$tmp/bin/"* "$tmp/nohelper/"; rm "$tmp/nohelper/yay"
+nh() { env HOME="$tmp/home" BXRIG_PUBKEY_FILE=none BXRIG_CONFIG_HOME="$tmp/cfg" PATH="$tmp/nohelper:$PATH" LOG="$LOG" "$@"; }
+set +e; nh "$binary" system update --aur --yes >/dev/null 2>&1; c=$?; set -e
+if command -v yay >/dev/null; then :; else [[ "$c" == 4 ]] || fail "--aur without a helper exits 4, got $c"; fi
+# a helper that is paru is used
+printf '#!/usr/bin/env bash\necho "paru $*" >> "$LOG"\n' > "$tmp/nohelper/paru"; chmod +x "$tmp/nohelper/paru"
+: > "$LOG"; nh "$binary" system update --aur --yes >/dev/null 2>&1 || true
+if command -v yay >/dev/null; then :; else grep -q 'paru -Sua --noconfirm' "$LOG" || fail "paru as the helper: $(cat "$LOG")"; fi
 echo "update-test ok"
