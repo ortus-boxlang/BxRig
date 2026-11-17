@@ -1,0 +1,79 @@
+// The Themes page of the Control Center (the bigger selector): rows, filters, the preview pane at three sizes, the live preview and the intents it
+// returns. Run from src/: (cd src && matchbox ../tests/themes_page_test.bxs)
+testkit = new lib.Check( "themes page" );
+tui = createObject( "rust", "tui.TUI" );
+view = new bxrig.ControlCenterView( tui );
+app = new bxrig.ControlCenterApp( new bxrig.ControlCenter( {} ).buildPages( true ), "themes" );
+page = app.page();
+function shot( w = 120, h = 40 ) { view.paint( app, 10, w, h ); return tui.render_to_string( w, h ); }
+
+testkit.check( "the page is its own class with the id themes", page.id() == "themes" && page.title() == "Themes" && !isNull( page.previewTheme ) );
+s = page.state();
+testkit.check( "rows: the demo themes, the current one marked, the cursor on it", s.rows == 5 && s.current == "bxrig" && s.selected == "bxrig" && s.items.filter( function( r ) { return r.name == "bxrig-retro" && r.font == "sharetech"; } ).len() == 1 );
+
+t = shot();
+testkit.check( "120x40: list with swatches, the palette roles, the sample terminal and the keys", find( "BxRig Retro", t ) > 0 && find( "Tokyo Night", t ) > 0 && find( "accent", t ) > 0 && find( "foreground", t ) > 0 && find( "git diff", t ) > 0 && find( "@@ -12,3 +12,4 @@", t ) > 0 && find( "live preview", t ) > 0 && find( "current", t ) > 0 && find( "████", t ) > 0 );
+t = shot( 92, 30 );
+testkit.check( "92x30: the same panes, narrower", find( "BxRig Retro", t ) > 0 && find( "accent", t ) > 0 && find( "git diff", t ) > 0 );
+t = shot( 76, 24 );
+testkit.check( "76x24: the sidebar collapses; the palette and a shorter terminal stay", find( "BxRig Retro", t ) > 0 && find( "accent", t ) > 0 && find( "~/dev/bxrig", t ) > 0 );
+t = shot( 50, 20 );
+testkit.check( "50x20: only the list (never a crash)", find( "BxRig Retro", t ) > 0 && find( "accent", t ) == 0 );
+
+// moving and the pane follows the highlighted theme
+app.onKey( "Down" );
+t = shot();
+testkit.check( "Down highlights BxRig Retro: its own colors show in the pane (#ff2ec4) and its font", page.state().selected == "bxrig-retro" && find( "#ff2ec4", t ) > 0 && find( "font: sharetech", t ) > 0 );
+
+// filters
+app.onKey( "l" );
+testkit.check( "l: only the light themes", page.state().shown == 1 && page.state().kind == "light" );
+app.onKey( "l" );
+app.onKey( "d" );
+testkit.check( "l again clears it; d: only the dark ones", page.state().shown == 4 && page.state().kind == "dark" );
+app.onKey( "a" );
+app.onKey( "/" );
+testkit.check( "/ takes text, so q and Escape do not leave", app.pageCaptures() );
+for ( ch in [ "r", "e", "t" ] ) app.onKey( ch );
+testkit.check( "typing narrows the list to Retro", page.state().shown == 1 && page.state().selected == "bxrig-retro" );
+app.onKey( "Escape" );
+testkit.check( "Escape clears the search", page.state().shown == 5 && !app.pageCaptures() );
+
+// live preview recolours the whole screen without applying
+shot();
+before = view.kit().palette().BASE;
+app.onKey( "Down" );
+app.onKey( "r" );
+t = shot();
+testkit.check( "r: the Control Center is drawn in the highlighted theme (retro night purple), nothing is applied", view.kit().palette().BASE == "##1a1033" && before == "##303446" && find( "previewing", t ) > 0 && find( "stop preview", t ) > 0 );
+app.onKey( "Down" );
+shot();
+testkit.check( "while previewing, moving changes the colors again", view.kit().palette().BASE != "##1a1033" );
+app.onKey( "r" );
+shot();
+testkit.check( "r again ends the preview and the BxRig colors come back", view.kit().palette().BASE == "##303446" && !page.state().live );
+
+// a view that follows the active theme goes back to it after a preview, also when no theme was ever applied
+fview = new bxrig.ControlCenterView( tui ).followTheme( true );
+fapp = new bxrig.ControlCenterApp( new bxrig.ControlCenter( {} ).buildPages( true ), "themes" );
+fview.paint( fapp, 0, 120, 40 );
+fbase = fview.kit().palette().BASE;
+fapp.onKey( "Down" ); fapp.onKey( "Down" ); fapp.onKey( "r" );
+fview.paint( fapp, 1, 120, 40 );
+testkit.check( "follow: a preview changes the palette", fview.kit().palette().BASE != fbase );
+fapp.onKey( "r" );
+fview.paint( fapp, 2, 120, 40 );
+testkit.check( "follow: stopping the preview brings the active theme's palette back", fview.kit().palette().BASE == fbase );
+
+// intents: the plan comes from the runner (the command with --dry-run), only y applies
+app.goto( "themes" );
+it = app.onKey( "Enter" );
+testkit.check( "Enter asks for `theme set NAME` (shown as a plan first)", it.action == "cli" && it.args.toList( " " ).startsWith( "theme set " ) );
+app.onKey( "Up" ); app.onKey( "Up" );
+app.onKey( "Home" ); app.onKey( "Down" );
+it = app.onKey( "f" );
+testkit.check( "f on a theme with a font asks to install it", it.action == "cli" && it.args.toList( " " ) == "appearance font install sharetech" );
+app.onKey( "Down" );
+testkit.check( "f on a theme without a font does nothing", !structCount( app.onKey( "f" ) ) );
+testkit.check( "m and v run the mode and VS Code commands", app.onKey( "m" ).args.toList( " " ) == "theme mode auto" && app.onKey( "v" ).args.toList( " " ) == "theme vscode" );
+testkit.done( "all passed" );

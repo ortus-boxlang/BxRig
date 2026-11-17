@@ -22,7 +22,7 @@ class PageFactory {
 			case "storage": return new bxrig.ListPage( new bxrig.StorageProvider( d ) );
 			case "secrets": return new bxrig.ListPage( new bxrig.SecretsProvider( d ) );
 			case "look": return new bxrig.LookPage( d );
-			case "themes": return new bxrig.ListPage( new bxrig.ThemesProvider( d ) );
+			case "themes": return new bxrig.ThemesPage( d );
 			case "logs": return new bxrig.ListPage( new bxrig.LogsProvider( d ) );
 		}
 		throw( type = "bxrig.pages", message = "unknown page: " & arguments.id );

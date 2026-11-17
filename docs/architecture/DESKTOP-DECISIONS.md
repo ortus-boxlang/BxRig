@@ -39,8 +39,8 @@ Status: **decided** means the owner chose it; **planned** means it is agreed and
 | Icon style on the bar | Hybrid: bare Tabler outline glyphs colored by one palette role; plates only on the logo button and on the Launchpad grid in the dock (plates need an outline or glow on dark and Retro) | decided |
 | Icon theme | `BxRig`, style A (superellipse tile, vertical glow, Phosphor duotone, MIT notice), new `bxrig-*` names, `Inherits=Papirus-Dark`; our icon where we have one, else Papirus; the icon set is not asked in the wizard. Built: `tools/gen-icon-theme.py` (31 icons, 16 to 256 px, bold darker variant at 16 and 22 px), `bxrig appearance icons bxrig\|papirus\|status`, applied automatically by `init` | decided, built |
 | App grid | Default Launchpad; a second style, Terminal-style grid, is selectable in quick settings via `appearance appgrid` | planned |
-| Theme selection | A separate, bigger TUI selector plus a wizard Theme page (default BxRig); the Look page has no theme list | planned |
-| Retro theme | Later, with Share Tech Mono Nerd | planned |
+| Theme selection | A separate, bigger TUI selector plus a wizard Theme page (default BxRig); the Look page has no theme list (built: `bxrig tui themes`, list with swatches, filters, wallpaper, palette and sample terminal preview, `r` live preview; the wizard page keeps its own list) | decided |
+| Retro theme | `bxrig-retro` (80s synthwave, neon magenta #ff2ec4) with Share Tech Mono Nerd (`ttf-sharetech-mono-nerd`, named by `font = "sharetech"` in its colors.toml); wallpaper drawn by `tools/gen-retro-wallpaper.py`; `bxrig banner` is its ASCII greeting. Not done: a starship accent and wiring the banner into the starter shell | decided |
 | Wizard colors | The wizard follows the chosen theme (TuiKit must stop hard-coding the Frappe palette) | planned |
 | Noctalia plugin store | The official store is not used; pinned own plugins only | decided |
 

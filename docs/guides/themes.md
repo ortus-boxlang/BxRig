@@ -18,7 +18,7 @@ bxrig theme mode auto             # theme, dark, light or auto
 bxrig theme status
 ```
 
-The Themes page of the Control Center (`bxrig tui themes`) is the selector: every theme with a color swatch, a filter (type to search, `d` for dark and `l` for light), a preview of the highlighted one (palette roles, a sample terminal and its wallpaper), `r` to preview it live in the Control Center itself, and `Enter` for the plan and `y` to apply.
+The Themes page of the Control Center (`bxrig tui themes`) is the selector: every theme with a color swatch, a filter (type to search, `d` for dark and `l` for light), a preview of the highlighted one (palette roles, a sample terminal and its wallpaper), `r` to preview it live (the whole Control Center is recoloured, nothing is applied; `r` again stops), and `Enter` for the plan and `y` to apply.
 
 Setting a theme acts at once. `--dry-run` shows what would be written without changing anything.
 

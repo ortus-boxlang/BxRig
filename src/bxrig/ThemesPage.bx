@@ -1,0 +1,328 @@
+// The Themes page of the Control Center (`bxrig tui themes`): the bigger theme selector. Not a plain table: a list of every theme with a color swatch,
+// and beside it a large preview of the highlighted one drawn in that theme's own colors: its wallpaper (the TuiKit image widget, a gradient tile without
+// images or without the file), the palette with the role names, and a sample terminal (prompt, ls and git diff).
+//   Keys   Up Down PgUp PgDn Home End move   / type to search (Enter keeps it, Escape clears it)   d dark only   l light only   a all (clears the filters)
+//          Enter shows the plan of `theme set NAME` and y applies it   r previews live: the whole Control Center is recoloured to the highlighted theme
+//          (nothing is applied; r again stops)   f installs the theme's font   m auto mode   v VS Code colors
+// The pane drops what does not fit: at 120x40 it shows wallpaper, palette and terminal; at 92x30 the same, narrower; at 76x24 the palette and a short terminal;
+// under 56 columns only the list. Data comes from ThemesProvider (`theme list`), colors from Palette.colorsOf (the theme's colors.toml, read once).
+//   id() title() icon() load() state() keys() paint( kit, x, y, w, h, tick, phase ) onKey( key ) act( hit ) onScroll( dir ) usesLeft() previewTheme()
+class ThemesPage {
+	function init( demo = false ) {
+		variables.provider = new bxrig.ThemesProvider( arguments.demo );
+		variables.pal = new bxrig.Palette();
+		variables.tc = new bxrig.ThemeColors();
+		variables.colors = {};
+		variables.all = [];
+		variables.list = new bxrig.TuiList( [], function( r ) { return r.__text ?: ""; } );
+		variables.kind = "";        // "", "dark" or "light"
+		variables.mode = "list";    // "list" or "input" (typing a search)
+		variables.input = "";
+		variables.live = false;     // r: the Control Center is drawn in the highlighted theme
+		variables.loaded = false;
+		variables.rowsShown = 10;
+		return this;
+	}
+
+	function id() { return "themes"; }
+	function title() { return "Themes"; }
+	function icon() { return new bxrig.ControlCenterPages().icon( "themes" ); }
+	function usesLeft() { return variables.mode != "list"; }
+	function selected() { return variables.list.selected(); }
+
+	// The theme the whole screen is drawn in while the live preview is on ("" otherwise).
+	function previewTheme() {
+		var sel = variables.list.selected();
+		return variables.live && !isSimpleValue( sel ) ? sel.name : "";
+	}
+
+	function colorsOf( name ) {
+		if ( !structKeyExists( variables.colors, arguments.name ) ) variables.colors[ arguments.name ] = variables.pal.colorsOf( arguments.name );
+		return variables.colors[ arguments.name ];
+	}
+
+	// ---- data ----
+	function load() {
+		var keep = variables.list.selected();
+		var keepName = isSimpleValue( keep ) ? "" : keep.name;
+		var rows = variables.provider.load();
+		for ( var r in rows ) r.__text = lCase( r.name & " " & r.label & " " & r.mode & " " & r.origin );
+		// no theme was ever applied: the BxRig default is the one that is on
+		var anyOn = false;
+		for ( var r2 in rows ) if ( r2.current ) anyOn = true;
+		if ( !anyOn ) for ( var r3 in rows ) if ( r3.name == "bxrig" ) { r3.current = true; r3.mark = "●"; }
+		variables.all = rows;
+		variables.live = false;   // a reload (after an apply too) ends the live preview
+		variables.loaded = true;
+		refilter();
+		var at = 0;
+		var i = 0;
+		var want = len( keepName ) ? keepName : currentName();
+		for ( var item in variables.list.items() ) { i++; if ( item.name == want ) at = i; }
+		if ( at ) variables.list.select( at );
+		return this;
+	}
+
+	function currentName() {
+		for ( var r in variables.all ) if ( r.current ) return r.name;
+		return "";
+	}
+
+	// The rows that pass the dark or light filter, then the typed text (TuiList).
+	function refilter() {
+		var k = variables.kind;
+		var rows = variables.all.filter( function( r ) { return !len( k ) || r.mode == k; } );
+		var q = variables.list.query();
+		variables.list.setItems( rows );
+		if ( len( q ) ) variables.list.filter( q );
+	}
+
+	function state() {
+		var items = [];
+		for ( var r in variables.all ) { var c = {}; for ( var k in r ) if ( k != "__text" ) c[ k ] = r[ k ]; items.append( c ); }
+		var sel = variables.list.selected();
+		return { rows: variables.all.len(), shown: variables.list.count(), cursor: variables.list.cursor(), mode: variables.mode, filter: variables.list.query(), kind: variables.kind, live: variables.live,
+			current: currentName(), selected: isSimpleValue( sel ) ? "" : sel.name, items: items };
+	}
+
+	// ---- keys ----
+	function keyMap() {
+		var m = new bxrig.KeyMap();
+		if ( variables.mode != "list" ) return m.bind( "Enter", "Enter", "keep", "keep" ).bind( "Esc", "Escape", "clear", "clear" );
+		return m.bind( "↑↓", [ "Up", "k" ], "move", "up" ).bind( "", [ "Down", "j" ], "", "down" ).bind( "", "PageUp", "", "pageUp" ).bind( "", "PageDown", "", "pageDown" ).bind( "", "Home", "", "home" ).bind( "", "End", "", "end" )
+			.bind( "Enter", "Enter", "plan", "apply" ).bind( "r", "r", variables.live ? "stop preview" : "live preview", "live" ).bind( "/", "/", "search", "type" )
+			.bind( "d", "d", "dark", "dark" ).bind( "l", "l", "light", "light" ).bind( "a", "a", "all", "all" ).bind( "f", "f", "font", "font" )
+			.bind( "m", "m", "auto mode", "auto" ).bind( "v", "v", "VS Code", "vscode" );
+	}
+
+	function keys() { return keyMap().hints(); }
+
+	function onKey( key ) {
+		var k = arguments.key;
+		if ( variables.mode != "list" ) {
+			if ( k == "Enter" ) variables.mode = "list";
+			else if ( k == "Escape" ) { variables.input = ""; variables.list.filter( "" ); variables.mode = "list"; }
+			else if ( k == "Backspace" ) { variables.input = len( variables.input ) > 1 ? left( variables.input, len( variables.input ) - 1 ) : ""; variables.list.filter( variables.input ); }
+			else if ( len( k ) == 1 || k == "Space" ) { variables.input &= ( k == "Space" ? " " : k ); variables.list.filter( variables.input ); }
+			return {};
+		}
+		var what = keyMap().match( k );
+		var sel = variables.list.selected();
+		if ( what == "up" ) { variables.list.move( -1 ); return {}; }
+		if ( what == "down" ) { variables.list.move( 1 ); return {}; }
+		if ( what == "pageUp" ) { variables.list.page( -1, variables.rowsShown ); return {}; }
+		if ( what == "pageDown" ) { variables.list.page( 1, variables.rowsShown ); return {}; }
+		if ( what == "home" ) { variables.list.home(); return {}; }
+		if ( what == "end" ) { variables.list.end(); return {}; }
+		if ( what == "type" ) { variables.mode = "input"; variables.input = variables.list.query(); return {}; }
+		if ( what == "live" ) { variables.live = !variables.live; return {}; }
+		if ( what == "dark" || what == "light" ) { variables.kind = what == variables.kind ? "" : what; refilter(); return {}; }
+		if ( what == "all" ) { variables.kind = ""; variables.input = ""; variables.list.filter( "" ); refilter(); return {}; }
+		if ( what == "auto" ) return { action: "cli", title: "Theme mode auto", args: [ "theme", "mode", "auto" ] };
+		if ( what == "vscode" ) return { action: "cli", title: "VS Code colours", args: [ "theme", "vscode" ] };
+		if ( isSimpleValue( sel ) ) return {};
+		if ( what == "apply" ) return { action: "cli", title: "Apply theme " & sel.label, args: [ "theme", "set", sel.name ] };
+		if ( what == "font" && len( sel.font ?: "" ) ) return { action: "cli", title: "Install the font of " & sel.label, args: [ "appearance", "font", "install", sel.font ] };
+		return {};
+	}
+
+	function act( hit ) {
+		if ( arguments.hit.kind == "row" ) { variables.list.select( arguments.hit.n ); return {}; }
+		if ( arguments.hit.kind == "live" ) { variables.live = !variables.live; return {}; }
+		return {};
+	}
+
+	function onScroll( dir ) { variables.list.move( arguments.dir == "up" ? -3 : 3 ); return {}; }
+
+	// ---- drawing ----
+	function padText( s, w ) { var t = s & ""; return len( t ) >= w ? left( t, max( 0, w ) ) : t & repeatString( " ", w - len( t ) ); }
+	function tone( c, key ) { return structKeyExists( arguments.c, arguments.key ) ? arguments.c[ key ] : arguments.c.accent; }
+
+	function paint( kit, x, y, w, h, tick, phase ) {
+		var k = arguments.kit;
+		var col = function( n ) { return k.color( n ); };
+		var ico = k.icon( icon() );
+		if ( len( ico ) ) k.put( arguments.x + 1, arguments.y, ico, col( "GREEN" ), col( "BASE" ) );
+		var tx = arguments.x + 1 + ( len( ico ) ? 2 : 0 );
+		k.put( tx, arguments.y, "Themes", col( "TEXT" ), col( "BASE" ), true );
+		var tag = variables.live ? "live preview: nothing is applied" : "Enter shows the plan, y applies";
+		k.put( tx + 8, arguments.y, k.trunc( tag, arguments.w - 40 ), variables.live ? col( "YELLOW" ) : col( "OVERLAY" ), col( "BASE" ) );
+		var shownFilter = variables.mode != "list" ? "/ " & variables.input & "▌" : trim( ( len( variables.kind ) ? variables.kind & " " : "" ) & ( len( variables.list.query() ) ? "/ " & variables.list.query() : "" ) );
+		if ( len( shownFilter ) ) k.put( arguments.x + arguments.w - len( shownFilter ) - 2, arguments.y, shownFilter, variables.mode != "list" ? col( "GREEN" ) : col( "CYAN" ), col( "BASE" ), true );
+		var top = arguments.y + 2;
+		var ph = arguments.h - 2;
+		var listW = arguments.w >= 100 ? 36 : ( arguments.w >= 70 ? 30 : ( arguments.w >= 56 ? 26 : arguments.w ) );
+		var paneW = arguments.w >= 56 ? arguments.w - listW - 1 : 0;
+		paintList( k, arguments.x, top, listW, ph, arguments.phase );
+		if ( paneW >= 30 && ph >= 8 ) paintPane( k, arguments.x + listW + 1, top, paneW, ph );
+	}
+
+	// The list: a cursor, the current mark, the name, "dark" or "light" when there is room and four colors of the theme.
+	function paintList( k, x, y, w, h, phase ) {
+		var kit = arguments.k;
+		kit.panel( arguments.x, arguments.y, arguments.w, arguments.h, "", false, arguments.phase );
+		var rowsN = max( 1, arguments.h - 2 );
+		variables.rowsShown = rowsN;
+		variables.list.fit( rowsN );
+		var win = variables.list.window( rowsN );
+		var ry = arguments.y + 1;
+		var modeW = arguments.w >= 30 ? 6 : 0;
+		var nameW = arguments.w - 4 - 6 - modeW - 1;
+		if ( !win.len() ) kit.put( arguments.x + 2, ry, variables.loaded ? "No theme matches." : "Reading...", kit.color( "OVERLAY" ), kit.color( "MANTLE" ) );
+		for ( var item in win ) {
+			var r = item.item;
+			var on = item.index == variables.list.cursor();
+			var bg = on ? kit.color( "SURFACE0" ) : kit.color( "MANTLE" );
+			if ( on ) kit.fillRect( arguments.x + 1, ry, arguments.w - 2, 1, kit.color( "SURFACE0" ) );
+			kit.put( arguments.x + 1, ry, on ? "▸" : " ", kit.color( "GREEN" ), bg, true );
+			kit.put( arguments.x + 3, ry, r.current ? "●" : " ", kit.color( "GREEN" ), bg );
+			kit.put( arguments.x + 5, ry, padText( kit.trunc( r.label, nameW - 1 ), nameW ), on ? kit.color( "GREEN" ) : kit.color( "TEXT" ), bg, on );
+			var cx = arguments.x + 5 + nameW;
+			if ( modeW ) cx = kit.put( cx, ry, padText( r.mode, modeW ), kit.color( "OVERLAY" ), bg );
+			var c = colorsOf( r.name );
+			if ( !structIsEmpty( c ) ) for ( var key in [ "background", "accent", "green", "blue" ] ) cx = kit.put( cx, ry, "█", tone( c, key ), bg );
+			kit.hit( "row", arguments.x + 1, ry, arguments.w - 2, 1, item.index );
+			ry++;
+		}
+		if ( variables.list.count() > rowsN ) kit.put( arguments.x + arguments.w - 12, arguments.y, " " & variables.list.cursor() & "/" & variables.list.count() & " ", kit.color( "OVERLAY" ), kit.color( "MANTLE" ) );
+	}
+
+	// A wallpaper thumbnail, or a gradient tile of the theme's colors when there is no picture to draw.
+	function paintThumb( k, x, y, w, h, c, path ) {
+		var kit = arguments.k;
+		if ( kit.image( arguments.x, arguments.y, arguments.w, arguments.h, arguments.path ) ) return true;
+		var dark = structKeyExists( arguments.c, "darker_background" ) ? arguments.c.darker_background : arguments.c.background;
+		var steps = arguments.h * 2;
+		for ( var row = 0; row < arguments.h; row++ ) {
+			var top = kit.mix( dark, arguments.c.accent, ( row * 2 ) / max( 1, steps - 1 ) * 0.85 );
+			var bot = kit.mix( dark, arguments.c.accent, ( row * 2 + 1 ) / max( 1, steps - 1 ) * 0.85 );
+			kit.put( arguments.x, arguments.y + row, repeatString( "▀", arguments.w ), top, bot );
+		}
+		return false;
+	}
+
+	function paintPalette( k, x, y, w, rows, c, cols ) {
+		var kit = arguments.k;
+		var bg = arguments.c.background;
+		var fg = arguments.c.foreground;
+		var muted = structKeyExists( arguments.c, "muted" ) ? arguments.c.muted : fg;
+		var sel = structKeyExists( arguments.c, "selection" ) ? arguments.c.selection : bg;
+		var roles = [ [ "accent", arguments.c.accent ], [ "background", bg ], [ "foreground", fg ], [ "selection", sel ], [ "muted", muted ], [ "red", tone( arguments.c, "red" ) ],
+			[ "orange", tone( arguments.c, "orange" ) ], [ "yellow", tone( arguments.c, "yellow" ) ], [ "green", tone( arguments.c, "green" ) ], [ "cyan", tone( arguments.c, "cyan" ) ],
+			[ "blue", tone( arguments.c, "blue" ) ], [ "magenta", tone( arguments.c, "magenta" ) ] ];
+		var cw = int( arguments.w / arguments.cols );
+		var hex = cw >= 22;
+		for ( var i = 0; i < roles.len(); i++ ) {
+			var cc = i mod arguments.cols;
+			var rr = int( i / arguments.cols );
+			if ( rr >= arguments.rows ) break;
+			var px = arguments.x + cc * cw;
+			var py = arguments.y + rr;
+			// a chip the color of the pane itself would be invisible: it is drawn as an empty box
+			if ( roles[ i + 1 ][ 2 ] == bg ) kit.put( px, py, "[]", muted, bg ); else kit.put( px, py, "██", roles[ i + 1 ][ 2 ], bg );
+			kit.put( px + 3, py, padText( roles[ i + 1 ][ 1 ], 10 ), fg, bg );
+			if ( hex ) kit.put( px + 3 + 11, py, roles[ i + 1 ][ 2 ], muted, bg );
+		}
+	}
+
+	// A prompt, ls colors and a git diff in the theme's colors, as many lines as there are rows.
+	function paintTerminal( k, x, y, w, rows, c ) {
+		var kit = arguments.k;
+		var bg = structKeyExists( arguments.c, "darker_background" ) ? arguments.c.darker_background : arguments.c.background;
+		var fg = arguments.c.foreground;
+		var muted = structKeyExists( arguments.c, "muted" ) ? arguments.c.muted : fg;
+		var acc = arguments.c.accent;
+		var q = chr( 34 );
+		kit.fillRect( arguments.x, arguments.y, arguments.w, arguments.rows, bg );
+		var lines = [
+			[ [ "~/dev/bxrig ", tone( arguments.c, "blue" ) ], [ "main ", tone( arguments.c, "magenta" ) ], [ "❯ ", acc ], [ "ls", fg ] ],
+			[ [ "src/ ", tone( arguments.c, "blue" ) ], [ "themes/ ", tone( arguments.c, "blue" ) ], [ "bxrig ", tone( arguments.c, "green" ) ], [ "box.json ", tone( arguments.c, "yellow" ) ], [ "app.zip ", tone( arguments.c, "red" ) ], [ "README.md", fg ] ],
+			[ [ "❯ ", acc ], [ "git diff", fg ] ],
+			[ [ "@@ -12,3 +12,4 @@", tone( arguments.c, "cyan" ) ] ],
+			[ [ "- accent = " & q & muted & q, tone( arguments.c, "red" ) ] ],
+			[ [ "+ accent = " & q & acc & q, tone( arguments.c, "green" ) ] ],
+			[ [ "  mode = " & q & "dark" & q, muted ] ],
+			[ [ "✓ ", tone( arguments.c, "green" ) ], [ "12 passed  ", fg ], [ "▲ ", tone( arguments.c, "yellow" ) ], [ "1 slow  ", fg ], [ "✗ ", tone( arguments.c, "red" ) ], [ "0 failed", fg ] ]
+		];
+		for ( var li = 1; li <= lines.len() && li <= arguments.rows; li++ ) {
+			var lx = arguments.x + 1;
+			for ( var part in lines[ li ] ) {
+				if ( lx - arguments.x >= arguments.w - 1 ) break;
+				lx = kit.put( lx, arguments.y + li - 1, kit.trunc( part[ 1 ], arguments.x + arguments.w - 1 - lx ), part[ 2 ], bg );
+			}
+		}
+	}
+
+	// The preview pane in the highlighted theme's own colors.
+	function paintPane( k, x, y, w, h ) {
+		var kit = arguments.k;
+		var sel = variables.list.selected();
+		if ( isSimpleValue( sel ) ) {
+			kit.panel( arguments.x, arguments.y, arguments.w, arguments.h, "", false, 0 );
+			return;
+		}
+		var c = colorsOf( sel.name );
+		if ( structIsEmpty( c ) ) { kit.panel( arguments.x, arguments.y, arguments.w, arguments.h, "", false, 0 ); kit.put( arguments.x + 2, arguments.y + 1, "This theme could not be read.", kit.color( "RED" ), kit.color( "MANTLE" ) ); return; }
+		var bg = c.background;
+		var fg = c.foreground;
+		var muted = structKeyExists( c, "muted" ) ? c.muted : fg;
+		var acc = c.accent;
+		kit.fillRect( arguments.x, arguments.y, arguments.w, arguments.h, bg );
+		kit.put( arguments.x, arguments.y, "╭" & repeatString( "─", arguments.w - 2 ) & "╮", acc, bg );
+		kit.put( arguments.x, arguments.y + arguments.h - 1, "╰" & repeatString( "─", arguments.w - 2 ) & "╯", muted, bg );
+		for ( var j = 1; j < arguments.h - 1; j++ ) {
+			kit.put( arguments.x, arguments.y + j, "│", muted, bg );
+			kit.put( arguments.x + arguments.w - 1, arguments.y + j, "│", muted, bg );
+		}
+		var ix = arguments.x + 2;
+		var iw = arguments.w - 4;
+		var iy = arguments.y + 1;
+		var avail = arguments.h - 2;
+		var badge = sel.current ? " current " : ( variables.live ? " previewing " : "" );
+		kit.put( ix, iy, kit.trunc( sel.label, iw - len( badge ) - 1 ), acc, bg, true );
+		if ( len( badge ) ) kit.put( ix + iw - len( badge ), iy, badge, bg, acc, true );
+		var fontTxt = len( sel.font ?: "" ) ? "  font: " & sel.font : "";
+		kit.put( ix, iy + 1, kit.trunc( sel.mode & "  " & sel.origin & fontTxt, iw ), muted, bg );
+		iy += 3;
+		avail -= 3;
+		// sections, in the order they are dropped when there is no room: the wallpaper first, then the terminal's extra lines
+		var path = sel.wallpaper ?: "";
+		var used = 0;
+		var thumbW = min( iw, 40 );
+		var thumbH = max( 3, round( thumbW * 9 / 32 ) );
+		var narrowPal = iw >= 28 ? 6 : 12;
+		if ( avail < narrowPal + 1 + thumbH + 1 + 5 && avail >= narrowPal + 1 + 7 + 1 + 5 && iw < 56 ) { thumbW = 24; thumbH = 7; }
+		if ( iw >= 56 && avail >= 12 + 1 + 5 ) {
+			// wallpaper on the left, the palette in one column on the right
+			var tw = 30;
+			var th = round( tw * 9 / 32 );
+			paintThumb( kit, ix, iy, tw, th, c, path );
+			paintPalette( kit, ix + tw + 2, iy, iw - tw - 2, 12, c, 1 );
+			used = 13;
+		} else if ( avail >= narrowPal + 1 + thumbH + 1 + 5 ) {
+			paintThumb( kit, ix, iy, thumbW, thumbH, c, path );
+			paintPalette( kit, ix, iy + thumbH + 1, iw, narrowPal, c, iw >= 28 ? 2 : 1 );
+			used = thumbH + 1 + narrowPal + 1;
+		} else if ( avail >= 4 ) {
+			var pr = min( narrowPal, avail - ( avail >= narrowPal + 1 + 5 ? 6 : 0 ) );
+			paintPalette( kit, ix, iy, iw, pr, c, iw >= 28 ? 2 : 1 );
+			used = pr + 1;
+		}
+		var trows = min( 8, avail - used );
+		if ( trows >= 4 ) paintTerminal( kit, ix, iy + used, iw, trows, c );
+		// what is left: where the wallpaper and the font come from
+		var rest = avail - used - ( trows >= 4 ? trows : 0 );
+		if ( rest >= 3 ) {
+			var info = [ [ "wallpaper  ", sel.name & ".jpg" ] ];
+			if ( len( sel.font ?: "" ) ) { var fr = new bxrig.Fonts().byId( sel.font ); info.append( [ "font       ", structIsEmpty( fr ) ? sel.font : fr.family & " (" & fr.pkg & ")" ] ); }
+			info.append( [ "applies to ", "bar, terminals, GTK and Qt, Neovim, tmux" ] );
+			var iyy = arguments.y + arguments.h - 1 - min( info.len(), rest - 1 );
+			for ( var inf in info ) {
+				if ( iyy >= arguments.y + arguments.h - 1 ) break;
+				kit.put( ix, iyy, inf[ 1 ], muted, bg );
+				kit.put( ix + len( inf[ 1 ] ), iyy, kit.trunc( inf[ 2 ], iw - len( inf[ 1 ] ) ), fg, bg );
+				iyy++;
+			}
+		}
+	}
+}

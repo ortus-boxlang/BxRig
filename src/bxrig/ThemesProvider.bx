@@ -1,4 +1,4 @@
-// Theme picker: the 15 bundled themes (and your own); Enter applies one. Reads `theme list`.
+// The rows of the Themes page: the bundled themes (and your own). Reads `theme list`. The page itself is ThemesPage.
 class ThemesProvider {
 	function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
 	function id() { return "themes"; }
@@ -19,9 +19,10 @@ class ThemesProvider {
 	}
 
 	function load( q = "" ) {
-		var d = variables.demo ? { themes: [ { name: "bxrig", light: false, current: true, origin: "bundled" }, { name: "bxrig-light", light: true, current: false, origin: "bundled" }, { name: "catppuccin", light: false, current: false, origin: "bundled" }, { name: "tokyo-night", light: false, current: false, origin: "bundled" } ] } : variables.proc.selfData( [ "theme", "list" ] );
+		var d = variables.demo ? { themes: [ { name: "bxrig", light: false, current: true, origin: "bundled" }, { name: "bxrig-retro", light: false, current: false, origin: "bundled", font: "sharetech" }, { name: "bxrig-light", light: true, current: false, origin: "bundled" }, { name: "catppuccin", light: false, current: false, origin: "bundled" }, { name: "tokyo-night", light: false, current: false, origin: "bundled" } ] } : variables.proc.selfData( [ "theme", "list" ] );
 		var rows = [];
-		for ( var t in ( d.themes ?: [] ) ) rows.append( { mark: t.current ? "●" : " ", name: t.name, mode: t.light ? "light" : "dark", origin: t.origin, current: t.current, swatch: "" } );
+		var namer = new bxrig.Theme( "" );
+		for ( var t in ( d.themes ?: [] ) ) rows.append( { mark: t.current ? "●" : " ", name: t.name, label: t.label ?: namer.label( t.name ), mode: t.light ? "light" : "dark", origin: t.origin, current: t.current, wallpaper: t.wallpaper ?: "", font: t.font ?: "", swatch: "" } );
 		return rows;
 	}
 }

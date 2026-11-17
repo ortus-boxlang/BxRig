@@ -41,6 +41,8 @@ class ControlCenterApp {
 	function index() { return variables.idx; }
 	function page() { return variables.pages[ variables.idx ]; }
 	function focus() { return variables.focus; }
+	// The theme the open page asks the whole screen to be drawn in ("" for none): the Themes page's live preview. Only pages that define previewTheme() have one.
+	function previewName() { var pg = page(); return !isNull( pg.previewTheme ) ? pg.previewTheme() : ""; }
 	// The keys of the Control Center itself, under the page's own: what the footer shows and what they do. Scope "free": only when the page is not
 	// taking text; "page": only when the focus is on the page (not the sidebar) and the page is not taking text.
 	function keyMap() {

@@ -41,7 +41,7 @@ app.onKey( "Enter" );
 testkit.check( "the bar toggle shortcut row opens the Shortcuts page", app.page().id() == "shortcuts" );
 seek( 5 ); app.onKey( "Enter" );
 t = shot();
-testkit.check( "the theme row opens the Themes page (the bigger selector), with its list and the apply key", app.page().id() == "themes" && find( "Themes", t ) > 0 && find( "tokyo-night", t ) > 0 && find( "apply", t ) > 0 );
+testkit.check( "the theme row opens the Themes page (the bigger selector), with its list and the apply key", app.page().id() == "themes" && find( "Themes", t ) > 0 && find( "Tokyo Night", t ) > 0 && find( "plan", t ) > 0 );
 seek( 6 );
 it = app.onKey( "Right" );
 testkit.check( "Right on the app grid switches style (and + does the same)", it.args.toList( " " ) == "appearance appgrid terminal" );

@@ -7,6 +7,8 @@ class ControlCenterView {
 		variables.follow = false;
 		variables.palette = "";
 		variables.themeName = "";
+		variables.previewShown = "";
+		variables.previewPals = {};
 		return this;
 	}
 
@@ -29,6 +31,20 @@ class ControlCenterView {
 		variables.kit.setPalette( pal.forTheme( name ) );
 	}
 
+	// A page can ask for the whole screen in another theme's colours (the Themes page's live preview) without applying anything; when it stops asking
+	// the screen goes back to the active theme (or the BxRig colours in demo mode).
+	function syncPreview( name ) {
+		if ( arguments.name == variables.previewShown ) return;
+		variables.previewShown = arguments.name;
+		if ( len( arguments.name ) ) {
+			if ( !structKeyExists( variables.previewPals, arguments.name ) ) variables.previewPals[ arguments.name ] = new bxrig.Palette().forTheme( arguments.name );
+			variables.kit.setPalette( variables.previewPals[ arguments.name ] );
+		} else if ( variables.follow ) {
+			variables.themeName = "~";   // not a theme name: forces syncTheme to set the active theme's palette again, also when that name is ""
+			syncTheme();
+		} else variables.kit.setPalette( new bxrig.Palette().frappe() );
+	}
+
 	function hitAt( x, y ) { return variables.kit.hitAt( arguments.x, arguments.y ); }
 
 	// The drawing kit (a test reads the palette the screen is drawn in).
@@ -36,7 +52,8 @@ class ControlCenterView {
 
 	function paint( app, tick, width, height ) {
 		var k = variables.kit;
-		if ( variables.follow && arguments.tick mod 20 == 0 ) syncTheme();
+		syncPreview( arguments.app.previewName() );
+		if ( variables.follow && !len( variables.previewShown ) && arguments.tick mod 20 == 0 ) syncTheme();
 		k.tui().begin_frame();
 		var C = function( n ) { return k.color( n ); };
 		var phase = ( arguments.tick mod 120 ) / 120;

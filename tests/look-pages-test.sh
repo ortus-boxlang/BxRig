@@ -87,7 +87,7 @@ WAIT="quit" KEYS="$DOWN|$UP|+|n|q" play "$tmp/cc2.out" "$binary" tui look || fai
 grep -q 'appearance bar layout' "$tmp/cc2.out" || fail 'the plan box for the layout change'
 # the Themes page is reachable by name and from the sidebar (Tab from Look)
 WAIT="quit" KEYS="q" play "$tmp/th.out" "$binary" tui themes --demo || fail "tui themes"
-grep -q 'tokyo-night' "$tmp/th.out" || fail 'tui themes shows the themes'
+grep -q 'Tokyo Night' "$tmp/th.out" || fail 'tui themes shows the themes'
 WAIT="quit" KEYS="\t|q" play "$tmp/th2.out" "$binary" tui look --demo || fail "tab to the next page"
-grep -q 'tokyo-night' "$tmp/th2.out" || fail 'Tab from Look reaches the Themes page'
+grep -q 'Tokyo Night' "$tmp/th2.out" || fail 'Tab from Look reaches the Themes page'
 echo "look pages tests passed"

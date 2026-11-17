@@ -54,7 +54,7 @@ testkit.check( "screen: the plan box", find( "System update", s2 ) > 0 && find( 
 cc = new bxrig.ControlCenter( {} );
 pages = cc.buildPages( true );
 testkit.check( "pages: eighteen, in order", pages.len() == 18 && pages[ 1 ].id() == "dashboard" && pages[ 2 ].id() == "apps" && pages[ 5 ].id() == "maven" && pages[ 6 ].id() == "gradle" && pages[ 8 ].id() == "ports" && pages[ 12 ].id() == "databases" && pages[ 13 ].id() == "mail" && pages[ 16 ].id() == "look" && pages[ 17 ].id() == "themes" && pages[ 18 ].id() == "logs" );
-want = { look: "Top bar layout", apps: "Firefox", boxlang: "1.9.0-snapshot", java: "temurin-21.0.13_9", maven: "3.10.0", gradle: "9.9.1", versions: "MatchBox", ports: "postgres", shortcuts: "Launcher", machines: "webtop-ubuntu", databases: "postgres", mail: "Your order 4821 has shipped", storage: "syno/backups", secrets: "ANTHROPIC_API_KEY", themes: "tokyo-night", logs: "port 5432 already in use" };
+want = { look: "Top bar layout", apps: "Firefox", boxlang: "1.9.0-snapshot", java: "temurin-21.0.13_9", maven: "3.10.0", gradle: "9.9.1", versions: "MatchBox", ports: "postgres", shortcuts: "Launcher", machines: "webtop-ubuntu", databases: "postgres", mail: "Your order 4821 has shipped", storage: "syno/backups", secrets: "ANTHROPIC_API_KEY", themes: "Tokyo Night", logs: "port 5432 already in use" };
 big = new bxrig.ControlCenterApp( pages, "" );
 for ( pg in pages ) {
 	if ( pg.id() == "dashboard" ) continue;
