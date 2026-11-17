@@ -1,0 +1,48 @@
+// Figlet (the bundled FIGlet fonts), AsciiColor (colours, gradients, directions) and the logo they draw.
+// Run from src/: (cd src && matchbox ../tests/ascii_test.bxs)
+testkit = new lib.Check( "ascii" );
+f = new bxrig.Figlet();
+c = new bxrig.AsciiColor();
+esc = chr( 27 );
+
+// ---- fonts ----
+testkit.check( "three fonts, DOS Rebel the default", f.names().toList() == "dos-rebel,ansi-shadow,calvin-s" && f.defaultFont() == "dos-rebel" && f.known( "calvin-s" ) && !f.known( "nope" ) );
+big = f.render( "BXRIG" );
+testkit.check( "BXRIG in DOS Rebel: 8 rows, 58 columns", big.len() == 8 && f.width( big ) == 58 );
+testkit.check( "the hardblank and endmarks are gone", !find( "$", big.toList( "" ) ) && !find( "@", big.toList( "" ) ) );
+testkit.check( "no trailing spaces and no blank rows above or below", big.filter( function( l ) { return right( l, 1 ) == " "; } ).len() == 0 && len( trim( big[ 1 ] ) ) && len( trim( big[ big.len() ] ) ) );
+small = f.render( "BXRIG", "calvin-s" );
+testkit.check( "Calvin S: 3 rows, 14 columns", small.len() == 3 && f.width( small ) == 14 && small[ 1 ] == "╔╗ ═╗ ╦╦═╗╦╔═╗" );
+shadow = f.render( "BXRIG", "ansi-shadow" );
+testkit.check( "ANSI Shadow: 6 rows, 36 columns", shadow.len() == 6 && f.width( shadow ) == 36 && shadow[ 1 ] == "██████╗ ██╗  ██╗██████╗ ██╗ ██████╗" );
+testkit.check( "a character the font does not have is skipped", f.render( "B€X", "calvin-s" ).toList( "|" ) == f.render( "BX", "calvin-s" ).toList( "|" ) );
+testkit.check( "a newline starts a new block of letters", f.render( "A" & chr( 10 ) & "B", "calvin-s" ).len() == 6 );
+testkit.check( "digits and punctuation", f.width( f.render( "v0.11!", "dos-rebel" ) ) > 20 );
+threw = false;
+try { f.render( "x", "nope" ); } catch ( any e ) { threw = find( "Unknown font", e.message ) > 0; }
+testkit.check( "an unknown font is an error that names the fonts", threw );
+
+// ---- the logo is the font ----
+testkit.check( "Brand.large() is BXRIG in DOS Rebel", new bxrig.Brand().large().toList( "|" ) == big.toList( "|" ) );
+
+// ---- colours ----
+testkit.check( "colours: #rrggbb, #rgb, names, case", c.parseColor( "##00FF78" ) == "##00ff78" && c.parseColor( "##0f8" ) == "##00ff88" && c.parseColor( "Red" ) == "##ff5555" && c.parseColor( "boxlang" ) == "##00ff78" );
+testkit.check( "not a colour is empty", c.parseColor( "nope" ) == "" && c.parseColor( "##12345" ) == "" );
+testkit.check( "presets: brand is cyan to green, rainbow has 6 stops", c.stops( "brand" ).stops.toList() == "##00dbff,##00ff78" && c.stops( "rainbow" ).stops.len() == 6 && c.stops( "Sunset" ).ok );
+testkit.check( "a custom gradient of two or more colours", c.stops( "red, ##00ff00, blue" ).stops.toList() == "##ff5555,##00ff00,##4c8dff" );
+testkit.check( "one colour or a bad one is not a gradient", !c.stops( "red" ).ok && find( "two or more", c.stops( "red" ).error ) && !c.stops( "red,nope" ).ok && find( "nope", c.stops( "red,nope" ).error ) );
+testkit.check( "theme falls back to the brand without a theme", c.stops( "theme" ).stops.len() == 2 );
+testkit.check( "at(): the ends are the stops, the middle is mixed", c.at( [ "##000000", "##ffffff" ], 0 ).toList() == "0,0,0" && c.at( [ "##000000", "##ffffff" ], 1 ).toList() == "255,255,255" && c.at( [ "##000000", "##ffffff" ], 0.5 ).toList() == "128,128,128" );
+testkit.check( "at(): three stops, the middle stop at 0.5, out of range is clamped", c.at( [ "##ff0000", "##00ff00", "##0000ff" ], 0.5 ).toList() == "0,255,0" && c.at( [ "##ff0000", "##0000ff" ], 2 ).toList() == "0,0,255" );
+
+// ---- painting ----
+p = c.paint( [ "ab", " c" ], [ "##ff0000", "##0000ff" ] );
+testkit.check( "horizontal: first column red, last blue, spaces unpainted, a reset per line", p[ 1 ] == esc & "[38;2;255;0;0ma" & esc & "[38;2;0;0;255mb" & esc & "[0m" && p[ 2 ] == " " & esc & "[38;2;0;0;255mc" & esc & "[0m" );
+v = c.paint( [ "ab", "cd" ], [ "##ff0000", "##0000ff" ], "vertical" );
+testkit.check( "vertical: one colour per row, written once", v[ 1 ] == esc & "[38;2;255;0;0mab" & esc & "[0m" && v[ 2 ] == esc & "[38;2;0;0;255mcd" & esc & "[0m" );
+d = c.paint( [ "ab", "cd" ], [ "##000000", "##ffffff" ], "diagonal" );
+testkit.check( "diagonal: the corners are the ends, the other two the middle", find( "[38;2;0;0;0ma", d[ 1 ] ) && find( "[38;2;128;128;128mb", d[ 1 ] ) && find( "[38;2;255;255;255md", d[ 2 ] ) );
+testkit.check( "a solid colour", c.paint( [ "hi" ], [ "##00ff78" ] )[ 1 ] == esc & "[38;2;0;255;120mhi" & esc & "[0m" );
+testkit.check( "a blank line gets no escapes", c.paint( [ "  " ], [ "##00ff78" ] )[ 1 ] == "  " );
+testkit.check( "Brand.ansi paints with the brand gradient, plain gives the lines back", find( "[38;2;0;219;255m", new bxrig.Brand().ansi( [ "ab" ] )[ 1 ] ) && new bxrig.Brand().ansi( [ "ab" ], true )[ 1 ] == "ab" );
+testkit.done( "ascii tests passed" );

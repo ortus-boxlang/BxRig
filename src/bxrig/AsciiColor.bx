@@ -1,0 +1,120 @@
+// Colour for text art: a solid colour or a gradient painted over lines of text with 24-bit terminal escapes. One engine for `bxrig ascii`,
+// the logo (Brand.ansi) and anything else that paints text. Spaces stay unpainted, an escape is written only when the colour changes, and
+// every line ends with a reset.
+//   colour   "#rrggbb", "#rgb", a name (names()), or "theme" (the accent of the theme that is on)
+//   gradient a preset (presets(): brand, theme, sunset, ocean, fire, forest, candy, rainbow) or two or more colours separated by commas
+//   direction "horizontal" (left to right), "vertical" (top to bottom) or "diagonal"
+class AsciiColor {
+	function init() {
+		variables.tc = new bxrig.ThemeColors();
+		return this;
+	}
+
+	function directions() { return [ "horizontal", "vertical", "diagonal" ]; }
+
+	function names() {
+		return {
+			black: "##000000", white: "##ffffff", gray: "##9aa0a6", red: "##ff5555", orange: "##ff9f43", yellow: "##f1fa8c",
+			green: "##50fa7b", cyan: "##00dbff", blue: "##4c8dff", purple: "##bd93f9", magenta: "##ff79c6", pink: "##ff9ecb",
+			// the brand
+			boxlang: "##00ff78", bxrig: "##00dbff"
+		};
+	}
+
+	function presets() {
+		return {
+			brand: [ "##00dbff", "##00ff78" ],
+			sunset: [ "##ff5f6d", "##ffc371" ],
+			ocean: [ "##2193b0", "##6dd5ed" ],
+			fire: [ "##f12711", "##f5af19" ],
+			forest: [ "##134e5e", "##71b280" ],
+			candy: [ "##ff6ec4", "##7873f5" ],
+			rainbow: [ "##ff0000", "##ff7f00", "##ffff00", "##00ff00", "##0000ff", "##8b00ff" ]
+		};
+	}
+
+	// The accent and a second colour of the theme that is on ([ accent, color6 or foreground ]); the brand colours without one.
+	function themeColors() {
+		try {
+			var th = new bxrig.Theme( new bxrig.util.Cli( "" ) );
+			var st = th.readState();
+			if ( len( st.name ) ) {
+				var t = th.find( st.name );
+				if ( t.found ) {
+					var p = variables.tc.parse( t.colorsText );
+					if ( p.ok ) return [ p.colors.accent, structKeyExists( p.colors, "color6" ) ? p.colors.color6 : p.colors.foreground ];
+				}
+			}
+		} catch ( any e ) {}
+		return presets().brand;
+	}
+
+	// One colour as "#rrggbb", or "" when it is not one.
+	function parseColor( spec ) {
+		var s = lCase( trim( arguments.spec ) );
+		if ( s == "theme" || s == "accent" ) return themeColors()[ 1 ];
+		var n = names();
+		if ( structKeyExists( n, s ) ) return n[ s ];
+		if ( reFind( "^##[0-9a-f]{6}$", s ) ) return s;
+		if ( reFind( "^##[0-9a-f]{3}$", s ) ) return "##" & repeatString( mid( s, 2, 1 ), 2 ) & repeatString( mid( s, 3, 1 ), 2 ) & repeatString( mid( s, 4, 1 ), 2 );
+		return "";
+	}
+
+	// The colour stops of a gradient spec: { ok, stops, error }.
+	function stops( spec ) {
+		var s = lCase( trim( arguments.spec ) );
+		if ( s == "theme" ) return { ok: true, stops: themeColors(), error: "" };
+		var p = presets();
+		if ( structKeyExists( p, s ) ) return { ok: true, stops: p[ s ], error: "" };
+		var out = [];
+		for ( var part in listToArray( s, "," ) ) {
+			var c = parseColor( part );
+			if ( !len( c ) ) return { ok: false, stops: [], error: "not a colour: " & trim( part ) };
+			out.append( c );
+		}
+		if ( out.len() < 2 ) return { ok: false, stops: [], error: "a gradient needs a preset (" & structKeyArray( p ).sort( "text" ).toList( ", " ) & ", theme) or two or more colours" };
+		return { ok: true, stops: out, error: "" };
+	}
+
+	// The colour at t (0 to 1) along the stops, as [ r, g, b ].
+	function at( stops, t ) {
+		var n = arguments.stops.len();
+		if ( n == 1 ) return variables.tc.toRgb( arguments.stops[ 1 ] );
+		var pos = max( 0, min( 1, arguments.t ) ) * ( n - 1 );
+		var i = min( n - 2, int( pos ) );
+		var a = variables.tc.toRgb( arguments.stops[ i + 1 ] );
+		var b = variables.tc.toRgb( arguments.stops[ i + 2 ] );
+		var f = pos - i;
+		return [ round( a[ 1 ] + ( b[ 1 ] - a[ 1 ] ) * f ), round( a[ 2 ] + ( b[ 2 ] - a[ 2 ] ) * f ), round( a[ 3 ] + ( b[ 3 ] - a[ 3 ] ) * f ) ];
+	}
+
+	// The lines painted with the stops (one stop is a solid colour) in the direction.
+	function paint( lines, stops, direction = "horizontal" ) {
+		var esc = chr( 27 );
+		var h = arguments.lines.len();
+		var w = 1;
+		for ( var l in arguments.lines ) w = max( w, len( l ) );
+		var out = [];
+		for ( var y = 1; y <= h; y++ ) {
+			var line = arguments.lines[ y ];
+			var s = "";
+			var last = "";
+			for ( var x = 1; x <= len( line ); x++ ) {
+				var ch = mid( line, x, 1 );
+				if ( ch == " " ) { s &= ch; continue; }
+				var tx = ( x - 1 ) / max( 1, w - 1 );
+				var ty = ( y - 1 ) / max( 1, h - 1 );
+				var t = arguments.direction == "vertical" ? ty : ( arguments.direction == "diagonal" ? ( tx + ty ) / 2 : tx );
+				var c = at( arguments.stops, t );
+				var code = c[ 1 ] & ";" & c[ 2 ] & ";" & c[ 3 ];
+				if ( code != last ) { s &= esc & "[38;2;" & code & "m"; last = code; }
+				s &= ch;
+			}
+			out.append( len( last ) ? s & esc & "[0m" : s );
+		}
+		return out;
+	}
+
+	// True when colour should be left out: NO_COLOR is set (https://no-color.org).
+	function disabled() { return len( new bxrig.util.Env().named( "noColor", "" ) ) > 0; }
+}

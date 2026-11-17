@@ -42,6 +42,11 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `wizard` | `--out` | value |  |
 | `wizard` | `--pages` | value |  |
 | `update` | `--notify` | bool |  |
+| `ascii` | `--font` | value | `dos` |
+| `ascii` | `--color` | value |  |
+| `ascii` | `--gradient` | value | `sunset` |
+| `ascii` | `--direction` | value | `diagonal` |
+| `ascii` | `--plain` | bool |  |
 | `apps` | `--name` | any |  |
 | `help` | `--help` | bool |  |
 | `help` | `--h` | bool |  |

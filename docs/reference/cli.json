@@ -228,6 +228,47 @@
 					]
 				},
 				{
+					"name": "ascii",
+					"summary": "Text in large letters (FIGlet fonts), painted with a colour or a gradient.",
+					"usage": [
+						"ascii TEXT... [--font=dos-rebel|ansi-shadow|calvin-s] [--color=COLOR | --gradient=SPEC] [--direction=horizontal|vertical|diagonal] [--plain] [--json]",
+						"ascii fonts [--json]"
+					],
+					"examples": [
+						"bxrig ascii BxRig",
+						"bxrig ascii \"Hello\" --font=ansi-shadow --gradient=sunset",
+						"bxrig ascii OK --color=#00ff78",
+						"bxrig ascii Rainbow --gradient=rainbow --direction=diagonal",
+						"bxrig ascii Theme --gradient=theme",
+						"bxrig ascii deploy --gradient=#ff5f6d,#ffc371,#00dbff",
+						"bxrig ascii fonts"
+					],
+					"mutates": false,
+					"note": "COLOR is #rrggbb, #rgb, theme (the accent of the theme that is on) or a name (black, white, gray, red, orange, yellow, green, cyan, blue, purple, magenta, pink, boxlang, bxrig). SPEC is a preset (brand, theme, sunset, ocean, fire, forest, candy, rainbow) or two or more colours separated by commas. Without --color or --gradient the brand gradient is used in a terminal and no colour into a pipe; --plain and NO_COLOR leave colour out. With no TEXT the first line of stdin is drawn.",
+					"flags": [
+						{
+							"name": "font",
+							"type": "value"
+						},
+						{
+							"name": "color",
+							"type": "value"
+						},
+						{
+							"name": "gradient",
+							"type": "value"
+						},
+						{
+							"name": "direction",
+							"type": "value"
+						},
+						{
+							"name": "plain",
+							"type": "bool"
+						}
+					]
+				},
+				{
 					"name": "version",
 					"summary": "The BxRig version and build.",
 					"usage": [

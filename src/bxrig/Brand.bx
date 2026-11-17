@@ -1,4 +1,4 @@
-// The BxRig brand in text: the logo as block-character art in three sizes, the tagline and the descriptions used by the README, `--help` and the screens.
+// The BxRig brand in text: the logo in three sizes (large in the DOS Rebel FIGlet font, small and word as block art), the tagline and the descriptions used by the README, `--help` and the screens.
 // The TUIs paint these with the brand gradient (cyan #00DBFF to green #00FF78); `ansi( lines )` does the same for plain terminal output.
 // docs/brand/bxrig-ascii.txt shows every size.
 class Brand {
@@ -7,17 +7,8 @@ class Brand {
 	function oneLiner() { return "BxRig brings an opinionated, beautiful and efficient desktop to Linux, built for developers."; }
 	function description() { return "BxRig turns a fresh Linux install into a polished developer rig: a themed desktop, the languages and tools you use, and one terminal screen to manage it all."; }
 
-	// 38 columns, 6 rows: a pixel font in capitals, two columns per pixel (BXRIG; the TUIs use capitals for the terminal wordmark, the logo keeps BxRig).
-	function large() {
-		return [
-			"████    ██  ██  ████    ██████    ████",
-			"██  ██  ██  ██  ██  ██    ██    ██",
-			"████      ██    ████      ██    ██",
-			"██  ██    ██    ██  ██    ██    ██  ██",
-			"██  ██  ██  ██  ██  ██    ██    ██  ██",
-			"████    ██  ██  ██  ██  ██████    ████"
-		];
-	}
+	// The logo: BXRIG in the DOS Rebel FIGlet font (58 columns, 8 rows), the font `bxrig ascii` uses by default.
+	function large() { return new bxrig.Figlet().render( "BXRIG", "dos-rebel" ); }
 
 	// 19 columns, 3 rows: the same letters in half blocks.
 	function small() {
@@ -62,25 +53,12 @@ class Brand {
 		return new bxrig.util.Exit().ok();
 	}
 
-	function hex( n ) { return right( "0" & formatBaseN( int( min( 255, max( 0, arguments.n ) ) ), 16 ), 2 ); }
 
-	// Lines painted left to right from cyan to green with 24-bit colour escapes. Without a colour terminal (NO_COLOR set, or `plain`) the lines come back as they are.
+	// Lines painted left to right from cyan to green (the brand gradient, see AsciiColor). Without a colour terminal (NO_COLOR set, or `plain`)
+	// the lines come back as they are.
 	function ansi( lines, plain = false ) {
-		if ( arguments.plain || len( new bxrig.util.Env().named( "noColor", "" ) ) ) return arguments.lines;
-		var esc = chr( 27 );
-		var w = 1;
-		for ( var l in arguments.lines ) w = max( w, len( l ) );
-		var out = [];
-		for ( var line in arguments.lines ) {
-			var s = "";
-			for ( var i = 1; i <= len( line ); i++ ) {
-				var ch = mid( line, i, 1 );
-				if ( ch == " " ) { s &= ch; continue; }
-				var t = ( i - 1 ) / max( 1, w - 1 );
-				s &= esc & "[38;2;" & round( 0 + 0 * t ) & ";" & round( 219 + 36 * t ) & ";" & round( 255 - 135 * t ) & "m" & ch;
-			}
-			out.append( s & esc & "[0m" );
-		}
-		return out;
+		var c = new bxrig.AsciiColor();
+		if ( arguments.plain || c.disabled() ) return arguments.lines;
+		return c.paint( arguments.lines, c.presets().brand );
 	}
 }

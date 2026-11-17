@@ -1,0 +1,91 @@
+// FIGlet fonts: text drawn in large letters, the way `figlet` and Omarchy's `omarchy ascii` do. The fonts are FIGlet `.flf` files packed
+// with BxRig (assets/fonts/, read through util/Res), so nothing is installed. Letters are set side by side at their full width (no smushing),
+// characters the font does not cover (outside printable ASCII) are skipped, and a newline in the text starts a new block of letters.
+//   names()                the bundled fonts, the default first
+//   render( text, name )   the lines, with no trailing spaces and no blank rows above or below
+class Figlet {
+	function init() {
+		variables.fonts = {};
+		// printable ASCII in code order: a character's position here is its glyph number (MatchBox has no asc())
+		variables.ascii = "";
+		for ( var code = 32; code <= 126; code++ ) variables.ascii &= chr( code );
+		return this;
+	}
+
+	function names() { return [ "dos-rebel", "ansi-shadow", "calvin-s" ]; }
+	function defaultFont() { return "dos-rebel"; }
+	function known( name ) { return arrayFind( names(), arguments.name ) > 0; }
+
+	// A parsed font: { height, glyphs } where glyphs[ n ] is the rows of the n-th printable ASCII character (1 = space).
+	function load( name ) {
+		if ( structKeyExists( variables.fonts, arguments.name ) ) return variables.fonts[ arguments.name ];
+		var rows = listToArray( replace( new bxrig.util.Res().text( "fonts/" & arguments.name & ".flf" ), chr( 13 ), "", "all" ), chr( 10 ), true );
+		// header: flf2a<hardblank> height baseline maxLength oldLayout commentLines ...
+		var header = listToArray( rows[ 1 ], " " );
+		var hardblank = mid( header[ 1 ], 6, 1 );
+		var height = int( val( header[ 2 ] ) );
+		var at = int( val( header[ 6 ] ) ) + 2;
+		var glyphs = [];
+		for ( var n = 1; n <= len( variables.ascii ); n++ ) {
+			var glyph = [];
+			for ( var r = 1; r <= height; r++ ) {
+				var row = at <= rows.len() ? rows[ at ] : "";
+				at = at + 1;
+				glyph.append( replace( withoutEndmark( row ), hardblank, " ", "all" ) );
+			}
+			glyphs.append( glyph );
+		}
+		var font = { height: height, glyphs: glyphs };
+		variables.fonts[ arguments.name ] = font;
+		return font;
+	}
+
+	// A glyph row ends with its endmark (any character, doubled on the last row): drop every trailing copy of it.
+	function withoutEndmark( row ) {
+		if ( !len( arguments.row ) ) return "";
+		var mark = right( arguments.row, 1 );
+		var s = arguments.row;
+		while ( len( s ) && right( s, 1 ) == mark ) s = len( s ) > 1 ? left( s, len( s ) - 1 ) : "";
+		return s;
+	}
+
+	function render( text, name = "" ) {
+		var fontName = len( arguments.name ) ? arguments.name : defaultFont();
+		if ( !known( fontName ) ) throw( message = "Unknown font " & fontName & " (use " & names().toList( ", " ) & ")" );
+		var font = load( fontName );
+		var out = [];
+		for ( var part in listToArray( replace( arguments.text, chr( 13 ), "", "all" ), chr( 10 ), true ) ) {
+			for ( var line in block( font, part ) ) out.append( line );
+		}
+		return out;
+	}
+
+	// One line of text in the font: the glyphs side by side, trailing spaces and the blank rows above and below removed.
+	function block( font, text ) {
+		var lines = [];
+		for ( var r = 1; r <= arguments.font.height; r++ ) lines.append( "" );
+		for ( var i = 1; i <= len( arguments.text ); i++ ) {
+			var n = find( mid( arguments.text, i, 1 ), variables.ascii );
+			if ( !n ) continue;
+			var glyph = arguments.font.glyphs[ n ];
+			var w = 0;
+			for ( var g in glyph ) w = max( w, len( g ) );
+			for ( var r2 = 1; r2 <= arguments.font.height; r2++ ) lines[ r2 ] = lines[ r2 ] & glyph[ r2 ] & repeatString( " ", w - len( glyph[ r2 ] ) );
+		}
+		var trimmed = lines.map( function( l ) { return reReplace( l, "\s+$", "" ); } );
+		var first = 1;
+		var last = trimmed.len();
+		while ( first <= last && !len( trimmed[ first ] ) ) first = first + 1;
+		while ( last >= first && !len( trimmed[ last ] ) ) last = last - 1;
+		var out = [];
+		for ( var k = first; k <= last; k++ ) out.append( trimmed[ k ] );
+		return out;
+	}
+
+	// The widest line, in characters.
+	function width( lines ) {
+		var w = 0;
+		for ( var l in arguments.lines ) w = max( w, len( l ) );
+		return w;
+	}
+}
