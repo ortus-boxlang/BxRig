@@ -1,0 +1,34 @@
+# BxRig Retro: 80s synthwave. Night-purple neutrals with neon magenta, cyan and mint.
+mode = "dark"
+# The font of the theme (an id of `bxrig appearance font list`): `theme set` uses it once it is installed (optional key, ignored by Omarchy).
+font = "sharetech"
+
+accent = "#ff2ec4"
+selection = "#3a2670"
+muted = "#8a79b8"
+
+background = "#1a1033"
+dark_background = "#120a26"
+darker_background = "#0b0618"
+lighter_background = "#3a2670"
+
+foreground = "#f2e9ff"
+dark_foreground = "#8a79b8"
+light_foreground = "#d9c8ff"
+bright_foreground = "#f2e9ff"
+
+red = "#ff4d6d"
+yellow = "#ffd23f"
+orange = "#ff8a3d"
+green = "#39ff9a"
+cyan = "#19e6ff"
+blue = "#6f7bff"
+magenta = "#b44cff"
+brown = "#7a3b5e"
+
+bright_red = "#ff4d6d"
+bright_yellow = "#ffd23f"
+bright_green = "#39ff9a"
+bright_cyan = "#19e6ff"
+bright_blue = "#6f7bff"
+bright_magenta = "#ff2ec4"

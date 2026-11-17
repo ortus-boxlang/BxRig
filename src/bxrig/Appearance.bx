@@ -34,19 +34,8 @@ class Appearance {
 	function bar() { return "main"; }
 
 	// ---- tables ----
-	// Nerd Font families (names read from the installed packages in the Arch test container) and the Arch package of each.
-	function fonts() {
-		var f = function( id, label, family, pkg ) { return { id: id, label: label, family: family, pkg: pkg }; };
-		return [
-			f( "jetbrains", "JetBrains Mono", "JetBrainsMono Nerd Font", "ttf-jetbrains-mono-nerd" ),
-			f( "cascadia", "Cascadia Mono", "CaskaydiaMono Nerd Font", "ttf-cascadia-mono-nerd" ),
-			f( "meslo", "Meslo LG Mono", "MesloLGM Nerd Font", "ttf-meslo-nerd" ),
-			f( "fira", "Fira Code", "FiraCode Nerd Font", "ttf-firacode-nerd" ),
-			f( "victor", "Victor Code", "VictorMono Nerd Font", "ttf-victor-mono-nerd" ),
-			f( "bitstream", "Bitstream Vera Mono", "BitstromWera Nerd Font", "ttf-bitstream-vera-mono-nerd" ),
-			f( "iosevka", "Iosevka", "Iosevka Nerd Font", "ttf-iosevka-nerd" )
-		];
-	}
+	// Nerd Font families and the Arch package of each (the table is bxrig.Fonts, a leaf class `theme set` can read too).
+	function fonts() { return new bxrig.Fonts().list(); }
 
 	// Noctalia clock formats (std::format chrono tokens: {:%H:%M}); id, label, format. The stacked formats of Omarchy are not offered: Noctalia
 	// stacks by itself on vertical bars (vertical_format).

@@ -305,6 +305,26 @@
 					]
 				},
 				{
+					"name": "banner",
+					"summary": "The BXRIG wordmark in block letters, painted in the colors of the current theme (the retro greeting).",
+					"usage": [
+						"banner [--plain] [--json]"
+					],
+					"examples": [
+						"bxrig banner",
+						"bxrig banner --plain",
+						"bxrig banner --json"
+					],
+					"mutates": false,
+					"note": "Five rows, painted top to bottom with the theme's accent, magenta and cyan. A pipe, --plain and NO_COLOR give plain text; --json gives the lines and the three colors.",
+					"flags": [
+						{
+							"name": "plain",
+							"type": "bool"
+						}
+					]
+				},
+				{
 					"name": "version",
 					"summary": "The BxRig version and build.",
 					"usage": [

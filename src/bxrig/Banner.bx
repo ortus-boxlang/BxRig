@@ -1,0 +1,57 @@
+// `bxrig banner [--plain] [--json]`: the BXRIG wordmark (five rows of block letters) painted top to bottom in the colours of the current theme:
+// the accent, the theme's magenta and its cyan (the neon magenta, violet and cyan of bxrig-retro; the BoxLang greens and blues of the default).
+// A terminal gets colour; a pipe, --plain and NO_COLOR get plain text. --json gives the lines and the three colours.
+// The retro starter shell greeting prints it. Exit 0.
+class Banner {
+	function init( cli ) {
+		variables.cli = arguments.cli;
+		variables.ac = new bxrig.AsciiColor();
+		return this;
+	}
+
+	function letters() {
+		return {
+			B: [ "██████  ", "██    ██", "██████  ", "██    ██", "██████  " ],
+			X: [ "██    ██", " ██  ██ ", "  ████  ", " ██  ██ ", "██    ██" ],
+			R: [ "██████  ", "██    ██", "██████  ", "██  ██  ", "██    ██" ],
+			I: [ "██████", "  ██  ", "  ██  ", "  ██  ", "██████" ],
+			G: [ " ██████ ", "██      ", "██  ████", "██    ██", " ██████ " ]
+		};
+	}
+
+	// The five rows of BXRIG.
+	function lines() {
+		var l = letters();
+		var out = [];
+		for ( var row = 1; row <= 5; row++ ) {
+			var parts = [];
+			for ( var ch in [ "B", "X", "R", "I", "G" ] ) parts.append( l[ ch ][ row ] );
+			out.append( rtrim( parts.toList( "  " ) ) );
+		}
+		return out;
+	}
+
+	// [ accent, magenta, cyan ] of the theme that is on (hex), the brand colours without one.
+	function colors() {
+		var base = variables.ac.themeColors();
+		try {
+			var th = new bxrig.Theme( variables.cli );
+			var st = th.readState();
+			var t = th.find( len( st.name ) ? st.name : "bxrig" );
+			if ( t.found ) {
+				var p = new bxrig.ThemeColors().parse( t.colorsText );
+				if ( p.ok ) return [ p.colors.accent, p.colors.bright_magenta ?: p.colors.color5, p.colors.bright_cyan ?: p.colors.color6 ];
+			}
+		} catch ( any e ) {}
+		return [ base[ 1 ], base[ 1 ], base[ 2 ] ];
+	}
+
+	function show( asJson, terminal, plain = false ) {
+		var ls = lines();
+		var cols = colors();
+		if ( arguments.asJson ) { println( variables.cli.envelope( "banner", 0, { lines: ls, colors: cols, width: len( ls[ 1 ] ), height: ls.len() } ) ); return 0; }
+		var paint = arguments.terminal && !arguments.plain && !variables.ac.disabled();
+		for ( var l in ( paint ? variables.ac.paint( ls, cols, "vertical" ) : ls ) ) println( l );
+		return 0;
+	}
+}

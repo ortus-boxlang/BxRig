@@ -1,0 +1,24 @@
+// The Nerd Font families `bxrig appearance font` offers (names read from the installed packages in the Arch test container) and the Arch package of each.
+// A leaf class with no references of its own: Appearance, Theme and the Themes page all read it (Theme cannot reference Appearance, which reaches Theme again).
+// A theme names its font by id in colors.toml (`font = "sharetech"`).
+class Fonts {
+	function list() {
+		var f = function( id, label, family, pkg ) { return { id: id, label: label, family: family, pkg: pkg }; };
+		return [
+			f( "jetbrains", "JetBrains Mono", "JetBrainsMono Nerd Font", "ttf-jetbrains-mono-nerd" ),
+			f( "cascadia", "Cascadia Mono", "CaskaydiaMono Nerd Font", "ttf-cascadia-mono-nerd" ),
+			f( "meslo", "Meslo LG Mono", "MesloLGM Nerd Font", "ttf-meslo-nerd" ),
+			f( "fira", "Fira Code", "FiraCode Nerd Font", "ttf-firacode-nerd" ),
+			f( "victor", "Victor Code", "VictorMono Nerd Font", "ttf-victor-mono-nerd" ),
+			f( "bitstream", "Bitstream Vera Mono", "BitstromWera Nerd Font", "ttf-bitstream-vera-mono-nerd" ),
+			f( "iosevka", "Iosevka", "Iosevka Nerd Font", "ttf-iosevka-nerd" ),
+			f( "sharetech", "Share Tech Mono", "ShareTechMono Nerd Font", "ttf-sharetech-mono-nerd" )
+		];
+	}
+
+	// The font row of an id ({} for an unknown id).
+	function byId( id ) {
+		for ( var f in list() ) if ( f.id == arguments.id ) return f;
+		return {};
+	}
+}

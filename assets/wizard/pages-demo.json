@@ -562,6 +562,11 @@
 							"description": "Pale sky with bright azure."
 						},
 						{
+							"value": "bxrig-retro",
+							"label": "BxRig Retro",
+							"description": "80s synthwave: neon magenta and cyan on night purple, Share Tech Mono."
+						},
+						{
 							"value": "catppuccin",
 							"label": "Catppuccin",
 							"description": "Mocha: lavender and blue on deep navy."

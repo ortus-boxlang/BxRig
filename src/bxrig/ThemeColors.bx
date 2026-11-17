@@ -60,6 +60,18 @@ class ThemeColors {
 		return out;
 	}
 
+	// The optional `font = "ID"` line of a colors.toml: an id of `bxrig appearance font list` ("" when there is none). parse() skips it
+	// (a value that is not #rrggbb is not a colour), so a theme with a font is still a valid Omarchy theme.
+	function fontId( text ) {
+		for ( var rawLine in listToArray( replace( arguments.text, chr( 13 ), "", "all" ), chr( 10 ) ) ) {
+			var line = trim( rawLine );
+			if ( left( line, 4 ) != "font" ) continue;
+			var m = reFind( "^font[ ]*=[ ]*[" & chr( 34 ) & "']?([a-z0-9-]+)", line, 1, true );
+			if ( m.pos[ 1 ] ) return mid( line, m.pos[ 2 ], m.len[ 2 ] );
+		}
+		return "";
+	}
+
 	// ---- colour maths ----
 	function toRgb( h ) {
 		return [ inputBaseN( mid( arguments.h, 2, 2 ), 16 ), inputBaseN( mid( arguments.h, 4, 2 ), 16 ), inputBaseN( mid( arguments.h, 6, 2 ), 16 ) ];

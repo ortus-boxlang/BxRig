@@ -71,6 +71,15 @@ class Theme {
 		if ( arguments.t.origin != "user" && len( arguments.t.wallpaper ) && arguments.t.wallpaper == w.target( arguments.t.name ) ) return w.ensure( arguments.t.name );
 		return arguments.t.wallpaper;
 	}
+	// The font a theme names ({} when it names none or an unknown one): { id, label, family, pkg, installed }.
+	function fontPlan( t ) {
+		if ( !len( arguments.t.font ?: "" ) ) return {};
+		var row = new bxrig.Fonts().byId( arguments.t.font );
+		if ( structIsEmpty( row ) ) return {};
+		row = duplicate( row );
+		row.installed = variables.proc.exec( [ "sh", "-c", 'fc-list : family | grep -qiF -- "$1"', "_", row.family ], 20 ).exitCode == 0;
+		return row;
+	}
 	// "tokyo-night" -> "Tokyo Night", "bxrig-light" -> "BxRig Light"
 	function label( name ) {
 		var words = listToArray( arguments.name, "-" ).map( function( x ) { return x == "bxrig" ? "BxRig" : uCase( left( x, 1 ) ) & mid( x, 2, len( x ) ); } );
@@ -82,7 +91,7 @@ class Theme {
 		var all = discover();
 		if ( !structKeyExists( all, arguments.name ) ) return { found: false };
 		var t = all[ arguments.name ];
-		var out = { found: true, name: t.name, origin: t.origin, colorsText: "", neovimText: "", wallpaper: "" };
+		var out = { found: true, name: t.name, origin: t.origin, colorsText: "", neovimText: "", wallpaper: "", font: "" };
 		if ( len( t.dir ) ) {
 			out.colorsText = fileRead( t.dir & "/colors.toml" );
 			if ( fileExists( t.dir & "/neovim.lua" ) ) out.neovimText = fileRead( t.dir & "/neovim.lua" );
@@ -96,6 +105,7 @@ class Theme {
 			out.neovimText = variables.td.neovim( t.name );
 			out.wallpaper = bundledWallpaper( t.name );
 		}
+		out.font = variables.tc.fontId( out.colorsText );
 		return out;
 	}
 
@@ -213,7 +223,7 @@ class Theme {
 		for ( var n in names() ) {
 			var t = find( n );
 			var p = variables.tc.parse( t.colorsText );
-			var row = { name: n, label: label( n ), origin: t.origin, valid: p.ok, light: p.ok ? variables.tc.isLight( p.colors ) : false, current: n == cur, wallpaper: t.wallpaper };
+			var row = { name: n, label: label( n ), origin: t.origin, valid: p.ok, light: p.ok ? variables.tc.isLight( p.colors ) : false, current: n == cur, wallpaper: t.wallpaper, font: t.font };
 			// a screenshot of the theme, when one is there (the theme switcher shows the wallpaper otherwise)
 			var pv = variables.environ.data( "theme-previews/" & n & ".jpg" );
 			if ( fileExists( pv ) ) row.preview = pv;
@@ -303,7 +313,13 @@ class Theme {
 		var wall = arguments.keepWallpaper ? "" : wallpaperFor( t );
 		var entries = files( p.colors, t.neovimText );
 		var data = { theme: t.name, origin: t.origin, light: variables.tc.isLight( p.colors ), mode: stateMode, applied_mode: m, wallpaper: wall, files: entries.map( function( e ) { return e.target; } ) };
-		if ( arguments.dry ) return variables.out.plan( "theme " & t.name & " (" & ( data.light ? "light" : "dark" ) & ", mode " & m & ")", data, arguments.asJson, true, [ "Files: " & entries.map( function( e ) { return e.target; } ).toList( ", " ) ] );
+		var fnt = fontPlan( t );
+		if ( !structIsEmpty( fnt ) ) data.font = { id: fnt.id, family: fnt.family, package: fnt.pkg, installed: fnt.installed };
+		if ( arguments.dry ) {
+			var plan = [ "Files: " & entries.map( function( e ) { return e.target; } ).toList( ", " ) ];
+			if ( !structIsEmpty( fnt ) ) plan.append( fnt.installed ? "Font: " & fnt.family & " (installed) becomes the shell and terminal font" : "Font: " & fnt.family & " is not installed, so the font stays as it is until you run: bxrig appearance font install " & fnt.id & " --yes (then bxrig theme set " & t.name & ")" );
+			return variables.out.plan( "theme " & t.name & " (" & ( data.light ? "light" : "dark" ) & ", mode " & m & ")", data, arguments.asJson, true, plan );
+		}
 		data.written = []; data.unchanged = []; data.failed = [];
 		for ( var e in entries ) {
 			if ( variables.config.configState( e ) == "clean" ) { data.unchanged.append( e.name ); continue; }
@@ -313,6 +329,14 @@ class Theme {
 		writeState( t.name, stateMode );
 		syncNvim();
 		var n = notify( m, wall );
+		if ( !structIsEmpty( fnt ) && fnt.installed ) {
+			// through the command (Theme cannot reference Appearance, whose classes reach Theme again); it saves the font, tells Noctalia and rewrites the starter terminals
+			var fa = variables.proc.self( [ "appearance", "font", fnt.id ], 120 );
+			data.font.applied = fa.exitCode == 0;
+			n.notes.append( fa.exitCode == 0 ? "font: " & fnt.family : "font: " & fnt.family & " could not be set: " & trim( fa.output ) );
+		} else if ( !structIsEmpty( fnt ) ) {
+			n.notes.append( "font: " & fnt.family & " is not installed; run: bxrig appearance font install " & fnt.id & " --yes, then bxrig theme set " & t.name );
+		}
 		data.noctalia = n.noctalia; data.plasma = n.plasma; data.hyprland = n.hyprland; data.notes = n.notes;
 		var lines = [ "Theme: " & t.name & " (" & t.origin & ", " & ( data.light ? "light" : "dark" ) & ", mode " & m & ")", "Files: " & data.written.len() & " written, " & data.unchanged.len() & " unchanged" ];
 		lines.append( "Noctalia: " & n.noctalia & "  Plasma: " & n.plasma & "  Hyprland: " & n.hyprland & "  GTK: " & n.gtk );

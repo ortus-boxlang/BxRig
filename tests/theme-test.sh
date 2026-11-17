@@ -7,8 +7,8 @@ for t in noctalia plasma-apply-colorscheme hyprctl; do logger $t; done
 chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
 
-# list: 20 bundled themes (10 BxRig: 5 dark, 5 light; 10 from Omarchy), both origins, nothing current yet
-run "$binary" theme list --json | jq -e '.ok and (.data.themes | length == 20) and (.data.themes | map(select(.valid)) | length == 20) and (.data.themes | map(select(.light)) | map(.name) | sort == ["bxrig-dawn","bxrig-light","bxrig-mint","bxrig-paper","bxrig-sky","catppuccin-latte","flexoki-light","rose-pine"])' >/dev/null || fail 'list'
+# list: 21 bundled themes (11 BxRig: 6 dark, 5 light; 10 from Omarchy), both origins, nothing current yet
+run "$binary" theme list --json | jq -e '.ok and (.data.themes | length == 21) and (.data.themes | map(select(.valid)) | length == 21) and (.data.themes | map(select(.light)) | map(.name) | sort == ["bxrig-dawn","bxrig-light","bxrig-mint","bxrig-paper","bxrig-sky","catppuccin-latte","flexoki-light","rose-pine"])' >/dev/null || fail 'list'
 run "$binary" theme show bxrig | grep -q 'accent #00ff78' || fail 'show'
 [[ "$(code "$binary" theme show nope)" == 4 ]] || fail 'unknown theme exits 4'
 [[ "$(code "$binary" theme set nope)" == 4 ]] || fail 'set unknown exits 4'
@@ -167,4 +167,16 @@ grep -q 'icon-theme: "Papirus"' "$rasi" || fail 'an icon theme that is not insta
 rm -rf "$tmp/share"
 run env BXRIG_SHARE_DIR="$tmp/share" "$binary" theme set bxrig --yes >/dev/null
 grep -q 'icon-theme: "hicolor"' "$rasi" || fail 'no icon theme at all: hicolor'
+# bxrig-retro: a neon theme that names a font; the font is applied only when it is installed
+run "$binary" theme show bxrig-retro | grep -q 'accent #ff2ec4' || fail 'retro theme shows its accent'
+run "$binary" theme set bxrig-retro --dry-run --json | jq -e '.data.font.id == "sharetech" and .data.font.package == "ttf-sharetech-mono-nerd" and (.data.font.installed | not)' >/dev/null || fail 'retro dry run names the font (not installed)'
+run "$binary" theme set bxrig-retro --dry-run | grep -q 'appearance font install sharetech' || fail 'the plan says how to install the font'
+run "$binary" theme set nord --dry-run --json | jq -e '.data | has("font") | not' >/dev/null || fail 'a theme without a font has no font step'
+: > "$LOG"; printf '#!/usr/bin/env bash\necho "ShareTechMono Nerd Font"\n' > "$tmp/bin/fc-list"; chmod +x "$tmp/bin/fc-list"
+run env BXRIG_SELF="$binary" "$binary" theme set bxrig-retro --json | jq -e '.data.font.applied == true' >/dev/null || fail 'retro applies its font when installed'
+grep -q "noctalia msg config-set shell.font_family 'ShareTechMono Nerd Font'" "$LOG" || fail "the font reaches Noctalia: $(cat "$LOG")"
+rm -f "$tmp/bin/fc-list"
+# banner: five rows, plain in a pipe, the three theme colours in json
+[[ "$(run "$binary" banner | wc -l)" == 5 ]] && ! run "$binary" banner | grep -q $'\033' || fail 'banner is five plain lines in a pipe'
+run "$binary" banner --json | jq -e '.data.height == 5 and (.data.colors == ["#ff2ec4","#ff2ec4","#19e6ff"])' >/dev/null || fail "banner colours follow the current theme: $(run "$binary" banner --json)"
 echo "theme tests passed"

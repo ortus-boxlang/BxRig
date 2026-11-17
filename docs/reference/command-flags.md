@@ -51,6 +51,7 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `ascii` | `--style` | value | `ascii` |
 | `about` | `--wait` | bool |  |
 | `about` | `--plain` | bool |  |
+| `banner` | `--plain` | bool |  |
 | `apps` | `--name` | any |  |
 | `help` | `--help` | bool |  |
 | `help` | `--h` | bool |  |

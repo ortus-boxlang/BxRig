@@ -43,6 +43,10 @@ class {
 				for ( ascI = 2; ascI <= p.len(); ascI++ ) ascWords.append( p[ ascI ] );
 				CLIExit( asc.text( ascWords, { font: args.options.font ?: "", color: args.options.color ?: "", gradient: args.options.gradient ?: "", direction: args.options.direction ?: "", plain: structKeyExists( args.options, "plain" ) }, asJson, CLIIsTerminal() ) );
 				break;
+			case "banner":
+				// The BXRIG wordmark in the colours of the current theme. See bxrig.Banner.
+				CLIExit( new bxrig.Banner( cli ).show( asJson, CLIIsTerminal(), structKeyExists( args.options, "plain" ) ) );
+				break;
 			case "version":
 				new bxrig.Brand().show( cli, appVersion, asJson, CLIIsTerminal() );
 				break;
