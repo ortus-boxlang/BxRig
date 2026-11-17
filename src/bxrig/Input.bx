@@ -102,7 +102,7 @@ class Input {
 		lines.append( "Drivers" );
 		for ( var name in [ "hid_magicmouse", "hid_logitech_dj", "hid_logitech_hidpp" ] ) lines.append( "  " & pad( name, 20 ) & drv[ name ].state );
 		lines.append( "Helpers" );
-		for ( var h in helperList() ) lines.append( "  " & ( helpers[ h.id ] ? "ok    " : "no    " ) & pad( h.id, 18 ) & h.purpose );
+		for ( var h in helperList() ) lines.append( "  " & ( helpers[ h.id ] ? "ok    " : "no    " ) & pad( h.id, 19 ) & h.purpose );
 		if ( missing.len() ) {
 			lines.append( "Missing for the devices found: " & missing.toList( ", " ) );
 			lines.append( "See the plan: bxrig input offer" );
@@ -125,16 +125,16 @@ class Input {
 		var out = { ids: [], detected: det, reasons: {}, guesses: [] };
 		var add = function( id, why ) { if ( !arrayFind( out.ids, id ) ) { out.ids.append( id ); out.reasons[ id ] = why; } };
 		if ( useLogi ) {
-			add( "solaar", "buttons, DPI, scroll and battery of Logitech devices (Logi Options+ on a Mac); installs a udev rule with uaccess" );
+			add( "solaar", "buttons, DPI, scroll and battery; adds a udev rule (uaccess)" );
 			if ( det.gaming ) {
-				add( "libratbag", "the service that configures gaming mice (report rate, DPI, profiles)" );
-				add( "piper", "the window over libratbag for gaming mice" );
+				add( "libratbag", "configures gaming mice: report rate, DPI, profiles" );
+				add( "piper", "the settings window for libratbag" );
 				var gnames = logi.filter( function( x ) { return x.gaming; } ).map( function( x ) { return x.name; } );
-				out.guesses.append( gnames.toList( ", " ) & ( gnames.len() == 1 ? " looks" : " look" ) & " like a gaming mouse by the name (G-series, G Pro, Superlight, Lightspeed or Gaming): a guess; libratbag and Piper only help gaming mice" );
+				out.guesses.append( gnames.toList( ", " ) & ( gnames.len() == 1 ? " looks" : " look" ) & " like a gaming mouse by the name, so libratbag and Piper are offered (a guess)" );
 			}
 		}
 		if ( useApple ) {
-			if ( ( det.trackpad || arguments.forWhat == "apple" || arguments.forWhat == "both" ) && !onPlasma() ) add( "libinput-gestures", "three-finger swipes for workspaces on Hyprland (writes nothing until `bxrig input gestures --yes`)" );
+			if ( ( det.trackpad || arguments.forWhat == "apple" || arguments.forWhat == "both" ) && !onPlasma() ) add( "libinput-gestures", "three-finger swipes on Hyprland (writes no file until bxrig input gestures --yes)" );
 		}
 		if ( ( useApple || useLogi ) && ( apple.len() || logi.len() || arguments.forWhat != "detect" ) ) add( "upower", "battery levels of wireless devices" );
 		return out;
@@ -145,13 +145,13 @@ class Input {
 		for ( var d in arguments.devices ) lines.append( "Found: " & variables.dev.label( d ) & ( d.battery >= 0 ? ", battery " & d.battery & "%" : "" ) );
 		if ( !arguments.devices.len() ) lines.append( "No Apple Magic or Logitech device was found; you asked for " & arguments.forWhat & " anyway." );
 		if ( want.detected.logitech || arguments.forWhat == "logitech" || arguments.forWhat == "both" ) lines.append( "Logi Options+ on a Mac manages buttons, DPI, scroll and battery. On Linux that is Solaar." );
-		if ( want.detected.apple || arguments.forWhat == "apple" || arguments.forWhat == "both" ) lines.append( "Apple Magic devices already work through the kernel driver (hid_magicmouse). Helpers add the battery and, with a trackpad on Hyprland, swipes." );
+		if ( want.detected.apple || arguments.forWhat == "apple" || arguments.forWhat == "both" ) lines.append( "Apple Magic devices already work through the kernel (hid_magicmouse). Helpers add the battery and, for a trackpad on Hyprland, swipes." );
 		for ( var g in want.guesses ) lines.append( "Guess: " & g );
 		var cat = new bxrig.Catalog().load();
 		for ( var id in arguments.install ) {
 			var app = {};
 			for ( var a in cat.apps ) if ( compare( a.id, id ) == 0 ) app = a;
-			lines.append( "  Install: " & pad( id, 18 ) & "(" & ( app.repo ?: app.source ?: "catalog" ) & ") " & ( want.reasons[ id ] ?: "" ) );
+			lines.append( "  Install: " & pad( id, 19 ) & "(" & ( app.repo ?: app.source ?: "catalog" ) & ") " & ( want.reasons[ id ] ?: "" ) );
 		}
 		return lines;
 	}
@@ -294,7 +294,7 @@ class Input {
 		data.scroll_speed = int( val( speed ) );
 		data.file = file;
 		data.commands = cmds.map( function( c ) { return c.toList( " " ); } );
-		var plan = [ "  write " & file & ": options hid_magicmouse scroll_speed=" & speed, "  sudo install ..." ];
+		var plan = [ "  write " & file & ": options hid_magicmouse scroll_speed=" & speed, "  sudo install -Dm644 TEMPFILE " & file ];
 		if ( state == "built-in" ) plan.append( "  warning: hid_magicmouse is built into this kernel, so modprobe.d options are not read; add hid_magicmouse.scroll_speed=" & speed & " to the kernel command line instead" );
 		else plan.append( "  note: it applies the next time the module loads (reconnect the device or reboot)" );
 		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "set the Magic Mouse and Trackpad scroll speed to " & speed, data, arguments.asJson, arguments.dry, plan );
@@ -335,8 +335,8 @@ class Input {
 		}
 		var data = { receivers: receivers, devices: others, drivers: { hid_logitech_dj: drv.hid_logitech_dj, hid_logitech_hidpp: drv.hid_logitech_hidpp }, solaar: { installed: solaar, show: show }, udev_rule: rule, udev_rule_file: "42-logitech-unify-permissions.rules" };
 		var lines = [];
-		if ( receivers.len() ) for ( var rc in receivers ) lines.append( "receiver  " & variables.dev.label( rc ) );
-		for ( var d in others ) lines.append( pad( d.kind, 19 ) & variables.dev.label( d ) & batteryText( d ) & ( d.gaming ? "  (gaming mouse by its name: a guess)" : "" ) );
+		for ( var rc in receivers ) lines.append( "  " & pad( rc.kind, 19 ) & variables.dev.label( rc ) );
+		for ( var d in others ) lines.append( "  " & pad( d.kind, 19 ) & variables.dev.label( d ) & batteryText( d ) & ( d.gaming ? "  (a gaming mouse by its name: a guess)" : "" ) );
 		if ( !devices.len() ) lines.append( "No Logitech device or receiver was found." );
 		lines.append( "info  drivers: hid_logitech_dj " & drv.hid_logitech_dj.state & ", hid_logitech_hidpp " & drv.hid_logitech_hidpp.state );
 		lines.append( ( solaar ? "ok    " : "FIX   " ) & "solaar" & ( solaar ? "" : ": bxrig install solaar (or bxrig input offer)" ) );

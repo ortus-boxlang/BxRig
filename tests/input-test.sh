@@ -59,7 +59,7 @@ DESK=KDE rj "$binary" input offer --json | jq -e '.data.install == ["upower"]' >
 [[ ! -s "$LOG" ]] || fail "a plan ran something: $(cat "$LOG")"
 rj "$binary" input offer | grep -q 'sudo pacman -S --needed --noconfirm upower' || fail 'the plan shows the pacman command'
 rj "$binary" input offer | grep -q 'yay -S --needed --noconfirm libinput-gestures' || fail 'the plan shows the AUR command'
-rj "$binary" input offer | grep -q 'Magic devices already work through the kernel driver' || fail 'the plan says Apple works natively'
+rj "$binary" input offer | grep -q 'Magic devices already work through the kernel' || fail 'the plan says Apple works natively'
 # an installed helper is not offered again
 echo upower > "$PKGS"
 rj "$binary" input offer --json | jq -e '.data.install == ["libinput-gestures"] and .data.already_installed == ["upower"]' >/dev/null || fail 'an installed helper is skipped'
