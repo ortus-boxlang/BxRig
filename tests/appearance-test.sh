@@ -109,6 +109,62 @@ run "$binary" appearance background next >/dev/null; has 'noctalia msg wallpaper
 run "$binary" appearance background random >/dev/null; has 'noctalia msg wallpaper-random' || fail 'random'
 [[ "$(code "$binary" appearance background set nothing.png)" == 4 ]] || fail 'unknown image exits 4'
 
+# ---- the bar foundation: layout, dock on/off, app grid, battery percentage (they render ~/.config/noctalia/config.toml) ----
+cfgtoml="$tmp/cfg2/noctalia/config.toml"   # its own config folder: the part above keeps its remembered settings for `apply`
+tomlget() { python3 - "$cfgtoml" "$1" <<'PY'
+import sys, tomllib
+c = tomllib.load(open(sys.argv[1], 'rb'))
+for k in sys.argv[2].split('.'): c = c[k]
+print(c if not isinstance(c, list) else ' '.join(c))
+PY
+}
+mkdir -p "$tmp/nopower" "$tmp/power/BAT0"; echo 78 > "$tmp/power/BAT0/capacity"; echo Discharging > "$tmp/power/BAT0/status"
+nopower() { run env BXRIG_CONFIG_HOME="$tmp/cfg2" BXRIG_POWER_DIR="$tmp/nopower" "$@"; }
+withpower() { run env BXRIG_CONFIG_HOME="$tmp/cfg2" BXRIG_POWER_DIR="$tmp/power" "$@"; }
+nopower "$binary" appearance bar layout status --json | jq -e '.data.layout == "standard" and .data.dock == true and .data.battery == false and (.data.zones.end | last) == "control-center"' >/dev/null || fail 'layout status: Standard by default'
+[[ "$(code "$binary" appearance bar layout)" == 2 && "$(code "$binary" appearance bar layout huge)" == 2 ]] || fail 'bad layout exits 2'
+: > "$LOG"; nopower "$binary" appearance bar layout minimal --dry-run --json | jq -e '.dry_run and .data.config.state == "would-write" and .data.layout == "minimal"' >/dev/null || fail 'layout dry run'
+[[ ! -e "$cfgtoml" ]] || fail 'a dry run wrote config.toml'
+nopower "$binary" appearance bar layout minimal --json | jq -e '.ok and .data.config.state == "written" and .data.layout == "minimal"' >/dev/null || fail "layout minimal: $(nopower "$binary" appearance bar layout minimal)"
+[[ "$(tomlget bar.main.center)" == bxrig-clock && "$(tomlget bar.main.end)" == "tray network volume notifications bxrig-themes control-center" ]] || fail "minimal bar: $(grep -n '^center\|^end' "$cfgtoml")"
+has 'noctalia msg config-reload' || fail 'a running Noctalia is told to reload'
+[[ -f "$tmp/home/.local/share/bxrig/plates/bxrig-menu.svg" && -f "$tmp/home/.local/share/bxrig/plates/bxrig-grid.svg" ]] || fail 'the plates were not written'
+nopower "$binary" appearance bar layout status --json | jq -e '.data.layout == "minimal"' >/dev/null || fail 'the layout is remembered'
+withpower "$binary" appearance bar layout dense --json | jq -e '.ok' >/dev/null || fail 'layout dense'
+[[ "$(tomlget bar.main.center)" == "bxrig-clock weather media" ]] && tomlget bar.main.end | grep -q 'brightness caffeine battery notifications bxrig-themes control-center' || fail 'dense bar on a laptop'
+[[ "$(tomlget widget.battery.show_label)" == True && "$(tomlget widget.battery.label_content)" == percent ]] || fail 'the laptop battery shows the percentage'
+nopower "$binary" appearance bar layout standard >/dev/null; ! grep -q '^\[widget.battery\]' "$cfgtoml" || fail 'a desktop has no battery widget'
+# the theme and wallpaper of the file survive a bar change
+sed -i 's/^mode = "dark"/mode = "light"/' "$cfgtoml"
+echo '# mine' >> "$cfgtoml"
+[[ "$(nopower "$binary" appearance bar layout dense >/dev/null; echo $?)" == 2 ]] || fail 'a config.toml with your changes needs --yes'
+nopower "$binary" appearance bar layout dense --yes >/dev/null || fail 'layout dense --yes'
+[[ "$(tomlget theme.mode)" == light ]] || fail 'the theme mode was lost'
+ls "$tmp/state/bxrig/backups/noctalia/"*.bak >/dev/null 2>&1 || fail 'a backup of config.toml was kept'
+# dock on|off|toggle|status: the grid button moves between the dock and the bar
+nopower "$binary" appearance dock status --json | jq -e '.data.dock == "on"' >/dev/null || fail 'dock status'
+: > "$LOG"; nopower "$binary" appearance dock off --yes --json | jq -e '.ok and .data.value == "off"' >/dev/null || fail 'dock off'
+[[ "$(tomlget dock.enabled)" == False && "$(tomlget bar.main.start)" == "bxrig-menu launcher workspaces active_window" ]] || fail 'dock off: the grid returns to the bar'
+has 'config-set dock.enabled false' || fail 'dock off keeps the Noctalia layer in step'
+nopower "$binary" appearance dock toggle --yes >/dev/null; [[ "$(tomlget dock.enabled)" == True && "$(tomlget bar.main.start)" == "bxrig-menu workspaces active_window" ]] || fail 'dock toggle turns it back on'
+nopower "$binary" appearance dock mode autohide >/dev/null; nopower "$binary" appearance dock on --yes >/dev/null; [[ "$(tomlget dock.auto_hide)" == True ]] || fail 'dock on keeps autohide'
+[[ "$(code "$binary" appearance dock sideways)" == 2 ]] || fail 'bad dock word'
+# app grid
+nopower "$binary" appearance appgrid status --json | jq -e '.data.appgrid == "launchpad"' >/dev/null || fail 'appgrid status'
+nopower "$binary" appearance appgrid terminal --yes --json | jq -e '.ok and .data.appgrid == "terminal" and (.data.notes | any(test("only remembered")))' >/dev/null || fail 'appgrid terminal is only stored, and says so'
+nopower "$binary" appearance appgrid status --json | jq -e '.data.appgrid == "terminal"' >/dev/null || fail 'appgrid is remembered'
+[[ "$(tomlget shell.launcher.app_grid)" == True ]] || fail 'the launcher keeps the grid view'
+nopower "$binary" appearance appgrid launchpad --yes >/dev/null || fail 'appgrid launchpad'
+[[ "$(code "$binary" appearance appgrid list)" == 2 ]] || fail 'bad appgrid style'
+# battery percentage
+withpower "$binary" appearance battery-percent status --json | jq -e '.data.battery_percent == "on" and .data.battery_found' >/dev/null || fail 'battery-percent status'
+: > "$LOG"; withpower "$binary" appearance battery-percent off --yes --json | jq -e '.ok and .data.value == "off"' >/dev/null || fail 'battery-percent off'
+[[ "$(tomlget widget.battery.show_label)" == False ]] || fail 'battery-percent off is written'
+has 'config-set widget.battery.show_label false' || fail 'battery-percent keeps the Noctalia layer in step'
+withpower "$binary" appearance battery-percent on --yes >/dev/null; [[ "$(tomlget widget.battery.show_label)" == True ]] || fail 'battery-percent on'
+nopower "$binary" appearance battery-percent on --yes --json | jq -e '.data.notes | any(test("no battery"))' >/dev/null || fail 'battery-percent on a desktop says there is no battery'
+[[ "$(code "$binary" appearance battery-percent maybe)" == 2 ]] || fail 'bad battery-percent word'
+
 # ---- apply pushes what is remembered; no Noctalia is saved-only ----
 : > "$LOG"; hypr "$binary" appearance apply >/dev/null
 has "config-set bar.main.position 'bottom'" && has "config-set dock.position 'left'" && has "config-set shell.font_family 'Iosevka Nerd Font'" && has 'hyprctl reload' || fail "apply: $(cat "$LOG")"

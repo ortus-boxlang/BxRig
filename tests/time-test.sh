@@ -67,4 +67,15 @@ ACTIVE=0 run "$binary" time status --json | jq -e '.data.automatic_zone' >/dev/n
 # ---- auto off ----
 : > "$LOG"; run "$binary" time auto off --yes >/dev/null
 has 'systemctl disable --now automatic-timezoned.service' && [[ ! -e "$tmp/sd/automatic-timezoned.service" && ! -e "$tmp/gc/90-bxrig-timezone.conf" ]] || fail 'auto off removes the files'
+# ---- time format: the bar clock's text (a setting: acts at once, rewrites the Noctalia config) ----
+run "$binary" time format --json | jq -e '.data.format == "%b %-d - %H:%M" and .data.default_format == "%b %-d - %H:%M" and (.data.sample | length) > 0' >/dev/null || fail 'time format shows the default'
+[[ ! -e "$tmp/cfg/noctalia/config.toml" ]] || fail 'reading the format wrote a file'
+run "$binary" time format "%a %-I:%M %p" --dry-run --json | jq -e '.dry_run and .data.format == "%a %-I:%M %p"' >/dev/null || fail 'time format dry run'
+[[ ! -e "$tmp/cfg/bxrig/appearance.json" ]] || fail 'a dry run saved the format'
+run "$binary" time format "%a %-I:%M %p" --json | jq -e '.ok and .data.config.state == "written"' >/dev/null || fail 'time format set'
+grep -qF 'format = "%a %-I:%M %p"' "$tmp/cfg/noctalia/config.toml" || fail "the format is in the clock plugin setting: $(grep -n format "$tmp/cfg/noctalia/config.toml")"
+jq -e '.bar.time_format == "%a %-I:%M %p"' "$tmp/cfg/bxrig/appearance.json" >/dev/null || fail 'the format is remembered'
+run "$binary" time format "MMM d - HH:mm" --json | jq -e '.data.format == "%b %-d - %H:%M"' >/dev/null || fail 'MMM d - HH:mm is read as a pattern'
+run "$binary" time format default >/dev/null; grep -qF 'format = "%b %-d - %H:%M"' "$tmp/cfg/noctalia/config.toml" || fail 'default resets the format'
+[[ "$(code "$binary" time format a b)" == 2 ]] || fail 'two words exit 2'
 echo "time-test: ok"

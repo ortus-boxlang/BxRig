@@ -1192,7 +1192,7 @@
 				},
 				{
 					"name": "appearance",
-					"summary": "Bar, dock, windows, animations, layout, fonts and backgrounds, one setting at a time.",
+					"summary": "Bar layout, dock, app grid, battery percentage, windows, animations, layout, fonts and backgrounds, one setting at a time.",
 					"usage": [
 						"appearance status|apply [--json]",
 						"appearance bar show|hide|toggle",
@@ -1200,9 +1200,13 @@
 						"appearance bar style opaque|glassy|clear",
 						"appearance bar clock ID",
 						"appearance bar battery on|off",
-						"appearance dock show|hide|toggle",
+						"appearance bar layout minimal|standard|dense|status [--yes]",
+						"appearance dock show|hide",
+						"appearance dock on|off|toggle|status [--yes]",
 						"appearance dock mode always|autohide|off",
 						"appearance dock position bottom|left|right",
+						"appearance appgrid launchpad|terminal|status [--yes]",
+						"appearance battery-percent on|off|status [--yes]",
 						"appearance windows gaps on|off",
 						"appearance windows corners theme|rounded|sharp",
 						"appearance windows opacity opaque|glassy",
@@ -1220,13 +1224,15 @@
 					],
 					"examples": [
 						"bxrig appearance bar position bottom",
+						"bxrig appearance bar layout minimal --yes",
+						"bxrig appearance dock off --yes",
 						"bxrig appearance windows gaps off",
 						"bxrig appearance layout columns",
 						"bxrig appearance font install cascadia --yes",
 						"bxrig appearance background random"
 					],
 					"mutates": false,
-					"note": "Settings act at once (no --yes); --dry-run shows the commands. What you choose is remembered, and `appearance apply` pushes it again.",
+					"note": "Settings act at once (no --yes); --dry-run shows the commands. What you choose is remembered, and `appearance apply` pushes it again. `bar layout`, `dock on|off|toggle`, `appgrid` and `battery-percent` rewrite ~/.config/noctalia/config.toml (backup kept; a file with changes of your own needs --yes). The `terminal` app grid style is only stored for now: nothing draws it yet.",
 					"flags": [
 						{
 							"name": "mode",
@@ -1295,23 +1301,25 @@
 				},
 				{
 					"name": "time",
-					"summary": "The time zone: show, set, set from your IP after travelling, follow your location, network time, and the world clock.",
+					"summary": "The time zone: show, set, set from your IP after travelling, follow your location, network time, the bar clock format, and the world clock.",
 					"usage": [
 						"time status [--json]",
 						"time zone [--list | ZONE] [--yes]",
 						"time sync [--yes]",
 						"time auto on|off|status [--yes]",
 						"time ntp on|off [--yes]",
+						"time format [FORMAT | default]",
 						"time world [status | set ZONE,ZONE... | add ZONE | remove ZONE | on | off] [--yes] [--json]"
 					],
 					"examples": [
 						"bxrig time zone Europe/Madrid --yes",
 						"bxrig time sync --yes",
 						"bxrig time auto on --yes",
-						"bxrig time world set Europe/Madrid,America/New_York --yes"
+						"bxrig time world set Europe/Madrid,America/New_York --yes",
+						"bxrig time format \"%a %-I:%M %p\""
 					],
 					"mutates": true,
-					"note": "`time auto on` sends your Wi-Fi networks or IP address to a location web service; the plan says so first.",
+					"note": "`time auto on` sends your Wi-Fi networks or IP address to a location web service; the plan says so first. `time format` sets the bar clock's text in Noctalia date format tokens (or MMM d - HH:mm patterns); it acts at once and rewrites the Noctalia config.",
 					"flags": [
 						{
 							"name": "demo",

@@ -34,20 +34,96 @@ class NoctaliaConfig {
 		return '{' & chr( 10 ) & '  "version": 2,' & chr( 10 ) & variant( "dark", dark, darkTerm ) & "," & chr( 10 ) & variant( "light", light, lightTerm ) & chr( 10 ) & '}' & chr( 10 );
 	}
 
-	// config.toml. home is the user's home directory (wallpaper paths are absolute).
-	function configToml( home, theme = "dark", wallpaper = "bxrig" ) {
-		var wpFile = new bxrig.StarterOptions().wallpapers()[ arguments.wallpaper ];
-		var pics = arguments.home & "/Pictures/BxRig";
-		return [
-			'# Written by bxrig (starter). Noctalia reloads this file when it changes; edit it freely, then `bxrig config diff noctalia`',
-			'# shows how it differs from the starter. Changes made in the Noctalia settings window are stored separately and win over this file.',
-			'',
-			'[theme]',
-			'mode = "' & arguments.theme & '"                 # dark | light | auto',
-			'shell_mode = "follow"',
-			'source = "custom"',
-			'custom_palette = "BxRig"    # ~/.config/noctalia/palettes/BxRig.json',
-			'',
+	// ---- the bar ----
+	// The three bar layouts (DESKTOP-DECISIONS.md, layout v3). Standard is the default.
+	function layouts() { return [ "minimal", "standard", "dense" ]; }
+	function defaultLayout() { return "standard"; }
+	function validLayout( name ) { return arrayFind( layouts(), arguments.name ) > 0; }
+
+	// The one-line description of each layout (the wizard preview and `appearance bar layout status` show it).
+	function describe( layout ) {
+		var d = {
+			minimal: "logo, workspaces, active window | clock | quick settings, tray, network, volume, battery, notifications, control center",
+			standard: "logo, workspaces, active window | clock, media | agents, capture, tray, clipboard, network, bluetooth, volume, battery, notifications, quick settings, control center",
+			dense: "Standard plus weather, brightness and caffeine"
+		};
+		return structKeyExists( d, arguments.layout ) ? d[ arguments.layout ] : "";
+	}
+
+	// The clock reads "Nov 5 - 04:00".
+	function defaultTimeFormat() { return "%b %-d - %H:%M"; }
+
+	// The defaults of every bar option (opts overrides any of them):
+	//   layout      minimal | standard | dense
+	//   dock        true: the dock is on and the Launchpad grid button lives in it; false: the grid button is the widget right after the logo
+	//   dockAuto    true: the dock hides itself when the pointer leaves
+	//   dockPos     top | bottom | left | right
+	//   battery     true on a laptop: the battery widget is written only then (on a desktop `device = auto` would show a gamepad)
+	//   percent     the battery shows its percentage
+	//   timeFormat  the clock text, Noctalia date format tokens (docs.noctalia.dev/noctalia/configuration/date-format-tokens)
+	//   plateDir    folder of the bar plate images (assets/icons/plates, written by `assets install` and by the bar commands)
+	function barDefaults( home ) {
+		return { layout: "standard", dock: true, dockAuto: false, dockPos: "bottom", battery: false, percent: true,
+			timeFormat: defaultTimeFormat(), plateDir: arguments.home & "/.local/share/bxrig/plates" };
+	}
+
+	function barOptions( home, opts = {} ) {
+		var o = barDefaults( arguments.home );
+		for ( var k in arguments.opts ) if ( structKeyExists( o, k ) ) o[ k ] = arguments.opts[ k ];
+		if ( !validLayout( o.layout ) ) o.layout = defaultLayout();
+		return o;
+	}
+
+	// The three bar sections of a layout, as widget names. Control center is always last and quick settings right before it.
+	// Only widgets that exist are listed. Planned (they join the layouts when they are built, see the layout v3 mock-up): bxrig-system
+	// (updates, backups), bxrig-dev (databases, containers, VMs), bxrig-vpn and a power panel for the battery. Quick settings is the theme
+	// switcher (bxrig-themes) until its own widget exists.
+	function zones( layout, opts = {} ) {
+		var o = barOptions( "", arguments.opts );
+		var start = [ "bxrig-menu" ];
+		if ( !o.dock ) start.append( "launcher" );
+		start.append( "workspaces" );
+		start.append( "active_window" );
+		var center = [ "bxrig-clock" ];
+		var end = [];
+		var l = arguments.layout;
+		if ( compare( l, "minimal" ) == 0 ) {
+			end = [ "tray", "network", "volume" ];
+		} else {
+			if ( compare( l, "dense" ) == 0 ) center.append( "weather" );
+			center.append( "media" );
+			end = [ "bxrig-agents", "screenshot", "tray", "clipboard", "network", "bluetooth", "volume" ];
+			if ( compare( l, "dense" ) == 0 ) { end.append( "brightness" ); end.append( "caffeine" ); }
+		}
+		if ( o.battery ) end.append( "battery" );
+		end.append( "notifications" );
+		end.append( "bxrig-themes" );
+		end.append( "control-center" );
+		return { start: start, center: center, end: end };
+	}
+
+	// A TOML basic string.
+	function tomlString( text ) {
+		return '"' & replace( replace( arguments.text, "\", "\\", "all" ), '"', '\"', "all" ) & '"';
+	}
+
+	function tomlList( items ) {
+		return "[" & arguments.items.map( function( i ) { return '"' & i & '"'; } ).toList( ", " ) & "]";
+	}
+
+	// What the logo button runs: the BxRig menu, detached (setsid), with ~/.local/bin on the PATH the way the key binds do.
+	function menuAction() {
+		return 'exec PATH="$HOME/.local/bin:$PATH" setsid bxrig menu >/dev/null 2>&1 &';
+	}
+
+	// The bar, the widgets the layout needs, the dock and the launcher, as lines of config.toml.
+	function barLines( opts ) {
+		var o = arguments.opts;
+		var z = zones( o.layout, o );
+		var plateDir = o.plateDir;
+		var out = [
+			'# Bar layout: ' & o.layout & ' (bxrig appearance bar layout minimal|standard|dense). ' & describe( o.layout ) & '.',
+			'# Hybrid icon style: the status widgets are bare glyphs coloured by one palette role; only the logo button and the Launchpad grid carry a plate.',
 			'[bar]',
 			'order = ["main"]',
 			'',
@@ -60,25 +136,33 @@ class NoctaliaConfig {
 			'margin_ends = 12',
 			'margin_edge = 8',
 			'padding = 12',
-			'widget_spacing = 6',
-			'capsule = true',
-			'capsule_fill = "surface_container"',
-			'capsule_opacity = 0.9',
-			'capsule_border = "outline_variant"',
-			'start = ["launcher", "workspaces", "active_window"]',
-			'center = ["bxrig-world-clock", "clock", "media"]',
-			'end = ["bxrig-agents", "bxrig-themes", "tray", "network", "bluetooth", "volume", "battery", "notifications", "control-center"]',
+			'widget_spacing = 8',
+			'capsule = false',
+			'color = "on_surface"',
+			'start = ' & tomlList( z.start ),
+			'center = ' & tomlList( z.center ),
+			'end = ' & tomlList( z.end ),
 			'',
-			'# The clock reads "Nov 5 - 15:44"; the globe before it opens the world clock (zones: bxrig time world set ZONE,ZONE --yes).',
-			'[widget.clock]',
-			'type = "clock"',
-			'format = "{:%b %-d - %H:%M}"',
-			'tooltip_format = "{:%A, %B %-d, %Y}"',
+			'# The logo button opens the BxRig menu. Its plate carries its own outline, so it stays visible on dark and Retro bars.',
+			'[widget.bxrig-menu]',
+			'type = "custom_button"',
+			'custom_image = ' & tomlString( plateDir & "/bxrig-menu.svg" ),
+			'custom_image_colorize = false',
+			'tooltip = "BxRig menu"',
+			'scale = 1.5',
 			'',
-			'[widget.bxrig-world-clock]',
-			'type = "bxrig/world-clock:bar"',
+			'[widget.bxrig-menu.actions]',
+			'left = ' & tomlString( menuAction() ),
 			'',
-			'# Your coding agents and their limits, and the theme switcher (BxRig plugins in ~/.local/share/noctalia/plugins)',
+			'# The clock is one widget (a BxRig plugin): the time as text, a popover with local time, other zones and a Calendar button; right click opens',
+			'# the calendar. The text follows the format below (bxrig time format; Noctalia date format tokens).',
+			'[widget.bxrig-clock]',
+			'type = "bxrig/clock:bar"',
+			'',
+			'[plugin_settings."bxrig/clock"]',
+			'format = ' & tomlString( o.timeFormat ),
+			'',
+			'# Your coding agents and their limits, and quick settings (for now the theme switcher): BxRig plugins in ~/.local/share/noctalia/plugins',
 			'[widget.bxrig-agents]',
 			'type = "bxrig/agents:bar"',
 			'',
@@ -86,8 +170,66 @@ class NoctaliaConfig {
 			'type = "bxrig/themes:bar"',
 			'',
 			'[plugins]',
-			'enabled = ["bxrig/world-clock", "bxrig/agents", "bxrig/themes"]',
+			'enabled = ["bxrig/clock", "bxrig/agents", "bxrig/themes"]',
+			''
+		];
+		if ( o.battery ) {
+			out.append( '# Battery (written only on a laptop): the charge as a percentage next to the icon.' );
+			out.append( '[widget.battery]' );
+			out.append( 'type = "battery"' );
+			out.append( 'display_mode = "glyph"' );
+			out.append( 'show_label = ' & ( o.percent ? "true" : "false" ) );
+			out.append( 'label_content = "percent"' );
+			out.append( '' );
+		}
+		if ( o.dock ) {
+			out.append( '# The dock is on. The Launchpad grid is its first button, so the launcher widget is not in the bar.' );
+			out.append( '[dock]' );
+			out.append( 'enabled = true' );
+			out.append( 'position = ' & tomlString( o.dockPos ) );
+			out.append( 'auto_hide = ' & ( o.dockAuto ? "true" : "false" ) );
+			out.append( 'launcher_position = "start"' );
+			out.append( 'launcher_custom_image = ' & tomlString( plateDir & "/bxrig-grid.svg" ) );
+			out.append( 'launcher_custom_image_colorize = false' );
+		} else {
+			out.append( '# The dock is off: the Launchpad grid button is the launcher widget, right after the logo.' );
+			out.append( '[widget.launcher]' );
+			out.append( 'custom_image = ' & tomlString( plateDir & "/bxrig-grid.svg" ) );
+			out.append( 'custom_image_colorize = false' );
+			out.append( '' );
+			out.append( '[dock]' );
+			out.append( 'enabled = false' );
+		}
+		out.append( '' );
+		out.append( '# The launcher opens as a grid (Launchpad). The Terminal-style grid is only remembered (bxrig appearance appgrid) until something draws it.' );
+		out.append( '[shell]' );
+		out.append( '# Noctalia has its own first-run wizard; it would cover the screen, because BxRig sets the shell up itself.' );
+		out.append( 'setup_wizard_enabled = false' );
+		out.append( '' );
+		out.append( '[shell.launcher]' );
+		out.append( 'app_grid = true' );
+		out.append( '' );
+		return out;
+	}
+
+	// config.toml. home is the user's home directory (wallpaper paths are absolute). opts: see barDefaults (the bar layout, dock, battery, clock).
+	function configToml( home, theme = "dark", wallpaper = "bxrig", opts = {} ) {
+		var wpFile = new bxrig.StarterOptions().wallpapers()[ arguments.wallpaper ];
+		var pics = arguments.home & "/Pictures/BxRig";
+		var o = barOptions( arguments.home, arguments.opts );
+		var lines = [
+			'# Written by bxrig (starter). Noctalia reloads this file when it changes; edit it freely, then `bxrig config diff noctalia`',
+			'# shows how it differs from the starter. Changes made in the Noctalia settings window are stored separately and win over this file.',
 			'',
+			'[theme]',
+			'mode = "' & arguments.theme & '"                 # dark | light | auto',
+			'shell_mode = "follow"',
+			'source = "custom"',
+			'custom_palette = "BxRig"    # ~/.config/noctalia/palettes/BxRig.json',
+			''
+		];
+		for ( var l in barLines( o ) ) lines.append( l );
+		var rest = [
 			'# Notifications stack by app, newest at the screen edge, follow the theme (the bell in the bar toggles Do Not Disturb).',
 			'# Super+Alt+Comma acts on the newest one, Super+Shift+Comma shows them all.',
 			'[notification]',
@@ -121,13 +263,27 @@ class NoctaliaConfig {
 			'interval_seconds = 1800',
 			'order = "random"',
 			''
-		].toList( chr( 10 ) );
+		];
+		for ( var r in rest ) lines.append( r );
+		return lines.toList( chr( 10 ) );
+	}
+
+	// The theme mode and the wallpaper id an existing config.toml was written with (the defaults when it has none), so a bar change can
+	// rewrite the file and keep both.
+	function detect( text ) {
+		var out = { theme: "dark", wallpaper: "bxrig" };
+		var t = arguments.text;
+		var m = reFind( 'mode = "(dark|light|auto)"', t, 1, true );
+		if ( m.pos[ 1 ] > 0 ) out.theme = mid( t, m.pos[ 2 ], m.len[ 2 ] );
+		var w = reFind( 'path = "[^"]*/([A-Za-z0-9_-]+)[.]jpg"', t, 1, true );
+		if ( w.pos[ 1 ] > 0 && structKeyExists( new bxrig.StarterOptions().wallpapers(), mid( t, w.pos[ 2 ], w.len[ 2 ] ) ) ) out.wallpaper = mid( t, w.pos[ 2 ], w.len[ 2 ] );
+		return out;
 	}
 
 	// The files bxrig manages for Noctalia, in the config service entry shape (name, target, mode, content).
-	function entries( cfgHome, home, theme = "dark", wallpaper = "bxrig" ) {
+	function entries( cfgHome, home, theme = "dark", wallpaper = "bxrig", opts = {} ) {
 		return [
-			{ name: "noctalia", target: arguments.cfgHome & "/noctalia/config.toml", mode: "644", content: configToml( arguments.home, arguments.theme, arguments.wallpaper ) },
+			{ name: "noctalia", target: arguments.cfgHome & "/noctalia/config.toml", mode: "644", content: configToml( arguments.home, arguments.theme, arguments.wallpaper, arguments.opts ) },
 			{ name: "noctalia-palette", target: arguments.cfgHome & "/noctalia/palettes/" & paletteName() & ".json", mode: "644", content: palette() }
 		];
 	}

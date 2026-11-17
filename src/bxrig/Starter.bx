@@ -13,9 +13,9 @@ class Starter {
 	function entries() {
 		var cfg = variables.config.cfgHome();
 		var home = new bxrig.util.Env().named( "home", "" );
-		var out = new bxrig.NoctaliaConfig().entries( cfg, home, variables.opts.theme, variables.opts.wallpaper );
+		var out = new bxrig.NoctaliaConfig().entries( cfg, home, variables.opts.theme, variables.opts.wallpaper, new bxrig.BarSettings( new bxrig.util.Cli( new bxrig.util.Version().current() ) ).options() );
 		out.append( { name: "hyprland", target: cfg & "/hypr/hyprland.lua", mode: "644", content: hyprlandText() } );
-		// the BxRig Noctalia plugins (world clock, agents, theme switcher): Noctalia finds them in its local plugin folder; config.toml enables them
+		// the BxRig Noctalia plugins (clock, agents, theme switcher): Noctalia finds them in its local plugin folder; config.toml enables them
 		var plugins = new bxrig.util.Env().xdgData( "noctalia/plugins" );
 		for ( var n in new bxrig.TemplateData().names() ) {
 			if ( left( n, 17 ) != "noctalia-plugins/" ) continue;
@@ -48,6 +48,8 @@ class Starter {
 	// Writes what is missing. Returns { written, kept, failed }: names of entries. kept = already there (clean, or changed by the user).
 	function apply() {
 		var out = { written: [], kept: [], failed: [] };
+		// the bar's logo and grid plates (the Noctalia config points at them); the full `assets install` writes them too
+		try { new bxrig.Assets( new bxrig.util.Cli( new bxrig.util.Version().current() ) ).ensurePlates(); } catch ( any e ) {}
 		for ( var e in entries() ) {
 			var st = variables.config.configState( e );
 			// hyprland.lua is the user's own file from the first start on: only a missing one is written

@@ -1,7 +1,8 @@
 // `bxrig appearance ...`: the look of the shell and the windows, one setting at a time (Omarchy's Appearance menu).
 //   appearance status [--json]
-//   appearance bar show|hide|toggle | position top|bottom|left|right | style opaque|glassy|clear | clock ID | battery on|off
-//   appearance dock show|hide|toggle | mode autohide|always|off | position top|bottom|left|right
+//   appearance bar show|hide|toggle | position top|bottom|left|right | style opaque|glassy|clear | clock ID | battery on|off | layout minimal|standard|dense|status
+//   appearance dock show|hide | on|off|toggle|status | mode autohide|always|off | position top|bottom|left|right
+//   appearance appgrid launchpad|terminal|status      appearance battery-percent on|off|status      (BarSettings: they render config.toml)
 //   appearance windows gaps on|off | corners theme|sharp|rounded | opacity opaque|transparent|glassy | one-window-ratio on|off | snap on|off
 //   appearance animations on|off
 //   appearance layout dwindle|master|columns|scrolling|monocle|floating   (HyprLayout)
@@ -144,8 +145,9 @@ class Appearance {
 		return arguments.dry ? res.toList( "; " ) : "applied";
 	}
 
-	function barCmd( args, dry, asJson ) {
+	function barCmd( args, dry, asJson, yes = false ) {
 		var v = arguments.args.len() ? arguments.args[ 1 ] : "";
+		if ( v == "layout" ) return new bxrig.BarSettings( variables.cli ).layoutCmd( arguments.args.slice( 2 ), arguments.dry, arguments.yes, arguments.asJson );
 		var s = readState();
 		if ( arrayFind( [ "show", "hide", "toggle" ], v ) && arguments.args.len() == 1 ) {
 			var r = arguments.dry ? { exitCode: 0, output: "" } : noctalia( [ "bar-" & v ] );
@@ -169,9 +171,15 @@ class Appearance {
 			var hit = clocks().filter( function( c ) { return c.id == wantClock; } );
 			if ( !hit.len() ) return variables.out.fail( "usage", "unknown clock format " & arguments.args[ 2 ] & " (" & clocks().map( function( c ) { return c.id; } ).toList( ", " ) & ")", arguments.asJson );
 			s.bar.clock = hit[ 1 ].id;
+			// the bar's clock is the BxRig clock widget now: its text follows bar.time_format (the same tokens, without the {: } wrapper)
+			s.bar.time_format = new bxrig.BarSettings( variables.cli ).strftime( hit[ 1 ].format );
 			var c1 = pushSet( [ [ "widget.clock.format", q( hit[ 1 ].format ) ] ], arguments.dry );
-			if ( !arguments.dry ) writeState( s );
-			return result( "bar clock", hit[ 1 ].id & " (" & hit[ 1 ].label & ")", { noctalia: c1 }, [], arguments.asJson, arguments.dry );
+			var applied1 = { noctalia: c1 };
+			if ( !arguments.dry ) {
+				writeState( s );
+				applied1.config = new bxrig.BarSettings( variables.cli ).render( false, arguments.yes ).state;
+			}
+			return result( "bar clock", hit[ 1 ].id & " (" & hit[ 1 ].label & ")", applied1, [], arguments.asJson, arguments.dry );
 		}
 		if ( v == "battery" && arguments.args.len() == 2 && arrayFind( [ "on", "off" ], arguments.args[ 2 ] ) ) {
 			var on = arguments.args[ 2 ] == "on";
@@ -183,10 +191,11 @@ class Appearance {
 		return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "appearance" ), arguments.asJson );
 	}
 
-	function dockCmd( args, dry, asJson ) {
+	function dockCmd( args, dry, asJson, yes = false ) {
 		var v = arguments.args.len() ? arguments.args[ 1 ] : "";
+		if ( arrayFind( [ "on", "off", "toggle", "status" ], v ) ) return new bxrig.BarSettings( variables.cli ).dockCmd( arguments.args, arguments.dry, arguments.yes, arguments.asJson );
 		var s = readState();
-		if ( arrayFind( [ "show", "hide", "toggle" ], v ) && arguments.args.len() == 1 ) {
+		if ( arrayFind( [ "show", "hide" ], v ) && arguments.args.len() == 1 ) {
 			var r = arguments.dry ? { exitCode: 0, output: "" } : noctalia( [ "dock-" & v ] );
 			return result( "dock", v, { noctalia: r.exitCode == 0 ? ( arguments.dry ? "noctalia msg dock-" & v : "applied" ) : "failed: " & trim( r.output ) }, [], arguments.asJson, arguments.dry );
 		}
@@ -391,13 +400,15 @@ class Appearance {
 		var rest = arguments.words.slice( 2 );
 		if ( g == "status" && !rest.len() ) return status( arguments.asJson );
 		if ( g == "apply" && !rest.len() ) return applyAll( arguments.dry, arguments.asJson );
-		if ( g == "bar" ) return barCmd( rest, arguments.dry, arguments.asJson );
-		if ( g == "dock" ) return dockCmd( rest, arguments.dry, arguments.asJson );
+		if ( g == "bar" ) return barCmd( rest, arguments.dry, arguments.asJson, arguments.yes );
+		if ( g == "dock" ) return dockCmd( rest, arguments.dry, arguments.asJson, arguments.yes );
+		if ( g == "appgrid" ) return new bxrig.BarSettings( variables.cli ).appgridCmd( rest, arguments.dry, arguments.yes, arguments.asJson );
+		if ( g == "battery-percent" ) return new bxrig.BarSettings( variables.cli ).batteryCmd( rest, arguments.dry, arguments.yes, arguments.asJson );
 		if ( g == "windows" ) return windowsCmd( rest, arguments.dry, arguments.asJson );
 		if ( g == "animations" ) return animationsCmd( rest, arguments.dry, arguments.asJson );
 		if ( g == "layout" ) return layoutCmd( rest, arguments.dry, arguments.asJson );
 		if ( g == "font" ) return fontCmd( rest, arguments.dry, arguments.asJson, arguments.yes );
 		if ( g == "background" ) return backgroundCmd( rest, arguments.dry, arguments.asJson );
-		return variables.out.fail( "usage", "unknown group " & g & ". Usage: bxrig appearance status | bar ... | dock ... | windows ... | animations ... | layout ... | font ... | background ...", arguments.asJson );
+		return variables.out.fail( "usage", "unknown group " & g & ". Usage: bxrig appearance status | bar ... | dock ... | appgrid ... | battery-percent ... | windows ... | animations ... | layout ... | font ... | background ...", arguments.asJson );
 	}
 }

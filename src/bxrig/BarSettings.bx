@@ -1,0 +1,276 @@
+// The settings of the Noctalia bar that BxRig writes into ~/.config/noctalia/config.toml: the bar layout, the dock, the app grid style, the battery
+// percentage and the clock format. They are remembered in ~/.config/bxrig/appearance.json (the same file as `appearance`), and every change renders
+// config.toml again through the config service (backup, journal, drift) and tells a running Noctalia to reload it.
+//   appearance bar layout minimal|standard|dense|status      the three bars of DESKTOP-DECISIONS.md (Standard is the default)
+//   appearance dock on|off|toggle|status                     the dock is on by default; its first button is the Launchpad grid, which leaves the bar
+//   appearance appgrid launchpad|terminal|status             the launcher's grid style; `terminal` is only stored (nothing draws it yet)
+//   appearance battery-percent on|off|status                 the percentage next to the battery icon (laptops only: the widget is not written elsewhere)
+//   time format [FORMAT|default]                             the clock text; default `%b %-d - %H:%M` reads "Nov 5 - 04:00"
+// Like the other `appearance` settings these act at once (no --yes) and take --dry-run. The one exception: when config.toml has changes of your
+// own, a plan is shown (exit 2) and --yes replaces the file (a backup is kept). Exit: 0 done, 2 usage or a plan, 8 the file is a link or special,
+// 6 a write failed.
+class BarSettings {
+	function init( cli, runner = "" ) {
+		variables.environ = new bxrig.util.Env();
+		variables.cli = arguments.cli;
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.config = new bxrig.ConfigService().quiet( true );
+		variables.nc = new bxrig.NoctaliaConfig();
+		return this;
+	}
+
+	function cfg() { return variables.config.cfgHome(); }
+	function stateFile() { return cfg() & "/bxrig/appearance.json"; }
+	function configFile() { return cfg() & "/noctalia/config.toml"; }
+
+	// ---- state (appearance.json: bar.layout, bar.battery_percent, bar.time_format, dock.mode, dock.position, appgrid) ----
+	function readState() {
+		var s = new bxrig.util.JsonStore().read( stateFile(), { font: "", bar: {}, dock: {}, windows: {}, animations: "", layout: "" } );
+		if ( !isStruct( s.bar ) ) s.bar = {};
+		if ( !isStruct( s.dock ) ) s.dock = {};
+		return s;
+	}
+
+	function writeState( s ) {
+		return new bxrig.util.JsonStore().write( "appearance-state", stateFile(), arguments.s );
+	}
+
+	function layout( s = "" ) {
+		var st = isStruct( arguments.s ) ? arguments.s : readState();
+		return structKeyExists( st.bar, "layout" ) && variables.nc.validLayout( st.bar.layout ) ? st.bar.layout : variables.nc.defaultLayout();
+	}
+	// The dock is on unless dock.mode is off.
+	function dockOn( s = "" ) {
+		var st = isStruct( arguments.s ) ? arguments.s : readState();
+		return !( structKeyExists( st.dock, "mode" ) && compare( st.dock.mode, "off" ) == 0 );
+	}
+	function appgrid( s = "" ) {
+		var st = isStruct( arguments.s ) ? arguments.s : readState();
+		return structKeyExists( st, "appgrid" ) && arrayFind( appgrids(), st.appgrid ) ? st.appgrid : "launchpad";
+	}
+	function appgrids() { return [ "launchpad", "terminal" ]; }
+	function percent( s = "" ) {
+		var st = isStruct( arguments.s ) ? arguments.s : readState();
+		return !( structKeyExists( st.bar, "battery_percent" ) && compare( st.bar.battery_percent, "off" ) == 0 );
+	}
+	function timeFormat( s = "" ) {
+		var st = isStruct( arguments.s ) ? arguments.s : readState();
+		return structKeyExists( st.bar, "time_format" ) && len( st.bar.time_format ) ? st.bar.time_format : variables.nc.defaultTimeFormat();
+	}
+
+	// The options NoctaliaConfig renders from: the saved state, the laptop battery detection and where the plate images are.
+	function options( s = "" ) {
+		var st = isStruct( arguments.s ) ? arguments.s : readState();
+		var assets = new bxrig.Assets( variables.cli );
+		return {
+			layout: layout( st ),
+			dock: dockOn( st ),
+			dockAuto: structKeyExists( st.dock, "mode" ) && compare( st.dock.mode, "autohide" ) == 0,
+			dockPos: structKeyExists( st.dock, "position" ) && arrayFind( [ "top", "bottom", "left", "right" ], st.dock.position ) ? st.dock.position : "bottom",
+			battery: new bxrig.util.Battery().present(),
+			percent: percent( st ),
+			timeFormat: timeFormat( st ),
+			plateDir: assets.plateDir()
+		};
+	}
+
+	// ---- rendering ----
+	// The Noctalia config entry for the saved state (the theme and wallpaper of an existing file are kept).
+	function entry( s = "" ) {
+		var home = variables.environ.home();
+		var d = { theme: "dark", wallpaper: "bxrig" };
+		if ( fileExists( configFile() ) ) d = variables.nc.detect( fileRead( configFile() ) );
+		var e = variables.nc.entries( cfg(), home, d.theme, d.wallpaper, options( arguments.s ) );
+		return e[ 1 ];
+	}
+
+	// Writes config.toml for the saved state. Returns { state, code, entry }: state is "unchanged", "written", "would-write" (dry run),
+	// "needs-yes" (the file has changes of yours and there is no --yes) or "failed"; code is the exit code to use when it is not 0.
+	function render( dry, yes, s = "" ) {
+		var e = entry( arguments.s );
+		var st = variables.config.configState( e );
+		var res = { state: "unchanged", code: 0, entry: e, was: st };
+		if ( st == "clean" ) return res;
+		if ( st == "blocked" ) { res.state = "failed"; res.code = new bxrig.util.Exit().conflict(); return res; }
+		if ( st == "drifted" && !arguments.yes ) { res.state = "needs-yes"; res.code = new bxrig.util.Exit().plan(); return res; }
+		if ( arguments.dry ) { res.state = "would-write"; return res; }
+		new bxrig.Assets( variables.cli ).ensurePlates();
+		var code = variables.config.configWrite( e, e.content, "bar", true, false );
+		if ( code != 0 ) { res.state = "failed"; res.code = code; return res; }
+		res.state = "written";
+		return res;
+	}
+
+	// Asks a running Noctalia to read the file again; "reloaded", "not running" or "failed: why".
+	function reload() {
+		if ( !variables.proc.has( "noctalia" ) ) return "Noctalia was not found: it reads the file when it starts";
+		var r = variables.proc.exec( [ "noctalia", "msg", "config-reload" ], 30 );
+		return r.exitCode == 0 ? "reloaded" : "not running (it reads the file when it starts)";
+	}
+
+	// The common tail of every setting: render, reload, say. what: the setting's label; value: what it is now; extra: more lines for people.
+	function finish( out, label, value, s, dry, yes, asJson, notes = [], data = {} ) {
+		var r = render( arguments.dry, arguments.yes, arguments.s );
+		var d = arguments.data;
+		d.setting = arguments.label;
+		d.value = arguments.value;
+		d.config = { file: configFile(), state: r.state };
+		var lines = [ arguments.label & ": " & arguments.value ];
+		if ( r.state == "needs-yes" ) {
+			var title = "write the BxRig bar settings into " & configFile();
+			return arguments.out.plan( title, d, arguments.asJson, false, [ "  " & configFile() & " has changes of your own: --yes replaces it (a backup is kept)", "  " & arguments.label & ": " & arguments.value ], "Add --yes to replace it." );
+		}
+		if ( r.state == "failed" ) return arguments.out.fail( r.code == 8 ? "conflict" : "failed", "could not write " & configFile() & " (a link or special file, or a failed write)", arguments.asJson );
+		if ( r.state == "written" ) { d.config.reload = reload(); lines.append( "  config.toml: written (a backup of the old one is kept), Noctalia: " & d.config.reload ); }
+		else if ( r.state == "would-write" ) lines.append( "  config.toml: would be written (" & configFile() & ")" );
+		else lines.append( "  config.toml: already up to date" );
+		for ( var n in arguments.notes ) lines.append( "note: " & n );
+		d.notes = arguments.notes;
+		return arguments.out.say( "ok", d, arguments.asJson, lines, arguments.dry );
+	}
+
+	function scoped( name ) { return variables.cli.scoped( arguments.name ); }
+
+	// ---- appearance bar layout ----
+	function layoutCmd( args, dry, yes, asJson ) {
+		var out = scoped( "appearance bar layout" );
+		var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
+		var s = readState();
+		if ( v == "status" ) {
+			var o = options( s );
+			var z = variables.nc.zones( o.layout, o );
+			var lines = [ "Bar layout: " & o.layout & "   " & variables.nc.describe( o.layout ), "  start:  " & z.start.toList( ", " ), "  center: " & z.center.toList( ", " ), "  end:    " & z.end.toList( ", " ),
+				"  dock: " & ( o.dock ? "on (the grid button is the dock's first button)" : "off (the grid button follows the logo)" ) & ", battery: " & ( o.battery ? "laptop" : "none found (the widget is left out)" ) ];
+			return out.say( "ok", { layout: o.layout, layouts: variables.nc.layouts(), description: variables.nc.describe( o.layout ), zones: z, dock: o.dock, battery: o.battery }, arguments.asJson, lines );
+		}
+		if ( !variables.nc.validLayout( v ) ) return out.fail( "usage", "usage: bxrig appearance bar layout minimal|standard|dense|status", arguments.asJson );
+		s.bar.layout = v;
+		if ( !arguments.dry ) { if ( writeState( s ) != 0 ) return out.fail( "failed", "could not save " & stateFile(), arguments.asJson ); }
+		return finish( out, "bar layout", v, s, arguments.dry, arguments.yes, arguments.asJson, [ variables.nc.describe( v ) ], { layout: v, zones: variables.nc.zones( v, options( s ) ) } );
+	}
+
+	// ---- appearance dock on|off|toggle|status ----
+	function dockCmd( args, dry, yes, asJson ) {
+		var out = scoped( "appearance dock" );
+		var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
+		var s = readState();
+		if ( v == "status" ) {
+			var on = dockOn( s );
+			var mode = structKeyExists( s.dock, "mode" ) ? s.dock.mode : "always";
+			return out.say( "ok", { dock: on ? "on" : "off", mode: mode, position: options( s ).dockPos }, arguments.asJson, [ "Dock: " & ( on ? "on" : "off" ) & " (mode " & mode & ", position " & options( s ).dockPos & ")" ] );
+		}
+		if ( !arrayFind( [ "on", "off", "toggle" ], v ) ) return out.fail( "usage", "usage: bxrig appearance dock on|off|toggle|status", arguments.asJson );
+		var want = v == "toggle" ? !dockOn( s ) : v == "on";
+		// the dock mode is shared with `dock mode always|autohide|off`: on keeps autohide when it was set, else always
+		if ( want ) s.dock.mode = structKeyExists( s.dock, "mode" ) && compare( s.dock.mode, "autohide" ) == 0 ? "autohide" : "always";
+		else s.dock.mode = "off";
+		if ( !arguments.dry ) { if ( writeState( s ) != 0 ) return out.fail( "failed", "could not save " & stateFile(), arguments.asJson ); }
+		var notes = [ want ? "the Launchpad grid button is now the first button of the dock" : "the Launchpad grid button is back in the bar, right after the logo" ];
+		var res = finish( out, "dock", want ? "on" : "off", s, arguments.dry, arguments.yes, arguments.asJson, notes );
+		// keep Noctalia's own layer (settings.toml, what `appearance dock mode` writes) in step, or it would win over config.toml
+		if ( res == 0 && !arguments.dry && variables.proc.has( "noctalia" ) ) variables.proc.exec( [ "noctalia", "msg", "config-set", "dock.enabled", want ? "true" : "false" ], 30 );
+		return res;
+	}
+
+	// ---- appearance appgrid launchpad|terminal|status ----
+	function appgridCmd( args, dry, yes, asJson ) {
+		var out = scoped( "appearance appgrid" );
+		var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
+		var s = readState();
+		if ( v == "status" ) return out.say( "ok", { appgrid: appgrid( s ), styles: appgrids() }, arguments.asJson, [ "App grid: " & appgrid( s ) & " (launchpad | terminal)" ] );
+		if ( !arrayFind( appgrids(), v ) ) return out.fail( "usage", "usage: bxrig appearance appgrid launchpad|terminal|status", arguments.asJson );
+		s.appgrid = v;
+		if ( !arguments.dry ) { if ( writeState( s ) != 0 ) return out.fail( "failed", "could not save " & stateFile(), arguments.asJson ); }
+		var notes = [];
+		if ( v == "terminal" ) notes.append( "the Terminal-style grid is only remembered for now: nothing draws it yet, the launcher keeps the Launchpad grid" );
+		return finish( out, "app grid", v, s, arguments.dry, arguments.yes, arguments.asJson, notes, { appgrid: v, applied: v == "launchpad" } );
+	}
+
+	// ---- appearance battery-percent on|off|status ----
+	function batteryCmd( args, dry, yes, asJson ) {
+		var out = scoped( "appearance battery-percent" );
+		var v = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
+		var s = readState();
+		var laptop = new bxrig.util.Battery().present();
+		if ( v == "status" ) return out.say( "ok", { battery_percent: percent( s ) ? "on" : "off", battery_found: laptop }, arguments.asJson, [ "Battery percentage: " & ( percent( s ) ? "on" : "off" ) & ( laptop ? "" : " (no battery found: the battery widget is not on this bar)" ) ] );
+		if ( !arrayFind( [ "on", "off" ], v ) ) return out.fail( "usage", "usage: bxrig appearance battery-percent on|off|status", arguments.asJson );
+		s.bar.battery_percent = v;
+		if ( !arguments.dry ) { if ( writeState( s ) != 0 ) return out.fail( "failed", "could not save " & stateFile(), arguments.asJson ); }
+		var notes = laptop ? [] : [ "no battery was found, so the bar has no battery widget; the choice is saved for a laptop" ];
+		var res = finish( out, "battery percentage", v, s, arguments.dry, arguments.yes, arguments.asJson, notes, { battery_found: laptop } );
+		// the same live path `appearance bar battery` uses, so Noctalia's own layer agrees
+		if ( res == 0 && !arguments.dry && laptop && variables.proc.has( "noctalia" ) ) variables.proc.exec( [ "noctalia", "msg", "config-set", "widget.battery.show_label", v == "on" ? "true" : "false" ], 30 );
+		return res;
+	}
+
+	// ---- time format ----
+	// The strftime pattern for what the user typed: a `{:%H:%M}` field is unwrapped; text with a % is used as it is (Noctalia date format tokens);
+	// text without a % is read as a pattern (yyyy yy MMMM MMM MM M dddd ddd dd d HH H hh h mm ss a), so `MMM d - HH:mm` works too.
+	// The pattern letters are case sensitive (MM month, mm minute), so they are kept in a list and compared with compare(), not in a struct.
+	function patternTokens() {
+		return [ [ "yyyy", "%Y" ], [ "yy", "%y" ], [ "MMMM", "%B" ], [ "MMM", "%b" ], [ "MM", "%m" ], [ "M", "%-m" ], [ "dddd", "%A" ], [ "ddd", "%a" ], [ "dd", "%d" ], [ "d", "%-d" ],
+			[ "HH", "%H" ], [ "H", "%-H" ], [ "hh", "%I" ], [ "h", "%-I" ], [ "mm", "%M" ], [ "ss", "%S" ], [ "a", "%p" ] ];
+	}
+
+	function tokenFor( word ) {
+		for ( var t in patternTokens() ) if ( compare( t[ 1 ], arguments.word ) == 0 ) return t[ 2 ];
+		return "";
+	}
+
+	function isPatternLetter( ch ) {
+		for ( var l in [ "y", "M", "d", "H", "h", "m", "s", "a" ] ) if ( compare( l, arguments.ch ) == 0 ) return true;
+		return false;
+	}
+
+	function strftime( text ) {
+		var t = trim( arguments.text );
+		if ( len( t ) > 3 && left( t, 2 ) == "{:" && right( t, 1 ) == "}" ) t = mid( t, 3, len( t ) - 3 );
+		if ( find( "%", t ) ) return t;
+		var out = "";
+		var i = 1;
+		while ( i <= len( t ) ) {
+			var ch = mid( t, i, 1 );
+			if ( !isPatternLetter( ch ) ) { out &= ch; i++; continue; }
+			var j = i;
+			while ( j < len( t ) && compare( mid( t, j + 1, 1 ), ch ) == 0 ) j++;
+			var rest = mid( t, i, j - i + 1 );
+			// the longest known token at the start of the run, then the rest of the run
+			while ( len( rest ) ) {
+				var k = min( len( rest ), 4 );
+				while ( k > 0 && !len( tokenFor( left( rest, k ) ) ) ) k--;
+				if ( k == 0 ) { out &= left( rest, 1 ); rest = mid( rest, 2, len( rest ) ); }
+				else { out &= tokenFor( left( rest, k ) ); rest = mid( rest, k + 1, len( rest ) ); }
+			}
+			i = j + 1;
+		}
+		return out;
+	}
+
+	// A line break or a tab would end the TOML string.
+	function hasControl( text ) {
+		return find( chr( 10 ), arguments.text ) > 0 || find( chr( 13 ), arguments.text ) > 0 || find( chr( 9 ), arguments.text ) > 0;
+	}
+
+	// A sample of a pattern with the current time ("" when `date` cannot render it).
+	function sample( pattern ) {
+		var r = variables.proc.exec( [ "date", "+" & arguments.pattern ], 10 );
+		return r.exitCode == 0 ? trim( r.output ) : "";
+	}
+
+	function timeCmd( args, dry, yes, asJson ) {
+		var out = scoped( "time format" );
+		var s = readState();
+		if ( !arguments.args.len() || ( arguments.args.len() == 1 && arguments.args[ 1 ] == "status" ) ) {
+			var cur = timeFormat( s );
+			return out.say( "ok", { format: cur, default_format: variables.nc.defaultTimeFormat(), sample: sample( cur ) }, arguments.asJson, [ "Clock format: " & cur & "   (now: " & sample( cur ) & ")", 'Set one with: bxrig time format "%b %-d - %H:%M"   (tokens: docs.noctalia.dev/noctalia/configuration/date-format-tokens, or MMM d - HH:mm)' ] );
+		}
+		if ( arguments.args.len() != 1 ) return out.fail( "usage", "usage: bxrig time format [FORMAT | default]   (quote the format)", arguments.asJson );
+		var want = arguments.args[ 1 ] == "default" ? variables.nc.defaultTimeFormat() : strftime( arguments.args[ 1 ] );
+		if ( !len( trim( want ) ) || len( want ) > 80 || hasControl( want ) ) return out.fail( "usage", "the format must be 1 to 80 characters of text and Noctalia date format tokens", arguments.asJson );
+		var shown = sample( want );
+		if ( !len( shown ) ) return out.fail( "usage", "that format is not valid: " & want & " (tokens: docs.noctalia.dev/noctalia/configuration/date-format-tokens)", arguments.asJson );
+		s.bar.time_format = want;
+		if ( !arguments.dry ) { if ( writeState( s ) != 0 ) return out.fail( "failed", "could not save " & stateFile(), arguments.asJson ); }
+		return finish( out, "clock format", want, s, arguments.dry, arguments.yes, arguments.asJson, [ "reads: " & shown ], { format: want, sample: shown } );
+	}
+}

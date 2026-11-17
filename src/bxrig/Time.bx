@@ -8,6 +8,8 @@
 //                                        a geoclue drop-in, enables it. This sends your Wi-Fi networks or IP address to a location web service.
 //   time ntp on|off [--yes]              network time sync (timedatectl set-ntp)
 //   time world [--json]                  the world clock: your local time and each zone you follow (the data the bar's globe panel shows)
+//   time format [FORMAT|default]         the bar clock's text: Noctalia date format tokens, default `%b %-d - %H:%M` ("Nov 5 - 04:00"); a setting, acts at once
+//                                        (BarSettings; MMM d - HH:mm style patterns work too). Rewrites ~/.config/noctalia/config.toml, --dry-run shows it
 //   time world set ZONE,ZONE... [--yes]  follow these zones (IANA names, e.g. Europe/Madrid); add ZONE, remove ZONE, off, on
 //                                        Saved in ~/.config/bxrig/worldclock.json: { "enabled": true, "zones": [ ... ] }
 // What `auto on` writes (the AUR package ships no unit; the daemon's README says it needs GeoClue to allow it without an agent):
@@ -253,6 +255,7 @@ class Time {
 		if ( verb == "auto" ) return autoCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
 		if ( verb == "ntp" ) return ntpCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
 		if ( verb == "world" ) return worldCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
+		if ( verb == "format" ) return new bxrig.BarSettings( variables.cli ).timeCmd( rest, arguments.dry, arguments.yes, arguments.asJson );
 		return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "time" ), arguments.asJson );
 	}
 }

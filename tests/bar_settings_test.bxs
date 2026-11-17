@@ -1,0 +1,17 @@
+// BarSettings: the clock pattern conversion and the saved-state readers. Run from src/: (cd src && matchbox ../tests/bar_settings_test.bxs)
+testkit = new lib.Check( "bar settings" );
+bs = new bxrig.BarSettings( new bxrig.util.Cli( "9.9.9" ) );
+testkit.check( "strftime: % patterns are used as they are", bs.strftime( "%b %-d - %H:%M" ) == "%b %-d - %H:%M" );
+testkit.check( "strftime: a {:...} field is unwrapped", bs.strftime( "{:%A %-I:%M %p}" ) == "%A %-I:%M %p" );
+testkit.check( "strftime: MMM d - HH:mm reads Nov 5 - 04:00", bs.strftime( "MMM d - HH:mm" ) == "%b %-d - %H:%M" );
+testkit.check( "strftime: month MM and minute mm are different letters", bs.strftime( "yyyy-MM-dd HH:mm:ss" ) == "%Y-%m-%d %H:%M:%S" && bs.strftime( "M/d h:mm a" ) == "%-m/%-d %-I:%M %p" );
+testkit.check( "strftime: weekday and month names", bs.strftime( "dddd, MMMM d" ) == "%A, %B %-d" && bs.strftime( "ddd MMM dd" ) == "%a %b %d" );
+testkit.check( "strftime: other letters and punctuation stay as they are", bs.strftime( "HH:mm | W" ) == "%H:%M | W" );
+// the state readers on a made-up state
+st = { font: "", bar: { layout: "dense", battery_percent: "off", time_format: "%H:%M" }, dock: { mode: "autohide", position: "left" }, windows: {}, animations: "", layout: "", appgrid: "terminal" };
+testkit.check( "state: layout, percentage, format and the grid style are read", bs.layout( st ) == "dense" && !bs.percent( st ) && bs.timeFormat( st ) == "%H:%M" && bs.appgrid( st ) == "terminal" );
+testkit.check( "state: autohide means the dock is on and hides itself", bs.dockOn( st ) && bs.options( st ).dockAuto && bs.options( st ).dockPos == "left" );
+off = { font: "", bar: {}, dock: { mode: "off" }, windows: {}, animations: "", layout: "" };
+testkit.check( "state: dock mode off turns the dock off; the defaults are Standard, percentage on, Launchpad", !bs.dockOn( off ) && bs.layout( off ) == "standard" && bs.percent( off ) && bs.appgrid( off ) == "launchpad" && bs.timeFormat( off ) == "%b %-d - %H:%M" );
+testkit.check( "state: a layout that does not exist falls back to Standard", bs.layout( { bar: { layout: "huge" }, dock: {} } ) == "standard" );
+testkit.done( "all passed" );
