@@ -189,6 +189,7 @@ class Shortcuts {
 			row( "panel-power", G.note, "Power panel (the control center panel)", "Super+Ctrl+P", "Super+Ctrl+P", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle control-center")' ),
 			row( "panel-display", G.note, "Display panel (the control center panel)", "Super+Ctrl+D", "Super+Ctrl+D", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle control-center")' ),
 			bx( "fullscreen-desktop", G.win, "Full screen desktop (hide or show the bar)", "Super+Ctrl+Alt+F", "Super+Ctrl+Alt+F", "appearance bar toggle" ),
+			bx( "bar-toggle", G.win, "Toggle top bar (show or hide)", "Super+Shift+Space", "Super+Shift+Space", "appearance bar toggle" ),
 			bx( "dock-toggle", G.win, "Toggle the dock (show or hide)", "Super+Alt+D", "Super+Alt+D", "appearance dock toggle" ),
 			row( "noctalia-settings", G.note, "Noctalia settings window", "Super+Ctrl+Comma", "Super+Ctrl+Comma", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "settings-toggle")' ),
 			row( "notify-latest", G.note, "Notifications: act on the newest (open it or press its button)", "Super+Alt+Comma", "Super+Alt+Comma", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "notification-invoke-latest")' ),

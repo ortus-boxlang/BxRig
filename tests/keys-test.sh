@@ -14,4 +14,12 @@ out="$("$binary" keys show)"
 "$binary" keys render xremap --json | jq -e '.data.target == "xremap"' >/dev/null || fail 'render --json'
 set +e; "$binary" keys render bogus >/dev/null 2>&1; c=$?; "$binary" keys >/dev/null 2>&1; d=$?; set -e
 [[ "$c" == 2 && "$d" == 2 ]] || fail "bad usage exits 2 (got $c, $d)"
+# Toggle top bar (Omarchy 4.5: Super+Shift+Space) runs `appearance bar toggle`, is listed, and clashes with nothing in either style
+mkdir -p "$tmp/home"
+for style in traditional mac; do
+	env HOME="$tmp/home" "$binary" keys style "$style" --yes >/dev/null 2>&1 || fail "keys style $style"
+	env HOME="$tmp/home" "$binary" keys show --json | jq -e '[.data.shortcuts[] | select(.id == "bar-toggle" and .keys == "Super+Shift+Space")] | length == 1' >/dev/null || fail "$style: the Toggle top bar row"
+	env HOME="$tmp/home" "$binary" keys render hyprland | grep -Fq 'mainMod .. " + SHIFT + Space", hl.dsp.exec_cmd([[sh -c '"'"'PATH="$HOME/.local/bin:$PATH"; bxrig appearance bar toggle'"'"']]))' || fail "$style: the Hyprland bind runs appearance bar toggle"
+	env HOME="$tmp/home" "$binary" keys conflicts --json | jq -e '.data.ok == true and (.data.within | length) == 0' >/dev/null || fail "$style: keys conflicts is not clean"
+done
 echo "keys tests passed"

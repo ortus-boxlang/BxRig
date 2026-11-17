@@ -74,6 +74,10 @@ Two styles: **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys for 
 
 `Super+Alt+D` shows or hides the dock in both styles (macOS Cmd+Option+D; with the Alt/Win swap on a PC keyboard it lands on the same physical keys). It runs `bxrig appearance dock toggle`, which is Noctalia's `dock-toggle` IPC command. No Omarchy 4.5 key uses `Super+Alt+D` (Omarchy has `Super+Ctrl+Alt+D` for the calendar), and `keys conflicts` is clean. It is also in the runner under Trigger > Toggle. macOS's "focus the dock" key (Ctrl+F3) is not possible: Noctalia has no IPC command to focus its dock.
 
+## Toggle top bar (2026-11-17)
+
+`Super+Shift+Space` shows or hides the top bar in both styles (Omarchy 4.5 uses the same key for "Toggle top bar"). It runs `bxrig appearance bar toggle`, the same command as `Super+Ctrl+Alt+F` (r31, "full screen desktop"), so the bar now has two keys. Row id `bar-toggle`, group Window; in the runner under Trigger > Toggle > "Top bar: show or hide". The key is free: `Super+Space` is the runner (r1), `Super+Alt+Space` launches apps (r2), `Super+Ctrl+Shift+Space` is the theme switcher, and `keys conflicts` is clean in both styles.
+
 ## Second round: the shortcuts that were missing (owner request, 2026-11-15)
 
 Omarchy 4.5.0 keys were read again from `default/hypr/bindings/{tiling,utilities,media,clipboard,applications}.lua` at the tag `v4.5.0`.

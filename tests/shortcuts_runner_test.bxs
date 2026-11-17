@@ -10,7 +10,7 @@ sec = tree.filter( function( e ) { return e.label == "Shortcuts"; } )[ 1 ];
 labels = sec.children.map( function( e ) { return e.label; } ).toList( "|" );
 testkit.check( "Shortcuts has list, search, rebind, run", find( "List the shortcuts", labels ) > 0 && find( "Search the shortcuts", labels ) > 0 && find( "Rebind a shortcut", labels ) > 0 && find( "Run a shortcut", labels ) > 0 );
 flat = menu.flatten( tree ).map( function( f ) { return f.path; } );
-testkit.check( "new runner entries: region record, dictation toggle, color picker, time, battery, weather", arrayFind( flat, "Trigger > Capture > Record a region of the screen" ) > 0 && arrayFind( flat, "Trigger > Toggle > Dictation on or off" ) > 0 && arrayFind( flat, "Trigger > Capture > Color picker" ) > 0 && arrayFind( flat, "Trigger > Notices > Time" ) > 0 && arrayFind( flat, "Trigger > Notices > Battery" ) > 0 && arrayFind( flat, "Trigger > Notices > Weather" ) > 0 && arrayFind( flat, "Trigger > Toggle > Dock: show or hide" ) > 0 );
+testkit.check( "new runner entries: region record, dictation toggle, color picker, time, battery, weather", arrayFind( flat, "Trigger > Capture > Record a region of the screen" ) > 0 && arrayFind( flat, "Trigger > Toggle > Dictation on or off" ) > 0 && arrayFind( flat, "Trigger > Capture > Color picker" ) > 0 && arrayFind( flat, "Trigger > Notices > Time" ) > 0 && arrayFind( flat, "Trigger > Notices > Battery" ) > 0 && arrayFind( flat, "Trigger > Notices > Weather" ) > 0 && arrayFind( flat, "Trigger > Toggle > Dock: show or hide" ) > 0 && arrayFind( flat, "Trigger > Toggle > Top bar: show or hide" ) > 0 );
 // every `menu open ROUTE` key points at a route that exists, and routes are unique by label
 sc = new bxrig.Shortcuts( {}, "traditional" );
 okRoutes = true;
