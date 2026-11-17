@@ -298,7 +298,7 @@ Moved or new in 4.5 that matter here: panels have their own keys (Super+Ctrl+A a
 | Input language switch | Super+I, Super+Shift+I | Super+I, Super+Shift+I; Mac style Super+Alt+I, Super+Alt+Shift+I | same | Owner r25; Super+I is Italic in the Mac style |
 | Zoom in, reset | Super+Ctrl+Z, Super+Ctrl+Alt+Z | none | Omarchy only | Add (P3) |
 | Lock | Super+Ctrl+L | Super+Ctrl+L | same | Owner r27 |
-| Toggle top bar | Super+Shift+Space | none (`appearance bar toggle` is on Super+Ctrl+Alt+F) | different on purpose | Omarchy's Super+Ctrl+Alt+F is its full screen desktop, which hides bar and dock; owner r31 gave that key to the bar |
+| Toggle top bar | Super+Shift+Space | Super+Shift+Space (`appearance bar toggle`; also on Super+Ctrl+Alt+F) | same | Added 2026-11-17; Omarchy's Super+Ctrl+Alt+F is its full screen desktop, which hides bar and dock; owner r31 gave that key to the bar, so the bar has both keys |
 | Background menu, theme menu | Super+Ctrl+Space or W; Super+Shift+Ctrl+Space or Super+Ctrl+T | none | Omarchy only | Add (P3) |
 | Window transparency, gaps, square ratio | Super+Backspace, with Shift, with Ctrl | none | Omarchy only | Add (P3) |
 | Full screen desktop | Super+Ctrl+Alt+F | Super+Ctrl+Alt+F (`appearance bar toggle`) | same | Owner r31: toggles the Noctalia bar |
@@ -384,7 +384,7 @@ Every binding of `bxrig keys show` that is not a remap, a Control Center page ro
 | Super+Ctrl+Alt+T, B, W | Time, battery, weather notices | `notify time\|battery\|weather` | yes | Trigger > Notices |
 | Super+Alt+C, Super+Ctrl+A, B, N, P, D | Noctalia control center panel | none (Noctalia IPC `panel-toggle control-center`) | no | none: Add (P2) with the panel entries |
 | Super+Ctrl+Comma | Noctalia settings window | none (Noctalia IPC `settings-toggle`) | no | none: Add (P2) |
-| Super+Ctrl+Alt+F | Hide or show the bar | `appearance bar toggle` | yes | Appearance > Bar > Toggle |
+| Super+Ctrl+Alt+F, Super+Shift+Space | Hide or show the bar (Toggle top bar) | `appearance bar toggle` | yes | Appearance > Bar > Toggle; Trigger > Toggle > Top bar: show or hide |
 | Super+Alt+D | Show or hide the dock | `appearance dock toggle` | yes | Appearance > Dock > Toggle; Trigger > Toggle > Dock: show or hide |
 | Super+Q, Super+W | Close window | none (Lua) | no | N/A: window manager action |
 | Super+F (Mac: Super+Ctrl+F), Super+T (Mac: Super+Alt+T), Super+J | Full screen, float, toggle split | none (Lua) | partly | Trigger > Toggle > Window layout: tile or float covers the layout, not the window |

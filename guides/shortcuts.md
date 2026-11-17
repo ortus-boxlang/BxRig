@@ -59,7 +59,7 @@ Your changes live in `~/.config/bxrig/shortcuts.json` and apply to both styles. 
 | `Super+Ctrl+E` | Emoji |
 | `Alt+Space` | Dictation on or off (the logical Alt key: with the Mac swap on a PC keyboard it is the Win key, where Option sits on a Mac) |
 | `Super+Alt+D` | Show or hide the dock |
-| `Super+Ctrl+Alt+F` | Hide or show the bar |
+| `Super+Ctrl+Alt+F`, `Super+Shift+Space` | Hide or show the bar (Toggle top bar) |
 | `Super+Ctrl+A` `B` `N` `P` `D` | The control center panel |
 | `Super+Ctrl+Alt+Comma` | Do Not Disturb |
 | `Super+Ctrl+Alt+T` / `B` / `W` | Show the time / battery / weather |
