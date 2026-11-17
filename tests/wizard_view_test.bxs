@@ -14,7 +14,7 @@ testkit.check( "welcome: wordmark art, tagline and prompt", find( "███", s
 app.onKey( "Enter" );
 s = shot();
 testkit.check( "page: title, options, selected marker", find( "Desktop", s ) > 0 && find( "Hyprland + Noctalia", s ) > 0 && find( "●  Hyprland + Noctalia (recommended)", s ) > 0 );
-testkit.check( "page: the sidebar lists the steps and Powered by BoxLang", find( "Steps", s ) > 0 && find( "Review", s ) > 0 && find( "Powered by BoxLang", s ) > 0 && find( "step 1 of 14", s ) > 0 );
+testkit.check( "page: the sidebar lists the steps and Powered by BoxLang", find( "Steps", s ) > 0 && find( "Review", s ) > 0 && find( "Powered by BoxLang", s ) > 0 && find( "step 1 of 17", s ) > 0 );
 testkit.check( "page: footer key hints", find( "ctrl-c", s ) > 0 && find( "space", s ) > 0 );
 testkit.check( "page: the focused option shows its description", find( "A fast tiling desktop", s ) > 0 );
 testkit.check( "page: number field shows its range", find( "1 to 10", s ) > 0 );
@@ -30,14 +30,14 @@ optY = 0; for ( i = 1; i <= lines.len(); i++ ) if ( find( "KDE Plasma with BxRig
 testkit.check( "a click on an option is a focus action", optY > 0 && view.hitAt( 40, optY ).kind == "focus" );
 testkit.check( "a click on nothing does nothing", view.hitAt( 0, 0 ).kind == "" );
 
-app.gotoPage( 4 );
+app.gotoPage( 7 );
 s = shot();
 testkit.check( "text fields show their placeholder", find( "Luis Majano", s ) > 0 );
 for ( c in [ "L", "u", "i", "s" ] ) app.onKey( c );
 s = shot();
 testkit.check( "and what is typed", find( "Luis", s ) > 0 );
 
-app.gotoPage( 3 );
+app.gotoPage( 6 );
 s = shot();
 testkit.check( "multi choice marks selected with a filled diamond", find( "◆", s ) > 0 && find( "◇", s ) > 0 );
 
@@ -57,16 +57,16 @@ testkit.check( "a new screen fades in (first frame is dimmer, same text)", find(
 spec2 = new bxrig.AppPages().inject( jsonDeserialize( new bxrig.WizardData().demoPages() ), new bxrig.Catalog().load() );
 app = new bxrig.WizardApp( spec2 ); app.onKey( "Enter" );
 t = ""; view.paint( app, 100, 120, 36 ); t = tui.render_to_string( 120, 36 );
-testkit.check( "Basic mode: 13 pages and the review, no app group pages in the sidebar", find( "step 1 of 14", t ) > 0 && find( "Everyday", t ) == 0 );
+testkit.check( "Basic mode: 16 pages and the review, no app group pages in the sidebar", find( "step 1 of 17", t ) > 0 && find( "Everyday", t ) == 0 );
 app = new bxrig.WizardApp( spec2, { app_mode: "custom" } ); app.onKey( "Enter" );
 view.paint( app, 100, 120, 36 ); t = tui.render_to_string( 120, 36 );
-testkit.check( "Customize mode: 24 pages and the review, with the group pages in the sidebar", find( "step 1 of 25", t ) > 0 && find( "Everyday", t ) > 0 && find( "Development", t ) > 0 );
-app.gotoPage( 11 );
+testkit.check( "Customize mode: 27 pages and the review, with the group pages in the sidebar", find( "step 1 of 28", t ) > 0 && find( "Everyday", t ) > 0 && find( "Development", t ) > 0 );
+app.gotoPage( 14 );
 view.paint( app, 100, 120, 36 ); t = tui.render_to_string( 120, 36 );
 testkit.check( "a generated page lists a category with ticked defaults and descriptions", find( "Development", t ) > 0 && find( "◆", t ) > 0 && find( "◇", t ) > 0 && find( "▸", t ) > 0 );
 
 // ---- a long help text wraps under its question (it used to run past the panel edge) ----
-app = new bxrig.WizardApp( spec2 ); app.onKey( "Enter" ); for ( i = 1; i <= 10; i++ ) app.onKey( "Tab" );
+app = new bxrig.WizardApp( spec2 ); app.onKey( "Enter" ); for ( i = 1; i <= 13; i++ ) app.onKey( "Tab" );
 view.paint( app, 100, 100, 44 ); t = tui.render_to_string( 100, 44 );
 testkit.check( "the API keys help wraps: its last words are on screen at 100 columns", find( "Stored in your desktop keyring", t ) > 0 && find( "shell history", t ) > 0 );
 
@@ -75,5 +75,55 @@ longSpec = jsonDeserialize( '{"title":"T","pages":[{"id":"a","title":"A","questi
 app = new bxrig.WizardApp( longSpec ); app.gotoReview();
 view.paint( app, 100, 100, 36 ); t = tui.render_to_string( 100, 36 );
 testkit.check( "a long review label is cut and its answer is shown whole", find( "Crimson answer", t ) > 0 );
+
+// ---- the Look pages: top bar layout, app grid style, theme ----
+function pageShot( app, w = 120, h = 36 ) { view.paint( app, 100, w, h ); return tui.render_to_string( w, h ); }
+spec3 = jsonDeserialize( new bxrig.WizardData().demoPages() );
+app = new bxrig.WizardApp( spec3 ); app.onKey( "Enter" ); app.gotoPage( 3 );
+t = pageShot( app );
+testkit.check( "bar page: the three layouts, each with its bar", find( "Minimal", t ) > 0 && find( "Standard", t ) > 0 && find( "Dense", t ) > 0 && find( "recommended, default", t ) > 0 && find( "Nov 5 - 04:00", t ) > 0 && find( "☁ 11°", t ) > 0 );
+testkit.check( "bar page: the dock line with the grid button first", find( "Dock", t ) > 0 && find( "▦", t ) > 0 && find( "step 3 of 17", t ) > 0 );
+testkit.check( "bar page: the focused option's description is in the detail strip", find( "Standard: the recommended bar", t ) > 0 && find( "bxrig appearance bar layout standard", t ) > 0 );
+app.onKey( "Down" );
+t = pageShot( app );
+testkit.check( "bar page: Down moves the marker and the detail to Dense", find( "●  Dense", t ) > 0 && find( "Dense: for developers", t ) > 0 && find( "●  Standard", t ) == 0 );
+testkit.check( "bar page: a click on an option's bar picks it", view.hitAt( 40, 12 ).kind == "focus" );
+
+app = new bxrig.WizardApp( spec3 ); app.onKey( "Enter" ); app.gotoPage( 4 );
+t = pageShot( app );
+testkit.check( "grid page: both styles drawn side by side, Launchpad chosen", find( "Launchpad grid", t ) > 0 && find( "Terminal-style grid", t ) > 0 && find( "Search apps...", t ) > 0 && find( "/ search apps", t ) > 0 && find( "●  Launchpad grid", t ) > 0 );
+app.onKey( "Down" );
+t = pageShot( app );
+testkit.check( "grid page: Down chooses Terminal-style", find( "●  Terminal-style grid", t ) > 0 && find( "square card", t ) > 0 );
+testkit.check( "grid page: a click on a preview picks that style", view.hitAt( 45, 18 ).kind == "focus" && view.hitAt( 45, 18 ).n > 0 );
+n3 = pageShot( app, 100, 30 );
+testkit.check( "grid page: still readable at 100 x 30", find( "Terminal-style grid", n3 ) > 0 );
+tiny = pageShot( app, 76, 24 );
+testkit.check( "grid page: and at the smallest size, with no preview cut mid-way", find( "App grid style", tiny ) > 0 && find( "Terminal-style grid", tiny ) > 0 );
+
+app = new bxrig.WizardApp( spec3 ); app.onKey( "Enter" ); app.gotoPage( 5 );
+t = pageShot( app );
+testkit.check( "theme page: every theme on a row with dark or light and four swatches, BxRig marked default", find( "BxRig", t ) > 0 && find( "default", t ) > 0 && find( "dark ████", t ) > 0 && find( "light████", t ) > 0 );
+testkit.check( "theme page: the pane shows the palette read from colors.toml", find( "Preview: BxRig", t ) > 0 && find( "#303446", t ) > 0 && find( "selected row", t ) > 0 );
+app.onKey( "Down" );
+t = pageShot( app );
+midnight = new bxrig.Palette().colorsOf( "bxrig-midnight" );
+testkit.check( "theme page: Down previews the next theme (its own background value)", find( "Preview: BxRig Midnight", t ) > 0 && find( midnight.background, t ) > 0 );
+testkit.check( "theme page: the wizard itself is drawn in the highlighted theme (palette follows the answer)", view.kit().color( "BASE" ) == midnight.background && view.kit().color( "GREEN" ) == midnight.accent );
+app.onKey( "Up" ); pageShot( app );
+testkit.check( "theme page: back on BxRig the palette is the default again", view.kit().color( "BASE" ) == "##303446" );
+narrowT = pageShot( app, 100, 30 );
+testkit.check( "theme page at 100 columns: the palette pane is still beside the list", find( "Preview: BxRig", narrowT ) > 0 || find( "dark ████", narrowT ) > 0 );
+tinyT = pageShot( app, 76, 24 );
+testkit.check( "theme page at 76 x 24 (no sidebar): the list and a narrow pane", find( "dark ████", tinyT ) > 0 && find( "Preview: BxRig", tinyT ) > 0 );
+midT = pageShot( app, 92, 30 );
+testkit.check( "theme page at 92 columns (sidebar, little room): the list with swatches and no pane", find( "dark ████", midT ) > 0 && find( "Preview:", midT ) == 0 );
+
+app = new bxrig.WizardApp( spec3, { bar_layout: "dense", appgrid_style: "terminal", theme_name: "nord" } ); app.gotoReview();
+t = pageShot( app, 120, 44 );
+testkit.check( "review: the three new answers in words", find( "Top bar layout", t ) > 0 && find( "Dense", t ) > 0 && find( "App grid style", t ) > 0 && find( "Terminal-style grid", t ) > 0 && find( "Color theme", t ) > 0 && find( "Nord", t ) > 0 );
+// a wizard that starts with a theme answer is drawn in that theme from the first frame
+app = new bxrig.WizardApp( spec3, { theme_name: "nord" } ); view2 = new bxrig.WizardView( tui ); view2.paint( app, 100, 120, 36 );
+testkit.check( "a saved theme answer colours the wizard from the welcome screen", view2.kit().color( "BASE" ) == new bxrig.Palette().colorsOf( "nord" ).background );
 
 testkit.done( "all passed" );

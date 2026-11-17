@@ -1,0 +1,230 @@
+// Previews of how BxRig will look, drawn with the TuiKit on the terminal canvas: the top bar (text chips), the dock, the two app grid styles and a
+// theme's palette. The wizard's Top bar layout, App grid style and Theme pages and the Control Center's Look page draw with it.
+// Everything here is only a picture: nothing is read from the desktop. The bar layouts are BarLayouts; theme colours come from Palette.colorsOf.
+//
+//   pv = new bxrig.LookPreview( kit )
+//   pv.strip( x, y, w, "standard", selected )      the bar in a band `w` wide; returns the rows it took (BarLayouts.height says it before drawing)
+//   pv.dock( x, y, w, selected )                   the dock: the grid button first, then apps
+//   pv.appGrid( x, y, w, "launchpad"|"terminal", selected )   an app grid preview; returns its height (gridHeight())
+//   pv.themePane( x, y, w, h, colors, name )       swatches and a sample terminal in the theme's own colours
+//   pv.themeSwatch( x, y, bg, colors )             "dark" or "light" and four colour blocks, 9 columns wide
+class LookPreview {
+	function init( kit ) {
+		variables.kit = arguments.kit;
+		variables.bl = new bxrig.BarLayouts();
+		return this;
+	}
+
+	// A chip colour role as a palette colour.
+	function role( r ) {
+		var k = variables.kit;
+		switch ( arguments.r ) {
+			case "acc": case "ok": return k.color( "GREEN" );
+			case "cy": return k.color( "CYAN" );
+			case "y": return k.color( "YELLOW" );
+			case "r": return k.color( "RED" );
+			case "m": return k.color( "MAUVE" );
+			case "pk": return k.color( "PEACH" );
+			case "ov": return k.color( "OVERLAY" );
+			case "sub": return k.color( "SUB" );
+		}
+		return k.color( "TEXT" );
+	}
+
+	// ---------------------------------------------------------------- the bar and the dock
+
+	function chipRow( x, y, chips, selected, bg ) {
+		var k = variables.kit;
+		var cx = arguments.x;
+		var i = 0;
+		for ( var c in arguments.chips ) {
+			i++;
+			if ( i > 1 ) cx++;
+			if ( c.id == "ws" ) {
+				cx = k.put( cx, arguments.y, "1", arguments.selected ? k.color( "CRUST" ) : k.color( "SUB" ), arguments.selected ? k.color( "GREEN" ) : arguments.bg, true );
+				cx = k.put( cx, arguments.y, " 2 3 4", arguments.selected ? k.color( "SUB" ) : k.color( "OVERLAY" ), arguments.bg );
+			} else cx = k.put( cx, arguments.y, c.t, arguments.selected ? role( c.role ) : k.color( "OVERLAY" ), arguments.bg, arguments.selected && c.b );
+		}
+		return cx;
+	}
+
+	function strip( x, y, w, key, selected = true, pct = false ) {
+		var k = variables.kit;
+		var bg = k.color( "CRUST" );
+		var rws = variables.bl.rows( arguments.key, arguments.w, arguments.pct );
+		var inner = max( 10, arguments.w - 2 );
+		k.fillRect( arguments.x, arguments.y, arguments.w, rws.len(), bg );
+		var i = 0;
+		for ( var r in rws ) {
+			var yy = arguments.y + i;
+			i++;
+			var lw = variables.bl.zoneWidth( r.l );
+			var cw = variables.bl.zoneWidth( r.c );
+			var rw = variables.bl.zoneWidth( r.r );
+			if ( r.mode == "one" ) {
+				chipRow( arguments.x + 1, yy, r.l, arguments.selected, bg );
+				var cx = arguments.x + 1 + int( ( inner - cw ) / 2 );
+				cx = max( cx, arguments.x + 1 + lw + 2 );
+				cx = min( cx, arguments.x + 1 + inner - rw - 2 - cw );
+				chipRow( cx, yy, r.c, arguments.selected, bg );
+				chipRow( arguments.x + arguments.w - 1 - rw, yy, r.r, arguments.selected, bg );
+			} else if ( r.mode == "lc" ) {
+				chipRow( arguments.x + 1, yy, r.l, arguments.selected, bg );
+				chipRow( arguments.x + 1 + lw + 2, yy, r.c, arguments.selected, bg );
+			} else if ( r.mode == "l" ) chipRow( arguments.x + 1, yy, r.l, arguments.selected, bg );
+			else if ( r.mode == "c" ) chipRow( arguments.x + 1, yy, r.c, arguments.selected, bg );
+			else chipRow( max( arguments.x + 1, arguments.x + arguments.w - 1 - rw ), yy, r.r, arguments.selected, bg );
+		}
+		return rws.len();
+	}
+
+	function dock( x, y, w, selected = true ) {
+		var k = variables.kit;
+		var bg = k.color( "CRUST" );
+		k.fillRect( arguments.x, arguments.y, arguments.w, 1, bg );
+		var cx = arguments.x + 1;
+		cx = k.put( cx, arguments.y, " ▦ ", arguments.selected ? k.color( "CRUST" ) : k.color( "OVERLAY" ), arguments.selected ? k.color( "GREEN" ) : k.color( "SURFACE0" ), true );
+		cx = k.put( cx, arguments.y, " │ ", k.color( "SURFACE1" ), bg );
+		for ( var d in variables.bl.dock() ) {
+			cx = k.put( cx, arguments.y, " " & d.t & " ", arguments.selected ? k.color( "CRUST" ) : k.color( "OVERLAY" ), arguments.selected ? role( d.role ) : k.color( "SURFACE0" ) );
+			cx++;
+		}
+		return 1;
+	}
+
+	// ---------------------------------------------------------------- the app grids
+
+	function apps() {
+		return [ [ "BxRig", "◆", "ok" ], [ "Center", "▣", "cy" ], [ "Term", "❯", "ok" ], [ "Files", "▤", "y" ], [ "Web", "◍", "cy" ], [ "Mail", "✉", "m" ], [ "Editor", "✎", "pk" ],
+			[ "Notes", "☰", "y" ], [ "Backup", "↻", "cy" ], [ "Themes", "◐", "m" ], [ "Prefs", "⚙", "r" ], [ "Music", "♪", "m" ], [ "Videos", "▶", "r" ], [ "Docs", "≡", "cy" ] ];
+	}
+
+	// The height of a grid preview of `rows` rows of apps.
+	function gridHeight( rows = 2 ) { return 5 + arguments.rows * 3; }
+
+	// A box with plain or rounded corners.
+	function box( x, y, w, h, fg, bg, rounded ) {
+		var k = variables.kit;
+		var cs = arguments.rounded ? [ "╭", "╮", "╰", "╯" ] : [ "┌", "┐", "└", "┘" ];
+		k.fillRect( arguments.x, arguments.y, arguments.w, arguments.h, arguments.bg );
+		k.put( arguments.x, arguments.y, cs[ 1 ] & repeatString( "─", arguments.w - 2 ) & cs[ 2 ], arguments.fg, arguments.bg );
+		k.put( arguments.x, arguments.y + arguments.h - 1, cs[ 3 ] & repeatString( "─", arguments.w - 2 ) & cs[ 4 ], arguments.fg, arguments.bg );
+		for ( var j = 1; j < arguments.h - 1; j++ ) {
+			k.put( arguments.x, arguments.y + j, "│", arguments.fg, arguments.bg );
+			k.put( arguments.x + arguments.w - 1, arguments.y + j, "│", arguments.fg, arguments.bg );
+		}
+	}
+
+	function appGrid( x, y, w, style, selected = true, rows = 2 ) {
+		var k = variables.kit;
+		var terminal = arguments.style == "terminal";
+		var h = gridHeight( arguments.rows );
+		var bg = k.color( "MANTLE" );
+		var edge = arguments.selected ? k.color( "GREEN" ) : k.color( "SURFACE1" );
+		box( arguments.x, arguments.y, arguments.w, h, edge, bg, !terminal );
+		k.fillRect( arguments.x + 2, arguments.y + 1, arguments.w - 4, 1, k.color( "CRUST" ) );
+		k.put( arguments.x + 3, arguments.y + 1, terminal ? "/ search apps" : "⌕ Search apps...", k.color( "OVERLAY" ), k.color( "CRUST" ) );
+		var cols = max( 2, min( 7, int( ( arguments.w - 2 ) / 7 ) ) );
+		var ox = arguments.x + 1 + int( ( arguments.w - 2 - cols * 7 ) / 2 );
+		var list = apps();
+		for ( var i = 0; i < cols * arguments.rows && i < list.len(); i++ ) {
+			var a = list[ i + 1 ];
+			var cx = ox + ( i mod cols ) * 7;
+			var cy = arguments.y + 3 + int( i / cols ) * 3;
+			if ( terminal ) {
+				k.put( cx + 3, cy, a[ 2 ], k.color( "SUB" ), bg );
+				k.put( cx + int( ( 7 - len( a[ 1 ] ) ) / 2 ), cy + 1, a[ 1 ], k.color( "OVERLAY" ), bg );
+			} else {
+				var col = role( a[ 3 ] );
+				k.fillRect( cx + 1, cy, 5, 2, col );
+				k.put( cx + 3, cy, a[ 2 ], k.color( "CRUST" ), col, true );
+				k.put( cx + 1, cy + 1, "▀▀▀▀▀", k.color( "CRUST" ), col );
+				k.put( cx + int( ( 7 - len( a[ 1 ] ) ) / 2 ), cy + 2, a[ 1 ], k.color( "TEXT" ), bg );
+			}
+		}
+		var dy = arguments.y + h - 2;
+		if ( terminal ) {
+			var hx = arguments.x + 2;
+			for ( var hint in [ [ "type", "filter" ], [ "enter", "open" ], [ "esc", "close" ] ] ) {
+				if ( hx + len( hint[ 1 ] ) + len( hint[ 2 ] ) + 3 > arguments.x + arguments.w - 1 ) break;
+				hx = k.put( hx, dy - 1, hint[ 1 ], k.color( "CYAN" ), bg, true ) + 1;
+				hx = k.put( hx, dy - 1, hint[ 2 ], k.color( "OVERLAY" ), bg ) + 2;
+			}
+			var tx = arguments.x + 2;
+			tx = k.put( tx, dy, " ▦ ", k.color( "SUB" ), k.color( "SURFACE0" ) );
+			tx = k.put( tx, dy, "│", k.color( "SURFACE1" ), bg );
+			for ( var dr in [ "ok", "cy", "y" ] ) tx = k.put( tx, dy, " ▪ ", role( dr ), k.color( "SURFACE0" ) );
+		} else {
+			var lx = arguments.x + 4;
+			lx = k.put( lx, dy, " ⠿ ", k.color( "TEXT" ), k.color( "SURFACE0" ) );
+			lx = k.put( lx, dy, " │ ", k.color( "SURFACE1" ), bg );
+			for ( var d2 in [ "ok", "cy", "y" ] ) { lx = k.put( lx, dy, " ▪ ", k.color( "CRUST" ), role( d2 ) ); lx++; }
+		}
+		return h;
+	}
+
+	// ---------------------------------------------------------------- a theme
+
+	// "dark" or "light" and four colour blocks of the theme (background, accent, green, blue), 9 columns.
+	function themeSwatch( x, y, bg, c ) {
+		var k = variables.kit;
+		var tc = new bxrig.ThemeColors();
+		k.put( arguments.x, arguments.y, tc.isLight( arguments.c ) ? "light" : "dark ", k.color( "OVERLAY" ), arguments.bg );
+		var cx = arguments.x + 5;
+		for ( var key in [ "background", "accent", "green", "blue" ] ) cx = k.put( cx, arguments.y, "█", structKeyExists( arguments.c, key ) ? arguments.c[ key ] : arguments.c.accent, arguments.bg );
+		return cx;
+	}
+
+	// A colour of a theme, or its accent when the theme has no such colour.
+	function tone( c, key ) { return structKeyExists( arguments.c, arguments.key ) ? arguments.c[ arguments.key ] : arguments.c.accent; }
+
+	function themePane( x, y, w, h, c, name ) {
+		var k = variables.kit;
+		var bg = arguments.c.background;
+		var fg = arguments.c.foreground;
+		var muted = structKeyExists( arguments.c, "muted" ) ? arguments.c.muted : fg;
+		var crust = structKeyExists( arguments.c, "darker_background" ) ? arguments.c.darker_background : bg;
+		var sel = structKeyExists( arguments.c, "selection" ) ? arguments.c.selection : crust;
+		var accent = arguments.c.accent;
+		k.fillRect( arguments.x, arguments.y, arguments.w, arguments.h, bg );
+		k.put( arguments.x, arguments.y, "╭" & repeatString( "─", arguments.w - 2 ) & "╮", accent, bg );
+		k.put( arguments.x, arguments.y + arguments.h - 1, "╰" & repeatString( "─", arguments.w - 2 ) & "╯", muted, bg );
+		for ( var j = 1; j < arguments.h - 1; j++ ) {
+			k.put( arguments.x, arguments.y + j, "│", muted, bg );
+			k.put( arguments.x + arguments.w - 1, arguments.y + j, "│", muted, bg );
+		}
+		k.put( arguments.x + 2, arguments.y, k.trunc( " Preview: " & arguments.name & " ", arguments.w - 4 ), accent, bg, true );
+		var sw = [ [ "bg", bg ], [ "fg", fg ], [ "acc", accent ], [ "sel", sel ], [ "red", tone( arguments.c, "red" ) ], [ "ora", tone( arguments.c, "orange" ) ], [ "yel", tone( arguments.c, "yellow" ) ], [ "grn", tone( arguments.c, "green" ) ], [ "cyn", tone( arguments.c, "cyan" ) ], [ "blu", tone( arguments.c, "blue" ) ], [ "mag", tone( arguments.c, "magenta" ) ], [ "mut", muted ] ];
+		var cw = int( ( arguments.w - 4 ) / 2 );
+		var cy = arguments.y + 2;
+		for ( var i = 0; i < sw.len() && cy + int( i / 2 ) < arguments.y + arguments.h - 1; i++ ) {
+			var cx = arguments.x + 2 + ( i mod 2 ) * cw;
+			var yy = cy + int( i / 2 );
+			k.put( cx, yy, "██", sw[ i + 1 ][ 2 ], bg );
+			k.put( cx + 3, yy, sw[ i + 1 ][ 1 ], fg, bg );
+			if ( cw >= 14 ) k.put( cx + 7, yy, sw[ i + 1 ][ 2 ], muted, bg );
+		}
+		cy += 7;
+		var th = min( 8, arguments.y + arguments.h - 1 - cy );
+		if ( th >= 4 ) {
+			k.fillRect( arguments.x + 2, cy, arguments.w - 4, th, crust );
+			var lines = [
+				[ [ "~/dev/bxrig ", tone( arguments.c, "blue" ) ], [ "main ", tone( arguments.c, "magenta" ) ], [ "❯ ", accent ], [ "bxrig status", fg ] ],
+				[ [ "✓ ", tone( arguments.c, "green" ) ], [ "Hyprland   ", fg ], [ "installed", muted ] ],
+				[ [ "▲ ", tone( arguments.c, "yellow" ) ], [ "Updates    ", fg ], [ "3 waiting", tone( arguments.c, "yellow" ) ] ],
+				[ [ "✗ ", tone( arguments.c, "red" ) ], [ "Backup     ", fg ], [ "2 days old", tone( arguments.c, "red" ) ] ],
+				[ [ "❯ ", accent ], [ "ls", fg ] ],
+				[ [ "src ", tone( arguments.c, "blue" ) ], [ "docs ", tone( arguments.c, "blue" ) ], [ "README.md", fg ] ]
+			];
+			for ( var li = 1; li <= lines.len() && li <= th - 1; li++ ) {
+				var lx = arguments.x + 3;
+				for ( var part in lines[ li ] ) {
+					if ( lx >= arguments.x + arguments.w - 3 ) break;
+					lx = k.put( lx, cy + li - 1, left( part[ 1 ], arguments.x + arguments.w - 3 - lx ), part[ 2 ], crust );
+				}
+			}
+			k.fillRect( arguments.x + 2, cy + th - 1, arguments.w - 4, 1, sel );
+			k.put( arguments.x + 3, cy + th - 1, "▌ selected row", fg, sel, true );
+		}
+	}
+}

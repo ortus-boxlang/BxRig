@@ -126,6 +126,8 @@ class WizardApp {
 					}
 					out.append( { kind: "opt", q: qn, i: oi, group: "" } );
 				}
+				// a picture of what the choice does (the app grid styles) sits under the options
+				if ( q.type == "choice" && ( q.preview ?: "" ) == "appgrid" ) out.append( { kind: "preview", q: qn, i: 0, group: "" } );
 			} else {
 				out.append( { kind: "heading", q: qn, i: 0, group: "" } );
 				out.append( { kind: "field", q: qn, i: 0, group: "" } );
@@ -175,10 +177,18 @@ class WizardApp {
 		return "";
 	}
 
-	// The row to focus first on a page: its first focusable one.
+	// The row to focus first on a page: its first focusable one, or, when that is an option of a single choice, the option that is the answer now
+	// (so Enter keeps the default instead of picking the first option).
 	function firstFocus( pg ) {
 		var rs = rowsOf( arguments.pg );
-		for ( var i = 1; i <= rs.len(); i++ ) if ( isFocusable( rs[ i ] ) ) return i;
+		for ( var i = 1; i <= rs.len(); i++ ) {
+			if ( !isFocusable( rs[ i ] ) ) continue;
+			if ( rs[ i ].kind == "opt" && arguments.pg.questions[ rs[ i ].q ].type == "choice" ) {
+				var q = arguments.pg.questions[ rs[ i ].q ];
+				for ( var j = i; j <= rs.len() && rs[ j ].q == rs[ i ].q; j++ ) if ( rs[ j ].kind == "opt" && q.options[ rs[ j ].i ].value == answerString( q.id ) ) return j;
+			}
+			return i;
+		}
 		return 1;
 	}
 
@@ -216,8 +226,18 @@ class WizardApp {
 		while ( true ) {
 			i += arguments.down ? 1 : -1;
 			if ( i < 1 || i > rs.len() ) return this;
-			if ( isFocusable( rs[ i ] ) ) { variables.focus = i; return this; }
+			if ( isFocusable( rs[ i ] ) ) { variables.focus = i; followFocus(); return this; }
 		}
+	}
+
+	// A choice marked `live` (the pages that preview what they pick: top bar layout, app grid, theme) selects whatever has focus, so the arrow
+	// keys change the preview at once.
+	function followFocus() {
+		var row = focusedRow();
+		if ( row.kind != "opt" ) return this;
+		var q = variables.spec.pages[ variables.page ].questions[ row.q ];
+		if ( q.type == "choice" && ( q.live ?: false ) == true ) variables.answers[ q.id ] = q.options[ row.i ].value;
+		return this;
 	}
 
 	function focusedRow() {

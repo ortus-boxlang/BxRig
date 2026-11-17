@@ -1,0 +1,37 @@
+// BarLayouts (the three top bar layouts as data) and LookPreview (their pictures). Run from src/: (cd src && matchbox ../tests/bar_layouts_test.bxs)
+testkit = new lib.Check( "bar layouts" );
+bl = new bxrig.BarLayouts();
+testkit.check( "three layouts: Minimal, Standard (default, recommended) and Dense", bl.order().toList( "," ) == "minimal,standard,dense" && bl.layout( "standard" ).tag == "recommended, default" && bl.layout( "dense" ).name == "Dense" );
+testkit.check( "an unknown layout is Standard", bl.layout( "huge" ).key == "standard" && !bl.valid( "huge" ) );
+
+testkit.check( "Standard has the capture icon, Minimal does not, Dense has everything", bl.has( "standard", "cap" ) && !bl.has( "minimal", "cap" ) && bl.has( "dense", "cap" ) );
+testkit.check( "Dense adds brightness and weather to Standard", bl.has( "dense", "bright" ) && bl.has( "dense", "weather" ) && !bl.has( "standard", "bright" ) && !bl.has( "standard", "weather" ) );
+testkit.check( "Minimal keeps workspaces, the active window and quick settings (DESKTOP-DECISIONS.md)", bl.has( "minimal", "ws" ) && bl.has( "minimal", "win" ) && bl.has( "minimal", "quick" ) && !bl.has( "minimal", "clip" ) );
+function ids( k ) { var l = bl.layout( k ); var out = []; for ( var z in [ l.L, l.C, l.R ] ) for ( var i in z ) out.append( i ); return out; }
+function holds( big, small ) { for ( var i in small ) if ( !arrayFind( big, i ) ) return false; return true; }
+testkit.check( "each layout holds the one before it (Minimal in Standard in Dense)", holds( ids( "standard" ), ids( "minimal" ) ) && holds( ids( "dense" ), ids( "standard" ) ) );
+testkit.check( "clipboard history is on the right, quick settings then control center last", bl.layout( "standard" ).R[ bl.layout( "standard" ).R.len() ] == "ctl" && bl.layout( "standard" ).R[ bl.layout( "standard" ).R.len() - 1 ] == "quick" && bl.has( "standard", "clip" ) );
+testkit.check( "every chip id used is a known chip", ids( "dense" ).filter( function( i ) { return !structKeyExists( bl.chips(), i ); } ).len() == 0 );
+
+// the strip in a given width
+wide = bl.rows( "standard", 200 );
+testkit.check( "wide: one row with the three zones side by side", wide.len() == 1 && wide[ 1 ].mode == "one" );
+narrow = bl.rows( "dense", 60 );
+fits = true; count = 0;
+for ( r in narrow ) { for ( z in [ r.l, r.c, r.r ] ) { if ( bl.zoneWidth( z ) > 58 ) fits = false; count += z.len(); } }
+testkit.check( "narrow: the zones wrap onto more rows, every row fits, no chip is lost", narrow.len() > 1 && fits && count == ids( "dense" ).len() );
+testkit.check( "height says how many rows the strip takes", bl.height( "dense", 60 ) == narrow.len() && bl.height( "minimal", 200 ) == 1 );
+testkit.check( "the battery percentage adds ' 78%' to the battery chip", find( "78%", bl.zone( [ "bat" ], true )[ 1 ].t ) > 0 && find( "78%", bl.zone( [ "bat" ], false )[ 1 ].t ) == 0 );
+testkit.check( "the dock starts with the grid button", bl.dock().len() == 5 && bl.dock()[ 1 ].t == "◍" );
+
+// drawn
+tui = createObject( "rust", "tui.TUI" );
+kit = new bxrig.TuiKit( tui );
+pv = new bxrig.LookPreview( kit );
+function draw( key, w = 120 ) { tui.begin_frame(); pv.strip( 0, 0, w, key, true ); return tui.render_to_string( w, 4 ); }
+testkit.check( "drawn: Standard shows the capture icon, Minimal does not", find( "◉", draw( "standard" ) ) > 0 && find( "◉", draw( "minimal" ) ) == 0 && find( "☁", draw( "dense" ) ) > 0 && find( "☁", draw( "standard" ) ) == 0 );
+testkit.check( "drawn: the clock reads Nov 5 - 04:00", find( "Nov 5 - 04:00", draw( "standard" ) ) > 0 );
+tui.begin_frame(); h = pv.appGrid( 0, 0, 40, "launchpad", true ); g1 = tui.render_to_string( 80, 14 );
+tui.begin_frame(); pv.appGrid( 0, 0, 40, "terminal", true ); g2 = tui.render_to_string( 80, 14 );
+testkit.check( "app grids: Launchpad has big tiles and a search box, Terminal-style has key hints and square corners", h == pv.gridHeight( 2 ) && find( "Search apps", g1 ) > 0 && find( "╭", g1 ) > 0 && find( "▀▀▀▀▀", g1 ) > 0 && find( "/ search apps", g2 ) > 0 && find( "esc", g2 ) > 0 && find( "┌", g2 ) > 0 && find( "╭", g2 ) == 0 );
+testkit.done();

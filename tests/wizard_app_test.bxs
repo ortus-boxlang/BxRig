@@ -18,7 +18,7 @@ before = a.focus();
 a.onKey( "Enter" );
 testkit.check( "enter moves to the next question", a.focus() > before && a.rows()[ a.focus() ].q == 2 );
 
-a = started(); a.gotoPage( 3 );
+a = started(); a.gotoPage( 6 );
 a.onKey( "Down" ); a.onKey( " " );
 testkit.check( "a multi choice toggles on", arrayFind( a.answerList( "layouts" ), "us" ) > 0 );
 a.onKey( " " );
@@ -33,7 +33,7 @@ testkit.check( "numbers stop at their maximum", a.answerNumber( "workspaces" ) =
 for ( i = 1; i <= 30; i++ ) a.onKey( "Left" );
 testkit.check( "and at their minimum", a.answerNumber( "workspaces" ) == 1 );
 
-a = started(); a.gotoPage( 4 );
+a = started(); a.gotoPage( 7 );
 for ( c in [ "L", "u", "i", "s" ] ) a.onKey( c );
 testkit.check( "text fields take typing", a.answerString( "git_name" ) == "Luis" );
 a.onKey( "Backspace" );
@@ -90,7 +90,7 @@ a = mk();
 testkit.check( "JavaScript runtimes are hidden until JavaScript is chosen, and default to Node", !a.finalAnswers().keyExists( "js_runtimes" ) && a.answerList( "js_runtimes" ).toList() == "node" );
 a = mk( { toolchains: [ "java", "javascript" ] } );
 testkit.check( "and asked once it is", a.finalAnswers().keyExists( "js_runtimes" ) );
-testkit.check( "the toolchains page says BoxLang is always installed", find( "BoxLang", a.spec().pages[ 5 ].intro ) > 0 && a.spec().pages[ 5 ].questions[ 1 ].type == "info" );
+testkit.check( "the toolchains page says BoxLang is always installed", find( "BoxLang", a.spec().pages[ 8 ].intro ) > 0 && a.spec().pages[ 8 ].questions[ 1 ].type == "info" );
 
 a = mk();
 testkit.check( "the launcher defaults to Noctalia and the menu to Rofi; the launcher is for Hyprland only", a.answerString( "launcher" ) == "noctalia" && a.answerString( "menu" ) == "rofi" && a.finalAnswers().keyExists( "launcher" ) && !mk( { desktops: "plasma" } ).finalAnswers().keyExists( "launcher" ) );
@@ -124,5 +124,44 @@ testkit.check( "next lands on it", a.pageIndex() == 2 && a.stepOf( 2 ) == 2 );
 
 a = mk();
 testkit.check( "the welcome version is the program version, not a number in the page file", a.spec().version == new bxrig.util.Version().current() && !jsonDeserialize( new bxrig.WizardData().demoPages() ).keyExists( "version" ) );
+
+// ---- the Look pages: top bar layout, app grid style and the theme chooser, each after Look, each its own page ----
+a = mk();
+ids = a.spec().pages.map( function( pg ) { return pg.id; } ).toList( "," );
+testkit.check( "pages after Look: top bar layout, app grid style, theme, then Input", find( "look,top_bar,app_grid,theme_page,input,", ids ) > 0 );
+lookIds = a.spec().pages[ 2 ].questions.map( function( q ) { return q.id; } );
+testkit.check( "the Look page has no color theme list (dark, light or auto stays)", !arrayFind( lookIds, "theme_name" ) && arrayFind( lookIds, "theme" ) && arrayFind( lookIds, "dock" ) && arrayFind( lookIds, "bar_position" ) );
+testkit.check( "defaults: Standard bar, Launchpad grid, the BxRig theme", a.answerString( "bar_layout" ) == "standard" && a.answerString( "appgrid_style" ) == "launchpad" && a.answerString( "theme_name" ) == "bxrig" );
+barPage = a.spec().pages[ 3 ]; gridPage = a.spec().pages[ 4 ]; themePage = a.spec().pages[ 5 ];
+testkit.check( "the bar layout choices are Minimal, Standard and Dense", barPage.questions[ 1 ].options.map( function( o ) { return o.value; } ).toList( "," ) == "minimal,standard,dense" && barPage.questions[ 1 ].live == true );
+testkit.check( "the app grid choices are Launchpad and Terminal-style", gridPage.questions[ 1 ].options.map( function( o ) { return o.value; } ).toList( "," ) == "launchpad,terminal" );
+themeValues = themePage.questions[ 1 ].options.map( function( o ) { return o.value; } );
+bundled = new bxrig.ThemeData().names();
+testkit.check( "the Theme page lists every theme in themes/ (" & bundled.len() & ")", themeValues.len() == bundled.len() && bundled.filter( function( n ) { return arrayFind( themeValues, n ) > 0; } ).len() == bundled.len() );
+testkit.check( "the Theme page asks no icon set", themePage.questions.len() == 1 );
+
+a = started(); a.gotoPage( 3 );
+testkit.check( "the page opens on the chosen option (Standard), so Enter keeps it", a.rows()[ a.focus() ].kind == "opt" && a.rows()[ a.focus() ].i == 2 );
+a.onKey( "Enter" );
+testkit.check( "Enter on the first screen of the page keeps the default and goes on", a.answerString( "bar_layout" ) == "standard" );
+a = started(); a.gotoPage( 3 ); a.onKey( "Down" );
+testkit.check( "Down changes the preview at once: Dense, no space needed", a.answerString( "bar_layout" ) == "dense" );
+a.onKey( "Up" ); a.onKey( "Up" );
+testkit.check( "Up twice: Minimal", a.answerString( "bar_layout" ) == "minimal" );
+a.onKey( "k" ); testkit.check( "the choice stops at the first option", a.answerString( "bar_layout" ) == "minimal" );
+a = started(); a.gotoPage( 4 ); a.onKey( "Down" );
+testkit.check( "app grid: Down is Terminal-style", a.answerString( "appgrid_style" ) == "terminal" && a.rows().filter( function( r ) { return r.kind == "preview"; } ).len() == 1 );
+a = started(); a.gotoPage( 5 ); a.onKey( "j" ); a.onKey( "j" );
+testkit.check( "theme: the highlighted theme is the answer (the third one)", a.answerString( "theme_name" ) == themeValues[ 3 ] );
+a = started(); a.gotoPage( 2 ); a.onKey( "Down" ); a.onKey( "Down" );
+testkit.check( "choices that are not live still need space (the Look mode)", a.answerString( "theme" ) == "dark" );
+
+// the bar and the grid are Noctalia's: asked for Hyprland and Both, not for KDE Plasma alone; the theme is for every desktop
+a = mk( { desktops: "plasma" } );
+testkit.check( "KDE only: no top bar or app grid page, the theme page stays", !a.pageVisible( 3 ) && !a.pageVisible( 4 ) && a.pageVisible( 5 ) && !a.finalAnswers().keyExists( "bar_layout" ) && a.finalAnswers().keyExists( "theme_name" ) );
+a = mk( { desktops: "both" } );
+testkit.check( "Both: all three pages", a.pageVisible( 3 ) && a.pageVisible( 4 ) && a.pageVisible( 5 ) && a.finalAnswers().bar_layout == "standard" && a.finalAnswers().appgrid_style == "launchpad" );
+a = mk( { bar_layout: "dense", appgrid_style: "terminal", theme_name: "nord" } );
+testkit.check( "review words: Dense, Terminal-style grid, Nord", a.display( barPage.questions[ 1 ] ) == "Dense" && a.display( gridPage.questions[ 1 ] ) == "Terminal-style grid" && a.display( themePage.questions[ 1 ] ) == "Nord" );
 
 testkit.done( "all passed" );

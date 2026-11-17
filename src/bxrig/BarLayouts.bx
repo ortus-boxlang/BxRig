@@ -1,0 +1,131 @@
+// The top bar layouts as data (pure, no drawing): what the wizard's "Top bar layout" page and the Control Center's Look page preview.
+// Three layouts, drawn as text chips so they work without an icon font (on the desktop the same items are the bar's icons):
+//   minimal   workspaces, active window, quick settings and the quiet status icons; no capture, no clipboard (DESKTOP-DECISIONS.md)
+//   standard  the recommended bar (default): everything used every day, the capture icon included
+//   dense     everything of Standard plus brightness and weather
+// The real bar is Noctalia's; `bxrig appearance bar layout minimal|standard|dense` applies a layout (the backend owns what each one puts on it).
+//
+//   bl = new bxrig.BarLayouts()
+//   bl.order()                     [ "minimal", "standard", "dense" ]
+//   bl.layout( "standard" )        { key, name, tag, desc, detail, inc, note, L, C, R }   L, C, R: chip ids of the left, centre and right zones
+//   bl.rows( "dense", 70 )         the bar drawn in 70 columns: an array of rows, each { mode, l, c, r } of chips
+//   bl.has( "minimal", "cap" )     whether a layout carries a chip
+class BarLayouts {
+	function order() { return [ "minimal", "standard", "dense" ]; }
+
+	function valid( key ) { return arrayFind( order(), arguments.key ) > 0; }
+
+	// Chip id -> { t: its text, role: its colour role, b: bold, label }. Roles: acc ok cy y r m pk ov sub text (TuiKit palette colours).
+	function chips() {
+		return {
+			logo: { t: "◆", role: "acc", b: true, label: "logo menu" },
+			ws: { t: "1 2 3 4", role: "sub", b: false, label: "workspaces" },
+			win: { t: "Files", role: "sub", b: false, label: "active window" },
+			clock: { t: "Nov 5 - 04:00", role: "text", b: true, label: "clock (one widget, other zones in its popover)" },
+			media: { t: "♪", role: "m", b: false, label: "media" },
+			agents: { t: "◈", role: "ok", b: false, label: "agents" },
+			dev: { t: "‹›", role: "ok", b: false, label: "Developer" },
+			sys: { t: "↻", role: "cy", b: false, label: "System (updates, backups)" },
+			cap: { t: "◉", role: "r", b: false, label: "capture" },
+			tray: { t: "···", role: "ov", b: false, label: "tray" },
+			clip: { t: "▤", role: "y", b: false, label: "clipboard history" },
+			net: { t: "≈", role: "cy", b: false, label: "network" },
+			vpn: { t: "▣", role: "r", b: false, label: "VPN" },
+			bt: { t: "✦", role: "cy", b: false, label: "bluetooth" },
+			vol: { t: "♫", role: "text", b: false, label: "volume" },
+			bright: { t: "☼", role: "y", b: false, label: "brightness" },
+			bat: { t: "▮▮▮▯", role: "ok", b: false, label: "battery (laptop only)" },
+			bell: { t: "◔", role: "y", b: false, label: "notifications" },
+			quick: { t: "≡", role: "m", b: false, label: "quick settings" },
+			ctl: { t: "⊞", role: "m", b: false, label: "control center (always last)" },
+			weather: { t: "☁ 11°", role: "cy", b: false, label: "weather" }
+		};
+	}
+
+	function layout( key ) {
+		var all = {
+			minimal: { name: "Minimal", tag: "", desc: "Quiet, like a Mac menu bar. The dock holds your apps.",
+				L: [ "logo", "ws", "win" ], C: [ "clock" ], R: [ "tray", "net", "vol", "bat", "bell", "quick", "ctl" ],
+				inc: "Logo menu, workspaces, active window, clock, tray, network, volume, battery (laptop only), notifications, quick settings and the control center. No capture icon.",
+				note: "", detail: "Minimal: the fewest icons. Everything else is one click away in the logo menu and the control center." },
+			standard: { name: "Standard", tag: "recommended, default", desc: "The balanced bar: what you use every day, nothing you rarely touch.",
+				L: [ "logo", "ws", "win" ], C: [ "clock", "media" ], R: [ "agents", "dev", "sys", "cap", "tray", "clip", "net", "vpn", "bt", "vol", "bat", "bell", "quick", "ctl" ],
+				inc: "Logo menu, workspaces, active window, clock, media, agents, Developer, System, capture, tray, clipboard history, network, VPN, bluetooth, volume, battery (laptop only), notifications, quick settings and the control center last.",
+				note: "", detail: "Standard: the recommended bar, the one you get if you just press Enter." },
+			dense: { name: "Dense", tag: "developer", desc: "Every status in view at once. Needs a wide screen.",
+				L: [ "logo", "ws", "win" ], C: [ "clock", "weather", "media" ], R: [ "agents", "dev", "sys", "cap", "tray", "clip", "net", "vpn", "bt", "vol", "bright", "bat", "bell", "quick", "ctl" ],
+				inc: "Everything in Standard, plus brightness and weather.",
+				note: "Caffeine is not a bar icon: it stays a switch in Quick settings.", detail: "Dense: for developers with a wide screen. On a small screen the bar runs out of room and hides some icons." }
+		};
+		var l = all[ valid( arguments.key ) ? arguments.key : "standard" ];
+		l.key = valid( arguments.key ) ? arguments.key : "standard";
+		return l;
+	}
+
+	function has( key, id ) {
+		var l = layout( arguments.key );
+		return arrayFind( l.L, arguments.id ) > 0 || arrayFind( l.C, arguments.id ) > 0 || arrayFind( l.R, arguments.id ) > 0;
+	}
+
+	// The chips of a zone, each with its text and width. pct adds the battery percentage ("▮▮▮▯ 78%").
+	function zone( ids, pct = false ) {
+		var all = chips();
+		var out = [];
+		for ( var id in arguments.ids ) {
+			var c = duplicate( all[ id ] );
+			c.id = id;
+			if ( id == "bat" && arguments.pct ) c.t &= " 78%";
+			c.w = len( c.t );
+			out.append( c );
+		}
+		return out;
+	}
+
+	function zoneWidth( z ) {
+		var w = 0;
+		for ( var c in arguments.z ) w += c.w;
+		return w + max( 0, arguments.z.len() - 1 );
+	}
+
+	// Chips packed into lines of at most `width` columns.
+	function pack( z, width ) {
+		var rows = [ [] ];
+		var cw = 0;
+		for ( var c in arguments.z ) {
+			var cur = rows[ rows.len() ];
+			var need = ( cur.len() ? 1 : 0 ) + c.w;
+			if ( cw + need > arguments.width && cur.len() ) { rows.append( [] ); cw = 0; cur = rows[ rows.len() ]; need = c.w; }
+			cur.append( c );
+			cw += need;
+		}
+		return rows;
+	}
+
+	// The bar in a strip of `width` columns (two columns of padding are kept): one row when the three zones fit side by side, else the left and
+	// centre zones share a row and the right zone wraps below, else every zone wraps. A row is { mode: one|lc|l|c|r, l, c, r } (chip arrays).
+	function rows( key, width, pct = false ) {
+		var lay = layout( arguments.key );
+		var l = zone( lay.L, arguments.pct );
+		var c = zone( lay.C, arguments.pct );
+		var r = zone( lay.R, arguments.pct );
+		var inner = max( 10, arguments.width - 2 );
+		var out = [];
+		if ( zoneWidth( l ) + zoneWidth( c ) + zoneWidth( r ) + 4 <= inner ) out.append( { mode: "one", l: l, c: c, r: r } );
+		else if ( zoneWidth( l ) + zoneWidth( c ) + 2 <= inner ) {
+			out.append( { mode: "lc", l: l, c: c, r: [] } );
+			for ( var rr in pack( r, inner ) ) out.append( { mode: "r", l: [], c: [], r: rr } );
+		} else {
+			for ( var a in pack( l, inner ) ) out.append( { mode: "l", l: a, c: [], r: [] } );
+			for ( var b in pack( c, inner ) ) out.append( { mode: "c", l: [], c: b, r: [] } );
+			for ( var d in pack( r, inner ) ) out.append( { mode: "r", l: [], c: [], r: d } );
+		}
+		return out;
+	}
+
+	function height( key, width, pct = false ) { return rows( arguments.key, arguments.width, arguments.pct ).len(); }
+
+	// The dock: the grid button first, then the apps. [ { t, role } ].
+	function dock() {
+		return [ { t: "◍", role: "cy" }, { t: "❯", role: "ok" }, { t: "▤", role: "y" }, { t: "◐", role: "m" }, { t: "▶", role: "r" } ];
+	}
+}

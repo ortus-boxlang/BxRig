@@ -1,6 +1,10 @@
 // Draws the setup wizard on MatchBox's terminal canvas (docs/tui.md in the MatchBox repo): the welcome splash, the pages
 // with a step sidebar, and the review. Catppuccin Frappe neutrals with the Ortus brand gradient (cyan #00DBFF to green
-// #00FF78). Every screen shows "Powered by BoxLang / www.boxlang.io".
+// #00FF78) until a theme is chosen: the wizard then follows the color theme answer (`theme_name`), so every screen is drawn in the
+// highlighted theme's colours while the Theme page is open. Every screen shows "Powered by BoxLang / www.boxlang.io".
+//
+// A choice may carry `preview`: "bar" (every option shows its top bar under it), "appgrid" (a preview of both grids under the options) or
+// "theme" (a swatch on every row and a pane with the highlighted theme's palette beside the list); an info row with preview "dock" draws the dock.
 //
 // paint( app, tick, width, height ) records the frame's drawing commands without painting the terminal, so a test can read
 // it back with tui.render_to_string( width, height ); the run loop calls tui.end_frame() afterwards. paint() also records
@@ -11,7 +15,12 @@ class WizardView {
 		variables.data = new bxrig.WizardData();
 		variables.wordmark = listToArray( variables.data.wordmark(), chr( 10 ), true );
 		variables.kit = new bxrig.TuiKit( arguments.tui );
-		for ( var shade in [ "BASE", "MANTLE", "CRUST", "SURFACE0", "SURFACE1", "OVERLAY", "TEXT", "SUB", "GREEN", "CYAN", "YELLOW", "RED" ] ) variables[ shade ] = variables.kit.color( shade );
+		variables.look = new bxrig.LookPreview( variables.kit );
+		variables.bl = new bxrig.BarLayouts();
+		variables.palettes = {};
+		variables.themeColors = {};
+		variables.paletteName = "";
+		syncShades();
 		variables.shownKey = "";
 		variables.changedAt = 0;
 		variables.stars = [];
@@ -20,6 +29,27 @@ class WizardView {
 	}
 
 	// ---------------------------------------------------------------- colour and drawing helpers (the shared kit does the work)
+
+	// The shade variables the drawing code reads, from the kit's palette.
+	function syncShades() {
+		for ( var shade in [ "BASE", "MANTLE", "CRUST", "SURFACE0", "SURFACE1", "OVERLAY", "TEXT", "SUB", "GREEN", "CYAN", "YELLOW", "RED" ] ) variables[ shade ] = variables.kit.color( shade );
+	}
+
+	// The parsed colours of a theme, kept after the first read (the Theme page asks again on every frame).
+	function colorsOf( name ) {
+		if ( !structKeyExists( variables.themeColors, arguments.name ) ) variables.themeColors[ arguments.name ] = new bxrig.Palette().colorsOf( arguments.name );
+		return variables.themeColors[ arguments.name ];
+	}
+
+	// The palette follows the color theme answer: the wizard is drawn in the theme that is highlighted.
+	function followTheme( app ) {
+		var name = arguments.app.answerString( "theme_name" );
+		if ( name == variables.paletteName ) return;
+		variables.paletteName = name;
+		if ( !structKeyExists( variables.palettes, name ) ) variables.palettes[ name ] = new bxrig.Palette().forTheme( name );
+		variables.kit.setPalette( variables.palettes[ name ] );
+		syncShades();
+	}
 
 
 	// Pixel art (an array of rows) in the brand gradient with a shimmer, one gradient per few cells.
@@ -57,8 +87,12 @@ class WizardView {
 	// What a click at x, y does: a { kind, n } struct, kind "" when it hits nothing.
 	function hitAt( x, y ) { var h = variables.kit.hitAt( arguments.x, arguments.y ); return { kind: h.kind, n: h.n }; }
 
+	// The drawing kit (a test reads the palette the wizard is drawn in).
+	function kit() { return variables.kit; }
+
 	function paint( app, tick, width, height ) {
 		variables.kit.clearHits();
+		followTheme( arguments.app );
 		var key = app.screen() & ":" & app.pageIndex();
 		if ( key != variables.shownKey ) { variables.shownKey = key; variables.changedAt = arguments.tick; }
 		var age = ( arguments.tick - variables.changedAt ) / 7;
@@ -185,16 +219,41 @@ class WizardView {
 		}
 	}
 
+	// The previews a page carries: the preview kind of its first choice that has one ("bar", "appgrid" or "theme"), "" for none.
+	function previewKind( pg ) {
+		for ( var q in arguments.pg.questions ) if ( q.type == "choice" && len( q.preview ?: "" ) ) return q.preview;
+		return "";
+	}
+
+	// Whether the Theme page draws its palette pane beside the list (room for a list of 34 and a pane of 22 or more).
+	function sideBySide( iw ) { return arguments.iw >= 58; }
+	function themeListWidth( iw ) { return sideBySide( arguments.iw ) ? 34 : arguments.iw; }
+
+	// The row number of option `i` of question `q`.
+	function optionRow( rws, q, i ) {
+		for ( var n = 1; n <= arguments.rws.len(); n++ ) if ( arguments.rws[ n ].kind == "opt" && arguments.rws[ n ].q == arguments.q && arguments.rws[ n ].i == arguments.i ) return n;
+		return 0;
+	}
+
 	// Lines a row takes on the page.
 	function rowHeight( pg, row, width ) {
 		if ( row.kind == "heading" ) return 1 + variables.kit.wrap( pg.questions[ row.q ].help ?: "", width ).len();
-		if ( row.kind == "info" ) return 1 + variables.kit.wrap( pg.questions[ row.q ].help ?: "", width ).len();
+		if ( row.kind == "info" ) {
+			var q = pg.questions[ row.q ];
+			return 1 + variables.kit.wrap( q.help ?: "", width ).len() + ( ( q.preview ?: "" ) == "dock" ? 1 : 0 );
+		}
+		if ( row.kind == "preview" ) return 1 + variables.look.gridHeight( 2 );
+		if ( row.kind == "opt" && ( pg.questions[ row.q ].preview ?: "" ) == "bar" ) {
+			var key = pg.questions[ row.q ].options[ row.i ].value;
+			return 1 + variables.bl.height( key, width - 5 ) + 1 + 1;
+		}
 		return 1;
 	}
 
 	function page( app, tick, x, y, w, h, phase ) {
 		var pg = app.spec().pages[ app.pageIndex() ];
 		var rws = app.rows();
+		var kind = previewKind( pg );
 		variables.kit.panel( arguments.x, arguments.y, arguments.w, arguments.h, pg.title, true, arguments.phase );
 		var ix = arguments.x + 3; var iy = arguments.y + 1; var iw = arguments.w - 6; var ih = arguments.h - 2;
 		var cy = iy + 1;
@@ -204,18 +263,22 @@ class WizardView {
 		}
 		var listTop = cy;
 		var listBottom = iy + ih - 4;
+		var rowW = kind == "theme" ? themeListWidth( iw ) : iw;
 		var tops = [];
 		var total = 0;
-		for ( var row in rws ) { tops.append( total ); total += rowHeight( pg, row, iw ); }
+		var ww = kind == "theme" ? rowW : iw;   // headings and notes wrap to the list, not under the palette pane
+		for ( var row in rws ) { tops.append( total ); total += rowHeight( pg, row, ww ); }
 		var avail = max( 1, listBottom - listTop );
 		var f = app.focus();
 		var fTop = f <= tops.len() ? tops[ f ] : 0;
-		var fH = f <= rws.len() ? rowHeight( pg, rws[ f ], iw ) : 1;
+		var fH = f <= rws.len() ? rowHeight( pg, rws[ f ], ww ) : 1;
 		var scroll = fTop + fH > avail ? fTop + fH - avail : 0;
+		// a picture under the options is kept in view when the room allows: the options above it scroll away first
 		for ( var idx = 1; idx <= rws.len(); idx++ ) {
 			var row = rws[ idx ];
+			var rh = rowHeight( pg, row, ww );
 			var ry = listTop + tops[ idx ] - scroll;
-			if ( ry < listTop || ry + rowHeight( pg, row, iw ) > listBottom ) continue;
+			if ( ry < listTop || ry + rh > listBottom ) continue;
 			var focused = idx == f;
 			var bg = focused ? variables.SURFACE0 : variables.MANTLE;
 			if ( row.kind == "heading" ) {
@@ -223,7 +286,7 @@ class WizardView {
 				variables.kit.put( ix, ry, qn.label, variables.TEXT, variables.MANTLE, true );
 				// a long help text wraps under the question instead of running past the panel
 				var hk = 1;
-				for ( var hline in variables.kit.wrap( qn.help ?: "", iw ) ) { variables.kit.put( ix, ry + hk, hline, variables.OVERLAY, variables.MANTLE ); hk++; }
+				for ( var hline in variables.kit.wrap( qn.help ?: "", ww ) ) { variables.kit.put( ix, ry + hk, hline, variables.OVERLAY, variables.MANTLE ); hk++; }
 			} else if ( row.kind == "group" ) {
 				variables.kit.put( ix + 2, ry, ucase( row.group ), variables.OVERLAY, variables.MANTLE, true );
 			} else if ( row.kind == "info" ) {
@@ -231,13 +294,16 @@ class WizardView {
 				variables.kit.put( ix, ry, qn.label, variables.TEXT, variables.MANTLE, true );
 				var k = 0;
 				for ( var line in variables.kit.wrap( qn.help ?: "", iw ) ) { variables.kit.put( ix, ry + 1 + k, line, variables.SUB, variables.MANTLE ); k++; }
+				if ( ( qn.preview ?: "" ) == "dock" ) variables.look.dock( ix, ry + 1 + k, min( iw, 44 ), true );
+			} else if ( row.kind == "preview" ) {
+				drawGrids( app, rws, row, pg, ix, ry, iw );
 			} else if ( row.kind == "opt" ) {
 				var qn = pg.questions[ row.q ];
 				var opt = qn.options[ row.i ];
 				var multi = qn.type == "multi";
 				var selected = multi ? arrayFind( app.answerList( qn.id ), opt.value ) > 0 : app.answerString( qn.id ) == opt.value;
 				if ( focused ) {
-					variables.kit.fillRect( ix, ry, iw, 1, variables.SURFACE0 );
+					variables.kit.fillRect( ix, ry, rowW, 1, variables.SURFACE0 );
 					variables.kit.put( ix, ry, "▌", variables.kit.brand( 0.5 ), variables.SURFACE0 );
 				}
 				var mark = multi ? ( selected ? "◆" : "◇" ) : ( selected ? "●" : "○" );
@@ -245,7 +311,17 @@ class WizardView {
 				variables.kit.put( ix + 5, ry, opt.label, selected ? variables.GREEN : variables.TEXT, bg, selected );
 				// an option the machine already has is marked (the wizard never removes anything)
 				if ( opt.installed ?: false ) variables.kit.put( ix + 5 + len( opt.label ) + 2, ry, "✓ installed", variables.OVERLAY, bg );
-				variables.kit.hit( "focus", ix, ry, iw, 1, idx );
+				if ( kind == "bar" ) {
+					var lay = variables.bl.layout( opt.value );
+					if ( len( lay.tag ) ) variables.kit.put( ix + 5 + len( opt.label ) + 2, ry, lay.tag, variables.OVERLAY, bg );
+					var sh = variables.look.strip( ix + 5, ry + 1, iw - 5, opt.value, selected );
+					for ( var dl in variables.kit.wrap( lay.desc, iw - 5 ) ) variables.kit.put( ix + 5, ry + 1 + sh, dl, selected ? variables.SUB : variables.OVERLAY, variables.MANTLE );
+				} else if ( kind == "theme" ) {
+					if ( opt.value == "bxrig" ) variables.kit.put( ix + 5 + len( opt.label ) + 2, ry, "default", variables.OVERLAY, bg );
+					var tcol = colorsOf( opt.value );
+					if ( rowW >= 30 && !structIsEmpty( tcol ) ) variables.look.themeSwatch( ix + rowW - 10, ry, bg, tcol );
+				}
+				variables.kit.hit( "focus", ix, ry, rowW, rh, idx );
 			} else if ( row.kind == "field" ) {
 				var qn = pg.questions[ row.q ];
 				if ( qn.type == "text" ) {
@@ -273,8 +349,14 @@ class WizardView {
 				variables.kit.hit( "focus", ix, ry, iw, 1, idx );
 			}
 		}
-		if ( scroll > 0 ) variables.kit.put( ix + iw - 2, listTop, "▲", variables.OVERLAY, variables.MANTLE );
-		if ( total - scroll > avail ) variables.kit.put( ix + iw - 2, listBottom - 1, "▼", variables.OVERLAY, variables.MANTLE );
+		// the palette pane of the Theme page: the highlighted theme's own colours
+		if ( kind == "theme" && sideBySide( iw ) ) {
+			var cur = app.answerString( themeQuestionId( pg ) );
+			var tc = colorsOf( cur );
+			if ( !structIsEmpty( tc ) ) variables.look.themePane( ix + rowW + 2, listTop, iw - rowW - 2, min( avail, 20 ), tc, themeLabel( pg, cur ) );
+		}
+		if ( scroll > 0 ) variables.kit.put( ix + rowW - 1, listTop, "▲", variables.OVERLAY, variables.MANTLE );
+		if ( total - scroll > avail ) variables.kit.put( ix + rowW - 1, listBottom - 1, "▼", variables.OVERLAY, variables.MANTLE );
 		// detail strip: what the focused option means
 		variables.kit.put( ix, listBottom, repeatString( "┄", iw ), variables.SURFACE1, variables.MANTLE );
 		var detail = "";
@@ -289,6 +371,40 @@ class WizardView {
 			if ( k == 0 ) variables.kit.put( ix, listBottom + 1, "▸", variables.CYAN, variables.MANTLE );
 			variables.kit.put( ix + 3, listBottom + 1 + k, line, variables.SUB, variables.MANTLE );
 			k++;
+		}
+	}
+
+	function themeQuestionId( pg ) {
+		for ( var q in arguments.pg.questions ) if ( q.type == "choice" && ( q.preview ?: "" ) == "theme" ) return q.id;
+		return "";
+	}
+
+	function themeLabel( pg, value ) {
+		for ( var q in arguments.pg.questions ) if ( q.type == "choice" && ( q.preview ?: "" ) == "theme" ) for ( var o in q.options ) if ( o.value == arguments.value ) return o.label;
+		return arguments.value;
+	}
+
+	// Both app grid styles side by side (or just the chosen one in a narrow window), the chosen one framed in green. Clicking one picks it.
+	function drawGrids( app, rws, row, pg, ix, ry, iw ) {
+		var q = arguments.pg.questions[ arguments.row.q ];
+		var chosen = arguments.app.answerString( q.id );
+		var styles = [];
+		for ( var o in q.options ) styles.append( o );
+		if ( sideBySide( arguments.iw ) || arguments.iw >= 50 ) {
+			var pw = int( ( arguments.iw - 2 ) / 2 );
+			for ( var n = 1; n <= min( 2, styles.len() ); n++ ) {
+				var gx = arguments.ix + ( n - 1 ) * ( pw + 2 );
+				var on = styles[ n ].value == chosen;
+				variables.kit.put( gx, arguments.ry, styles[ n ].label, on ? variables.GREEN : variables.OVERLAY, variables.MANTLE, on );
+				variables.look.appGrid( gx, arguments.ry + 1, pw, styles[ n ].value, on );
+				variables.kit.hit( "focus", gx, arguments.ry, pw, 1 + variables.look.gridHeight( 2 ), optionRow( arguments.rws, arguments.row.q, n ) );
+			}
+		} else {
+			var pw1 = min( arguments.iw, 40 );
+			for ( var m = 1; m <= styles.len(); m++ ) if ( styles[ m ].value == chosen ) {
+				variables.kit.put( arguments.ix, arguments.ry, styles[ m ].label, variables.GREEN, variables.MANTLE, true );
+				variables.look.appGrid( arguments.ix, arguments.ry + 1, pw1, chosen, true );
+			}
 		}
 	}
 

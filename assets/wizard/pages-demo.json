@@ -211,7 +211,7 @@
 		{
 			"id": "look",
 			"title": "Look",
-			"intro": "Your colors, your wallpaper, your bar. Every theme brings its own wallpaper.",
+			"intro": "Light or dark, the dock, the bar position and the clock. The top bar layout, the app grid style and the color theme have a page of their own after this one.",
 			"questions": [
 				{
 					"type": "choice",
@@ -233,115 +233,6 @@
 							"value": "auto",
 							"label": "Auto",
 							"description": "Follows sunrise and sunset."
-						}
-					]
-				},
-				{
-					"type": "choice",
-					"id": "theme_name",
-					"label": "Color theme",
-					"default": "bxrig",
-					"help": "Colors the shell, terminals, btop, Neovim, window borders and the lock screen, and sets the theme's own wallpaper. Change it any time: bxrig theme set NAME, or the theme switcher. Dark/Light above is overridden by the theme unless you chose Auto.",
-					"options": [
-						{
-							"value": "bxrig",
-							"label": "BxRig",
-							"description": "Frappe neutrals with the BoxLang greens (the default)."
-						},
-						{
-							"value": "bxrig-midnight",
-							"label": "BxRig Midnight",
-							"description": "Near-black with a green aurora, easy on OLED screens."
-						},
-						{
-							"value": "bxrig-cyan",
-							"label": "BxRig Cyan",
-							"description": "Deep ocean blues with BoxLang cyan."
-						},
-						{
-							"value": "bxrig-forest",
-							"label": "BxRig Forest",
-							"description": "Night forest greens."
-						},
-						{
-							"value": "bxrig-ember",
-							"label": "BxRig Ember",
-							"description": "Charcoal with glowing ember orange."
-						},
-						{
-							"value": "bxrig-light",
-							"label": "BxRig Light",
-							"description": "Latte neutrals with deeper greens."
-						},
-						{
-							"value": "bxrig-dawn",
-							"label": "BxRig Dawn",
-							"description": "Warm cream with coral sunrise."
-						},
-						{
-							"value": "bxrig-paper",
-							"label": "BxRig Paper",
-							"description": "Paper white with ink blue."
-						},
-						{
-							"value": "bxrig-mint",
-							"label": "BxRig Mint",
-							"description": "Clean white with glacier teal."
-						},
-						{
-							"value": "bxrig-sky",
-							"label": "BxRig Sky",
-							"description": "Pale sky with bright azure."
-						},
-						{
-							"value": "catppuccin",
-							"label": "Catppuccin",
-							"description": "Mocha: lavender and blue on deep navy."
-						},
-						{
-							"value": "catppuccin-latte",
-							"label": "Catppuccin Latte",
-							"description": "The light Catppuccin."
-						},
-						{
-							"value": "everforest",
-							"label": "Everforest",
-							"description": "Muted forest greens."
-						},
-						{
-							"value": "flexoki-light",
-							"label": "Flexoki Light",
-							"description": "Warm paper and ink."
-						},
-						{
-							"value": "gruvbox",
-							"label": "Gruvbox",
-							"description": "Retro warm browns and orange."
-						},
-						{
-							"value": "kanagawa",
-							"label": "Kanagawa",
-							"description": "Ink and wave blues."
-						},
-						{
-							"value": "matte-black",
-							"label": "Matte Black",
-							"description": "Black with an amber accent."
-						},
-						{
-							"value": "nord",
-							"label": "Nord",
-							"description": "Arctic frost blues."
-						},
-						{
-							"value": "rose-pine",
-							"label": "Rose Pine",
-							"description": "Soft rose and pine, light."
-						},
-						{
-							"value": "tokyo-night",
-							"label": "Tokyo Night",
-							"description": "Neon blues and purples."
 						}
 					]
 				},
@@ -522,6 +413,206 @@
 							"label": "UTC"
 						}
 					]
+				}
+			]
+		},
+		{
+			"id": "top_bar",
+			"title": "Top bar layout",
+			"intro": "Pick how much goes on your top bar. The arrow keys change the preview live. You can change it later in the Control Center (Look page).",
+			"when": {
+				"id": "desktops",
+				"in": [
+					"hyprland",
+					"both"
+				]
+			},
+			"questions": [
+				{
+					"type": "choice",
+					"id": "bar_layout",
+					"label": "Top bar layout",
+					"default": "standard",
+					"live": true,
+					"preview": "bar",
+					"help": "Each choice shows its bar. The dock is set on the Look page.",
+					"options": [
+						{
+							"value": "minimal",
+							"label": "Minimal",
+							"description": "Minimal: the fewest icons. Everything else is one click away in the logo menu and the control center. Change it later: bxrig appearance bar layout minimal."
+						},
+						{
+							"value": "standard",
+							"label": "Standard",
+							"description": "Standard: the recommended bar, the one you get if you just press Enter. Change it later: bxrig appearance bar layout standard."
+						},
+						{
+							"value": "dense",
+							"label": "Dense",
+							"description": "Dense: for developers with a wide screen. On a small screen the bar runs out of room and hides some icons. Change it later: bxrig appearance bar layout dense."
+						}
+					]
+				},
+				{
+					"type": "info",
+					"id": "dock_note",
+					"label": "Dock",
+					"preview": "dock",
+					"help": "On by default, at the bottom of the screen. The grid button comes first and opens all your apps."
+				}
+			]
+		},
+		{
+			"id": "app_grid",
+			"title": "App grid style",
+			"intro": "Pick how the app grid looks. It lists every installed app with a search box. The arrow keys switch between the two styles.",
+			"when": {
+				"id": "desktops",
+				"in": [
+					"hyprland",
+					"both"
+				]
+			},
+			"questions": [
+				{
+					"type": "choice",
+					"id": "appgrid_style",
+					"label": "App grid style",
+					"default": "launchpad",
+					"live": true,
+					"preview": "appgrid",
+					"help": "Same apps, same search. Only the look differs.",
+					"options": [
+						{
+							"value": "launchpad",
+							"label": "Launchpad grid",
+							"description": "Big colored icon tiles on a soft rounded card, with a grid button first in the dock. Change it later: bxrig appearance appgrid launchpad."
+						},
+						{
+							"value": "terminal",
+							"label": "Terminal-style grid",
+							"description": "Small flat glyphs on a square card with key hints and monospace labels. Change it later: bxrig appearance appgrid terminal."
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "theme_page",
+			"title": "Theme",
+			"intro": "Colors the shell, terminals, btop, Neovim, window borders and the lock screen, and sets the theme's own wallpaper. The arrow keys preview each theme and this wizard follows the highlighted one.",
+			"questions": [
+				{
+					"type": "choice",
+					"id": "theme_name",
+					"label": "Color theme",
+					"default": "bxrig",
+					"help": "Change it any time: bxrig theme set NAME, or the Themes page of the Control Center. Dark or light on the Look page is overridden by the theme unless you chose Auto.",
+					"options": [
+						{
+							"value": "bxrig",
+							"label": "BxRig",
+							"description": "Frappe neutrals with the BoxLang greens (the default)."
+						},
+						{
+							"value": "bxrig-midnight",
+							"label": "BxRig Midnight",
+							"description": "Near-black with a green aurora, easy on OLED screens."
+						},
+						{
+							"value": "bxrig-cyan",
+							"label": "BxRig Cyan",
+							"description": "Deep ocean blues with BoxLang cyan."
+						},
+						{
+							"value": "bxrig-forest",
+							"label": "BxRig Forest",
+							"description": "Night forest greens."
+						},
+						{
+							"value": "bxrig-ember",
+							"label": "BxRig Ember",
+							"description": "Charcoal with glowing ember orange."
+						},
+						{
+							"value": "bxrig-light",
+							"label": "BxRig Light",
+							"description": "Latte neutrals with deeper greens."
+						},
+						{
+							"value": "bxrig-dawn",
+							"label": "BxRig Dawn",
+							"description": "Warm cream with coral sunrise."
+						},
+						{
+							"value": "bxrig-paper",
+							"label": "BxRig Paper",
+							"description": "Paper white with ink blue."
+						},
+						{
+							"value": "bxrig-mint",
+							"label": "BxRig Mint",
+							"description": "Clean white with glacier teal."
+						},
+						{
+							"value": "bxrig-sky",
+							"label": "BxRig Sky",
+							"description": "Pale sky with bright azure."
+						},
+						{
+							"value": "catppuccin",
+							"label": "Catppuccin",
+							"description": "Mocha: lavender and blue on deep navy."
+						},
+						{
+							"value": "catppuccin-latte",
+							"label": "Catppuccin Latte",
+							"description": "The light Catppuccin."
+						},
+						{
+							"value": "everforest",
+							"label": "Everforest",
+							"description": "Muted forest greens."
+						},
+						{
+							"value": "flexoki-light",
+							"label": "Flexoki Light",
+							"description": "Warm paper and ink."
+						},
+						{
+							"value": "gruvbox",
+							"label": "Gruvbox",
+							"description": "Retro warm browns and orange."
+						},
+						{
+							"value": "kanagawa",
+							"label": "Kanagawa",
+							"description": "Ink and wave blues."
+						},
+						{
+							"value": "matte-black",
+							"label": "Matte Black",
+							"description": "Black with an amber accent."
+						},
+						{
+							"value": "nord",
+							"label": "Nord",
+							"description": "Arctic frost blues."
+						},
+						{
+							"value": "rose-pine",
+							"label": "Rose Pine",
+							"description": "Soft rose and pine, light."
+						},
+						{
+							"value": "tokyo-night",
+							"label": "Tokyo Night",
+							"description": "Neon blues and purples."
+						}
+					],
+					"live": true,
+					"preview": "theme"
 				}
 			]
 		},
