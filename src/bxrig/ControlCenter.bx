@@ -67,12 +67,13 @@ class ControlCenter {
 		var start = arguments.pageId;
 		var intents = new bxrig.IntentRunner();
 		var iconsOn = iconsEnabled( arguments.icons );
+		var follow = !arguments.demo;   // the real Control Center draws in the active theme; --demo keeps the BxRig colours
 		var sb = arguments.sidebar;
 		while ( true ) {
 			var app = new bxrig.ControlCenterApp( buildPages( arguments.demo ), start, sb );
 			new bxrig.TuiRunner().run(
 				app,
-				function( tui ) { return new bxrig.ControlCenterView( tui ).setIcons( iconsOn ); },
+				function( tui ) { return new bxrig.ControlCenterView( tui ).setIcons( iconsOn ).followTheme( follow ); },
 				function( intent ) { intents.handle( app, intent ); }
 			);
 			start = app.page().id();

@@ -9,7 +9,7 @@
 //   bl.order()                     [ "minimal", "standard", "dense" ]
 //   bl.layout( "standard" )        { key, name, tag, desc, detail, inc, note, L, C, R }   L, C, R: chip ids of the left, centre and right zones
 //   bl.rows( "dense", 70 )         the bar drawn in 70 columns: an array of rows, each { mode, l, c, r } of chips
-//   bl.has( "minimal", "cap" )     whether a layout carries a chip
+//   bl.carries( "minimal", "cap" )     whether a layout carries a chip
 class BarLayouts {
 	function order() { return [ "minimal", "standard", "dense" ]; }
 
@@ -62,7 +62,7 @@ class BarLayouts {
 		return l;
 	}
 
-	function has( key, id ) {
+	function carries( key, id ) {
 		var l = layout( arguments.key );
 		return arrayFind( l.L, arguments.id ) > 0 || arrayFind( l.C, arguments.id ) > 0 || arrayFind( l.R, arguments.id ) > 0;
 	}

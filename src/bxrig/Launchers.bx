@@ -38,7 +38,7 @@ class Launchers {
 		return [
 			{ id: "develop", title: "Develop", comment: "BoxLang, Java, Maven, Gradle, versions, databases, mail and ports", icon: "applications-development", pages: [ "boxlang", "java", "maven", "gradle", "versions", "databases", "mail", "ports" ] },
 			{ id: "system", title: "System", comment: "Machines, storage, secrets, logs, packages and shortcuts", icon: "applications-system", pages: [ "machines", "storage", "secrets", "logs", "packages", "shortcuts" ] },
-			{ id: "look", title: "Look", comment: "Themes", icon: "preferences-desktop-theme", pages: [ "themes" ] }
+			{ id: "look", title: "Look", comment: "Look and themes", icon: "preferences-desktop-theme", pages: [ "look", "themes" ] }
 		];
 	}
 

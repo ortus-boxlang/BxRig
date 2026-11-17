@@ -1,0 +1,179 @@
+// The Look page of the Control Center: how the desktop looks, as one list of settings with a picture of the bar on top.
+//   Bar     top bar layout (Minimal, Standard, Dense), battery percentage, clock format, the key that hides the bar
+//   Colors  the color theme (Enter opens the Themes page, the bigger selector)
+//   Apps    app grid style (Launchpad or Terminal-style) and the dock
+// Up and Down pick a setting, + and Right (or Space, or Enter) change it to the next value and - to the previous one (a text setting asks, a link opens its page). A change is a
+// bxrig command like any other in the Control Center: the plan (the command with --dry-run) first, then a y runs it. Values come from LookData.
+//   id() title() icon() load() state() keys() paint( kit, x, y, w, h, tick, phase ) onKey( key ) act( hit ) onScroll( dir ) usesLeft()
+class LookPage {
+	function init( demo = false ) {
+		variables.data = new bxrig.LookData( arguments.demo );
+		variables.look = {};
+		variables.cursor = 1;
+		variables.loaded = false;
+		variables.bl = new bxrig.BarLayouts();
+		return this;
+	}
+
+	function id() { return "look"; }
+	function title() { return "Look"; }
+	function icon() { return new bxrig.ControlCenterPages().icon( "look" ); }
+	function usesLeft() { return false; }
+
+	function load() {
+		variables.look = variables.data.load();
+		variables.loaded = true;
+		return this;
+	}
+
+	// The settings, in order: { group, id, label, kind: choice|toggle|text|link, value (what is shown), hint, desc, cmd (what a change runs) }.
+	function rows() {
+		var l = variables.loaded ? variables.look : variables.data.defaults();
+		var theme = new bxrig.Theme( "" ).label( l.theme );
+		return [
+			{ group: "Bar", id: "layout", label: "Top bar layout", kind: "choice", value: variables.bl.layout( l.layout ).name, hint: "Minimal, Standard, Dense", desc: variables.bl.layout( l.layout ).detail, cmd: "bxrig appearance bar layout " & l.layout },
+			{ group: "Bar", id: "battery", label: "Battery percentage", kind: "toggle", value: l.battery_percent, hint: l.battery_found ? "next to the battery icon" : "laptops only (no battery found)", desc: "Shows 78% next to the battery icon. Ignored on a desktop with no battery.", cmd: "bxrig appearance battery-percent " & l.battery_percent },
+			{ group: "Bar", id: "clock", label: "Clock format", kind: "text", value: l.clock_sample, hint: l.clock_format, desc: "The bar clock's text, in Noctalia date format tokens. Enter asks for a format; the default is %b %-d - %H:%M.", cmd: "bxrig time format " & l.clock_format },
+			{ group: "Bar", id: "toggle", label: "Bar toggle shortcut", kind: "link", value: l.bar_toggle_keys, hint: "hides or shows the bar", desc: "This key runs bxrig appearance bar toggle. Enter opens the Shortcuts page to change it.", cmd: "bxrig appearance bar toggle" },
+			{ group: "Colors", id: "theme", label: "Color theme", kind: "link", value: theme, hint: "Enter opens the Themes page", desc: "Colors the shell, terminals, borders, lock screen and wallpaper. Choosing a theme has its own page, with a preview of each.", cmd: "bxrig theme set " & l.theme },
+			{ group: "Apps", id: "appgrid", label: "App grid style", kind: "choice", value: l.appgrid == "terminal" ? "Terminal-style grid" : "Launchpad grid", hint: "Launchpad or Terminal-style", desc: "The grid of every installed app, opened from the first button of the dock. Same apps and search, a different look.", cmd: "bxrig appearance appgrid " & l.appgrid },
+			{ group: "Apps", id: "dock", label: "Dock", kind: "toggle", value: l.dock ? "on" : "off", hint: "bottom of the screen", desc: "A dock of your apps. When it is on, the grid button is its first button and leaves the bar.", cmd: "bxrig appearance dock " & ( l.dock ? "on" : "off" ) }
+		];
+	}
+
+	function state() {
+		var items = rows().map( function( r ) { return { group: r.group, id: r.id, label: r.label, kind: r.kind, value: r.value }; } );
+		return { rows: items.len(), items: items, cursor: variables.cursor, look: variables.loaded ? variables.look : variables.data.defaults() };
+	}
+
+	function keyMap() {
+		// Left is the Control Center's own (it goes to the sidebar), so the previous value is on - and the next on + and Right
+		return new bxrig.KeyMap().bind( "↑↓", [ "Up", "k" ], "move", "up" ).bind( "", [ "Down", "j" ], "", "down" ).bind( "-+", "-", "previous", "prev" ).bind( "", [ "+", "Right" ], "", "next" )
+		.bind( "Enter", [ "Enter", " " ], "change", "do" ).bind( "r", "r", "refresh", "refresh" );
+	}
+
+	function keys() { return keyMap().hints(); }
+
+	// The command for the next (d = 1) or previous (d = -1) value of a setting, as an intent the Control Center runs after the plan box.
+	function change( d ) {
+		var l = variables.loaded ? variables.look : variables.data.defaults();
+		var r = rows()[ variables.cursor ];
+		if ( r.id == "layout" ) {
+			var all = variables.bl.order();
+			var i = arrayFind( all, l.layout );
+			var want = all[ ( ( i - 1 + arguments.d + all.len() ) mod all.len() ) + 1 ];
+			return { action: "cli", title: "Top bar layout: " & variables.bl.layout( want ).name, args: [ "appearance", "bar", "layout", want ] };
+		}
+		if ( r.id == "appgrid" ) {
+			var want2 = l.appgrid == "terminal" ? "launchpad" : "terminal";
+			return { action: "cli", title: "App grid style: " & ( want2 == "terminal" ? "Terminal-style" : "Launchpad" ), args: [ "appearance", "appgrid", want2 ] };
+		}
+		if ( r.id == "dock" ) { var d2 = l.dock ? "off" : "on"; return { action: "cli", title: "Dock " & d2, args: [ "appearance", "dock", d2 ] }; }
+		if ( r.id == "battery" ) { var b = l.battery_percent == "on" ? "off" : "on"; return { action: "cli", title: "Battery percentage " & b, args: [ "appearance", "battery-percent", b ] }; }
+		if ( r.id == "clock" ) {
+			return { action: "ask", title: "Clock format", prompt: "Format for the bar clock (now " & l.clock_format & "). Type default to go back to the default.", make: function( value ) {
+				return { action: "cli", title: "Clock format " & value, args: [ "time", "format", value ] };
+			} };
+		}
+		if ( r.id == "toggle" ) return { action: "goto", page: "shortcuts" };
+		if ( r.id == "theme" ) return { action: "goto", page: "themes" };
+		return {};
+	}
+
+	function onKey( key ) {
+		var what = keyMap().match( arguments.key );
+		var n = rows().len();
+		if ( what == "up" ) { variables.cursor = max( 1, variables.cursor - 1 ); return {}; }
+		if ( what == "down" ) { variables.cursor = min( n, variables.cursor + 1 ); return {}; }
+		if ( what == "refresh" ) { load(); return {}; }
+		if ( what == "prev" ) return change( -1 );
+		if ( what == "next" || what == "do" ) return change( 1 );
+		return {};
+	}
+
+	function act( hit ) {
+		if ( arguments.hit.kind == "row" ) { variables.cursor = arguments.hit.n; return {}; }
+		if ( arguments.hit.kind == "do" ) { variables.cursor = arguments.hit.n; return change( 1 ); }
+		return {};
+	}
+
+	function onScroll( dir ) { return onKey( arguments.dir == "up" ? "Up" : "Down" ); }
+
+	// ---------------------------------------------------------------- drawing
+
+	function paint( kit, x, y, w, h, tick, phase ) {
+		var k = arguments.kit;
+		var C = function( n ) { return k.color( n ); };
+		var pv = new bxrig.LookPreview( k );
+		var l = variables.loaded ? variables.look : variables.data.defaults();
+		var ico = k.icon( icon() );
+		if ( len( ico ) ) k.put( arguments.x + 1, arguments.y, ico, C( "GREEN" ), C( "BASE" ) );
+		var tx = arguments.x + 1 + ( len( ico ) ? 2 : 0 );
+		k.put( tx, arguments.y, "Look", C( "TEXT" ), C( "BASE" ), true );
+		k.put( tx + 6, arguments.y, k.trunc( "Layout, theme, app grid and dock. A change shows its plan first.", arguments.w - 12 ), C( "OVERLAY" ), C( "BASE" ) );
+		var px = arguments.x + 1;
+		var pw = arguments.w - 2;
+		var cy = arguments.y + 2;
+		var bottom = arguments.y + arguments.h;
+		// the picture: the bar in the layout you have, and the dock under it
+		var bh = variables.bl.height( l.layout, pw - 4, l.battery_percent == "on" );
+		var ph = bh + 4;
+		if ( cy + ph <= bottom ) {
+			k.panel( px, cy, pw, ph, "Preview", false, arguments.phase );
+			k.fillRect( px + 1, cy + 1, pw - 2, ph - 2, C( "MANTLE" ) );
+			pv.strip( px + 2, cy + 1, pw - 4, l.layout, true, l.battery_percent == "on" );
+			if ( l.dock ) pv.dock( px + 2, cy + 2 + bh, min( pw - 4, 40 ), true );
+			else k.put( px + 2, cy + 2 + bh, k.trunc( "dock off: the grid button moves to the start of the bar", pw - 6 ), C( "OVERLAY" ), C( "MANTLE" ) );
+			cy += ph;
+		}
+		var rws = rows();
+		var groups = [ "Bar", "Colors", "Apps" ];
+		var idx = 0;
+		var labelW = 22;
+		for ( var g in groups ) {
+			var members = [];
+			for ( var r in rws ) if ( r.group == g ) members.append( r );
+			var gh = members.len() + 2;
+			if ( cy + gh > bottom - 5 && cy + gh > bottom ) break;
+			k.panel( px, cy, pw, gh, g, false, arguments.phase );
+			k.fillRect( px + 1, cy + 1, pw - 2, gh - 2, C( "MANTLE" ) );
+			var i = 0;
+			for ( var m in members ) {
+				idx++;
+				i++;
+				var yy = cy + i;
+				var on = idx == variables.cursor;
+				var bg = on ? C( "SURFACE0" ) : C( "MANTLE" );
+				if ( on ) { k.fillRect( px + 1, yy, pw - 2, 1, C( "SURFACE0" ) ); k.put( px + 1, yy, "▌", C( "GREEN" ), C( "SURFACE0" ) ); }
+				k.put( px + 3, yy, m.label, on ? C( "TEXT" ) : C( "SUB" ), bg, on );
+				var vx = px + 3 + labelW;
+				var ex = vx;
+				if ( m.kind == "choice" ) {
+					ex = k.put( vx, yy, "‹ ", on ? C( "CYAN" ) : C( "OVERLAY" ), bg );
+					ex = k.put( ex, yy, m.value, C( "GREEN" ), bg, true );
+					ex = k.put( ex, yy, " ›", on ? C( "CYAN" ) : C( "OVERLAY" ), bg );
+				} else if ( m.kind == "toggle" ) {
+					var isOn = m.value == "on";
+					ex = k.put( vx, yy, " On ", isOn ? C( "CRUST" ) : C( "OVERLAY" ), isOn ? C( "GREEN" ) : C( "SURFACE1" ), isOn );
+					ex = k.put( ex, yy, " Off ", !isOn ? C( "CRUST" ) : C( "OVERLAY" ), !isOn ? C( "RED" ) : C( "SURFACE1" ), !isOn );
+				} else ex = k.put( vx, yy, m.value, C( "GREEN" ), bg, true );
+				if ( ex + len( m.hint ) + 3 < px + pw - 2 ) k.put( ex + 2, yy, m.hint, C( "OVERLAY" ), bg );
+				k.hit( "row", px + 1, yy, pw - 2, 1, idx );
+				k.hit( "do", vx, yy, max( 1, ex - vx ), 1, idx );
+			}
+			cy += gh;
+		}
+		// the selected setting: what it does and the command behind it
+		var cur = rws[ variables.cursor ];
+		if ( cy + 5 <= bottom ) {
+			k.panel( px, cy, pw, 5, "Selected", false, arguments.phase );
+			k.fillRect( px + 1, cy + 1, pw - 2, 3, C( "MANTLE" ) );
+			k.put( px + 2, cy + 1, cur.label, C( "TEXT" ), C( "MANTLE" ), true );
+			for ( var line in k.wrap( cur.desc, pw - 6 ) ) { k.put( px + 2, cy + 2, line, C( "SUB" ), C( "MANTLE" ) ); break; }
+			var kx = k.put( px + 2, cy + 3, " $ ", C( "CRUST" ), C( "GREEN" ), true );
+			k.put( kx + 1, cy + 3, k.trunc( cur.cmd, pw - 10 ), C( "TEXT" ), C( "MANTLE" ) );
+		} else if ( cy + 1 <= bottom ) {
+			k.put( px + 2, cy, k.trunc( cur.desc, pw - 4 ), C( "SUB" ), C( "BASE" ) );
+		}
+	}
+}

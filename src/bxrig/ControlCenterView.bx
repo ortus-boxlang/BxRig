@@ -4,15 +4,39 @@ class ControlCenterView {
 	function init( tui ) {
 		variables.kit = new bxrig.TuiKit( arguments.tui );
 		variables.sideW = 22;
+		variables.follow = false;
+		variables.palette = "";
+		variables.themeName = "";
 		return this;
 	}
 
 	function setIcons( on ) { variables.kit.setIcons( arguments.on ); return this; }
 
+	// Draws in the active theme's colours (the one `theme set` applied last): at start, and again within a second of a theme being applied from the
+	// Themes page. Off by default and in demo mode, which keeps the BxRig palette.
+	function followTheme( on = true, palette = "" ) {
+		variables.follow = arguments.on;
+		variables.palette = isSimpleValue( arguments.palette ) ? new bxrig.Palette() : arguments.palette;   // a Palette made with an Env: tests
+		if ( arguments.on ) syncTheme();
+		return this;
+	}
+
+	function syncTheme() {
+		var pal = variables.palette;
+		var name = pal.activeName();
+		if ( name == variables.themeName && structCount( variables.kit.palette() ) ) return;
+		variables.themeName = name;
+		variables.kit.setPalette( pal.forTheme( name ) );
+	}
+
 	function hitAt( x, y ) { return variables.kit.hitAt( arguments.x, arguments.y ); }
+
+	// The drawing kit (a test reads the palette the screen is drawn in).
+	function kit() { return variables.kit; }
 
 	function paint( app, tick, width, height ) {
 		var k = variables.kit;
+		if ( variables.follow && arguments.tick mod 20 == 0 ) syncTheme();
 		k.tui().begin_frame();
 		var C = function( n ) { return k.color( n ); };
 		var phase = ( arguments.tick mod 120 ) / 120;

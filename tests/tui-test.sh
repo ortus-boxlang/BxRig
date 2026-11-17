@@ -12,7 +12,9 @@ code() { set +e; "$@" >/dev/null 2>&1; echo $?; set -e; }
 # the other pages in demo mode
 "$binary" tui ports --demo --json | jq -e '.data.rows == 7 and (.data.items | map(select(.conflict)) | length == 2)' >/dev/null || fail 'ports demo'
 "$binary" tui java --demo --json | jq -e '.data.items[0].id == "temurin-21.0.13_9"' >/dev/null || fail 'java demo'
-for pg in boxlang maven gradle versions shortcuts machines databases mail storage secrets themes logs; do "$binary" tui "$pg" --demo --json | jq -e '.ok and (.data.rows > 0)' >/dev/null || fail "$pg demo"; done
+for pg in boxlang maven gradle versions shortcuts machines databases mail storage secrets look themes logs; do "$binary" tui "$pg" --demo --json | jq -e '.ok and (.data.rows > 0)' >/dev/null || fail "$pg demo"; done
+"$binary" tui look --demo --json | jq -e '.data.rows == 7 and (.data.items | map(.id) | join(",")) == "layout,battery,clock,toggle,theme,appgrid,dock" and .data.look.layout == "standard"' >/dev/null || fail 'look demo'
+"$binary" tui themes --demo --json | jq -e '.data.items | map(.name) | index("tokyo-night") != null' >/dev/null || fail 'themes page by name'
 "$binary" tui packages --demo --json | jq -e '.data.rows == 0' >/dev/null || fail 'packages start empty until you search'
 
 # the real machine: never fails, has the parts (power switch points at an empty folder: no battery)
@@ -28,7 +30,7 @@ echo '{"host":"x","os":"Test","kernel":"1","uptime":60,"cpu":0.1,"mem":{"used":1
 BXRIG_DASHBOARD_FILE="$tmp/d.json" "$binary" tui dashboard --json | jq -e '.data.data.host == "x" and (.data.attention | length == 0)' >/dev/null || fail 'forced data'
 
 # tui list: every page with its title and icon name, one registry for the menu, the launchers and the shortcuts
-"$binary" tui list --json | jq -e '.ok and (.data.pages | length == 17) and .data.pages[0].id == "dashboard" and (.data.pages | map(select(.id == "databases")) | .[0].title == "Databases") and all(.data.pages[]; (.icon | length) > 0)' >/dev/null || fail 'tui list --json'
+"$binary" tui list --json | jq -e '.ok and (.data.pages | length == 18) and .data.pages[0].id == "dashboard" and (.data.pages | map(select(.id == "databases")) | .[0].title == "Databases") and all(.data.pages[]; (.icon | length) > 0)' >/dev/null || fail 'tui list --json'
 "$binary" tui list | grep -q '^databases  Databases$' || fail 'tui list text'
 for pg in $("$binary" tui list --json | jq -r '.data.pages[].id'); do "$binary" tui "$pg" --demo --json >/dev/null || fail "tui $pg --json from the list"; done
 [[ "$(code "$binary" tui list --json)" == 0 ]] || fail 'tui list exits 0'

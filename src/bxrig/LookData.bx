@@ -1,0 +1,48 @@
+// What the desktop looks like now, for the Control Center's Look page: the top bar layout, the dock, the app grid style, the battery percentage, the
+// clock format and the theme. Read with the read-only status commands of `bxrig appearance` and `bxrig time format` (--json), so the page never reads
+// a file the commands own. A command that is missing or fails leaves its field at the default; nothing here changes anything.
+//   ld = new bxrig.LookData( demo = false )
+//   ld.demo()   made-up values (`bxrig tui look --demo`)         ld.load()   the real ones
+// A look is { layout, dock (bool), appgrid, battery_percent (on|off), battery_found (bool), clock_format, clock_sample, theme, bar_toggle_keys }.
+class LookData {
+	function init( demo = false, proc = "" ) {
+		variables.demo = arguments.demo;
+		variables.proc = isSimpleValue( arguments.proc ) ? new bxrig.util.Proc() : arguments.proc;
+		return this;
+	}
+
+	function defaults() {
+		return { layout: "standard", dock: true, appgrid: "launchpad", battery_percent: "off", battery_found: true, clock_format: "%b %-d - %H:%M", clock_sample: "Nov 5 - 04:00", theme: "bxrig", bar_toggle_keys: "Super+Shift+Space" };
+	}
+
+	function demo() {
+		var d = defaults();
+		d.battery_found = true;
+		return d;
+	}
+
+	// A text field of a status answer, or the fallback.
+	function field( data, key, fallback ) {
+		return structKeyExists( arguments.data, arguments.key ) && isSimpleValue( arguments.data[ arguments.key ] ) && len( arguments.data[ arguments.key ] ) ? arguments.data[ arguments.key ] : arguments.fallback;
+	}
+
+	function load() {
+		if ( variables.demo ) return demo();
+		var out = defaults();
+		var bar = variables.proc.selfData( [ "appearance", "bar", "layout", "status" ], 30 );
+		out.layout = field( bar, "layout", out.layout );
+		if ( structKeyExists( bar, "dock" ) && isBoolean( bar.dock ) ) out.dock = bar.dock;
+		out.appgrid = field( variables.proc.selfData( [ "appearance", "appgrid", "status" ], 30 ), "appgrid", out.appgrid );
+		var pct = variables.proc.selfData( [ "appearance", "battery-percent", "status" ], 30 );
+		out.battery_percent = field( pct, "battery_percent", out.battery_percent );
+		if ( structKeyExists( pct, "battery_found" ) && isBoolean( pct.battery_found ) ) out.battery_found = pct.battery_found;
+		var tm = variables.proc.selfData( [ "time", "format" ], 30 );
+		out.clock_format = field( tm, "format", out.clock_format );
+		out.clock_sample = field( tm, "sample", out.clock_sample );
+		var name = new bxrig.Palette().activeName();
+		if ( len( name ) ) out.theme = name;
+		var keys = variables.proc.selfData( [ "keys", "show" ], 30 );
+		for ( var s in ( keys.shortcuts ?: [] ) ) if ( ( s.id ?: "" ) == "bar-toggle" && len( s.keys ?: "" ) && s.keys != "unbound" ) out.bar_toggle_keys = s.keys;
+		return out;
+	}
+}

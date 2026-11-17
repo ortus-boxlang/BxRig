@@ -4,13 +4,13 @@ bl = new bxrig.BarLayouts();
 testkit.check( "three layouts: Minimal, Standard (default, recommended) and Dense", bl.order().toList( "," ) == "minimal,standard,dense" && bl.layout( "standard" ).tag == "recommended, default" && bl.layout( "dense" ).name == "Dense" );
 testkit.check( "an unknown layout is Standard", bl.layout( "huge" ).key == "standard" && !bl.valid( "huge" ) );
 
-testkit.check( "Standard has the capture icon, Minimal does not, Dense has everything", bl.has( "standard", "cap" ) && !bl.has( "minimal", "cap" ) && bl.has( "dense", "cap" ) );
-testkit.check( "Dense adds brightness and weather to Standard", bl.has( "dense", "bright" ) && bl.has( "dense", "weather" ) && !bl.has( "standard", "bright" ) && !bl.has( "standard", "weather" ) );
-testkit.check( "Minimal keeps workspaces, the active window and quick settings (DESKTOP-DECISIONS.md)", bl.has( "minimal", "ws" ) && bl.has( "minimal", "win" ) && bl.has( "minimal", "quick" ) && !bl.has( "minimal", "clip" ) );
+testkit.check( "Standard has the capture icon, Minimal does not, Dense has everything", bl.carries( "standard", "cap" ) && !bl.carries( "minimal", "cap" ) && bl.carries( "dense", "cap" ) );
+testkit.check( "Dense adds brightness and weather to Standard", bl.carries( "dense", "bright" ) && bl.carries( "dense", "weather" ) && !bl.carries( "standard", "bright" ) && !bl.carries( "standard", "weather" ) );
+testkit.check( "Minimal keeps workspaces, the active window and quick settings (DESKTOP-DECISIONS.md)", bl.carries( "minimal", "ws" ) && bl.carries( "minimal", "win" ) && bl.carries( "minimal", "quick" ) && !bl.carries( "minimal", "clip" ) );
 function ids( k ) { var l = bl.layout( k ); var out = []; for ( var z in [ l.L, l.C, l.R ] ) for ( var i in z ) out.append( i ); return out; }
 function holds( big, small ) { for ( var i in small ) if ( !arrayFind( big, i ) ) return false; return true; }
 testkit.check( "each layout holds the one before it (Minimal in Standard in Dense)", holds( ids( "standard" ), ids( "minimal" ) ) && holds( ids( "dense" ), ids( "standard" ) ) );
-testkit.check( "clipboard history is on the right, quick settings then control center last", bl.layout( "standard" ).R[ bl.layout( "standard" ).R.len() ] == "ctl" && bl.layout( "standard" ).R[ bl.layout( "standard" ).R.len() - 1 ] == "quick" && bl.has( "standard", "clip" ) );
+testkit.check( "clipboard history is on the right, quick settings then control center last", bl.layout( "standard" ).R[ bl.layout( "standard" ).R.len() ] == "ctl" && bl.layout( "standard" ).R[ bl.layout( "standard" ).R.len() - 1 ] == "quick" && bl.carries( "standard", "clip" ) );
 testkit.check( "every chip id used is a known chip", ids( "dense" ).filter( function( i ) { return !structKeyExists( bl.chips(), i ); } ).len() == 0 );
 
 // the strip in a given width
