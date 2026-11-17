@@ -81,7 +81,8 @@ Each part is read on its own. If one cannot be read, the rest still shows.
 | Mail | the mail your apps send to the catcher (`bxrig mail`): headers and text of the highlighted message, delete, clear, open it in the browser, send a test; it refreshes by itself every 3 seconds |
 | Storage | NAS shares and cloud remotes: mount, unmount, test |
 | Secrets | names only; `v` shows one value for one look |
-| Themes | the 15 themes; Enter applies |
+| Look | the top bar layout (Minimal, Standard, Dense) with a picture of the bar and the dock, battery percentage, clock format, the key that hides the bar, the app grid style (Launchpad or Terminal-style) and the dock. `-` and `+` (or Right, Space, Enter) pick the previous or next value, and the plan comes first. The color theme is a link to the Themes page |
+| Themes | the 20 themes; Enter applies |
 | Logs | the journal of this boot; `p` changes the lowest priority shown |
 
 In a table, `/` filters the rows (or searches, on Packages), Enter keeps it and Escape clears it. Every key that changes something shows a plan first.
@@ -89,6 +90,14 @@ In a table, `/` filters the rows (or searches, on Packages), Enter keeps it and 
 ## How the pages fit together
 
 Every screen shares one kit for lists, tabs, plan boxes and meters, so they look and behave the same. A page is a small class, which is also how new pages are added. A page can send you to a full screen such as BxTimeMachine and bring you back.
+
+## Look and Themes
+
+`bxrig tui look` shows the bar you have in a Preview box (the same text-chip pictures the wizard draws) and the settings below it in three groups: **Bar** (top bar layout, battery percentage, clock format, the bar toggle key), **Colors** (a link to the Themes page) and **Apps** (app grid style, dock). The values come from the read-only status commands (`bxrig appearance bar layout status`, `appearance appgrid status`, `appearance battery-percent status`, `time format`). A change is an ordinary command: the plan box shows it with `--dry-run`, and `y` runs it.
+
+`bxrig tui themes` is the bigger selector: every theme, with `Enter` to apply it. The sidebar lists Look and Themes as two pages; the Look page has no theme list of its own.
+
+The whole Control Center is drawn in the colors of the theme you applied last (`~/.config/bxrig/theme.json`), at start and again within a second of applying another one from the Themes page. `--demo` keeps the BxRig colors.
 
 ## Back into the wizard
 
