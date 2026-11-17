@@ -1,0 +1,39 @@
+# BxRig VPN: a shield in the bar (green while a VPN is connected, grey otherwise, hidden when no VPN is installed) that opens one list of
+# every VPN you can use: saved NetworkManager profiles (vpn, wireguard) and the VPN apps (NordVPN, NordLayer, Tailscale, Mullvad).
+# Picking one connects it and disconnects the current one first, unless "Allow more than one at the same time" is on.
+# Data: `bxrig vpn list --json` (10 s while the popover is open, 60 s in the background for the shield), places from
+# `bxrig vpn locations NAME --json`; actions: `bxrig vpn connect|disconnect NAME`, `bxrig vpn set allow_several=...`.
+# Open the panel from a keybind with:
+#   noctalia msg panel-toggle bxrig/vpn:panel
+
+id = "bxrig/vpn"
+name = "VPN (BxRig)"
+version = "1.0.0"
+plugin_api = 43
+author = "bxrig"
+license = "MIT"
+dependencies = ["bxrig"]
+tags = ["vpn", "network", "bxrig"]
+icon = "shield-check"
+description = "Every VPN in one list: network profiles, NordVPN, NordLayer, Tailscale and Mullvad. Connect, disconnect, pick a country or exit node; fed by bxrig."
+
+[[setting]]
+key = "command"
+type = "string"
+label_key = "settings.command.label"
+description_key = "settings.command.description"
+default = "bxrig"
+
+[[widget]]
+id = "bar"
+entry = "bar.luau"
+
+[[panel]]
+id = "panel"
+entry = "panel.luau"
+width = 420
+height = "content"
+max_height = 640
+placement = "attached"
+position = "auto"
+open_near_click = true

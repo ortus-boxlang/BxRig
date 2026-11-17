@@ -75,7 +75,7 @@ class NoctaliaConfig {
 	}
 
 	// The three bar sections of a layout, as widget names. Control center is always last and quick settings right before it.
-	// Only widgets that exist are listed. Planned (they join the layouts when they are built, see the layout v3 mock-up): bxrig-vpn. Quick settings is the
+	// Only widgets that exist are listed. Planned (they join the layouts when they are built, see the layout v3 mock-up): nothing is planned now. Quick settings is the
 	// bxrig-quick plugin (switches and pickers, the theme switcher as its second page). The battery is the built-in widget; its left click opens
 	// the bxrig/power panel (a plugin panel without a bar widget), see barLines.
 	function zones( layout, opts = {} ) {
@@ -92,7 +92,7 @@ class NoctaliaConfig {
 		} else {
 			if ( compare( l, "dense" ) == 0 ) center.append( "weather" );
 			center.append( "media" );
-			end = [ "bxrig-agents", "screenshot", "bxrig-system", "bxrig-dev", "tray", "clipboard", "network", "bluetooth", "volume" ];
+			end = [ "bxrig-agents", "screenshot", "bxrig-system", "bxrig-dev", "bxrig-vpn", "tray", "clipboard", "network", "bluetooth", "volume" ];
 			if ( compare( l, "dense" ) == 0 ) end.append( "brightness" );
 		}
 		if ( o.battery ) end.append( "battery" );
@@ -178,8 +178,12 @@ class NoctaliaConfig {
 			'[widget.bxrig-dev]',
 			'type = "bxrig/dev:bar"',
 			'',
+			'# VPN: a shield (green while connected), one list of network profiles and VPN apps; the icon hides itself when none is installed',
+			'[widget.bxrig-vpn]',
+			'type = "bxrig/vpn:bar"',
+			'',
 			'[plugins]',
-			'enabled = ["bxrig/clock", "bxrig/agents", "bxrig/system", "bxrig/quick", "bxrig/dev", "bxrig/power"]',
+			'enabled = ["bxrig/clock", "bxrig/agents", "bxrig/system", "bxrig/quick", "bxrig/dev", "bxrig/power", "bxrig/vpn"]',
 			''
 		];
 		if ( o.battery ) {

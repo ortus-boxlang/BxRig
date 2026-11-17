@@ -1,0 +1,105 @@
+// The BxRig Noctalia plugin bxrig/vpn: manifest, files, translations and a structural check of the Luau (no Luau interpreter in CI).
+// Run from src/: (cd src && matchbox ../tests/plugin_vpn_test.bxs)
+// Reads the scripts as text: every file the manifest names exists, the blocks balance, the bxrig commands the plugin runs are ones the CLI
+// has, the refresh rates and the hide-when-empty rule are there, and no em dash is in any file.
+testkit = new lib.Check( "vpn plugin" );
+root = expandPath( "../templates/noctalia-plugins" );
+dir = root & "/vpn";
+
+// The script text without comments and string literals, so a keyword inside a message does not count.
+function bare( text ) {
+	var out = "";
+	for ( var line in listToArray( text, chr( 10 ), true ) ) {
+		var i = 1;
+		var res = "";
+		var q = "";
+		while ( i <= len( line ) ) {
+			var ch = mid( line, i, 1 );
+			if ( len( q ) ) {
+				if ( compare( ch, "\" ) == 0 ) { i += 2; continue; }
+				if ( compare( ch, q ) == 0 ) q = "";
+			} else if ( compare( ch, '"' ) == 0 || compare( ch, "'" ) == 0 ) { q = ch; res &= '""'; }
+			else if ( compare( ch, "-" ) == 0 && compare( mid( line, i, 2 ), "--" ) == 0 ) break;
+			else res &= ch;
+			i++;
+		}
+		out &= res & chr( 10 );
+	}
+	return out;
+}
+
+// Opens minus closes of Luau blocks (function, if, for/while ... do, `do`) against `end`.
+function balance( text ) {
+	var words = listToArray( " " & reReplace( bare( text ), "[^A-Za-z_0-9]", " ", "all" ) & " ", " ", false );
+	var depth = 0;
+	var loopHead = 0;
+	for ( var w in words ) {
+		if ( compare( w, "function" ) == 0 || compare( w, "if" ) == 0 ) depth++;
+		else if ( compare( w, "for" ) == 0 || compare( w, "while" ) == 0 ) loopHead++;
+		else if ( compare( w, "do" ) == 0 ) { if ( loopHead > 0 ) loopHead--; depth++; }
+		else if ( compare( w, "end" ) == 0 ) depth--;
+	}
+	return depth;
+}
+
+function textOf( rel ) { return fileRead( root & "/" & rel ); }
+
+testkit.check( "the folder exists", directoryExists( dir ) );
+manifest = textOf( "vpn/plugin.toml" );
+testkit.check( "id bxrig/vpn, plugin_api 43, author bxrig, the bxrig dependency", find( 'id = "bxrig/vpn"', manifest ) > 0 && find( "plugin_api = 43", manifest ) > 0 && find( 'author = "bxrig"', manifest ) > 0 && find( 'dependencies = ["bxrig"]', manifest ) > 0 );
+testkit.check( "the plugin-level command setting", find( 'key = "command"', manifest ) > 0 && find( 'default = "bxrig"', manifest ) > 0 );
+testkit.check( "a bar widget and an attached panel near the click", find( 'id = "bar"', manifest ) > 0 && find( 'id = "panel"', manifest ) > 0 && find( 'placement = "attached"', manifest ) > 0 && find( "open_near_click = true", manifest ) > 0 );
+ok = true; entries = 0;
+for ( line in listToArray( manifest, chr( 10 ) ) ) {
+	if ( reFind( '^entry = "', trim( line ) ) ) {
+		entries++;
+		f = listFirst( listRest( trim( line ), '"' ), '"' );
+		if ( !fileExists( dir & "/" & f ) ) { ok = false; println( "  missing " & f ); }
+	}
+}
+testkit.check( "every entry script of the manifest exists (" & entries & ")", ok && entries == 2 );
+testkit.check( "bxrig.luau is the shared helper, byte for byte", compare( textOf( "vpn/bxrig.luau" ), textOf( "agents/bxrig.luau" ) ) == 0 );
+tr = jsonDeserialize( textOf( "vpn/translations/en.json" ) );
+testkit.check( "translations/en.json has the command setting texts and a title", structKeyExists( tr, "title" ) && structKeyExists( tr.settings, "command" ) && structKeyExists( tr.settings.command, "label" ) && structKeyExists( tr.settings.command, "description" ) );
+ok = true;
+for ( f in directoryList( dir, false, "name" ) ) {
+	if ( right( f, 5 ) == ".luau" ) {
+		t = textOf( "vpn/" & f );
+		if ( compare( left( t, 12 ), "--!nonstrict" ) != 0 ) { ok = false; println( "  no --!nonstrict in " & f ); }
+		if ( balance( t ) != 0 ) { ok = false; println( "  unbalanced blocks in " & f & " (" & balance( t ) & ")" ); }
+	}
+}
+testkit.check( "every script is nonstrict and its blocks balance", ok );
+ok = true;
+for ( f in directoryList( dir, true, "path" ) ) {
+	if ( !directoryExists( f ) && find( chr( 8212 ), fileRead( f ) ) ) { ok = false; println( "  em dash in " & f ); }
+}
+testkit.check( "no em dash in any file", ok );
+
+// ---- the bar widget ----
+bar = textOf( "vpn/bar.luau" );
+testkit.check( "bar: a bare shield glyph, green (primary) when connected and muted (on_surface_variant) when not", find( '"shield-check"', bar ) > 0 && find( '"shield"', bar ) > 0 && find( 'color = on > 0 and "primary" or "on_surface_variant"', bar ) > 0 );
+testkit.check( "bar: hidden when `vpn list` is empty (and before the first answer)", find( "barWidget.setVisible(false)", bar ) > 0 && find( "barWidget.setVisible(true)", bar ) > 0 && find( "#result.providers == 0", bar ) > 0 );
+testkit.check( "bar: refreshes every 60 s in the background and follows the open panel through noctalia.state", find( "REFRESH_MS = 60000", bar ) > 0 && find( 'noctalia.state.watch("list"', bar ) > 0 );
+testkit.check( "bar: a click toggles bxrig/vpn:panel", find( 'togglePanel("bxrig/vpn:panel")', bar ) > 0 );
+
+// ---- the shared reader ----
+shared = textOf( "vpn/vpn.luau" );
+testkit.check( "vpn.luau reads `vpn list --json`", find( '{ "vpn", "list", "--json" }', shared ) > 0 );
+
+// ---- the panel ----
+pn = textOf( "vpn/panel.luau" );
+testkit.check( "panel: refreshes every 10 s while open", find( "REFRESH_MS = 10000", pn ) > 0 );
+testkit.check( "panel: two groups, Network profiles and VPN apps", find( '"Network profiles"', pn ) > 0 && find( '"VPN apps"', pn ) > 0 );
+testkit.check( "panel: connects, disconnects and picks a place with the bxrig vpn commands", find( '{ "vpn", "connect", str(item.id) }', pn ) > 0 && find( '"--location=" .. location', pn ) > 0 && find( '{ "vpn", "disconnect", str(item.id) }', pn ) > 0 && find( '{ "vpn", "locations", str(item.id), "--json" }', pn ) > 0 );
+testkit.check( "panel: the allow-several switch runs `vpn set allow_several=... --yes`", find( '"allow_several=" ..', pn ) > 0 && find( '"--yes" }', pn ) > 0 && find( "Allow more than one at the same time", pn ) > 0 );
+testkit.check( "panel: an empty list says how to install a VPN app, with install buttons", find( "No VPN is installed", pn ) > 0 && find( '" install " ..', pn ) > 0 && find( "safeName", pn ) > 0 );
+testkit.check( "panel: a status dot per row, a place button where the provider can pick, a warning for two at once", find( "dotColor", pn ) > 0 && find( 'glyph = "map-pin"', pn ) > 0 && find( "can_pick", pn ) > 0 && find( "clash on routes and DNS", pn ) > 0 );
+testkit.check( "panel and bar run no shell and no sudo", find( "os.execute", pn & bar & shared ) == 0 && find( "sudo", bare( pn & bar & shared ) ) == 0 );
+// every `vpn` verb the plugin runs is in the CLI's usage text
+usage = new bxrig.CommandSpec().usage( "vpn" );
+ok = true;
+for ( verb in [ "list", "connect NAME", "disconnect", "locations NAME", "set allow_several=" ] ) if ( !find( verb, usage ) ) { ok = false; println( "  vpn usage lacks: " & verb ); }
+testkit.check( "the CLI knows every vpn verb the plugin runs", ok && find( "--location=PLACE", usage ) > 0 );
+
+testkit.done( "all passed" );
