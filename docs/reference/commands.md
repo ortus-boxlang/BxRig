@@ -1482,7 +1482,7 @@ Minimize, restore and snap windows, and the quake console.
 ```text
 bxrig window minimize|restore|quake [--json]
 bxrig window quake send [--json]
-bxrig window snap left|right [--json]
+bxrig window snap left|right|top|bottom [--json]
 ```
 
 ```bash
@@ -1493,7 +1493,7 @@ bxrig window quake send
 bxrig window snap left
 ```
 
-> quake shows or hides the special workspace qconsole (the default terminal starts there the first time); quake send moves the focused window onto it. snap left|right floats the focused window onto that half of its monitor. Hyprland only.
+> quake shows or hides the special workspace qconsole (the default terminal starts there the first time); quake send moves the focused window onto it. snap left|right|top|bottom floats the focused window onto that half of its monitor. Hyprland only.
 
 ### `bxrig overview` {#bxrig-overview}
 

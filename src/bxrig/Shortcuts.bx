@@ -210,6 +210,9 @@ class Shortcuts {
 			row( "column-wider", G.win, "Make the window's column wider (scrolling: 1/3, 1/2, 2/3, full)", "Super+Equal", "Super+Equal", "hypr-bind", 'function() bxrigResize("+") end' ),
 			bx( "snap-left", G.win, "Snap the window to the left half", "Super+Alt+Left", "Super+Alt+Left", "window snap left" ),
 			bx( "snap-right", G.win, "Snap the window to the right half", "Super+Alt+Right", "Super+Alt+Right", "window snap right" ),
+			bx( "snap-top", G.win, "Snap the window to the top half", "Super+Alt+Up", "Super+Alt+Up", "window snap top" ),
+			bx( "snap-bottom", G.win, "Snap the window to the bottom half", "Super+Alt+Down", "Super+Alt+Down", "window snap bottom" ),
+			row( "center", G.win, "Center the floating window", "Super+Alt+Shift+C", "Super+Alt+Shift+C", "hypr-bind", "hl.dsp.window.center()" ),
 			bx( "quake-toggle", G.win, "Quake console (show or hide)", "Super+Shift+Grave", "Super+Shift+Grave", "window quake" ),
 			bx( "quake-send", G.win, "Send the window to the quake console", "Super+Ctrl+Grave", "Super+Ctrl+Grave", "window quake send" ),
 			bx( "force-quit", G.win, "Force quit a window", "Super+Alt+Escape", "Super+Alt+Escape", "forcequit" ),
@@ -236,11 +239,20 @@ class Shortcuts {
 			rows.append( row( "focus-" & lcase( d ), G.win, "Focus the window to the " & lcase( d ), "Super+" & d, "Super+" & d, "hypr-bind", 'hl.dsp.focus({ direction = "' & lcase( d ) & '" })' ) );
 			rows.append( row( "move-" & lcase( d ), G.win, "Move the window " & lcase( d ), "Super+Shift+" & d, "Super+Shift+" & d, "hypr-bind", 'hl.dsp.window.move({ direction = "' & lcase( d ) & '" })' ) );
 		}
-		// the workspace before or after this one (r: on this monitor, empty ones included); with Shift the window goes along
+		// the workspace before or after this one (r: on this monitor, empty ones included); with Alt the window goes along
 		for ( var wd in [ { k: "Left", n: "previous", s: "-1" }, { k: "Right", n: "next", s: "+1" } ] ) {
 			rows.append( row( "ws-" & wd.n, G.ws, "Go to the " & wd.n & " workspace", "Super+Ctrl+" & wd.k, "Super+Ctrl+" & wd.k, "hypr-bind", 'hl.dsp.focus({ workspace = "r' & wd.s & '" })' ) );
-			rows.append( row( "ws-move-" & wd.n, G.ws, "Take the window to the " & wd.n & " workspace", "Super+Ctrl+Shift+" & wd.k, "Super+Ctrl+Shift+" & wd.k, "hypr-bind", 'hl.dsp.window.move({ workspace = "r' & wd.s & '" })' ) );
+			rows.append( row( "ws-move-" & wd.n, G.ws, "Take the window to the " & wd.n & " workspace", "Super+Ctrl+Alt+" & wd.k, "Super+Ctrl+Alt+" & wd.k, "hypr-bind", 'hl.dsp.window.move({ workspace = "r' & wd.s & '" })' ) );
 		}
+		// back to the workspace you were on (Omarchy's key)
+		rows.append( row( "ws-last", G.ws, "Back to the last workspace", "Super+Ctrl+Tab", "Super+Ctrl+Tab", "hypr-bind", 'hl.dsp.focus({ workspace = "previous_per_monitor" })' ) );
+		// monitors (Omarchy's keys): the window or the whole workspace to the monitor in that direction, focus the next or previous monitor
+		for ( var md in [ { k: "Left", d: "l", n: "left" }, { k: "Right", d: "r", n: "right" }, { k: "Up", d: "u", n: "upper" }, { k: "Down", d: "d", n: "lower" } ] ) {
+			rows.append( row( "monitor-window-" & md.n, G.ws, "Move the window to the " & md.n & " monitor", "Super+Ctrl+Shift+" & md.k, "Super+Ctrl+Shift+" & md.k, "hypr-bind", 'hl.dsp.window.move({ monitor = "' & md.d & '" })' ) );
+			rows.append( row( "monitor-workspace-" & md.n, G.ws, "Move the workspace to the " & md.n & " monitor", "Super+Alt+Shift+" & md.k, "Super+Alt+Shift+" & md.k, "hypr-bind", 'hl.dsp.workspace.move({ monitor = "' & md.d & '" })' ) );
+		}
+		rows.append( row( "monitor-next", G.ws, "Focus the next monitor", "Ctrl+Alt+Tab", "Ctrl+Alt+Tab", "hypr-bind", 'hl.dsp.focus({ monitor = "+1" })' ) );
+		rows.append( row( "monitor-previous", G.ws, "Focus the previous monitor", "Ctrl+Alt+Shift+Tab", "Ctrl+Alt+Shift+Tab", "hypr-bind", 'hl.dsp.focus({ monitor = "-1" })' ) );
 		// workspaces 1 to 10: Super+1..0 switches, Super+Shift+1..0 sends the window there
 		for ( var i = 1; i <= 10; i++ ) {
 			var k = i % 10;

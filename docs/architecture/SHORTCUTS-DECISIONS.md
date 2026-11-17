@@ -30,7 +30,10 @@ Two styles: **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys for 
 | w2 | Snap to the left / right half | `Super+Alt+Left` / `Right` | same | 2026-11-16, `window snap left\|right` |
 | w3 | Next layout on the workspace | `Super+Shift+J` | same | 2026-11-16, HyprKwin's key on Plasma |
 | w4 | Narrower / wider column | `Super+Minus` / `Super+Equal` | same | 2026-11-16, HyprKwin's keys on Plasma (`Meta+-` / `Meta+=`) |
-| w5 | Previous / next workspace; take the window along | `Super+Ctrl+Left` / `Right`; with Shift | same | 2026-11-16 |
+| w5 | Previous / next workspace; take the window along | `Super+Ctrl+Left` / `Right`; with Alt | same | 2026-11-16; the window key moved from Shift to Alt on 2026-11-17 (Shift is Omarchy's monitor key) |
+| w6 | Snap to the top / bottom half; center a floating window | `Super+Alt+Up` / `Down`; `Super+Alt+Shift+C` | same | 2026-11-17 (Omarchy uses `Super+Alt+arrows` for groups, BxRig for snapping) |
+| w7 | Window to the monitor in a direction; workspace to it; focus next / previous monitor | `Super+Ctrl+Shift+arrows`; `Super+Alt+Shift+arrows`; `Ctrl+Alt+Tab` / with Shift | same | 2026-11-17, Omarchy's keys |
+| w8 | Back to the last workspace | `Super+Ctrl+Tab` | same | 2026-11-17, Omarchy's key (`previous_per_monitor`). No silent send to a workspace (owner) |
 
 ## Not touched by the owner: the page proposal applies
 

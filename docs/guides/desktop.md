@@ -58,7 +58,10 @@ Look and hardware have their own pages: [Appearance](appearance.md) for the bar,
 | Overview | `bxrig overview` | `Super+Ctrl+Up` |
 | Minimize / restore | `bxrig window minimize\|restore` | `Super+H` / `Super+Shift+H` |
 | Maximize | (Hyprland binding) | `Super+M` |
-| Snap to a half | `bxrig window snap left\|right` | `Super+Alt+Left` / `Right` |
+| Snap to a half | `bxrig window snap left\|right\|top\|bottom` | `Super+Alt+` arrows |
+| Center a floating window | (Hyprland binding) | `Super+Alt+Shift+C` |
+| Last workspace | (Hyprland binding) | `Super+Ctrl+Tab` |
+| Window / workspace to another monitor | (Hyprland binding) | `Super+Ctrl+Shift+` / `Super+Alt+Shift+` arrows |
 | Next layout on this workspace | (Hyprland binding) | `Super+Shift+J` |
 | Narrower / wider column | (Hyprland binding) | `Super+Minus` / `Super+Equal` |
 | Quake console | `bxrig window quake`, `window quake send` | `Super+Shift+Grave` / `Super+Ctrl+Grave` |
