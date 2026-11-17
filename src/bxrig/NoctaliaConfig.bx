@@ -44,7 +44,7 @@ class NoctaliaConfig {
 	function describe( layout ) {
 		var d = {
 			minimal: "logo, workspaces, active window | clock | quick settings, tray, network, volume, battery, notifications, control center",
-			standard: "logo, workspaces, active window | clock, media | agents, capture, tray, clipboard, network, bluetooth, volume, battery, notifications, quick settings, control center",
+			standard: "logo, workspaces, active window | clock, media | agents, capture, developer, tray, clipboard, network, bluetooth, volume, battery, notifications, quick settings, control center",
 			dense: "Standard plus weather and brightness (caffeine is a switch in quick settings, not an icon)"
 		};
 		return structKeyExists( d, arguments.layout ) ? d[ arguments.layout ] : "";
@@ -92,7 +92,7 @@ class NoctaliaConfig {
 		} else {
 			if ( compare( l, "dense" ) == 0 ) center.append( "weather" );
 			center.append( "media" );
-			end = [ "bxrig-agents", "screenshot", "tray", "clipboard", "network", "bluetooth", "volume" ];
+			end = [ "bxrig-agents", "screenshot", "bxrig-dev", "tray", "clipboard", "network", "bluetooth", "volume" ];
 			if ( compare( l, "dense" ) == 0 ) end.append( "brightness" );
 		}
 		if ( o.battery ) end.append( "battery" );
@@ -170,8 +170,12 @@ class NoctaliaConfig {
 			'[widget.bxrig-quick]',
 			'type = "bxrig/quick:bar"',
 			'',
+			'# Developer: databases, containers and virtual machines (a code glyph with the number running)',
+			'[widget.bxrig-dev]',
+			'type = "bxrig/dev:bar"',
+			'',
 			'[plugins]',
-			'enabled = ["bxrig/clock", "bxrig/agents", "bxrig/quick"]',
+			'enabled = ["bxrig/clock", "bxrig/agents", "bxrig/quick", "bxrig/dev"]',
 			''
 		];
 		if ( o.battery ) {

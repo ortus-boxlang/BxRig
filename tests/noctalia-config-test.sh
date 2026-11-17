@@ -25,7 +25,8 @@ assert m['capsule'] is False and 'capsule_border' not in m
 assert c['dock']['enabled'] is True and c['dock']['launcher_position'] == 'start' and c['dock']['launcher_custom_image'].endswith('/plates/bxrig-grid.svg')
 assert c['shell']['setup_wizard_enabled'] is False and c['shell']['launcher']['app_grid'] is True
 assert 'bxrig-agents' in m['end'] and 'bxrig-quick' in m['end'] and 'caffeine' not in m['end']
-assert c['plugins']['enabled'] == ['bxrig/clock', 'bxrig/agents', 'bxrig/quick']
+assert m['end'].index('bxrig-dev') == m['end'].index('screenshot') + 1 and c['widget']['bxrig-dev']['type'] == 'bxrig/dev:bar'
+assert c['plugins']['enabled'] == ['bxrig/clock', 'bxrig/agents', 'bxrig/quick', 'bxrig/dev']
 assert c['notification']['group_by_app'] is True and c['notification']['border_color'] == 'primary'
 assert c['wallpaper']['directory'] == sys.argv[2] + '/Pictures/BxRig'
 assert c['wallpaper']['default']['path'].endswith('/bxrig.jpg')

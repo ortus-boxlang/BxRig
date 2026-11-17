@@ -17,11 +17,11 @@ testkit.check( "layouts: minimal, standard, dense; standard is the default", nc.
 std = nc.zones( "standard", { battery: true } );
 testkit.check( "standard start: logo, workspaces, active window (the grid is in the dock)", std.start.toList( "," ) == "bxrig-menu,workspaces,active_window" );
 testkit.check( "standard center: the clock and the media player", std.center.toList( "," ) == "bxrig-clock,media" );
-testkit.check( "standard end: agents, capture, tray, clipboard, network, bluetooth, volume, battery, notifications, quick settings, control center", std.end.toList( "," ) == "bxrig-agents,screenshot,tray,clipboard,network,bluetooth,volume,battery,notifications,bxrig-quick,control-center" );
+testkit.check( "standard end: agents, capture, developer, tray, clipboard, network, bluetooth, volume, battery, notifications, quick settings, control center", std.end.toList( "," ) == "bxrig-agents,screenshot,bxrig-dev,tray,clipboard,network,bluetooth,volume,battery,notifications,bxrig-quick,control-center" );
 mini = nc.zones( "minimal", { battery: true } );
 testkit.check( "minimal: logo, workspaces, active window | clock | tray, network, volume, battery, notifications, quick settings, control center", mini.start.toList( "," ) == "bxrig-menu,workspaces,active_window" && mini.center.toList( "," ) == "bxrig-clock" && mini.end.toList( "," ) == "tray,network,volume,battery,notifications,bxrig-quick,control-center" );
 dense = nc.zones( "dense", { battery: true } );
-testkit.check( "dense: standard plus weather and brightness (caffeine is not a bar icon)", dense.center.toList( "," ) == "bxrig-clock,weather,media" && dense.end.toList( "," ) == "bxrig-agents,screenshot,tray,clipboard,network,bluetooth,volume,brightness,battery,notifications,bxrig-quick,control-center" );
+testkit.check( "dense: standard plus weather and brightness (caffeine is not a bar icon)", dense.center.toList( "," ) == "bxrig-clock,weather,media" && dense.end.toList( "," ) == "bxrig-agents,screenshot,bxrig-dev,tray,clipboard,network,bluetooth,volume,brightness,battery,notifications,bxrig-quick,control-center" );
 ok = true; for ( l in nc.layouts() ) { z = nc.zones( l, { battery: true } ); if ( z.end[ z.end.len() ] != "control-center" || z.end[ z.end.len() - 1 ] != "bxrig-quick" ) ok = false; }
 testkit.check( "every layout: control center is last, quick settings right before it", ok );
 ok = true; for ( l in nc.layouts() ) if ( arrayFind( nc.zones( l, { battery: true } ).end, "caffeine" ) ) ok = false;
@@ -39,7 +39,7 @@ testkit.check( "Noctalia's first-run wizard is off, the launcher opens as a grid
 testkit.check( "hybrid style: bare widgets (capsule off, no blank capsule_border), one palette role, plates only on the logo and the grid", find( "capsule = false", t ) > 0 && find( "capsule_border", t ) == 0 && find( 'color = "on_surface"', t ) > 0 && find( "bxrig-menu.svg", t ) > 0 && find( "bxrig-grid.svg", t ) > 0 && find( "custom_image", t ) > 0 );
 testkit.check( "the logo button opens `bxrig menu` detached (setsid)", find( "setsid bxrig menu", t ) > 0 && find( "[widget.bxrig-menu.actions]", t ) > 0 && find( 'type = "custom_button"', t ) > 0 );
 testkit.check( "the clock is one plugin widget with its format setting; no built-in clock, no globe", find( '[widget.bxrig-clock]', t ) > 0 && find( 'type = "bxrig/clock:bar"', t ) > 0 && find( '[plugin_settings."bxrig/clock"]', t ) > 0 && find( 'format = "%b %-d - %H:%M"', t ) > 0 && find( "[widget.clock]", t ) == 0 && find( "world-clock", t ) == 0 );
-testkit.check( "the plugins are enabled", find( 'enabled = ["bxrig/clock", "bxrig/agents", "bxrig/quick"]', t ) > 0 );
+testkit.check( "the plugins are enabled", find( 'enabled = ["bxrig/clock", "bxrig/agents", "bxrig/quick", "bxrig/dev"]', t ) > 0 );
 testkit.check( "a custom clock format is quoted for TOML", find( 'format = "%a \"x\" %H:%M"', nc.configToml( "/home/dev", "dark", "bxrig", { timeFormat: '%a "x" %H:%M' } ) ) > 0 );
 d = nc.detect( nc.configToml( "/home/dev", "light", "bxrig-light" ) );
 testkit.check( "detect: the theme mode and wallpaper of a written config", d.theme == "light" && d.wallpaper == "bxrig-light" );

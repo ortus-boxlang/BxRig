@@ -89,14 +89,16 @@ class Containers {
 	// A name as the engine accepts it (the first character is never a dash, so it cannot be read as an option).
 	function validName( name ) { return reFind( "^[A-Za-z0-9][A-Za-z0-9_.-]{0,126}$", arguments.name ?: "" ) > 0; }
 
-	// The host ports of an engine `Ports` text ("127.0.0.1:5432->5432/tcp, [::]:5432->5432/tcp"), each once, in order.
+	// The host ports of an engine `Ports` text ("127.0.0.1:5432->5432/tcp, [::]:5432->5432/tcp", or a range "0.0.0.0:8000-8002->8000-8002/tcp"),
+	// each once, in order; a range gives its first and last port.
 	function hostPorts( text ) {
 		var out = [];
 		for ( var part in listToArray( arguments.text, "," ) ) {
-			var m = reFind( "([0-9]+)->", part, 1, true );
+			var m = reFind( "([0-9]+)(-[0-9]+)?->", part, 1, true );
 			if ( m.pos[ 1 ] == 0 ) continue;
-			var port = int( mid( part, m.pos[ 2 ], m.len[ 2 ] ) );
-			if ( !arrayFind( out, port ) ) out.append( port );
+			var found = [ int( mid( part, m.pos[ 2 ], m.len[ 2 ] ) ) ];
+			if ( m.pos.len() >= 3 && m.pos[ 3 ] > 0 ) found.append( int( mid( part, m.pos[ 3 ] + 1, m.len[ 3 ] - 1 ) ) );
+			for ( var port in found ) if ( !arrayFind( out, port ) ) out.append( port );
 		}
 		return out;
 	}

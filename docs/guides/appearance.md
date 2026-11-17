@@ -40,15 +40,16 @@ bxrig appearance apply                    # push everything you chose again
 | Layout | Start | Center | End |
 |---|---|---|---|
 | Minimal | logo, workspaces, active window | clock | tray, network, volume, battery*, notifications, quick settings, control center |
-| Standard | logo, workspaces, active window | clock, media | agents, capture, tray, clipboard history, network, Bluetooth, volume, battery*, notifications, quick settings, control center |
+| Standard | logo, workspaces, active window | clock, media | agents, capture, developer, tray, clipboard history, network, Bluetooth, volume, battery*, notifications, quick settings, control center |
 | Dense | as Standard | clock, weather, media | as Standard, plus brightness |
 
 \* The battery widget is written only when a battery is found (a laptop). It shows the percentage; `appearance battery-percent off` hides the number.
 
 - **Logo** opens the BxRig menu (`bxrig menu`). **Clock** is one widget: the time as text, a popover with your local time, the other zones you follow (`bxrig time world`) and a Calendar button; right click opens the Noctalia calendar.
+- **Developer** (a code glyph, Standard and Dense) shows how many databases, containers and VMs are running. Its popover has three tabs: Databases (`bxrig db`), Containers (`bxrig containers`, over Podman or the engine `db engine` chose) and VMs (`bxrig vm`). Each row has a state dot, the host ports, start and stop (stop asks for a second click), a copy button for the connection string or address, and a logs button that opens `bxrig containers logs NAME` in a terminal; the footer opens the Machines page of `bxrig tui`. It refreshes every 15 seconds while open and every 2 minutes for the number.
 - **Dock** is on by default. The Launchpad grid is its first button, so the grid is not in the bar; with `dock off` the grid button returns to the bar, right after the logo.
 - **Quick settings** (`bxrig/quick`, the sliders icon) is a popover of switches and pickers: Caffeine, Do Not Disturb, Dark/Light/Auto, Dock, Battery percentage (laptops), App grid style, Top bar layout, Clock format, a button to the control center Home tile for Night light, and a button that opens the BxRig Control Center. Its **Themes** row opens the theme switcher (search, preview, Enter applies). Every control runs the matching bxrig command with `--yes` and shows its result. Caffeine is a switch here, not a bar icon: Noctalia can switch it (`noctalia msg caffeine-enable|disable`) but cannot report its state, so the switch shows what you last set in the popover.
-- Planned widgets that are not built yet and so are on no bar: System (updates, backups), Developer (databases, containers, VMs), VPN and a Power panel for the battery.
+- Planned widgets that are not built yet and so are on no bar: System (updates, backups), VPN and a Power panel for the battery.
 - **App grid**: `launchpad` is the launcher's grid view. `terminal` (a Terminal-style grid) is only remembered for now: nothing draws it yet, so the launcher keeps the Launchpad grid.
 - **Clock format** uses Noctalia's date format tokens (https://docs.noctalia.dev/noctalia/configuration/date-format-tokens/). A pattern without a `%`, like `MMM d - HH:mm`, is read as letters (yyyy MM dd HH mm ss a ...) and converted.
 
