@@ -1,0 +1,267 @@
+{
+	"theme": "BxRig",
+	"sizes": [
+		16,
+		22,
+		24,
+		32,
+		48,
+		64,
+		128,
+		256
+	],
+	"small": [
+		16,
+		22
+	],
+	"icons": [
+		{
+			"name": "bxrig-develop",
+			"glyph": "code",
+			"category": "develop",
+			"context": "categories",
+			"title": "Develop",
+			"use": "the Develop folder of the BxRig menu"
+		},
+		{
+			"name": "bxrig-system",
+			"glyph": "cpu",
+			"category": "system",
+			"context": "categories",
+			"title": "System",
+			"use": "the System folder of the BxRig menu"
+		},
+		{
+			"name": "bxrig-look",
+			"glyph": "paint-brush",
+			"category": "look",
+			"context": "categories",
+			"title": "Look",
+			"use": "the Look folder and the Look page"
+		},
+		{
+			"name": "bxrig-control-center",
+			"glyph": "sliders-horizontal",
+			"category": "control",
+			"context": "apps",
+			"title": "Control Center",
+			"use": "the Control Center launcher"
+		},
+		{
+			"name": "bxrig-wizard",
+			"glyph": "magic-wand",
+			"category": "look",
+			"context": "apps",
+			"title": "Setup Wizard",
+			"use": "the Setup Wizard launcher"
+		},
+		{
+			"name": "bxrig-runner",
+			"glyph": "rocket-launch",
+			"category": "control",
+			"context": "apps",
+			"title": "Runner",
+			"use": "the Runner menu launcher"
+		},
+		{
+			"name": "bxrig-apps",
+			"glyph": "squares-four",
+			"category": "control",
+			"context": "apps",
+			"title": "Apps",
+			"use": "the Apps page"
+		},
+		{
+			"name": "bxrig-dashboard",
+			"glyph": "gauge",
+			"category": "system",
+			"context": "apps",
+			"title": "Dashboard",
+			"use": "the Dashboard page"
+		},
+		{
+			"name": "bxrig-ports",
+			"glyph": "plugs-connected",
+			"category": "develop",
+			"context": "apps",
+			"title": "Ports",
+			"use": "the Ports page"
+		},
+		{
+			"name": "bxrig-backups",
+			"glyph": "cloud-arrow-up",
+			"category": "system",
+			"context": "apps",
+			"title": "Backups",
+			"use": "backups"
+		},
+		{
+			"name": "bxrig-updates",
+			"glyph": "arrow-circle-up",
+			"category": "develop",
+			"context": "apps",
+			"title": "Updates",
+			"use": "updates"
+		},
+		{
+			"name": "bxrig-agents",
+			"glyph": "robot",
+			"category": "look",
+			"context": "apps",
+			"title": "AI agents",
+			"use": "the AI agents"
+		},
+		{
+			"name": "bxrig-vpn",
+			"glyph": "shield-check",
+			"category": "system",
+			"context": "apps",
+			"title": "VPN",
+			"use": "the VPN panel"
+		},
+		{
+			"name": "bxrig-dev-services",
+			"glyph": "stack",
+			"category": "develop",
+			"context": "apps",
+			"title": "Dev services",
+			"use": "the developer panel (databases, containers, VMs)"
+		},
+		{
+			"name": "bxrig-about",
+			"glyph": "info",
+			"category": "control",
+			"context": "apps",
+			"title": "About",
+			"use": "the About launcher"
+		},
+		{
+			"name": "bxrig-boxlang",
+			"glyph": "cube",
+			"category": "develop",
+			"context": "apps",
+			"title": "BoxLang",
+			"use": "the BoxLang page"
+		},
+		{
+			"name": "bxrig-java",
+			"glyph": "coffee",
+			"category": "develop",
+			"context": "apps",
+			"title": "Java",
+			"use": "the Java page"
+		},
+		{
+			"name": "bxrig-maven",
+			"glyph": "wrench",
+			"category": "develop",
+			"context": "apps",
+			"title": "Maven",
+			"use": "the Maven page"
+		},
+		{
+			"name": "bxrig-gradle",
+			"glyph": "hammer",
+			"category": "develop",
+			"context": "apps",
+			"title": "Gradle",
+			"use": "the Gradle page"
+		},
+		{
+			"name": "bxrig-versions",
+			"glyph": "tag",
+			"category": "develop",
+			"context": "apps",
+			"title": "Versions",
+			"use": "the Versions page"
+		},
+		{
+			"name": "bxrig-databases",
+			"glyph": "database",
+			"category": "develop",
+			"context": "apps",
+			"title": "Databases",
+			"use": "the Databases page"
+		},
+		{
+			"name": "bxrig-mail",
+			"glyph": "envelope",
+			"category": "utility",
+			"context": "apps",
+			"title": "Mail",
+			"use": "the Mail page"
+		},
+		{
+			"name": "bxrig-machines",
+			"glyph": "desktop-tower",
+			"category": "system",
+			"context": "apps",
+			"title": "Machines",
+			"use": "the Machines page"
+		},
+		{
+			"name": "bxrig-storage",
+			"glyph": "hard-drives",
+			"category": "system",
+			"context": "apps",
+			"title": "Storage",
+			"use": "the Storage page"
+		},
+		{
+			"name": "bxrig-secrets",
+			"glyph": "key",
+			"category": "utility",
+			"context": "apps",
+			"title": "Secrets",
+			"use": "the Secrets page"
+		},
+		{
+			"name": "bxrig-logs",
+			"glyph": "scroll",
+			"category": "system",
+			"context": "apps",
+			"title": "Logs",
+			"use": "the Logs page"
+		},
+		{
+			"name": "bxrig-packages",
+			"glyph": "package",
+			"category": "utility",
+			"context": "apps",
+			"title": "Packages",
+			"use": "the Packages page"
+		},
+		{
+			"name": "bxrig-shortcuts",
+			"glyph": "keyboard",
+			"category": "control",
+			"context": "apps",
+			"title": "Shortcuts",
+			"use": "the Shortcuts page"
+		},
+		{
+			"name": "bxrig-themes",
+			"glyph": "palette",
+			"category": "look",
+			"context": "apps",
+			"title": "Themes",
+			"use": "the Themes page"
+		},
+		{
+			"name": "bxrig",
+			"glyph": "",
+			"category": "brand",
+			"context": "apps",
+			"title": "bxrig",
+			"use": "reused artwork"
+		},
+		{
+			"name": "bxrig-grid",
+			"glyph": "",
+			"category": "brand",
+			"context": "apps",
+			"title": "bxrig-grid",
+			"use": "reused artwork"
+		}
+	]
+}
