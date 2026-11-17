@@ -59,6 +59,14 @@ run "$binary" nightshift off >/dev/null; grep -q 'disable --now bxrig-wlsunset.s
 
 # input: doctor and gestures
 run "$binary" input doctor --json | jq -e '.data.libinput_gestures == true and .data.in_input_group == false' >/dev/null || fail 'input doctor'
+# the driver check reads /sys/module and /sys/bus/hid/drivers (a built-in driver is not in lsmod), then modinfo
+printf '#!/usr/bin/env bash\nexit 1\n' > "$tmp/bin/modinfo"; chmod +x "$tmp/bin/modinfo"
+mkdir -p "$tmp/sysmod/hid_magicmouse" "$tmp/hiddrv/magicmouse" "$tmp/emptymod" "$tmp/emptydrv"
+BXRIG_SYS_MODULE="$tmp/emptymod" BXRIG_HID_DRIVERS="$tmp/emptydrv" run "$binary" input doctor --json | jq -e '.data.magicmouse_driver == false and .data.magicmouse_driver_state == "absent"' >/dev/null || fail 'input doctor: no driver'
+BXRIG_SYS_MODULE="$tmp/sysmod" BXRIG_HID_DRIVERS="$tmp/emptydrv" run "$binary" input doctor --json | jq -e '.data.magicmouse_driver == true and .data.magicmouse_driver_state == "built-in"' >/dev/null || fail 'input doctor: a module directory without initstate is built in'
+BXRIG_SYS_MODULE="$tmp/emptymod" BXRIG_HID_DRIVERS="$tmp/hiddrv" run "$binary" input doctor --json | jq -e '.data.magicmouse_driver_state == "built-in"' >/dev/null || fail 'input doctor: a registered HID driver means built in'
+echo live > "$tmp/sysmod/hid_magicmouse/initstate"
+BXRIG_SYS_MODULE="$tmp/sysmod" run "$binary" input doctor | grep -q 'ok    kernel driver hid_magicmouse: loaded' || fail 'input doctor: loaded'
 [[ "$(code "$binary" input gestures)" == 2 ]] || fail 'gestures without --yes exits 2'
 : > "$LOG"; run "$binary" input gestures --yes >/dev/null; grep -q 'gesture swipe left 3 hyprctl dispatch workspace e+1' "$tmp/cfg/libinput-gestures.conf" || fail 'gestures file'
 grep -q 'libinput-gestures-setup autostart' "$LOG" && grep -q 'libinput-gestures-setup start' "$LOG" || fail 'gestures autostart'

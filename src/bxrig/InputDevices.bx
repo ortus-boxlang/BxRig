@@ -1,0 +1,309 @@
+// What input devices are plugged in or paired: Apple Magic Mouse, Magic Trackpad and Magic Keyboard, and Logitech mice, keyboards and receivers.
+// No root and no external tool is needed: the kernel's sysfs says it all (`bluetoothctl` and `upower` only add to it when they are installed).
+//   /sys/bus/hid/devices/BUS:VENDOR:PRODUCT.N/uevent    HID_ID (bus, vendor, product), HID_NAME, DRIVER; power_supply/*/capacity is the kernel's battery
+//   /sys/class/input/inputN/{name,id/vendor,id/bustype}  the same devices as the input layer sees them (a second source)
+//   bluetoothctl devices                                 paired devices that are not connected now
+//   upower -e, upower -i PATH                            battery of a device the kernel did not give one for
+// A device is Apple when the vendor is 05AC and the name has "Magic" in it, Logitech when the vendor is 046D. Product ids are never hard-coded.
+// The kind comes from the name (a guess, said so wherever it is shown): apple-mouse, apple-trackpad, apple-keyboard, logitech-mouse,
+// logitech-keyboard, logitech-receiver, other. Bus 0005 is Bluetooth, 0003 USB.
+// Test overrides (a fake sysfs): BXRIG_SYS_HID (default /sys/bus/hid/devices), BXRIG_SYS_INPUT (/sys/class/input), BXRIG_SYS_MODULE (/sys/module),
+// BXRIG_HID_DRIVERS (/sys/bus/hid/drivers), BXRIG_UDEV_DIR (default: /usr/lib/udev/rules.d and /etc/udev/rules.d).
+class InputDevices {
+	function init( runner = "" ) {
+		variables.environ = new bxrig.util.Env();
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		return this;
+	}
+
+	function sysHid() { return variables.environ.named( "sysHid", "/sys/bus/hid/devices" ); }
+	function sysInput() { return variables.environ.named( "sysInput", "/sys/class/input" ); }
+	function sysModule() { return variables.environ.named( "sysModule", "/sys/module" ); }
+	function hidDrivers() { return variables.environ.named( "hidDrivers", "/sys/bus/hid/drivers" ); }
+	function udevDirs() {
+		var one = variables.environ.named( "udevDir", "" );
+		return len( one ) ? [ one ] : [ "/usr/lib/udev/rules.d", "/etc/udev/rules.d" ];
+	}
+
+	// ---- parsing and naming (pure) ----
+
+	// KEY=VALUE lines of a sysfs uevent file as a struct.
+	function parseUevent( text ) {
+		var out = {};
+		for ( var line in listToArray( arguments.text, chr( 10 ) ) ) {
+			var at = find( "=", line );
+			if ( at > 1 ) out[ trim( left( line, at - 1 ) ) ] = trim( mid( line, at + 1, len( line ) ) );
+		}
+		return out;
+	}
+
+	// "0005" to "bluetooth". The kernel bus numbers (include/uapi/linux/input.h): 3 USB, 5 Bluetooth, 6 virtual, 0x18 I2C, 0x1C SPI.
+	function transportOf( bus ) {
+		var b = uCase( right( "0000" & arguments.bus, 4 ) );
+		if ( compare( b, "0005" ) == 0 ) return "bluetooth";
+		if ( compare( b, "0003" ) == 0 ) return "usb";
+		if ( compare( b, "0018" ) == 0 ) return "i2c";
+		if ( compare( b, "001C" ) == 0 ) return "spi";
+		if ( compare( b, "0006" ) == 0 ) return "virtual";
+		return "other";
+	}
+
+	// The last four hex digits of a vendor or product field ("000005AC" to "05AC").
+	function hex4( value ) {
+		return uCase( right( "0000" & arguments.value, 4 ) );
+	}
+
+	// Pulls BUS, VENDOR and PRODUCT out of a device directory name such as 0005:05AC:0265.0001 ({} when it is not one).
+	function parseHidName( dirName ) {
+		var m = reFind( "^([0-9A-Fa-f]{4}):([0-9A-Fa-f]{4}):([0-9A-Fa-f]{4})", arguments.dirName, 1, true );
+		if ( !m.pos[ 1 ] ) return {};
+		return { bus: uCase( mid( arguments.dirName, m.pos[ 2 ], 4 ) ), vendor: uCase( mid( arguments.dirName, m.pos[ 3 ], 4 ) ), product: uCase( mid( arguments.dirName, m.pos[ 4 ], 4 ) ) };
+	}
+
+	// Kind of a Logitech device from its name (a guess): logitech-receiver, logitech-keyboard, logitech-mouse or other.
+	function logitechKind( name ) {
+		var n = arguments.name;
+		if ( reFindNoCase( "receiver", n ) ) return "logitech-receiver";
+		if ( reFindNoCase( "keyboard|MX Keys|MX Mechanical|Pop Keys|Craft|(^|[^A-Za-z0-9])K[0-9]{3}([^0-9]|$)|G(213|413|512|513|610|613|810|815|910|913|915)", n ) ) return "logitech-keyboard";
+		if ( reFindNoCase( "mouse|trackball|MX (Master|Anywhere|Vertical|Ergo)|(^|[^A-Za-z0-9])M[0-9]{3}([^0-9]|$)|Lift|Pebble|Marble|Signature|Triathlon|Superlight|G ?Pro|(^|[^A-Za-z0-9])G[0-9]{3}[A-Za-z]?([^0-9]|$)", n ) ) return "logitech-mouse";
+		return "other";
+	}
+
+	// True when a Logitech mouse looks like a gaming mouse by its name (G-series, G Pro, Superlight, Lightspeed, "Gaming"): the offer adds libratbag and Piper for it. A guess.
+	function gamingGuess( name ) {
+		return reFindNoCase( "(^|[^A-Za-z0-9])G[0-9]{3}[A-Za-z]?([^0-9]|$)|G ?Pro|Superlight|Lightspeed|Gaming|Logitech G ", arguments.name ) > 0;
+	}
+
+	// { vendor: "apple"|"logitech"|"other", kind } for a vendor id and a name. Apple needs "Magic" in the name; other Apple devices are "other".
+	function classify( vendor, name ) {
+		var v = hex4( arguments.vendor );
+		var n = arguments.name;
+		if ( compare( v, "05AC" ) == 0 ) {
+			if ( !findNoCase( "magic", n ) ) return { vendor: "apple", kind: "other" };
+			return { vendor: "apple", kind: appleKind( n ) };
+		}
+		if ( compare( v, "046D" ) == 0 ) return { vendor: "logitech", kind: logitechKind( n ) };
+		return { vendor: "other", kind: "other" };
+	}
+
+	function appleKind( name ) {
+		if ( findNoCase( "trackpad", arguments.name ) ) return "apple-trackpad";
+		if ( findNoCase( "mouse", arguments.name ) ) return "apple-mouse";
+		if ( findNoCase( "keyboard", arguments.name ) ) return "apple-keyboard";
+		return "other";
+	}
+
+	// A device known only by its Bluetooth name (no vendor id): "Magic ..." is Apple, "Logitech ..." or an MX name is Logitech.
+	function classifyByName( name ) {
+		var n = arguments.name;
+		if ( findNoCase( "magic", n ) && reFindNoCase( "mouse|trackpad|keyboard", n ) ) return { vendor: "apple", kind: appleKind( n ) };
+		if ( reFindNoCase( "logitech|MX (Master|Anywhere|Keys|Vertical|Ergo|Mechanical)", n ) ) return { vendor: "logitech", kind: logitechKind( n ) };
+		return { vendor: "other", kind: "other" };
+	}
+
+	function kinds() {
+		return [ "apple-mouse", "apple-trackpad", "apple-keyboard", "logitech-mouse", "logitech-keyboard", "logitech-receiver", "other" ];
+	}
+
+	function device( id, vendor, product, bus, name, kind, vendorName, source, connected, battery ) {
+		return {
+			id: arguments.id, name: arguments.name, kind: arguments.kind, vendor: arguments.vendorName, vendor_id: arguments.vendor, product_id: arguments.product,
+			transport: transportOf( arguments.bus ), battery: arguments.battery.percent, battery_status: arguments.battery.status, battery_source: arguments.battery.source,
+			connected: arguments.connected, source: arguments.source, gaming: arguments.kind == "logitech-mouse" && gamingGuess( arguments.name )
+		};
+	}
+
+	function noBattery() { return { percent: -1, status: "", source: "" }; }
+
+	// ---- reading the system ----
+
+	// The battery the kernel reports under a device directory (power_supply/*/capacity): { percent, status, source }; percent -1 when there is none.
+	function kernelBattery( dir ) {
+		var pd = arguments.dir & "/power_supply";
+		if ( !directoryExists( pd ) ) return noBattery();
+		for ( var d in directoryList( pd, false, "name" ) ) {
+			var cap = pd & "/" & d & "/capacity";
+			if ( !fileExists( cap ) ) continue;
+			var t = trim( fileRead( cap ) );
+			if ( !reFind( "^[0-9]+$", t ) ) continue;
+			var st = fileExists( pd & "/" & d & "/status" ) ? trim( fileRead( pd & "/" & d & "/status" ) ) : "";
+			return { percent: int( val( t ) ), status: st, source: "kernel" };
+		}
+		return noBattery();
+	}
+
+	// Apple and Logitech devices on the HID bus, one row per physical device (a receiver's several interfaces collapse into one).
+	function hidDevices() {
+		var out = [];
+		var seen = {};
+		var base = sysHid();
+		if ( !directoryExists( base ) ) return out;
+		for ( var dn in directoryList( base, false, "name" ) ) {
+			var dir = base & "/" & dn;
+			var ev = fileExists( dir & "/uevent" ) ? parseUevent( fileRead( dir & "/uevent" ) ) : {};
+			var hid = parseHidName( dn );
+			var bus = ""; var vendor = ""; var product = "";
+			if ( structKeyExists( ev, "HID_ID" ) && listLen( ev.HID_ID, ":" ) == 3 ) {
+				bus = hex4( listGetAt( ev.HID_ID, 1, ":" ) ); vendor = hex4( listGetAt( ev.HID_ID, 2, ":" ) ); product = hex4( listGetAt( ev.HID_ID, 3, ":" ) );
+			} else if ( !structIsEmpty( hid ) ) {
+				bus = hid.bus; vendor = hid.vendor; product = hid.product;
+			} else continue;
+			var name = ev.HID_NAME ?: "";
+			var c = classify( vendor, name );
+			if ( compare( c.vendor, "other" ) == 0 ) continue;
+			// Apple: only the Magic devices count; an Apple device without "Magic" (the built-in keyboard of a Mac) is not listed
+			if ( compare( c.vendor, "apple" ) == 0 && compare( c.kind, "other" ) == 0 ) continue;
+			var key = vendor & ":" & product & ( compare( c.kind, "logitech-receiver" ) == 0 ? "" : ":" & lCase( name ) );
+			if ( structKeyExists( seen, key ) ) {
+				// a receiver shows up as several interfaces ("Logitech USB Receiver", "... Mouse", "... Keyboard"): keep the shortest name
+				var at = seen[ key ];
+				if ( compare( c.kind, "logitech-receiver" ) == 0 && len( name ) < len( out[ at ].name ) ) out[ at ].name = name;
+				continue;
+			}
+			seen[ key ] = out.len() + 1;
+			out.append( device( dn, vendor, product, bus, len( name ) ? name : "HID " & vendor & ":" & product, c.kind, c.vendor, "hid", true, kernelBattery( dir ) ) );
+		}
+		return out;
+	}
+
+	// Apple and Logitech devices the input layer lists that the HID scan did not (name, vendor and bus of /sys/class/input/inputN).
+	function inputClassDevices( known ) {
+		var out = [];
+		var base = sysInput();
+		if ( !directoryExists( base ) ) return out;
+		for ( var dn in directoryList( base, false, "name" ) ) {
+			if ( !reFind( "^input[0-9]+$", dn ) ) continue;
+			var dir = base & "/" & dn;
+			if ( !fileExists( dir & "/name" ) || !fileExists( dir & "/id/vendor" ) ) continue;
+			var name = trim( fileRead( dir & "/name" ) );
+			var vendor = hex4( trim( fileRead( dir & "/id/vendor" ) ) );
+			var c = classify( vendor, name );
+			if ( compare( c.vendor, "other" ) == 0 || ( compare( c.vendor, "apple" ) == 0 && compare( c.kind, "other" ) == 0 ) ) continue;
+			if ( haveName( arguments.known, name ) || haveName( out, name ) ) continue;
+			var bus = fileExists( dir & "/id/bustype" ) ? hex4( trim( fileRead( dir & "/id/bustype" ) ) ) : "";
+			var product = fileExists( dir & "/id/product" ) ? hex4( trim( fileRead( dir & "/id/product" ) ) ) : "";
+			out.append( device( dn, vendor, product, bus, name, c.kind, c.vendor, "input", true, noBattery() ) );
+		}
+		return out;
+	}
+
+	// True when a device list has this name, or one that starts with it or that it starts with ("Magic Mouse 2" and "Magic Mouse 2 Touchpad").
+	function haveName( list, name ) {
+		var n = lCase( arguments.name );
+		for ( var d in arguments.list ) {
+			var o = lCase( d.name );
+			if ( compare( o, n ) == 0 || left( o, len( n ) ) == n || left( n, len( o ) ) == o ) return true;
+		}
+		return false;
+	}
+
+	// `bluetoothctl devices` as [ { mac, name } ] ([] when the tool is missing or fails).
+	function bluetoothNames() {
+		var out = [];
+		if ( !variables.proc.has( "bluetoothctl" ) ) return out;
+		var r = variables.proc.exec( [ "bluetoothctl", "devices" ], 10 );
+		if ( r.exitCode != 0 ) return out;
+		for ( var line in listToArray( r.output, chr( 10 ) ) ) {
+			var m = reFind( "^\s*Device\s+([0-9A-Fa-f:]{17})\s+(.+)$", line, 1, true );
+			if ( m.pos[ 1 ] ) out.append( { mac: mid( line, m.pos[ 2 ], m.len[ 2 ] ), name: trim( mid( line, m.pos[ 3 ], m.len[ 3 ] ) ) } );
+		}
+		return out;
+	}
+
+	// Paired Bluetooth devices that are Apple or Logitech by name and not already listed (not connected now).
+	function bluetoothDevices( known ) {
+		var out = [];
+		for ( var b in bluetoothNames() ) {
+			var c = classifyByName( b.name );
+			if ( compare( c.vendor, "other" ) == 0 || haveName( arguments.known, b.name ) || haveName( out, b.name ) ) continue;
+			var d = device( b.mac, "", "", "0005", b.name, c.kind, c.vendor, "bluetooth", false, noBattery() );
+			out.append( d );
+		}
+		return out;
+	}
+
+	// The percentage `upower` knows for a device name ({ percent, status } or percent -1): matches the model name, no other guessing.
+	function upowerBattery( name ) {
+		var res = { percent: -1, status: "", source: "" };
+		if ( !variables.proc.has( "upower" ) ) return res;
+		var list = variables.proc.exec( [ "upower", "-e" ], 10 );
+		if ( list.exitCode != 0 ) return res;
+		for ( var path in listToArray( list.output, chr( 10 ) ) ) {
+			path = trim( path );
+			if ( !len( path ) || findNoCase( "DisplayDevice", path ) || findNoCase( "line_power", path ) ) continue;
+			var info = variables.proc.exec( [ "upower", "-i", path ], 10 );
+			if ( info.exitCode != 0 ) continue;
+			var model = ""; var pct = -1; var state = "";
+			for ( var l in listToArray( info.output, chr( 10 ) ) ) {
+				var t = trim( l );
+				if ( left( t, 6 ) == "model:" ) model = trim( mid( t, 7, len( t ) ) );
+				else if ( left( t, 11 ) == "percentage:" ) { var pv = reReplace( trim( mid( t, 12, len( t ) ) ), "[^0-9.]", "", "all" ); if ( len( pv ) ) pct = int( val( pv ) ); }
+				else if ( left( t, 6 ) == "state:" ) state = trim( mid( t, 7, len( t ) ) );
+			}
+			if ( pct >= 0 && len( model ) && ( findNoCase( model, arguments.name ) || findNoCase( arguments.name, model ) ) ) return { percent: pct, status: state, source: "upower" };
+		}
+		return res;
+	}
+
+	// Every Apple and Logitech input device found: [ { id, name, kind, vendor, vendor_id, product_id, transport, battery (-1 unknown), battery_status,
+	// battery_source ("kernel" or "upower"), connected, source ("hid", "input" or "bluetooth"), gaming } ].
+	function scan() {
+		var out = hidDevices();
+		for ( var d in inputClassDevices( out ) ) out.append( d );
+		for ( var b in bluetoothDevices( out ) ) out.append( b );
+		var needsUpower = false;
+		for ( var x in out ) if ( x.connected && x.battery < 0 && compare( x.kind, "logitech-receiver" ) != 0 && compare( x.transport, "usb" ) != 0 ) needsUpower = true;
+		if ( needsUpower ) {
+			for ( var y in out ) {
+				if ( !y.connected || y.battery >= 0 || compare( y.kind, "logitech-receiver" ) == 0 || compare( y.transport, "usb" ) == 0 ) continue;
+				var u = upowerBattery( y.name );
+				if ( u.percent >= 0 ) { y.battery = u.percent; y.battery_status = u.status; y.battery_source = u.source; }
+			}
+		}
+		// Apple first, then Logitech; mice, then keyboards, then receivers (the order of kinds())
+		var ordered = [];
+		for ( var k in kinds() ) for ( var o in out ) if ( compare( o.kind, k ) == 0 ) ordered.append( o );
+		return ordered;
+	}
+
+	// Devices of one vendor ("apple" or "logitech").
+	function ofVendor( devices, vendor ) {
+		return arguments.devices.filter( function( d ) { return compare( d.vendor, vendor ) == 0; } );
+	}
+
+	// "Magic Mouse 2 (Bluetooth)": a device for a person.
+	function label( d ) {
+		var t = { bluetooth: "Bluetooth", usb: "USB", i2c: "I2C", spi: "SPI", virtual: "virtual", other: "other bus" };
+		return arguments.d.name & " (" & t[ arguments.d.transport ] & ( arguments.d.connected ? "" : ", paired, not connected" ) & ")";
+	}
+
+	// ---- drivers ----
+
+	// The state of a kernel module: "loaded" (a module in memory), "built-in" (part of the kernel, which lsmod never lists), "available" (on disk, loads when a
+	// device needs it) or "absent". /sys/module/NAME has an initstate file only for a loaded module; /sys/bus/hid/drivers/DRIVER exists once the driver is registered.
+	function driverState( module, driver = "" ) {
+		var mdir = sysModule() & "/" & arguments.module;
+		if ( directoryExists( mdir ) ) return fileExists( mdir & "/initstate" ) ? "loaded" : "built-in";
+		if ( len( arguments.driver ) && directoryExists( hidDrivers() & "/" & arguments.driver ) ) return "built-in";
+		if ( variables.proc.has( "modinfo" ) ) {
+			var r = variables.proc.exec( [ "modinfo", "-n", arguments.module ], 10 );
+			if ( r.exitCode == 0 ) return findNoCase( "builtin", r.output ) ? "built-in" : "available";
+		}
+		return "absent";
+	}
+
+	// The module parameters the kernel shows (/sys/module/NAME/parameters) as { name: value }; {} when the module is not there.
+	function moduleParams( module ) {
+		var out = {};
+		var pd = sysModule() & "/" & arguments.module & "/parameters";
+		if ( !directoryExists( pd ) ) return out;
+		for ( var f in directoryList( pd, false, "name" ) ) if ( fileExists( pd & "/" & f ) ) out[ f ] = trim( fileRead( pd & "/" & f ) );
+		return out;
+	}
+
+	// True when a udev rules file of that name is installed.
+	function udevRule( file ) {
+		for ( var d in udevDirs() ) if ( fileExists( d & "/" & arguments.file ) ) return true;
+		return false;
+	}
+}

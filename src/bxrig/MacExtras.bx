@@ -10,7 +10,7 @@
 //   nightshift   Hyprland: a user service running `wlsunset -l LAT -L LON` (sunrise and sunset computed from your time zone's
 //                coordinates in /usr/share/zoneinfo/zone1970.tab, offline); Plasma: kwinrc [NightColor] Active=true, Mode=Automatic
 //   gpu doctor   detects the GPU vendor with lspci and reports the missing driver packages
-//   input        Apple Magic Mouse/Trackpad checks (kernel hid_magicmouse, bluetooth) and libinput-gestures workspace swipes
+//   input        `input doctor` (kernel hid_magicmouse loaded or built in, bluetooth) and `input gestures` (libinput-gestures workspace swipes); the rest of `input` is bxrig.Input
 //   airplay      UxPlay as a user service (an AirPlay receiver; needs avahi-daemon)
 // Not verified on a real machine: hyprexpo with the Lua config era, KWin killWindow, kwinrc NightColor Mode, UxPlay flags. Exit: 0 done,
 // 4 a tool or precondition is missing, 6 a command failed.
@@ -284,12 +284,13 @@ class MacExtras {
 
 	// ---- input devices and gestures ----
 	function inputDoctor( asJson ) {
-		var mods = variables.proc.exec( [ "sh", "-c", "lsmod 2>/dev/null | grep -c hid_magicmouse" ], 10 ).output;
+		// loaded or built into the kernel (lsmod never lists a built-in driver): /sys/module and /sys/bus/hid/drivers, see InputDevices.driverState
+		var drv = new bxrig.InputDevices( variables.runnerArg ).driverState( "hid_magicmouse", "magicmouse" );
 		var bt = variables.systemd.state( "bluetooth" );
 		var groups = variables.proc.exec( [ "id", "-nG" ], 10 ).output;
-		var d = { magicmouse_driver: val( trim( mods ) ) > 0, bluetooth: trim( bt ) == "active", libinput_gestures: variables.proc.has( "libinput-gestures" ), in_input_group: find( "input", groups ) > 0 };
+		var d = { magicmouse_driver: drv == "loaded" || drv == "built-in", magicmouse_driver_state: drv, bluetooth: trim( bt ) == "active", libinput_gestures: variables.proc.has( "libinput-gestures" ), in_input_group: find( "input", groups ) > 0 };
 		var lines = [
-			( d.magicmouse_driver ? "ok    " : "info  " ) & "kernel driver hid_magicmouse (loads when a Magic Mouse or Trackpad connects)" & ( d.magicmouse_driver ? "" : ": not loaded now" ),
+			( d.magicmouse_driver ? "ok    " : "info  " ) & "kernel driver hid_magicmouse: " & drv & ( drv == "available" ? " (loads when a Magic Mouse or Trackpad connects)" : ( drv == "absent" ? " (this kernel has none)" : "" ) ),
 			( d.bluetooth ? "ok    " : "FIX   " ) & "bluetooth service" & ( d.bluetooth ? "" : ": sudo systemctl enable --now bluetooth (bluez and bluez-utils)" ),
 			( d.libinput_gestures ? "ok    " : "FIX   " ) & "libinput-gestures" & ( d.libinput_gestures ? "" : ": bxrig install libinput-gestures" ),
 			( d.in_input_group ? "ok    " : "FIX   " ) & "you are in the input group" & ( d.in_input_group ? "" : ": sudo gpasswd -a $USER input, then log out and in" )

@@ -1,0 +1,19 @@
+// InputDevices: naming rules, kinds and the Bluetooth/USB transport, from names only (no sysfs). Run from src/: (cd src && matchbox ../tests/input_devices_test.bxs)
+testkit = new lib.Check( "input devices" );
+id = new bxrig.InputDevices();
+testkit.check( "bus 0005 is Bluetooth, 0003 USB, 0018 I2C", id.transportOf( "0005" ) == "bluetooth" && id.transportOf( "0003" ) == "usb" && id.transportOf( "0018" ) == "i2c" && id.transportOf( "0099" ) == "other" );
+testkit.check( "hex4 takes the last four digits in upper case", id.hex4( "000005ac" ) == "05AC" && id.hex4( "46d" ) == "046D" );
+p = id.parseHidName( "0005:05ac:0265.0001" );
+testkit.check( "a HID directory name gives bus, vendor and product", p.bus == "0005" && p.vendor == "05AC" && p.product == "0265" && structIsEmpty( id.parseHidName( "usb1" ) ) );
+u = id.parseUevent( "DRIVER=magicmouse" & chr( 10 ) & "HID_ID=0005:000005AC:00000265" & chr( 10 ) & "HID_NAME=Magic Mouse 2" & chr( 10 ) & "junk" );
+testkit.check( "uevent lines become keys", u.DRIVER == "magicmouse" && u.HID_NAME == "Magic Mouse 2" && !structKeyExists( u, "junk" ) );
+testkit.check( "Apple needs vendor 05AC and Magic in the name", id.classify( "05AC", "Magic Mouse 2" ).kind == "apple-mouse" && id.classify( "05AC", "Apple Internal Keyboard / Trackpad" ).kind == "other" && id.classify( "05AC", "Apple Internal Keyboard / Trackpad" ).vendor == "apple" );
+testkit.check( "Apple kinds", id.classify( "05AC", "Magic Trackpad 2" ).kind == "apple-trackpad" && id.classify( "05AC", "Magic Keyboard with Touch ID" ).kind == "apple-keyboard" && id.classify( "05ac", "Magic Mouse" ).kind == "apple-mouse" );
+testkit.check( "a Magic name under another vendor is not Apple", id.classify( "1234", "Magic Mouse 2" ).vendor == "other" );
+testkit.check( "Logitech by vendor 046D", id.classify( "046D", "Logitech USB Receiver" ).kind == "logitech-receiver" && id.classify( "046D", "MX Master 3S" ).kind == "logitech-mouse" && id.classify( "046D", "MX Keys" ).kind == "logitech-keyboard" && id.classify( "046D", "Logitech Pebble Wireless Mouse" ).kind == "logitech-mouse" );
+testkit.check( "an unknown Logitech name is other", id.classify( "046D", "Logitech Webcam C920" ).kind == "other" && id.classify( "046D", "Logitech Webcam C920" ).vendor == "logitech" );
+testkit.check( "G-series keyboards are keyboards, G-series mice are mice", id.logitechKind( "Logitech G915 Wireless RGB Mechanical Gaming Keyboard" ) == "logitech-keyboard" && id.logitechKind( "Logitech G502 HERO" ) == "logitech-mouse" && id.logitechKind( "Logitech G Pro X Superlight" ) == "logitech-mouse" );
+testkit.check( "gaming guess", id.gamingGuess( "Logitech G502 HERO Gaming Mouse" ) && id.gamingGuess( "PRO X SUPERLIGHT" ) && !id.gamingGuess( "MX Master 3S" ) && !id.gamingGuess( "Logitech Pebble Wireless Mouse" ) );
+testkit.check( "by name only (Bluetooth list)", id.classifyByName( "Magic Trackpad" ).kind == "apple-trackpad" && id.classifyByName( "MX Master 3" ).vendor == "logitech" && id.classifyByName( "Sony WH-1000XM4" ).vendor == "other" && id.classifyByName( "Magic Keyboard" ).kind == "apple-keyboard" );
+testkit.check( "haveName matches a prefix either way", id.haveName( [ { name: "Magic Mouse 2" } ], "Magic Mouse 2 Touchpad" ) && id.haveName( [ { name: "Magic Mouse 2 Touchpad" } ], "magic mouse 2" ) && !id.haveName( [ { name: "Magic Mouse 2" } ], "Magic Trackpad 2" ) );
+testkit.done( "all ok" );
