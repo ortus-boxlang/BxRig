@@ -114,7 +114,7 @@ class SetupPlan {
 		var t = new bxrig.TerminalConfig().find( arguments.terminal );
 		return [ "hyprland", "noctalia", "uwsm", "hyprlock", "hypridle", "xdg-desktop-portal-hyprland", "hyprpolkitagent",
 			"qt6ct", "nwg-look", "hyprpicker", "grim", "slurp", "wl-clipboard", "brightnessctl", structKeyExists( t, "pkg" ) ? t.pkg : "ghostty",
-			"adw-gtk-theme", "noto-fonts", "noto-fonts-emoji", "bluez", "bluez-utils" ];
+			"adw-gtk-theme", "papirus-icon-theme", "noto-fonts", "noto-fonts-emoji", "bluez", "bluez-utils" ];
 	}
 
 	// The Bluetooth service the bar's Bluetooth panel and `bxrig bluetooth status` need: bluez ships it, it is not enabled by itself.

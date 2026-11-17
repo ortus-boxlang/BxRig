@@ -31,6 +31,7 @@ bxrig appearance font install cascadia --yes
 bxrig appearance font cascadia            # Noctalia and the terminals follow
 bxrig appearance background random        # or: list, set NAME, next
 bxrig appearance apply                    # push everything you chose again
+bxrig appearance icons papirus --yes      # the icon set: bxrig (default), papirus, status
 ```
 
 ## The three bars
@@ -65,6 +66,22 @@ These five settings (`bar layout`, `dock on|off|toggle`, `appgrid`, `battery-per
 - **Backgrounds** are read from `~/Pictures/BxRig`, `~/Pictures` and the current theme's folder.
 
 The menu has all of this under Appearance.
+
+## Icons
+
+BxRig has its own icon theme, **BxRig**: superellipse tiles with a vertical glow and a white Phosphor duotone glyph, one color per kind (develop green, system blue, look purple, control indigo, utility amber). It covers what BxRig itself owns: the BxRig laptop and the app grid, the Develop, System and Look folders, the Setup Wizard, Runner menu, Control Center, About, and one icon for every page of `bxrig tui list`. Everything else is Papirus-Dark: the theme inherits it (`Inherits=Papirus-Dark,hicolor`), so apps look as they do in Papirus.
+
+![The BxRig icons at 16 to 128 px](../assets/bxrig-icon-theme.png)
+
+```bash
+bxrig appearance icons status
+bxrig appearance icons bxrig --yes     # the default after `bxrig init` / setup: BxRig icons over Papirus-Dark
+bxrig appearance icons papirus --yes   # Papirus-Dark alone; the BxRig launchers use the stock names again
+```
+
+The icon set is not a question in the wizard: setup applies `bxrig`, and this command switches later. It installs `papirus-icon-theme` (Arch `extra`, in the default tier of the catalog) when Papirus-Dark is missing, writes the theme to `~/.local/share/icons/BxRig`, and sets GTK (gsettings, the settings.ini line when the file has one, xfconf on XFCE), Qt (`qt6ct.conf`, and Plasma's icon theme), and the runner (Rofi, Fuzzel and Wofi through `bxrig runner icon-theme`). The application-menu launchers (`bxrig launchers on`) are rewritten to follow it. It writes files, so without `--yes` it prints the plan (exit 2). The glyphs are [Phosphor Icons](https://phosphoricons.com) (MIT); the licence is installed with the theme.
+
+A theme-less icon name never leaves a gap: with `papirus`, or when an older BxRig has no theme installed, the launchers and the runner menu use the stock Papirus names (`applications-development`, `system-run`) and the plain `bxrig` icon.
 
 ## Text in large letters
 

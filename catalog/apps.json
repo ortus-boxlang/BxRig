@@ -3787,6 +3787,26 @@
 			"repo": "extra"
 		},
 		{
+			"id": "papirus-icon-theme",
+			"name": "Papirus icon theme",
+			"description": "Papirus icon theme for GTK and Qt (Papirus-Dark is the base of the BxRig icon set)",
+			"description_source": "curated",
+			"kind": "desktop",
+			"group": "desktop",
+			"category": "Themes",
+			"tier": "default",
+			"source": "pacman",
+			"targets": [
+				"papirus-icon-theme"
+			],
+			"repo": "extra",
+			"homepage": "https://github.com/PapirusDevelopmentTeam/papirus-icon-theme",
+			"macos": null,
+			"origin": [
+				"owner-request"
+			]
+		},
+		{
 			"id": "aether",
 			"name": "Aether",
 			"description": "Desktop theming application - extract colors from wallpapers and apply cohesive themes",

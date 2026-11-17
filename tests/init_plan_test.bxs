@@ -8,16 +8,16 @@ p = ip.plan( {} );
 testkit.check( "no answers, no steps (an unanswered page does nothing)", p.steps.len() == 0 && p.pending.len() == 0 && p.errors.len() == 0 );
 
 p = ip.plan( { desktops: "hyprland", layout: "master", terminal: "ghostty", shell: "zsh" } );
-testkit.check( "Hyprland only: hyprland, terminal, shell, then the session", ids( p ) == "hyprland,terminal,shell,xremap,default-terminal,session" );
+testkit.check( "Hyprland only: hyprland, terminal, shell, then the session", ids( p ) == "hyprland,terminal,icons,shell,xremap,default-terminal,session" );
 testkit.check( "hyprland step carries the terminal and the layout", cmd( p, "hyprland" ) == "bxrig setup hyprland --terminal=ghostty --layout=master" );
 testkit.check( "KDE is not configured when only Hyprland is chosen", find( "plasma", ids( p ) ) == 0 || !find( "setup plasma", p.steps.map( function( s ) { return s.argv.toList( " " ); } ).toList( "|" ) ) );
 testkit.check( "the session follows the desktop", cmd( p, "session" ) == "bxrig session set hyprland" );
 
 p = ip.plan( { desktops: "plasma" } );
-testkit.check( "KDE only: plasma and the plasma session", ids( p ) == "plasma,xremap,session" && cmd( p, "session" ) == "bxrig session set plasma" );
+testkit.check( "KDE only: plasma and the plasma session", ids( p ) == "plasma,icons,xremap,session" && cmd( p, "session" ) == "bxrig session set plasma" );
 
 p = ip.plan( { desktops: "both", login_session: "plasma", mac_keys: true } );
-testkit.check( "Both configures both, login_session picks the session", ids( p ) == "key-style,hyprland,plasma,xremap,session" && cmd( p, "session" ) == "bxrig session set plasma" );
+testkit.check( "Both configures both, login_session picks the session", ids( p ) == "key-style,hyprland,plasma,icons,xremap,session" && cmd( p, "session" ) == "bxrig session set plasma" );
 testkit.check( "Both without login_session starts on Hyprland", cmd( ip.plan( { desktops: "both" } ), "session" ) == "bxrig session set hyprland" );
 testkit.check( "xremap builds for KDE when Plasma is the only desktop", cmd( ip.plan( { desktops: "plasma", mac_keys: true } ), "xremap" ) == "bxrig setup xremap --build=kde" );
 testkit.check( "the Mac key style is set first, with the keyboard (a PC swaps Alt and Win, an Apple keyboard does not)", cmd( ip.plan( { desktops: "hyprland", mac_keys: true } ), "key-style" ) == "bxrig keys style mac --keyboard=pc" && cmd( ip.plan( { desktops: "hyprland", mac_keys: true, keyboard_type: "apple" } ), "key-style" ) == "bxrig keys style mac --keyboard=apple" && ids( ip.plan( { desktops: "hyprland", mac_keys: true } ) ).startsWith( "key-style," ) );
@@ -229,7 +229,7 @@ testkit.check( "every password manager option is a Security app of the catalog",
 for ( v in [ "proton-pass", "enpass", "nordpass", "keeper", "bitwarden-cli", "pass", "gopass" ] ) testkit.check( "password manager " & v & " installs by its catalog id", cmd( ip.plan( { password_manager: v } ), "apps" ) == "bxrig install " & v );
 // ---- the top bar layout, app grid style and theme pages ----
 p = ip.plan( { desktops: "hyprland", bar_layout: "dense", appgrid_style: "terminal", theme_name: "nord", bar_position: "top", dock: true } );
-testkit.check( "bar layout and app grid steps run `appearance` after the desktop setup, theme, bar and dock", ids( p ) == "hyprland,theme,bar,dock,bar-layout,appgrid,xremap,session" || ids( p ) == "hyprland,theme,bar,dock,bar-layout,appgrid,xremap,default-terminal,session" || reFind( "^hyprland,theme,bar,dock,bar-layout,appgrid", ids( p ) ) > 0 );
+testkit.check( "bar layout and app grid steps run `appearance` after the desktop setup, theme, bar and dock", ids( p ) == "hyprland,theme,icons,bar,dock,bar-layout,appgrid,xremap,session" || ids( p ) == "hyprland,theme,icons,bar,dock,bar-layout,appgrid,xremap,default-terminal,session" || reFind( "^hyprland,theme,icons,bar,dock,bar-layout,appgrid", ids( p ) ) > 0 );
 testkit.check( "the commands are `bxrig appearance bar layout X` and `appearance appgrid X`, optional (Noctalia may not run during the install)", cmd( p, "bar-layout" ) == "bxrig appearance bar layout dense" && cmd( p, "appgrid" ) == "bxrig appearance appgrid terminal" && p.steps.filter( function( s ) { return ( s.id == "bar-layout" || s.id == "appgrid" ) && ( s.optional ?: false ); } ).len() == 2 );
 testkit.check( "the theme step is `theme set X`", cmd( p, "theme" ) == "bxrig theme set nord" );
 testkit.check( "the dock answer is the persistent `appearance dock on|off`, not the runtime show and hide", cmd( p, "dock" ) == "bxrig appearance dock on" && cmd( ip.plan( { desktops: "hyprland", dock: false } ), "dock" ) == "bxrig appearance dock off" );

@@ -100,6 +100,8 @@ class InitPlan {
 			if ( pick( a, "theme" ) == "auto" ) thargv.append( "--mode=auto" );
 			out.steps.append( { id: "theme", title: "apply the " & themeName & " colour theme", argv: thargv, optional: true } );
 		}
+		// the icon set (not asked in the wizard): the BxRig theme over Papirus-Dark; `bxrig appearance icons papirus` switches to Papirus alone later
+		if ( wantsHypr || wantsPlasma ) out.steps.append( { id: "icons", title: "icon set: BxRig icons over Papirus-Dark", argv: [ "bxrig", "appearance", "icons", "bxrig" ], optional: true } );
 		// the bar and the dock (Noctalia, so Hyprland only); optional: Noctalia may not be running during the install
 		if ( wantsHypr && len( pick( a, "bar_position" ) ) ) out.steps.append( { id: "bar", title: "put the bar at the " & a.bar_position, argv: [ "bxrig", "appearance", "bar", "position", a.bar_position ], optional: true } );
 		if ( wantsHypr && structKeyExists( a, "dock" ) ) out.steps.append( { id: "dock", title: "dock " & ( isSet( a.dock ) ? "on" : "off" ), argv: [ "bxrig", "appearance", "dock", isSet( a.dock ) ? "on" : "off" ], optional: true } );

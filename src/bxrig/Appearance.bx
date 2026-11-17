@@ -8,6 +8,7 @@
 //   appearance layout dwindle|master|columns|scrolling|monocle|floating   (HyprLayout)
 //   appearance font list | NAME | install NAME [--yes]        NAME is a font id from `font list` or an installed family
 //   appearance background list | set NAME_OR_PATH | next | random
+//   appearance icons bxrig|papirus|status [--yes]   the icon set (IconSet): the BxRig theme over Papirus-Dark, or Papirus-Dark alone; plans first (it writes files)
 // Where each one lands (and nothing here edits a file you wrote):
 //   Noctalia   `noctalia msg config-set PATH VALUE` (Noctalia docs v5: values are TOML, strings quoted) for the bar, dock, clock, battery, font
 //              and shell corners; `bar-show|hide|toggle`, `dock-show|hide|toggle` and `wallpaper-*` for the commands. config-set keeps the
@@ -409,6 +410,7 @@ class Appearance {
 		if ( g == "layout" ) return layoutCmd( rest, arguments.dry, arguments.asJson );
 		if ( g == "font" ) return fontCmd( rest, arguments.dry, arguments.asJson, arguments.yes );
 		if ( g == "background" ) return backgroundCmd( rest, arguments.dry, arguments.asJson );
-		return variables.out.fail( "usage", "unknown group " & g & ". Usage: bxrig appearance status | bar ... | dock ... | appgrid ... | battery-percent ... | windows ... | animations ... | layout ... | font ... | background ...", arguments.asJson );
+		if ( g == "icons" ) return new bxrig.IconSet( variables.cli, variables.proc.runner() ).run( rest, arguments.dry, arguments.yes, arguments.asJson, this );
+		return variables.out.fail( "usage", "unknown group " & g & ". Usage: bxrig appearance status | bar ... | dock ... | appgrid ... | battery-percent ... | windows ... | animations ... | layout ... | font ... | background ... | icons ...", arguments.asJson );
 	}
 }

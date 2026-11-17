@@ -23,15 +23,16 @@ JSON
 # no --yes: the plan, exit 2, nothing run
 [[ "$(code "$binary" init --answers="$tmp/a.json")" == 2 ]] || fail 'no --yes exits 2'
 [[ ! -s "$LOG" ]] || fail 'the plan ran something'
-run "$binary" init --answers="$tmp/a.json" --dry-run --json | jq -e '.ok and (.data.steps | map(.id) == ["key-style","hyprland","plasma","terminal","shell","xremap","toolchain-python","apps","default-terminal","db-postgres","git-name","git-email","ssh-key","session"]) and (.data.pending == [])' >/dev/null || fail 'dry-run --json plan'
+run "$binary" init --answers="$tmp/a.json" --dry-run --json | jq -e '.ok and (.data.steps | map(.id) == ["key-style","hyprland","plasma","terminal","icons","shell","xremap","toolchain-python","apps","default-terminal","db-postgres","git-name","git-email","ssh-key","session"]) and (.data.pending == [])' >/dev/null || fail 'dry-run --json plan'
 [[ ! -s "$LOG" ]] || fail 'dry-run ran something'
 
 # --yes: every step runs in order; our own commands get --yes, git does not
-run "$binary" init --answers="$tmp/a.json" --yes --json | jq -e '.ok and (.data.done | length == 14) and (.data.failed | length == 0)' >/dev/null || fail 'init --yes --json'
+run "$binary" init --answers="$tmp/a.json" --yes --json | jq -e '.ok and (.data.done | length == 15) and (.data.failed | length == 0)' >/dev/null || fail 'init --yes --json'
 expected='bxrig keys style mac --keyboard=pc --yes
 bxrig setup hyprland --terminal=ghostty --layout=scrolling --yes
 bxrig setup plasma --yes
 bxrig setup terminal --default=ghostty --also=kitty --yes
+bxrig appearance icons bxrig --yes
 bxrig setup shell --shell=zsh --yes
 bxrig setup xremap --build=hypr --yes
 bxrig profile-install python --yes

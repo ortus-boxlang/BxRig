@@ -1,0 +1,33 @@
+// Which icon set the desktop uses (`bxrig appearance icons`), read from ~/.config/bxrig/appearance.json (icons.set: "bxrig" or "papirus"), and the icon name
+// a BxRig-owned entry (launcher, menu folder) should therefore carry. Kept apart from IconSet so that Launchers can read it without a circular reference.
+class IconChoice {
+	function init() {
+		variables.environ = new bxrig.util.Env();
+		return this;
+	}
+
+	function themeDir() { return variables.environ.xdgData() & "/icons/BxRig"; }
+	function stateFile() { return variables.environ.xdgConfig() & "/bxrig/appearance.json"; }
+	function bxrigInstalled() { return fileExists( themeDir() & "/index.theme" ); }
+
+	// The set the user chose: "bxrig", "papirus" or "" (never chosen).
+	function chosen() {
+		var s = new bxrig.util.JsonStore().load( stateFile(), {} );
+		try {
+			if ( isStruct( s ) && structKeyExists( s, "icons" ) && isStruct( s.icons ) && structKeyExists( s.icons, "set" ) && arrayFind( [ "bxrig", "papirus" ], s.icons.set ) ) return s.icons.set;
+		} catch ( any e ) {}
+		return "";
+	}
+
+	// The set to use: the chosen one; with none chosen, bxrig when its theme is installed.
+	function effective() {
+		var c = chosen();
+		if ( len( c ) ) return c;
+		return bxrigInstalled() ? "bxrig" : "papirus";
+	}
+
+	// The BxRig name with the bxrig set (when its theme is there), else the stock name that Papirus (or hicolor) has: an entry always shows something.
+	function iconFor( bxrigName, stockName ) {
+		return effective() == "bxrig" && bxrigInstalled() ? arguments.bxrigName : arguments.stockName;
+	}
+}

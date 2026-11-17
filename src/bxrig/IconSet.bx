@@ -1,0 +1,223 @@
+// `bxrig appearance icons bxrig|papirus|status [--json] [--yes] [--dry-run]`: which icon set the desktop uses.
+//   bxrig    the BxRig theme (our own icons for BxRig things, Papirus-Dark for everything else: BxRig Inherits=Papirus-Dark,hicolor). The default after setup.
+//   papirus  Papirus-Dark alone (the BxRig icons stay installed but are not selected).
+//   status   the set in use and where it is applied.
+// What it does (a plan without --yes, exit 2, because it writes files):
+//   1. installs papirus-icon-theme (Arch `extra`) when Papirus-Dark is missing (the one `sudo pacman` step shown in the plan);
+//   2. bxrig only: writes the theme files embedded in BxRig (IconThemeData) to ~/.local/share/icons/BxRig (a marker file holds the BxRig version, so an update rewrites them);
+//   3. sets the icon theme of GTK (gsettings, the gtk-3.0 and gtk-4.0 settings.ini through the config service, xfconf on XFCE), Qt (qt6ct.conf; kdeglobals on Plasma)
+//      and the runner (Rofi, Fuzzel, Wofi through `runner icon-theme`: ~/.config/bxrig/runner.json, and the generated theme files on the next `theme set`);
+//   4. rewrites the application-menu launchers when they are on (their icons are the bxrig-* names with BxRig, the stock names with Papirus);
+//   5. remembers the choice in ~/.config/bxrig/appearance.json (icons.set).
+// Nothing is written to a file you wrote except the one icon-theme line of a settings file that already has it (backup and journal by the config service).
+// Exit: 0 done, 2 plan without --yes or bad usage, 4 precondition (root), 6 a step failed.
+class IconSet {
+	function init( cli, runner = "" ) {
+		variables.environ = new bxrig.util.Env();
+		variables.cli = arguments.cli;
+		variables.runner = arguments.runner;
+		variables.out = new bxrig.util.Out( arguments.cli, "appearance icons" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.config = new bxrig.ConfigService().quiet( true );
+		return this;
+	}
+
+	function sets() {
+		return [
+			{ id: "bxrig", theme: "BxRig", label: "BxRig icons over Papirus-Dark" },
+			{ id: "papirus", theme: "Papirus-Dark", label: "Papirus-Dark alone" }
+		];
+	}
+	function themeOf( id ) { for ( var s in sets() ) if ( s.id == arguments.id ) return s.theme; return ""; }
+	function valid( id ) { return len( themeOf( arguments.id ) ) > 0; }
+	function papirusPackage() { return "papirus-icon-theme"; }
+	function themeDir() { return choice().themeDir(); }
+	function markerFile() { return themeDir() & "/.bxrig-icons"; }
+	function marker() { return "bxrig-icon-theme " & variables.cli.version(); }
+	function stateFile() { return choice().stateFile(); }
+
+	// ---- reading (IconChoice) ----
+	function choice() { return new bxrig.IconChoice(); }
+	function chosen() { return choice().chosen(); }
+	function effective() { return choice().effective(); }
+	function bxrigInstalled() { return choice().bxrigInstalled(); }
+	function papirusInstalled() { return new bxrig.IconTheme().installed( "Papirus-Dark" ); }
+
+	// ---- the theme files ----
+	function themeFiles() {
+		var data = new bxrig.IconThemeData();
+		var out = [];
+		for ( var n in data.names() ) out.append( { name: n, target: variables.environ.xdgData() & "/icons/" & n } );
+		return out;
+	}
+
+	function themeCurrent() {
+		return fileExists( markerFile() ) && trim( fileRead( markerFile() ) ) == marker() && fileExists( themeDir() & "/index.theme" );
+	}
+
+	function writeTheme() {
+		var data = new bxrig.IconThemeData();
+		for ( var f in themeFiles() ) {
+			directoryCreate( getDirectoryFromPath( f.target ), true, true );
+			fileWrite( f.target, data.binary( f.name ) );
+		}
+		fileWrite( markerFile(), marker() & chr( 10 ) );
+	}
+
+	// ---- settings files ----
+	// Text of an ini file with key set in section (the line replaced, or added at the end of the section, or the section added).
+	function iniSet( text, section, key, value ) {
+		var lines = len( arguments.text ) ? listToArray( replace( arguments.text, chr( 13 ), "", "all" ), chr( 10 ), true ) : [];
+		var inSec = false;
+		var secAt = 0;
+		var done = false;
+		for ( var i = 1; i <= lines.len(); i++ ) {
+			var t = trim( lines[ i ] );
+			if ( left( t, 1 ) == "[" ) {
+				if ( inSec && !done ) { lines.insertAt( i, arguments.key & "=" & arguments.value ); done = true; break; }
+				inSec = t == "[" & arguments.section & "]";
+				if ( inSec ) secAt = i;
+				continue;
+			}
+			if ( inSec && reFind( "^" & arguments.key & "[ ]*=", t ) ) { lines[ i ] = arguments.key & "=" & arguments.value; done = true; break; }
+		}
+		if ( !done && secAt > 0 ) {
+			var at = secAt + 1;
+			while ( at <= lines.len() && left( trim( lines[ at ] ), 1 ) != "[" ) at++;
+			// back over blank lines at the end of the section
+			while ( at > secAt + 1 && !len( trim( lines[ at - 1 ] ) ) ) at--;
+			lines.insertAt( at, arguments.key & "=" & arguments.value );
+			done = true;
+		}
+		if ( !done ) {
+			while ( lines.len() && !len( trim( lines[ lines.len() ] ) ) ) lines.deleteAt( lines.len() );
+			if ( lines.len() ) lines.append( "" );
+			lines.append( "[" & arguments.section & "]" );
+			lines.append( arguments.key & "=" & arguments.value );
+		}
+		return lines.toList( chr( 10 ) ) & chr( 10 );
+	}
+
+	// The settings files to change: [ { name, target, section, key, create } ]. GTK files only when they exist (gtk-3.0 is created when neither does); qt6ct.conf is created.
+	function iniTargets() {
+		var cfg = variables.environ.xdgConfig();
+		var out = [];
+		var g3 = cfg & "/gtk-3.0/settings.ini";
+		var g4 = cfg & "/gtk-4.0/settings.ini";
+		out.append( { name: "icons-gtk3", target: g3, section: "Settings", key: "gtk-icon-theme-name", create: !fileExists( g4 ) } );
+		if ( fileExists( g4 ) ) out.append( { name: "icons-gtk4", target: g4, section: "Settings", key: "gtk-icon-theme-name", create: false } );
+		out.append( { name: "icons-qt6ct", target: cfg & "/qt6ct/qt6ct.conf", section: "Appearance", key: "icon_theme", create: true } );
+		return out.filter( function( t ) { return t.create || fileExists( t.target ); } );
+	}
+
+	function iniText( t, theme ) {
+		return iniSet( fileExists( arguments.t.target ) ? fileRead( arguments.t.target ) : "", arguments.t.section, arguments.t.key, arguments.theme );
+	}
+
+	// ---- plan and apply ----
+	function plan( id ) {
+		var theme = themeOf( arguments.id );
+		var out = { set: arguments.id, theme: theme, steps: [], files: [], commands: [], package: "" };
+		if ( !papirusInstalled() && !new bxrig.util.Pacman( variables.proc ).isInstalled( papirusPackage() ) ) {
+			out.package = papirusPackage();
+			out.commands.append( new bxrig.util.Pacman( variables.proc ).installArgv( [ papirusPackage() ] ) );
+			out.steps.append( "install " & papirusPackage() & " (Papirus-Dark, the base of both sets)" );
+		}
+		if ( arguments.id == "bxrig" && !themeCurrent() ) {
+			out.files.append( themeDir() & " (" & new bxrig.IconThemeData().names().len() & " files)" );
+			out.steps.append( "write the BxRig icon theme to " & themeDir() );
+		}
+		for ( var t in iniTargets() ) {
+			if ( fileExists( t.target ) && !iniHas( t, theme ) ) { out.files.append( t.target ); out.steps.append( "set " & t.key & " in " & t.target ); }
+			else if ( !fileExists( t.target ) ) { out.files.append( t.target ); out.steps.append( "write " & t.target ); }
+		}
+		out.steps.append( "set the GTK icon theme to " & theme & " (gsettings" & ( isXfce() ? ", xfconf" : "" ) & ")" );
+		if ( new bxrig.util.Desktop().inPlasma() ) out.steps.append( "set the Plasma icon theme to " & theme );
+		out.steps.append( "set the runner icon theme to " & theme & " (Rofi, Fuzzel, Wofi)" );
+		out.steps.append( "rewrite the application-menu launchers when they are on" );
+		out.steps.append( "remember icons.set = " & arguments.id & " in " & stateFile() );
+		return out;
+	}
+
+	function iniHas( t, theme ) {
+		if ( !fileExists( arguments.t.target ) ) return false;
+		var want = arguments.t.key & "=" & arguments.theme;
+		for ( var line in listToArray( fileRead( arguments.t.target ), chr( 10 ) ) ) if ( replace( trim( line ), " ", "", "all" ) == want ) return true;
+		return false;
+	}
+
+	function isXfce() { return findNoCase( "xfce", new bxrig.util.Desktop().raw() ) > 0; }
+
+	function writeIni( t, theme ) {
+		var e = { name: arguments.t.name, target: arguments.t.target, mode: "644", content: iniText( arguments.t, arguments.theme ) };
+		if ( variables.config.configState( e ) == "clean" ) return true;
+		return variables.config.configWrite( e, e.content, "appearance", true, false ) == 0;
+	}
+
+	function applyDesktop( theme ) {
+		var res = {};
+		res.gtk = "skipped";
+		if ( variables.proc.has( "gsettings" ) ) res.gtk = variables.proc.exec( [ "gsettings", "set", "org.gnome.desktop.interface", "icon-theme", arguments.theme ], 15 ).exitCode == 0 ? "applied" : "failed";
+		if ( isXfce() && variables.proc.has( "xfconf-query" ) ) res.xfce = variables.proc.exec( [ "xfconf-query", "-c", "xsettings", "-p", "/Net/IconThemeName", "-n", "-t", "string", "-s", arguments.theme ], 15 ).exitCode == 0 ? "applied" : "failed";
+		if ( new bxrig.util.Desktop().inPlasma() ) {
+			res.plasma = "skipped";
+			if ( variables.proc.has( "kwriteconfig6" ) ) res.plasma = variables.proc.exec( [ "kwriteconfig6", "--file", "kdeglobals", "--group", "Icons", "--key", "Theme", arguments.theme ], 15 ).exitCode == 0 ? "applied" : "failed";
+		}
+		return res;
+	}
+
+	function run( args, dry, yes, asJson, appearance ) {
+		var v = arguments.args.len() ? arguments.args[ 1 ] : "status";
+		if ( arguments.args.len() > 1 || ( v != "status" && !valid( v ) ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "appearance icons" ), arguments.asJson );
+		if ( v == "status" ) return status( arguments.asJson );
+		if ( variables.proc.isRoot() ) return variables.out.fail( "precondition", "Run as a regular user", arguments.asJson );
+		var p = plan( v );
+		var shown = p.steps.map( function( s ) { return "  " & s; } );
+		if ( !arguments.yes || arguments.dry ) {
+			var data = { set: v, theme: p.theme, steps: p.steps, files: p.files, commands: p.commands.map( function( c ) { return c.toList( " " ); } ) };
+			for ( var c in p.commands ) shown.append( "  " & c.toList( " " ) );
+			return new bxrig.util.Mutation( variables.out ).show( "icon set " & v & " (" & p.theme & ")", data, arguments.asJson, arguments.dry, shown );
+		}
+		var done = [];
+		for ( var c in p.commands ) {
+			var r = variables.proc.exec( c, 600 );
+			if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ), step: c.toList( " " ) }, arguments.asJson, [ "error: " & c.toList( " " ) & ": " & trim( r.output ) ] );
+			done.append( "installed " & p.package );
+		}
+		if ( v == "bxrig" ) {
+			try { if ( !themeCurrent() ) { writeTheme(); done.append( "wrote the BxRig icon theme" ); } }
+			catch ( any e ) { return variables.out.say( "failed", { error: e.message }, arguments.asJson, [ "error: could not write the BxRig icon theme: " & e.message ] ); }
+		}
+		for ( var t in iniTargets() ) {
+			if ( !writeIni( t, p.theme ) ) return variables.out.say( "failed", { error: "could not write " & t.target }, arguments.asJson, [ "error: could not write " & t.target ] );
+			done.append( "set " & t.key & " in " & t.target );
+		}
+		var applied = applyDesktop( p.theme );
+		var rc = new bxrig.Runner( variables.cli, variables.runner ).set( "icon-theme", p.theme );
+		applied.runner = len( rc ) ? "failed: " & rc : "applied";
+		// the choice is remembered before the launchers are rewritten: they read it
+		var st = arguments.appearance.readState();
+		st.icons = { set: v };
+		arguments.appearance.writeState( st );
+		var lm = new bxrig.Launchers( variables.cli, variables.runner ).refresh();
+		applied.launchers = lm;
+		var data = { set: v, theme: p.theme, done: done, applied: applied };
+		var lines = [ "Icon set: " & v & " (" & p.theme & ")" ];
+		for ( var d in done ) lines.append( "  " & d );
+		for ( var k in applied ) lines.append( "  " & k & ": " & applied[ k ] );
+		return variables.out.say( "ok", data, arguments.asJson, lines );
+	}
+
+	function status( asJson ) {
+		var it = new bxrig.IconTheme();
+		var c = chosen();
+		var data = { set: c, effective: effective(), theme: themeOf( effective() ), bxrig_installed: bxrigInstalled(), bxrig_current: themeCurrent(), papirus_installed: papirusInstalled(),
+			gtk: it.gtkSetting(), gsettings: it.gsettingsSetting(), runner: it.savedSetting() };
+		var lines = [ "Icon set:   " & ( len( c ) ? c : "(not chosen yet: " & effective() & ")" ) & "  (" & data.theme & ")",
+			"BxRig theme: " & ( data.bxrig_installed ? ( data.bxrig_current ? "installed" : "installed (older, `appearance icons bxrig --yes` updates it)" ) : "not installed" ),
+			"Papirus:    " & ( data.papirus_installed ? "installed" : "not installed (" & papirusPackage() & ")" ),
+			"GTK:        " & ( len( data.gsettings ) ? data.gsettings : ( len( data.gtk ) ? data.gtk : "(not set)" ) ),
+			"Runner:     " & ( len( data.runner ) ? data.runner : "auto" ) ];
+		return variables.out.say( "ok", data, arguments.asJson, lines );
+	}
+}
