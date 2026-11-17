@@ -102,7 +102,7 @@ class InitPlan {
 		}
 		// the bar and the dock (Noctalia, so Hyprland only); optional: Noctalia may not be running during the install
 		if ( wantsHypr && len( pick( a, "bar_position" ) ) ) out.steps.append( { id: "bar", title: "put the bar at the " & a.bar_position, argv: [ "bxrig", "appearance", "bar", "position", a.bar_position ], optional: true } );
-		if ( wantsHypr && structKeyExists( a, "dock" ) ) out.steps.append( { id: "dock", title: ( isSet( a.dock ) ? "show" : "hide" ) & " the dock", argv: [ "bxrig", "appearance", "dock", isSet( a.dock ) ? "show" : "hide" ], optional: true } );
+		if ( wantsHypr && structKeyExists( a, "dock" ) ) out.steps.append( { id: "dock", title: "dock " & ( isSet( a.dock ) ? "on" : "off" ), argv: [ "bxrig", "appearance", "dock", isSet( a.dock ) ? "on" : "off" ], optional: true } );
 		// the top bar layout and the app grid style (Noctalia, so Hyprland only), after the bar and the dock
 		var layoutPick = pick( a, "bar_layout" );
 		if ( len( layoutPick ) && !arrayFind( barLayouts(), layoutPick ) ) out.errors.append( "bar_layout: unknown value " & layoutPick );

@@ -241,7 +241,7 @@
 					"id": "dock",
 					"label": "Dock",
 					"default": true,
-					"help": "A dock of your apps at the bottom of the screen (Noctalia). Change it later: bxrig appearance dock show|hide.",
+					"help": "A dock of your apps at the bottom of the screen (Noctalia). Change it later: bxrig appearance dock on|off.",
 					"when": {
 						"id": "desktops",
 						"in": [
