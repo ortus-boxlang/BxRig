@@ -9,7 +9,7 @@
 --
 -- Data: `bxrig vpn list --json` (vpn.luau), fetched on open and every 10 s while open; places: `bxrig vpn locations NAME --json`.
 -- Actions (runAsync with an argument list, never a shell): `bxrig vpn connect NAME [--location=VALUE]`, `bxrig vpn disconnect NAME`,
--- `bxrig vpn set allow_several=true|false --yes`. The install buttons open a terminal with `bxrig install NAME`.
+-- `bxrig vpn set allow_several=true|false --yes`. The install buttons open a terminal with `bxrig install NAME --yes`.
 -- Colors are palette roles only, so the panel follows the active theme (there is no success role: primary, the brand green, is "connected").
 
 local bxrig = require("./bxrig.luau")
@@ -93,7 +93,8 @@ local function openInstall(choice)
 		render()
 		return
 	end
-	noctalia.runInTerminal(shq(bxrig.command()) .. " install " .. shq(id))
+	-- --yes: without it `bxrig install` only prints its plan and the terminal closes at once; the window waits for Enter so the result can be read (sudo asks for the password there)
+	noctalia.runInTerminal(shq(bxrig.command()) .. " install " .. shq(id) .. " --yes; echo; printf 'Done. Press Enter to close. '; read -r _")
 	panel.close()
 end
 
