@@ -155,6 +155,7 @@ jobs:
           (cd src && matchbox ../tests/time_machine_test.bxs)
           (cd src && matchbox ../tests/system_updates_test.bxs)
           (cd src && matchbox ../tests/backup_status_test.bxs)
+          (cd src && matchbox ../tests/plugin_system_test.bxs)
           (cd src && matchbox ../tests/tui_kit_test.bxs)
           (cd src && matchbox ../tests/image_cache_test.bxs)
           (cd src && matchbox ../tests/app_icons_test.bxs)

@@ -6,6 +6,7 @@ Noctalia v5 plugins (author id `bxrig`). Each folder is one plugin.
 |---|---|---|---|
 | `clock/` | `bxrig/clock` | bar widget `bar` (the time as text), panel `panel` | text: `noctalia.formatTime` with the `format` setting; panel: `bxrig time world --json`, every 30 s while open |
 | `agents/` | `bxrig/agents` | bar widget `bar`, panel `panel` | `bxrig ai panel --json`, every 60 s while open; launch runs `bxrig ai launch <id>` |
+| `system/` | `bxrig/system` | bar widget `bar` (a glyph and the number of waiting updates, hidden at 0), panel `panel` (tabs Updates and Backups) | `bxrig system updates --json` every 10 min in the background and every 60 s while open; `bxrig backup status --json` every 60 s while open; Update all runs `bxrig system update --yes` in a terminal; Back up now runs each row's own command in a terminal; Open Time Machine runs `bxrig timemachine` in a terminal |
 | `dev/` | `bxrig/dev` | bar widget `bar` (a code glyph and the number running), panel `panel` (tabs Databases, Containers, VMs) | `bxrig db list --json`, `bxrig containers list --json`, `bxrig vm list --json`; every 15 s while open, every 2 min for the badge |
 | `quick/` | `bxrig/quick` | bar widget `bar`, panel `panel` (switches and pickers), panel `themes` (theme switcher) | the `status` of each setting on open; each control runs its bxrig command with `--yes`; themes: `bxrig theme list --json` on open, Enter runs `bxrig theme set <name> --yes` |
 | `power/` | `bxrig/power` | panel `panel` only, no bar widget: the battery widget opens it | `bxrig power status --json`, every 15 s while open; profile `bxrig power profile`, lid `bxrig power lid battery|ac ACTION --yes`, `bxrig system suspend`, `bxrig power hibernate --yes`, `bxrig power charge-limit N --yes` |
@@ -18,12 +19,13 @@ Noctalia finds hand-placed plugins in `~/.local/share/noctalia/plugins/<folder>/
 
 ```sh
 mkdir -p ~/.local/share/noctalia/plugins
-for p in clock agents quick dev power; do
+for p in clock agents system quick dev power; do
   rm -rf ~/.local/share/noctalia/plugins/$p
   cp -r templates/noctalia-plugins/$p ~/.local/share/noctalia/plugins/$p
 done
 noctalia msg plugins enable bxrig/clock
 noctalia msg plugins enable bxrig/agents
+noctalia msg plugins enable bxrig/system
 noctalia msg plugins enable bxrig/quick
 noctalia msg plugins enable bxrig/dev
 noctalia msg plugins enable bxrig/power
@@ -34,7 +36,7 @@ Enabling adds the id to `enabled = [...]` under `[plugins]` in Noctalia's state-
 
 ```toml
 [plugins]
-enabled = ["bxrig/clock", "bxrig/agents", "bxrig/quick", "bxrig/dev", "bxrig/power"]
+enabled = ["bxrig/clock", "bxrig/agents", "bxrig/system", "bxrig/quick", "bxrig/dev", "bxrig/power"]
 ```
 
 To disable a plugin and keep its files: `noctalia msg plugins disable bxrig/<name>`.
@@ -46,6 +48,7 @@ Noctalia hot-reloads edited `.luau` files. If you replace a whole plugin folder 
 ```sh
 noctalia msg panel-toggle bxrig/clock:panel
 noctalia msg panel-toggle bxrig/agents:panel
+noctalia msg panel-toggle bxrig/system:panel
 noctalia msg panel-toggle bxrig/dev:panel
 noctalia msg panel-toggle bxrig/quick:panel
 noctalia msg panel-toggle bxrig/quick:themes
@@ -78,6 +81,9 @@ type = "bxrig/clock:bar"     # the time as text: click opens the panel, right cl
 [widget.bxrig-agents]
 type = "bxrig/agents:bar"          # robot -> agents panel
 
+[widget.bxrig-system]
+type = "bxrig/system:bar"         # glyph + update count -> updates and backups
+
 [widget.bxrig-quick]
 type = "bxrig/quick:bar"           # sliders -> quick settings (the theme switcher is its second page)
 
@@ -86,10 +92,10 @@ type = "bxrig/dev:bar"             # code glyph + number running -> developer po
 
 [bar.main]
 center = ["bxrig-clock", "media"]
-end = ["bxrig-agents", "bxrig-dev", "tray", "network", "bluetooth", "volume", "battery", "notifications", "bxrig-quick", "control-center"]
+end = ["bxrig-agents", "screenshot", "bxrig-system", "bxrig-dev", "tray", "network", "bluetooth", "volume", "battery", "notifications", "bxrig-quick", "control-center"]
 ```
 
-`bxrig appearance bar layout minimal|standard|dense` writes the whole bar (these widgets, the built-in ones, the dock) into config.toml for you; the three layouts are in `docs/guides/appearance.md`. Planned BxRig widgets that are not built yet and therefore not on any bar: `bxrig-system` (updates, backups) and `bxrig-vpn`. Caffeine is not a bar widget: it is a switch in quick settings. The power panel (`bxrig/power`) has no bar widget either: the built-in battery widget opens it.
+`bxrig appearance bar layout minimal|standard|dense` writes the whole bar (these widgets, the built-in ones, the dock) into config.toml for you; the three layouts are in `docs/guides/appearance.md`. Planned BxRig widgets that are not built yet and therefore not on any bar: `bxrig-vpn`. Caffeine is not a bar widget: it is a switch in quick settings. The power panel (`bxrig/power`) has no bar widget either: the built-in battery widget opens it.
 
 The battery widget is the built-in one (written only on a laptop). A left click opens the BxRig power panel, a right click the control center Power tab, and the separate `power_profile` widget stays off the bar (battery and power are one panel):
 
@@ -147,6 +153,15 @@ The plugins read the envelope `{"ok": true, "data": {...}}`. When `ok` is false,
   - `accounts[]`: `{name, plan, active, meters[]}`.
   - `meters[]`: `{label, used_fraction, resets_in}`.
   - An account with no meters, or an agent with no accounts, shows "no usage data".
+- `bxrig system updates --json` (System, tab Updates and the bar badge):
+  - `data.total`, `data.repo_count`, `data.aur_count`: the counts (the badge shows `total`, hidden at 0).
+  - `data.packages[]`: `{name, old, new, repo ("repo"|"aur")}`.
+  - `data.needs_reboot`, `data.reboot_pending`, `data.reboot_stale`, `data.reboot_reasons[]`: the restart banner. A pending kernel, systemd, glibc, firmware, microcode or NVIDIA driver update, or a running kernel that was already replaced.
+  - `data.last_update_ago`: "3 days ago" or "" (not found in the pacman log); `data.snapshot_tool`: snapper, timeshift or "" (the snapshot-first note); `data.aur_error`: set when the AUR helper failed.
+  - Exit 4 (no `checkupdates`, no network) arrives as `ok` false and `data.error`; the tab shows it, and offers to install pacman-contrib when that is the cause.
+- `bxrig backup status --json` (System, tab Backups):
+  - `data.rows[]` (config, system, data): `{id, label, kind, last_ago, next, size_text, health ("ok"|"warn"|"none"), note, action[]}`. `action` is the `bxrig` words that back that row up now, `[]` when it cannot be done yet (the row's play button is disabled).
+  - `data.warn_count` puts a warning glyph on the Backups tab.
 - Quick settings page 1 reads `bxrig theme status --json` (`data.mode`, `data.name`), `bxrig notify dnd status --json` (`data.output`, `on` or `off`), `bxrig appearance dock|appgrid|bar layout|battery-percent status --json` (`data.dock`, `data.appgrid`, `data.layout`, `data.battery_percent` and `data.battery_found`) and `bxrig time format status --json` (`data.format`). It writes with `bxrig toggle stay-awake on|off`, `notify dnd on|off`, `theme mode theme|dark|light|auto`, `appearance dock on|off`, `appearance appgrid launchpad|terminal`, `appearance bar layout minimal|standard|dense`, `appearance battery-percent on|off` and `time format FORMAT`, always with `--yes`. A bar config.toml with changes of your own is replaced (a backup is kept) because of that `--yes`. Caffeine has Noctalia IPC to switch it (`noctalia msg caffeine-enable|disable|toggle`) but none to read it back, so its switch shows what the panel last set (kept until Noctalia restarts). Night light has no command here: a button opens the control center Home tab.
 - `bxrig power status --json` (the power panel):
   - `data.battery[]`: `{name, percent, status, state ("charging"|"discharging"|"full"|"not_charging"|"unknown"), watts, time_remaining_minutes, health_percent, cycles, charge_limit, charge_limit_supported}`; a number the battery does not report is `-1`.
