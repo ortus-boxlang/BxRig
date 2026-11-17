@@ -24,7 +24,7 @@ Status: **decided** means the owner chose it; **planned** means it is agreed and
 | Quick settings | The `bxrig/quick` plugin (evolved from the theme switcher): a popover of switches and pickers (Caffeine, Do Not Disturb, Dark/Light/Auto, Dock, Battery percentage, App grid style, Top bar layout, Clock format, Night light note, Control Center button), with the theme list and preview as its second page (Themes row) | decided |
 | Battery and power | One panel: the built-in battery widget stays; left click opens the `bxrig/power` panel (profile, lid on battery and AC, Suspend, Hibernate, charge limit when supported), right click the control center Power tab; the `power_profile` widget stays off the bar | decided |
 | Brightness, weather | Noctalia built-ins, not on the bar | decided |
-| VPN | Its own bar icon; NordVPN, NordLayer, Tailscale and NetworkManager profiles in one pick-one list with adapters; an allow-several toggle | planned |
+| VPN | Its own bar icon; NordVPN, NordLayer, Tailscale, Mullvad and NetworkManager profiles in one pick-one list with data-driven adapters; an allow-several toggle (built: `bxrig vpn`, plugin `bxrig/vpn`; the look is checked on screen later) | decided |
 | System popover | Updates and Backups (`bxrig/system`: bar glyph with the waiting-update count, tabs Updates and Backups; built, visual check pending) | decided |
 | Developer panel | Separate from System: databases, containers, VMs (plugin `bxrig/dev`, `bxrig containers list\|start\|stop\|restart\|logs`) | decided |
 | Capture icon | On Standard and Dense | decided |
