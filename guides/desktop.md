@@ -25,7 +25,7 @@ The Noctalia bar carries three BxRig panels and the notifications. Each opens fr
 
 ## KDE Plasma
 
-- **Tiling:** `bxrig setup plasma` installs HyprKwin. Layouts: dwindle, master, monocle, scrolling, stage. `bxrig tiling on|off|status|layout NAME`.
+- **Tiling:** `bxrig setup plasma` installs HyprKwin and turns on the Bluetooth service (`bluetooth.service`, if it is not on yet). Layouts: dwindle, master, monocle, scrolling, stage. `bxrig tiling on|off|status|layout NAME`.
 - **Panels:** `bxrig plasma panels apply` replaces your panels with a top status panel (launcher, workspace pager, active window, clock, weather, media, system vitals, tray, in rounded islands with Panel Colorizer) and a bottom dock. Your old layout is backed up first: `bxrig plasma panels undo --yes` restores it. From Hyprland it is applied at your next Plasma login.
 - **Virtual desktops:** `bxrig plasma desktops 4`.
 - **World clock:** the panel clock reads `Nov 15 - 22:16`; click it for every time zone you chose in the wizard (`bxrig time world`).
