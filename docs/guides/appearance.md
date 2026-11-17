@@ -73,6 +73,9 @@ BxRig has its own icon theme, **BxRig**: superellipse tiles with a vertical glow
 
 ![The BxRig icons at 16 to 128 px](../assets/bxrig-icon-theme.png)
 
+| ![The XFCE application menu with the BxRig folder open](../assets/screenshots/icons-xfce-menu.webp)<br>**The application menu** (XFCE) | ![Rofi as an icon grid with the BxRig launchers](../assets/screenshots/icons-launcher-grid.webp)<br>**A launcher grid** (Rofi) |
+|---|---|
+
 ```bash
 bxrig appearance icons status
 bxrig appearance icons bxrig --yes     # the default after `bxrig init` / setup: BxRig icons over Papirus-Dark
