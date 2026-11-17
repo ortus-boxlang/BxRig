@@ -63,6 +63,27 @@ testkit.check( "hyprland: the config steps run no commands (they are executed in
 part = {}; part["hyprland"] = true; part["ghostty"] = true;
 p = plan.hyprland( facts( { installed: part } ), {} );
 testkit.check( "hyprland: only the missing packages are installed", p.added.len() == pk.len() - 2 && !arrayFind( p.added, "hyprland" ) && !arrayFind( p.added, "ghostty" ) && arrayFind( p.added, "noctalia" ) > 0 );
+// plasma: the Bluetooth service on this path too
+plHave = { git: true, "python-dbus": true, "python-gobject": true, "qt6-tools": true };
+p = plan.plasma( facts( { bluetoothEnabled: false } ), {} );
+testkit.check( "plasma: service off and bluez missing means bluez packages, then the service step, then the checkout", ids( p ) == "packages,bluetooth,fetch,install" && arrayFind( p.steps[1].commands[1], "bluez" ) > 0 && arrayFind( p.steps[1].commands[1], "bluez-utils" ) > 0 && p.steps[2].kind == "systemd" && p.steps[2].commands[1].toList( " " ) == "sudo systemctl enable --now bluetooth.service" );
+p = plan.plasma( facts( { bluetoothEnabled: true } ), {} );
+testkit.check( "plasma: an enabled service gives no Bluetooth step and no bluez package", ids( p ) == "fetch,install" );
+nf = facts( {} ); nf.delete( "bluetoothEnabled" );
+p = plan.plasma( nf, {} );
+testkit.check( "plasma: facts without bluetoothEnabled are read as off", ids( p ) == "packages,bluetooth,fetch,install" );
+p = plan.plasma( facts( { installed: { git: true, "python-dbus": true, "python-gobject": true, "qt6-tools": true, bluez: true, "bluez-utils": true }, bluetoothEnabled: false } ), {} );
+testkit.check( "plasma: bluez present and service off gives only the service step first", ids( p ) == "bluetooth,fetch,install" );
+p = plan.plasma( facts( { bluetoothEnabled: false, hyprkwinInstalled: true } ), { undoKeys: true } );
+testkit.check( "plasma --undo-keys never enables the service", ids( p ) == "fetch,keys-restore" );
+testkit.check( "plasma: the service step needs sudo", plan.plasma( facts( { bluetoothEnabled: false, hasSudo: false } ), {} ).errors.len() == 1 );
+p = plan.undoPlasma( facts( { plasmaBluetooth: true, bluetoothEnabled: true, hyprkwinInstalled: true } ) );
+testkit.check( "undo plasma: the service setup turned on goes off before the uninstall", ids( p ) == "bluetooth,fetch,uninstall" && p.steps[1].commands[1].toList( " " ) == "sudo systemctl disable --now bluetooth.service" );
+p = plan.undoPlasma( facts( { plasmaBluetooth: false, bluetoothEnabled: true, hyprkwinInstalled: true } ) );
+testkit.check( "undo plasma: a service setup did not enable is left on", ids( p ) == "fetch,uninstall" );
+p = plan.undoPlasma( facts( { plasmaBluetooth: true, bluetoothEnabled: false, hyprkwinInstalled: true } ) );
+testkit.check( "undo plasma: a service already off needs no step", ids( p ) == "fetch,uninstall" );
+
 p = plan.hyprland( facts( { installed: {}, bluetoothEnabled: false } ), {} );
 testkit.check( "hyprland: bluez is installed and bluetooth.service enabled after the packages (sudo systemctl, as a plan step)", ids( p ) == "packages,bluetooth,images,starter,keys" && p.steps[2].kind == "systemd" && p.steps[2].commands[1].toList( " " ) == "sudo systemctl enable --now bluetooth.service" && arrayFind( p.steps[1].commands[1], "bluez" ) > 0 && arrayFind( p.steps[1].commands[1], "bluez-utils" ) > 0 );
 p = plan.hyprland( facts( { installed: have, bluetoothEnabled: false } ), {} );

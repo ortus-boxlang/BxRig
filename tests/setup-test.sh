@@ -38,6 +38,7 @@ run() { env BXRIG_OS_RELEASE="${OS_FILE:-$tmp/os-cachyos}" BXRIG_STATE_HOME="$tm
 reset() { : > "$SETUP_LOG"; rm -rf "$tmp/home/.local" "$tmp/state-home"; }
 leftovers() { { ls -d /tmp/bxrig-hyprkwin-* 2>/dev/null || true; } | wc -l; }
 before="$(leftovers)"; reset
+export MOCK_BT_ENABLED=1   # the plasma sections below run with bluetooth.service already enabled; its own section follows the undo checks
 
 # gating
 [[ "$(code "$binary" setup plasma)" == 2 ]] || fail 'no --yes exits 2'
@@ -92,6 +93,38 @@ rm -rf "$tmp/home/.local"; [[ "$(code "$binary" setup undo plasma --yes)" == 4 ]
 [[ "$(run "$binary" setup status --json | jq -r '.data.plasma.kwin')" == 6.6.2 ]] || fail 'status shows the kwin version'
 [[ "$(code "$binary" setup)" == 2 ]] || fail 'setup alone is a usage error'
 [[ "$(code "$binary" setup nope)" == 2 ]] || fail 'unknown target is a usage error'
+
+# ---- plasma: bluetooth.service is turned on here too (skipped when enabled), remembered, and turned off again by undo
+unset MOCK_BT_ENABLED
+reset; out="$(run "$binary" setup plasma --dry-run --json)"
+[[ "$(jq -r '.data.steps|map(.id)|join(",")' <<<"$out")" == packages,bluetooth,fetch,install ]] || fail 'plasma plan: bluez packages and the Bluetooth step when it is off'
+[[ "$(jq -r '.data.steps[1].commands[0]|join(" ")' <<<"$out")" == 'sudo systemctl enable --now bluetooth.service' ]] || fail 'plasma plan: the exact systemctl argv'
+[[ ! -s "$SETUP_LOG" && ! -e "$tmp/state-home" ]] || fail 'plasma plan changed something'
+run "$binary" setup plasma --yes >/dev/null 2>&1 || fail 'setup plasma --yes with the service off'
+grep -Fq 'pacman -S --needed --noconfirm bluez bluez-utils' "$SETUP_LOG" || fail 'plasma installs bluez when it is missing'
+grep -Fxq 'systemctl enable --now bluetooth.service' "$SETUP_LOG" || fail 'plasma turns the Bluetooth service on'
+[[ "$(jq -r .bluetooth "$tmp/state-home/bxrig/setup-plasma.json")" == true && "$(stat -c %a "$tmp/state-home/bxrig/setup-plasma.json")" == 600 ]] || fail 'plasma remembers it turned the service on (private file)'
+# already enabled: no step, nothing remembered
+reset; MOCK_BT_ENABLED=1 run "$binary" setup plasma --yes >/dev/null 2>&1 || fail 'setup plasma with the service on'
+grep -Fq 'bluetooth' "$SETUP_LOG" && fail 'an enabled service is left alone'
+[[ ! -e "$tmp/state-home/bxrig/setup-plasma.json" ]] || fail 'nothing is remembered when setup did not enable it'
+# bluez present, service off: only the service step comes before the checkout
+reset; out="$(MOCK_INSTALLED="git python-dbus python-gobject qt6-tools bluez bluez-utils" run "$binary" setup plasma --dry-run --json)"
+[[ "$(jq -r '.data.steps|map(.id)|join(",")' <<<"$out")" == bluetooth,fetch,install ]] || fail 'plasma plan: only the service step when bluez is there'
+# --undo-keys never turns the service on
+reset; mkdir -p "$tmp/home/.local/share/hyprkwin"; run "$binary" setup plasma --undo-keys --yes >/dev/null 2>&1 || fail '--undo-keys with the service off'
+grep -Fq 'bluetooth' "$SETUP_LOG" && fail '--undo-keys must not touch the Bluetooth service'
+# undo: turned off only when setup plasma turned it on
+reset; mkdir -p "$tmp/home/.local/share/hyprkwin" "$tmp/state-home/bxrig"; echo '{"bluetooth":true}' > "$tmp/state-home/bxrig/setup-plasma.json"
+MOCK_BT_ENABLED=1 run "$binary" setup undo plasma --yes >/dev/null 2>&1 || fail 'undo plasma with a remembered service'
+grep -Fxq 'systemctl disable --now bluetooth.service' "$SETUP_LOG" || fail 'undo plasma turns the service off'
+[[ "$(grep -n 'systemctl disable' "$SETUP_LOG" | cut -d: -f1)" -lt "$(grep -n '^UNINSTALL' "$SETUP_LOG" | cut -d: -f1)" ]] || fail 'the service goes off before the uninstall'
+[[ ! -e "$tmp/state-home/bxrig/setup-plasma.json" ]] || fail 'undo forgets the record'
+reset; mkdir -p "$tmp/home/.local/share/hyprkwin"; MOCK_BT_ENABLED=1 run "$binary" setup undo plasma --yes >/dev/null 2>&1 || fail 'undo plasma without a record'
+grep -Fq 'bluetooth' "$SETUP_LOG" && fail 'undo leaves a service setup did not enable'
+export MOCK_BT_ENABLED=1
+reset; rm -rf "$tmp/home/.local"
+unset MOCK_BT_ENABLED
 
 # ---- hyprland: packages only
 ALL="hyprland noctalia uwsm hyprlock hypridle xdg-desktop-portal-hyprland hyprpolkitagent qt6ct nwg-look hyprpicker grim slurp wl-clipboard brightnessctl ghostty adw-gtk-theme noto-fonts noto-fonts-emoji bluez bluez-utils"

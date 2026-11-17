@@ -58,6 +58,23 @@ class Setup {
 		}
 	}
 
+	// Where `setup plasma` remembers that it turned the Bluetooth service on (so `setup undo plasma` turns it off again).
+	function plasmaStateFile() {
+		return new bxrig.ConfigService().stateDir() & "/setup-plasma.json";
+	}
+
+	// True when a previous `setup plasma` turned bluetooth.service on.
+	function plasmaBluetooth() {
+		var file = plasmaStateFile();
+		if ( !fileExists( file ) ) return false;
+		try {
+			var data = jsonDeserialize( fileRead( file ) );
+			return structKeyExists( data, "bluetooth" ) && data.bluetooth == true;
+		} catch ( any e ) {
+			return false;
+		}
+	}
+
 	// Node.js through nvm: nvm is a shell function, so it is probed by sourcing nvm.sh in a bash subshell ("" when none).
 	function nodeVersion( nvmDir ) {
 		if ( !fileExists( arguments.nvmDir & "/nvm.sh" ) ) return "";
@@ -81,6 +98,7 @@ class Setup {
 			arch: trim( variables.inst.proc().exec( [ "uname", "-m" ], 10 ).output ),
 			hasPacman: variables.pacman.available(),
 			hyprlandAdded: hyprlandAdded(),
+			plasmaBluetooth: plasmaBluetooth(),
 			bluetoothEnabled: new bxrig.util.Systemd( variables.inst.runner() ).enabled( new bxrig.SetupPlan().bluetoothUnit() ),
 			isRoot: variables.inst.isRoot(),
 			hasSudo: variables.inst.hasCommand( "sudo" ),
@@ -120,13 +138,20 @@ class Setup {
 	// `setup plasma [--keys | --undo-keys]`
 	function plasma( opts, yes, dryRun, asJson ) {
 		var f = facts();
-		return execute( "setup plasma", new bxrig.SetupPlan().plasma( f, opts ), f, yes, dryRun, asJson );
+		var plan = new bxrig.SetupPlan().plasma( f, opts );
+		var exit = execute( "setup plasma", plan, f, yes, dryRun, asJson );
+		if ( exit == 0 && yes && !dryRun && plan.steps.filter( function( st ) { return st.id == "bluetooth"; } ).len() ) {
+			new bxrig.ConfigService().writeAtomic( plasmaStateFile(), jsonSerialize( { bluetooth: true, time: now() & "" } ), "600" );
+		}
+		return exit;
 	}
 
 	// `setup undo plasma`
 	function undoPlasma( yes, dryRun, asJson ) {
 		var f = facts();
-		return execute( "setup undo plasma", new bxrig.SetupPlan().undoPlasma( f ), f, yes, dryRun, asJson );
+		var exit = execute( "setup undo plasma", new bxrig.SetupPlan().undoPlasma( f ), f, yes, dryRun, asJson );
+		if ( exit == 0 && yes && !dryRun && fileExists( plasmaStateFile() ) ) fileDelete( plasmaStateFile() );
+		return exit;
 	}
 
 	// `setup hyprland`: the missing packages, then the list of what was installed is remembered for undo.
