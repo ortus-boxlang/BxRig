@@ -1,0 +1,87 @@
+// The colours of the terminal screens (wizard, Control Center, BxTimeMachine): a palette struct that TuiKit draws with. Pure apart from reading a
+// theme's colors.toml. The default is the BxRig theme (Catppuccin Frappe neutrals with the BoxLang green and cyan), written out here so a screen
+// is fast and looks the same when no theme can be read; every other theme is derived from its colors.toml (the file ThemeColors already parses).
+//
+//   pal = new bxrig.Palette()
+//   pal.frappe()              the BxRig palette
+//   pal.forTheme( "nord" )    the palette of a theme by name ("" and "bxrig" are the default; an unknown or invalid theme is the default too)
+//   pal.active()              the palette of the theme `theme set` last applied (~/.config/bxrig/theme.json), else the default
+//   pal.colorsOf( "nord" )    the parsed colors.toml of a theme ({} when there is none): what the Theme page previews
+// A palette has: BASE MANTLE CRUST SURFACE0 SURFACE1 OVERLAY TEXT SUB GREEN CYAN YELLOW RED MAUVE SKY PEACH. GREEN is the theme's accent and
+// CYAN its bright cyan (the two ends of the brand gradient), so a theme recolours the gradient too.
+class Palette {
+	// env: an Env with its own variables (tests); the real environment by default.
+	function init( env = "" ) {
+		variables.tc = new bxrig.ThemeColors();
+		variables.env = isSimpleValue( arguments.env ) ? new bxrig.util.Env() : arguments.env;
+		return this;
+	}
+
+	function frappe() {
+		return {
+			BASE: "##303446", MANTLE: "##292c3c", CRUST: "##232634", SURFACE0: "##414559", SURFACE1: "##51576d", OVERLAY: "##737994",
+			TEXT: "##c6d0f5", SUB: "##a5adce", GREEN: "##00ff78", CYAN: "##00dbff", YELLOW: "##e5c890", RED: "##e78284", MAUVE: "##ca9ee6", SKY: "##99d1db", PEACH: "##ef9f76"
+		};
+	}
+
+	// The palette of parsed colors (ThemeColors.parse( text ).colors). Optional keys fall back to a mix of the required ones.
+	function fromColors( c ) {
+		var t = variables.tc;
+		var bg = arguments.c.background;
+		var fg = arguments.c.foreground;
+		var sel = structKeyExists( arguments.c, "selection" ) ? arguments.c.selection : t.mix( bg, fg, 0.2 );
+		var muted = structKeyExists( arguments.c, "muted" ) ? arguments.c.muted : t.mix( bg, fg, 0.45 );
+		return {
+			BASE: bg,
+			MANTLE: structKeyExists( arguments.c, "dark_background" ) ? arguments.c.dark_background : t.mix( bg, "##000000", 0.12 ),
+			CRUST: structKeyExists( arguments.c, "darker_background" ) ? arguments.c.darker_background : t.mix( bg, "##000000", 0.22 ),
+			SURFACE0: t.mix( bg, sel, 0.5 ),
+			SURFACE1: sel,
+			OVERLAY: t.mix( muted, fg, 0.25 ),
+			TEXT: fg,
+			SUB: structKeyExists( arguments.c, "light_foreground" ) ? arguments.c.light_foreground : t.mix( fg, bg, 0.25 ),
+			GREEN: arguments.c.accent,
+			CYAN: structKeyExists( arguments.c, "bright_cyan" ) ? arguments.c.bright_cyan : arguments.c.cyan,
+			YELLOW: arguments.c.yellow,
+			RED: arguments.c.red,
+			MAUVE: arguments.c.magenta,
+			SKY: arguments.c.cyan,
+			PEACH: structKeyExists( arguments.c, "orange" ) ? arguments.c.orange : arguments.c.yellow
+		};
+	}
+
+	// The colors.toml text of a theme: your own folders first (the same sources `theme set` reads), then the ones bundled in the binary.
+	function colorsText( name ) {
+		// the folders Theme.sources() lists, in the same order
+		var dirs = [ variables.env.xdgConfig( "bxrig/themes" ), variables.env.xdgConfig( "omarchy/themes" ), variables.env.home() & "/.local/share/omarchy/themes" ];
+		for ( var d in dirs ) {
+			var f = d & "/" & arguments.name & "/colors.toml";
+			if ( fileExists( f ) ) { try { return fileRead( f ); } catch ( any e ) {} }
+		}
+		return new bxrig.ThemeData().colors( arguments.name );
+	}
+
+	// The parsed colors of a theme, {} when it is unknown or invalid (the file is never half read).
+	function colorsOf( name ) {
+		if ( !len( arguments.name ) ) return {};
+		var text = colorsText( arguments.name );
+		if ( !len( text ) ) return {};
+		var p = variables.tc.parse( text );
+		return p.ok ? p.colors : {};
+	}
+
+	function forTheme( name ) {
+		if ( !len( arguments.name ) || arguments.name == "bxrig" ) return frappe();
+		var c = colorsOf( arguments.name );
+		return structIsEmpty( c ) ? frappe() : fromColors( c );
+	}
+
+	// The name `theme set` last applied ("" when none was).
+	function activeName() {
+		var f = variables.env.xdgConfig( "bxrig/theme.json" );
+		var j = new bxrig.util.JsonStore().read( f, { name: "" } );
+		return toString( j.name );
+	}
+
+	function active() { return forTheme( activeName() ); }
+}

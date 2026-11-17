@@ -1,9 +1,9 @@
 // The shared drawing kit for every BxRig terminal screen (wizard, BxTimeMachine, Control Center and its pages), on MatchBox's canvas.
-// Catppuccin Frappe neutrals with the Ortus brand gradient (cyan #00DBFF to green #00FF78).
+// Colours come from a Palette: Catppuccin Frappe neutrals with the Ortus brand gradient (cyan #00DBFF to green #00FF78) by default, or a theme's own colours.
 //
 // Shape (one kit per screen, made with the canvas):
 //   kit = new bxrig.TuiKit( tui )
-//   colours   kit.color( "GREEN" ), kit.mix( a, b, t ), kit.brand( t ), kit.shimmer( x, w, phase ), kit.setFade( 0..1 )
+//   colours   kit.color( "GREEN" ), kit.setPalette( pal ), kit.mix( a, b, t ), kit.brand( t ), kit.shimmer( x, w, phase ), kit.setFade( 0..1 )
 //   drawing   kit.put( x, y, s, fg, bg, bold, dim ), kit.fillRect, kit.gtext( x, y, s, bold, phase, bg ), kit.trunc, kit.wrap, kit.panel
 //   clicks    kit.clearHits(), kit.hit( kind, x, y, w, h, n, m ), kit.hitAt( x, y ) -> { kind, n, m }
 //   widgets   kit.tabs, kit.listView, kit.modal, kit.confirmModal, kit.toast, kit.keybar, kit.meter, kit.badge, kit.spark, kit.size
@@ -13,10 +13,7 @@ class TuiKit {
 	function init( tui ) {
 		variables.fmt = new bxrig.util.Fmt();
 		variables.tui = arguments.tui;
-		variables.pal = {
-			BASE: "##303446", MANTLE: "##292c3c", CRUST: "##232634", SURFACE0: "##414559", SURFACE1: "##51576d", OVERLAY: "##737994",
-			TEXT: "##c6d0f5", SUB: "##a5adce", GREEN: "##00ff78", CYAN: "##00dbff", YELLOW: "##e5c890", RED: "##e78284", MAUVE: "##ca9ee6", SKY: "##99d1db", PEACH: "##ef9f76"
-		};
+		variables.pal = new bxrig.Palette().frappe();
 		variables.hits = [];
 		variables.fade = 1;
 		variables.icons = false;
@@ -47,6 +44,9 @@ class TuiKit {
 		return out;
 	}
 	function color( name ) { return variables.pal[ arguments.name ]; }
+	// The colours of the screen: a Palette struct (see Palette.bx). The default is the BxRig theme; a screen switches to the active theme at start.
+	function setPalette( pal ) { variables.pal = arguments.pal; return this; }
+	function palette() { return variables.pal; }
 	function setFade( f ) { variables.fade = arguments.f; return this; }
 
 	// Icons are Nerd Font glyphs, drawn only when switched on (a terminal without the font would show boxes). icon( name ) is "" when off or the name is unknown.

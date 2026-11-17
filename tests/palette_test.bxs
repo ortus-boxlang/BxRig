@@ -1,0 +1,52 @@
+// Palette: the colours of the terminal screens, from a theme's colors.toml. Run from src/: (cd src && matchbox ../tests/palette_test.bxs)
+testkit = new lib.Check( "palette" );
+pal = new bxrig.Palette();
+tc = new bxrig.ThemeColors();
+keys = [ "BASE", "MANTLE", "CRUST", "SURFACE0", "SURFACE1", "OVERLAY", "TEXT", "SUB", "GREEN", "CYAN", "YELLOW", "RED", "MAUVE", "SKY", "PEACH" ];
+function complete( p ) { for ( var k in keys ) if ( !structKeyExists( p, k ) || !reFind( "^##[0-9a-fA-F]{6}$", p[ k ] ) ) return false; return true; }
+
+f = pal.frappe();
+testkit.check( "default: the BxRig palette is Frappe with the BoxLang green and cyan", f.BASE == "##303446" && f.GREEN == "##00ff78" && f.CYAN == "##00dbff" && complete( f ) );
+testkit.check( "the default theme, an empty name and an unknown theme all give the default", pal.forTheme( "bxrig" ).BASE == f.BASE && pal.forTheme( "" ).BASE == f.BASE && pal.forTheme( "no-such-theme" ).BASE == f.BASE );
+
+names = new bxrig.ThemeData().names();
+bad = [];
+for ( n in names ) { p = pal.forTheme( n ); if ( !complete( p ) ) bad.append( n ); }
+testkit.check( "every bundled theme gives a complete palette (" & bad.toList( "," ) & ")", names.len() == 20 && !bad.len() );
+
+nord = pal.forTheme( "nord" );
+c = tc.parse( new bxrig.ThemeData().colors( "nord" ) ).colors;
+testkit.check( "a theme: background, text and accent are the theme's own", nord.BASE == c.background && nord.TEXT == c.foreground && nord.GREEN == c.accent && nord.BASE != f.BASE );
+testkit.check( "a theme: the neutrals run from the background out (crust is darker, surfaces lighter)", tc.lum( nord.CRUST ) < tc.lum( nord.BASE ) && tc.lum( nord.SURFACE1 ) > tc.lum( nord.BASE ) );
+
+light = pal.forTheme( "bxrig-light" );
+testkit.check( "a light theme is light: its background is bright and its text dark", tc.lum( light.BASE ) > 0.4 && tc.lum( light.TEXT ) < 0.3 );
+readable = [];
+for ( n in names ) { p = pal.forTheme( n ); if ( tc.contrast( p.BASE, p.TEXT ) < 4.5 || tc.contrast( p.BASE, p.GREEN ) < 1.5 ) readable.append( n ); }
+testkit.check( "text and accent can be read on the background in every theme (" & readable.toList( "," ) & ")", !readable.len() );
+
+testkit.check( "colorsOf: the parsed theme, {} for an unknown one", pal.colorsOf( "nord" ).accent == c.accent && structIsEmpty( pal.colorsOf( "nope" ) ) && structIsEmpty( pal.colorsOf( "" ) ) );
+
+// optional keys are derived: a theme with only the required ones still gives a complete palette
+tiny = { accent: "##ff8800", background: "##101820", foreground: "##e0e0e0", red: "##ff0000", green: "##00ff00", yellow: "##ffff00", blue: "##0000ff", magenta: "##ff00ff", cyan: "##00ffff" };
+testkit.check( "a minimal colors.toml still gives a complete palette", complete( pal.fromColors( tiny ) ) && pal.fromColors( tiny ).GREEN == "##ff8800" );
+
+// the active theme: ~/.config/bxrig/theme.json names it; a user theme folder wins over a bundled one
+home = testkit.tmp();
+env = new bxrig.util.Env( { HOME: home, BXRIG_CONFIG_HOME: home & "/cfg" } );
+p2 = new bxrig.Palette( env );
+testkit.check( "active: no theme.json is the default", p2.activeName() == "" && p2.active().BASE == f.BASE );
+directoryCreate( home & "/cfg/bxrig", true, true );
+fileWrite( home & "/cfg/bxrig/theme.json", '{"name":"nord","mode":"theme"}' );
+testkit.check( "active: the name `theme set` wrote gives that theme's palette", p2.activeName() == "nord" && p2.active().BASE == c.background );
+directoryCreate( home & "/cfg/bxrig/themes/nord", true, true );
+fileWrite( home & "/cfg/bxrig/themes/nord/colors.toml", new bxrig.ThemeData().colors( "gruvbox" ) );
+testkit.check( "a theme folder of yours wins over the bundled theme of the same name", p2.active().BASE == tc.parse( new bxrig.ThemeData().colors( "gruvbox" ) ).colors.background );
+fileWrite( home & "/cfg/bxrig/themes/nord/colors.toml", "accent = nope" );
+testkit.check( "a broken colors.toml is the default palette, never a half theme", p2.active().BASE == f.BASE );
+
+// the kit draws with whatever palette it is given
+tui = createObject( "rust", "tui.TUI" );
+kit = new bxrig.TuiKit( tui );
+testkit.check( "kit: starts with the default palette and switches", kit.color( "BASE" ) == f.BASE && kit.setPalette( nord ).color( "BASE" ) == nord.BASE && kit.palette().GREEN == nord.GREEN );
+testkit.done();
