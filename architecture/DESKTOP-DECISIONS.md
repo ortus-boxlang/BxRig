@@ -37,7 +37,7 @@ Status: **decided** means the owner chose it; **planned** means it is agreed and
 | Decision | Choice | Status |
 |---|---|---|
 | Icon style on the bar | Hybrid: bare Tabler outline glyphs colored by one palette role; plates only on the logo button and on the Launchpad grid in the dock (plates need an outline or glow on dark and Retro) | decided |
-| Icon theme | `BxRig`, style A (superellipse tile, vertical glow, Phosphor duotone, MIT notice), new `bxrig-*` names, `Inherits=Papirus-Dark`; our icon where we have one, else Papirus; the icon set is not asked in the wizard | planned |
+| Icon theme | `BxRig`, style A (superellipse tile, vertical glow, Phosphor duotone, MIT notice), new `bxrig-*` names, `Inherits=Papirus-Dark`; our icon where we have one, else Papirus; the icon set is not asked in the wizard. Built: `tools/gen-icon-theme.py` (31 icons, 16 to 256 px, bold darker variant at 16 and 22 px), `bxrig appearance icons bxrig\|papirus\|status`, applied automatically by `init` | decided, built |
 | App grid | Default Launchpad; a second style, Terminal-style grid, is selectable in quick settings via `appearance appgrid` | planned |
 | Theme selection | A separate, bigger TUI selector plus a wizard Theme page (default BxRig); the Look page has no theme list | planned |
 | Retro theme | Later, with Share Tech Mono Nerd | planned |

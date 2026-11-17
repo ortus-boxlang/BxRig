@@ -753,6 +753,7 @@ bxrig appearance background list
 bxrig appearance background set NAME_OR_PATH
 bxrig appearance background next
 bxrig appearance background random
+bxrig appearance icons bxrig|papirus|status [--yes]
 ```
 
 ```bash
@@ -763,9 +764,10 @@ bxrig appearance windows gaps off
 bxrig appearance layout columns
 bxrig appearance font install cascadia --yes
 bxrig appearance background random
+bxrig appearance icons papirus --yes
 ```
 
-> Settings act at once (no --yes); --dry-run shows the commands. What you choose is remembered, and `appearance apply` pushes it again. `bar layout`, `dock on|off|toggle`, `appgrid` and `battery-percent` rewrite ~/.config/noctalia/config.toml (backup kept; a file with changes of your own needs --yes). The `terminal` app grid style is only stored for now: nothing draws it yet.
+> Settings act at once (no --yes); --dry-run shows the commands. What you choose is remembered, and `appearance apply` pushes it again. `bar layout`, `dock on|off|toggle`, `appgrid` and `battery-percent` rewrite ~/.config/noctalia/config.toml (backup kept; a file with changes of your own needs --yes). The `terminal` app grid style is only stored for now: nothing draws it yet. `icons` is the exception to "act at once": it installs papirus-icon-theme and writes the BxRig icon theme and settings files, so it prints a plan (exit 2) until --yes; `bxrig` (the default after setup) is the BxRig icons over Papirus-Dark, `papirus` is Papirus-Dark alone.
 
 ### `bxrig hotcorners` {#bxrig-hotcorners}
 
