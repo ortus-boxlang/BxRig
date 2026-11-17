@@ -1775,9 +1775,11 @@
 						"backup send ID|all --to=TARGET [--from=TARGET] [--yes]",
 						"backup export data ID --to=FILE.tar|FILE.zip [--path=/PATH] [--target=NAME] [--yes]",
 						"backup export config ID --to=FILE.tar.gz [--yes]",
+						"backup status [--json]",
 						"backup timeline [--local] [--json]"
 					],
 					"examples": [
+						"bxrig backup status --json",
 						"bxrig backup config now",
 						"bxrig backup config list",
 						"bxrig backup config diff 20261113T153000",

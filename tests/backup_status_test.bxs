@@ -1,0 +1,41 @@
+// backup status: the health rules, the time text and the timer reader, with a fake runner. Run from src/: (cd src && matchbox ../tests/backup_status_test.bxs)
+testkit = new lib.Check( "backup_status" );
+cli = new bxrig.util.Cli( "0" );
+st = new bxrig.BackupStatus( cli );
+day = 86400;
+testkit.check( "config limit is 30 days", st.limit( "config", false ) == 30 * day );
+testkit.check( "system limit is 2 days with the timeline timer, 14 without", st.limit( "system", true ) == 2 * day && st.limit( "system", false ) == 14 * day );
+testkit.check( "data limit follows the schedule", st.limit( "data", true, "hourly" ) == 6 * 3600 && st.limit( "data", true, "daily" ) == 2 * day && st.limit( "data", false, "off" ) == 14 * day );
+testkit.check( "worst: warn beats ok beats none", st.worst( [ { health: "none" }, { health: "ok" }, { health: "warn" } ] ) == "warn" && st.worst( [ { health: "none" }, { health: "ok" } ] ) == "ok" && st.worst( [ { health: "none" } ] ) == "none" && st.worst( [] ) == "none" );
+testkit.check( "inText", st.inText( 1000 + 1500, 1000 ) == "in 25m" && st.inText( 0, 1000 ) == "none" && st.inText( 1000, 2000 ) == "in 0s" && st.inText( 1000 + 7200, 1000 ) == "in 2h" );
+r = st.row( "x", "X", "config", "t", 0 );
+testkit.check( "a fresh row has no health and no action", r.health == "none" && r.action.len() == 0 && r.last_epoch == 0 && r.size == 0 );
+j = st.judge( st.row( "x", "X", "config", "t", 0 ), 10 * day, 30 * day );
+testkit.check( "judge: within the limit is ok", j.health == "ok" && j.note == "" );
+j = st.judge( st.row( "x", "X", "config", "t", 0 ), 40 * day, 30 * day );
+testkit.check( "judge: past the limit warns with the age", j.health == "warn" && find( "older than", j.note ) > 0 );
+w = st.withAction( st.row( "x", "X", "data", "t", 0 ), [ "backup", "data", "run" ] );
+testkit.check( "withAction keeps the words and the text", w.action.len() == 3 && w.action_text == "bxrig backup data run" );
+l = st.withLast( st.row( "x", "X", "data", "t", 0 ), 1794775330, 1794775330 + 3 * 3600 );
+testkit.check( "withLast: epoch, age and ISO", l.last_epoch == 1794775330 && l.last_ago == "3 hours ago" && l.last == "2026-11-15T20:42:10Z" );
+// the clock
+c = new bxrig.util.Clock();
+testkit.check( "iso of known moments", c.iso( 0 ) == "1970-01-01T00:00:00Z" && c.iso( 951868800 ) == "2000-03-01T00:00:00Z" && c.iso( 1794583800 ) == "2026-11-13T15:30:00Z" && c.iso( 1709164799 ) == "2024-02-28T23:59:59Z" && c.iso( 1709164800 ) == "2024-02-29T00:00:00Z" && c.iso( 1709251200 ) == "2024-03-01T00:00:00Z" );
+testkit.check( "iso and epoch are inverses", c.epoch( c.iso( 1794952336 ) ) == 1794952336 && c.epoch( c.iso( 86399 ) ) == 86399 );
+// the timer reader
+fake = { code: 0, out: "@1794909600" & chr( 10 ), seen: [] };
+runner = function( argv, timeout ) { fake.seen = argv; return { exitCode: fake.code, output: fake.out, timeout: false }; };
+sd = new bxrig.util.Systemd( new bxrig.util.Proc( runner ) );
+testkit.check( "nextRun reads @seconds", sd.nextRun( "x.timer" ) == 1794909600 );
+testkit.check( "nextRun asks systemctl show with a unix timestamp", fake.seen.toList( " " ) == "systemctl show --property=NextElapseUSecRealtime --timestamp=unix --value x.timer" );
+sd.nextRun( "y.timer", true );
+testkit.check( "nextRun for a user timer", fake.seen[ 2 ] == "--user" );
+fake.out = "";
+testkit.check( "nextRun is 0 when there is no time", sd.nextRun( "x.timer" ) == 0 );
+fake.out = "n/a";
+testkit.check( "nextRun is 0 for n/a", sd.nextRun( "x.timer" ) == 0 );
+fake.out = "@0";
+testkit.check( "nextRun is 0 for @0", sd.nextRun( "x.timer" ) == 0 );
+fake.code = 1; fake.out = "@1794909600";
+testkit.check( "nextRun is 0 when systemctl fails", sd.nextRun( "x.timer" ) == 0 );
+testkit.done();

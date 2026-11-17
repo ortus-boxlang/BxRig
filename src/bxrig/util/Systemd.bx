@@ -62,6 +62,14 @@ class Systemd {
 	// True when state() is "active" (for tools whose fake or real output is the text, not the exit code).
 	function isActive( unit, user = false ) { return state( arguments.unit, arguments.user ) == "active"; }
 
+	// When the timer fires next, in seconds since 1970 (`show --property=NextElapseUSecRealtime --timestamp=unix --value` prints "@1794909600"). 0 when
+	// the timer is not loaded, has no next time, or systemd does not say.
+	function nextRun( unit, user = false ) {
+		var r = variables.proc.exec( argv( "show", [ arguments.unit ], arguments.user, false, [ "--property=NextElapseUSecRealtime", "--timestamp=unix", "--value" ] ), 10 );
+		var t = replace( trim( r.output ), "@", "" );
+		return r.exitCode == 0 && reFind( "^[0-9]+$", t ) ? int( val( t ) ) : 0;
+	}
+
 	// Runs enable --now / disable --now / stop / daemon-reload: { exitCode, output }.
 	function enable( units, user = false, timeout = 60 ) { return variables.proc.exec( enableArgv( arguments.units, arguments.user ), arguments.timeout ); }
 	function disable( units, user = false, timeout = 30 ) { return variables.proc.exec( disableArgv( arguments.units, arguments.user ), arguments.timeout ); }

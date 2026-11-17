@@ -1130,12 +1130,14 @@ bxrig backup data include|exclude add|remove PATH_OR_PATTERN
 bxrig backup send ID|all --to=TARGET [--from=TARGET] [--yes]
 bxrig backup export data ID --to=FILE.tar|FILE.zip [--path=/PATH] [--target=NAME] [--yes]
 bxrig backup export config ID --to=FILE.tar.gz [--yes]
+bxrig backup status [--json]
 bxrig backup timeline [--local] [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
 
 ```bash
+bxrig backup status --json
 bxrig backup config now
 bxrig backup config list
 bxrig backup config diff 20261113T153000

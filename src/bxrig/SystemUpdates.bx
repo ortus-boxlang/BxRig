@@ -20,7 +20,7 @@ class SystemUpdates {
 		variables.pacman = new bxrig.util.Pacman( variables.proc );
 		variables.aur = new bxrig.util.Aur( variables.proc );
 		variables.fmt = new bxrig.util.Fmt();
-		variables.clock = new bxrig.BackupTimeline( arguments.cli, arguments.runner );
+		variables.clock = new bxrig.util.Clock();
 		return this;
 	}
 

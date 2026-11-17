@@ -30,7 +30,7 @@ Every command below follows the BxRig rules (plan without `--yes`, `--dry-run`, 
 
 - `bxrig backup config now|list|diff ID|restore ID [--only=PATH] --yes|auto on|off|export` (BxRig setup snapshots, automatic before updates). `bxrig backup snapshots setup|list|create|restore ID PATH` (snapper on Btrfs, Timeshift elsewhere; no automatic rollback). `bxrig backup data target add NAME --type=s3|b2|azure|gs|sftp|rest|rclone|local ... [--ask-keys]`, then `init NAME --yes`, `run --all --yes`, `list`, `restore ID --to=DIR`, `verify`, `forget`, `schedule daily|hourly|off --yes`. `backup send ID --from=A --to=B` and `backup export data|config ID --to=FILE`. Keys and repository passwords live in the keyring; never ask for or print them.
 - `bxrig nas discover|add NAME --host=H --user=U --ask-password|shares|mount NAME SHARE --yes|auto on NAME SHARE --yes|test|sync|use NAME SHARE`. SMB mounts use a root-only credentials file; say so before applying.
-- `bxrig timemachine` (alias `bxtimemachine`) is BxTimeMachine, the backup screen; `backup timeline --json` is the same data for scripts. It needs a terminal.
+- `bxrig timemachine` (alias `bxtimemachine`) is BxTimeMachine, the backup screen; `backup timeline --json` is the same data for scripts. It needs a terminal. `bxrig backup status [--json]` is one row per kind (config, system, data) with last run, next run, size and health (ok, warn, none).
 
 ## Finding commands
 
