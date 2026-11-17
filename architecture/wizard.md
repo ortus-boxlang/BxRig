@@ -19,7 +19,7 @@ Exit codes: 0 answers written, 130 cancelled (nothing written), 2 usage, 4 unrea
 ## Pages
 
 ```json
-{ "title": "BxRig", "tagline": "...", "version": "0.12.0",
+{ "title": "BxRig", "tagline": "...", 
   "pages": [ { "id": "desktop", "title": "Desktop", "intro": "...",
     "questions": [
       { "type": "choice",  "id": "desktops", "label": "...", "help": "...", "default": "both",
