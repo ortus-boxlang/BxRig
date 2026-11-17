@@ -97,7 +97,13 @@ t = pageShot( app );
 testkit.check( "grid page: Down chooses Terminal-style", find( "●  Terminal-style grid", t ) > 0 && find( "square card", t ) > 0 );
 testkit.check( "grid page: a click on a preview picks that style", view.hitAt( 45, 18 ).kind == "focus" && view.hitAt( 45, 18 ).n > 0 );
 n3 = pageShot( app, 100, 30 );
-testkit.check( "grid page: still readable at 100 x 30", find( "Terminal-style grid", n3 ) > 0 );
+testkit.check( "grid page: still readable at 100 x 30, with the previews (one row of apps each when the page is short)", find( "Terminal-style grid", n3 ) > 0 && find( "Search apps...", n3 ) > 0 && find( "/ search apps", n3 ) > 0 );
+n92 = pageShot( app, 92, 30 );
+testkit.check( "grid page: and at 92 x 30", find( "Search apps...", n92 ) > 0 );
+head76 = pageShot( app, 76, 24 );
+testkit.check( "76 columns: the header notice and the step counter no longer overlap", find( "step 4 of 17", head76 ) > 0 && find( "Powered by Bo", head76 ) == 0 );
+head90 = pageShot( app, 90, 30 );
+testkit.check( "90 columns: Powered by BoxLang fits beside the progress", find( "Powered by BoxLang", head90 ) > 0 && find( "step 4 of 17", head90 ) > 0 );
 tiny = pageShot( app, 76, 24 );
 testkit.check( "grid page: and at the smallest size, with no preview cut mid-way", find( "App grid style", tiny ) > 0 && find( "Terminal-style grid", tiny ) > 0 );
 

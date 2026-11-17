@@ -20,6 +20,7 @@ class WizardView {
 		variables.palettes = {};
 		variables.themeColors = {};
 		variables.paletteName = "";
+		variables.gridRows = 2;   // rows of apps in the app grid previews: 2, or 1 when the page is short
 		syncShades();
 		variables.shownKey = "";
 		variables.changedAt = 0;
@@ -160,9 +161,10 @@ class WizardView {
 		var step = app.screen() == "page" ? app.stepOf( app.pageIndex() ) : n + 1;
 		variables.kit.gtext( 3, 1, "◆ BxRig", true, arguments.phase, variables.BASE );
 		variables.kit.put( 13, 1, "setup", variables.SUB, variables.BASE );
-		if ( arguments.width < 92 ) variables.kit.put( 20, 1, "· Powered by BoxLang · www.boxlang.io", variables.OVERLAY, variables.BASE );
+		// without the step list (under 92 columns) the notice goes in the header, as much of it as fits before the progress bar
+		var barW = arguments.width < 92 ? 12 : 24;
+		if ( arguments.width < 92 ) variables.kit.put( 20, 1, arguments.width >= 99 ? "· Powered by BoxLang · www.boxlang.io" : ( arguments.width >= 80 ? "· Powered by BoxLang" : "" ), variables.OVERLAY, variables.BASE );
 		var label = "step " & step & " of " & ( n + 1 );
-		var barW = 24;
 		var barX = arguments.width - barW - 3;
 		variables.kit.put( barX - len( label ) - 2, 1, label, variables.SUB, variables.BASE );
 		for ( var i = 0; i < barW; i++ ) {
@@ -242,7 +244,7 @@ class WizardView {
 			var q = pg.questions[ row.q ];
 			return 1 + variables.kit.wrap( q.help ?: "", width ).len() + ( ( q.preview ?: "" ) == "dock" ? 1 : 0 );
 		}
-		if ( row.kind == "preview" ) return 1 + variables.look.gridHeight( 2 );
+		if ( row.kind == "preview" ) return 1 + variables.look.gridHeight( variables.gridRows );
 		if ( row.kind == "opt" && ( pg.questions[ row.q ].preview ?: "" ) == "bar" ) {
 			var key = pg.questions[ row.q ].options[ row.i ].value;
 			return 1 + variables.bl.height( key, width - 5 ) + variables.kit.wrap( variables.bl.layout( key ).desc, width - 5 ).len() + 1;
@@ -264,6 +266,7 @@ class WizardView {
 		var listTop = cy;
 		var listBottom = iy + ih - 4;
 		var rowW = kind == "theme" ? themeListWidth( iw ) : iw;
+		variables.gridRows = listBottom - listTop >= 21 ? 2 : 1;
 		var tops = [];
 		var total = 0;
 		var ww = kind == "theme" ? rowW : iw;   // headings and notes wrap to the list, not under the palette pane
@@ -397,14 +400,14 @@ class WizardView {
 				var gx = arguments.ix + ( n - 1 ) * ( pw + 2 );
 				var on = styles[ n ].value == chosen;
 				variables.kit.put( gx, arguments.ry, styles[ n ].label, on ? variables.GREEN : variables.OVERLAY, variables.MANTLE, on );
-				variables.look.appGrid( gx, arguments.ry + 1, pw, styles[ n ].value, on );
-				variables.kit.hit( "focus", gx, arguments.ry, pw, 1 + variables.look.gridHeight( 2 ), optionRow( arguments.rws, arguments.row.q, n ) );
+				variables.look.appGrid( gx, arguments.ry + 1, pw, styles[ n ].value, on, variables.gridRows );
+				variables.kit.hit( "focus", gx, arguments.ry, pw, 1 + variables.look.gridHeight( variables.gridRows ), optionRow( arguments.rws, arguments.row.q, n ) );
 			}
 		} else {
 			var pw1 = min( arguments.iw, 40 );
 			for ( var m = 1; m <= styles.len(); m++ ) if ( styles[ m ].value == chosen ) {
 				variables.kit.put( arguments.ix, arguments.ry, styles[ m ].label, variables.GREEN, variables.MANTLE, true );
-				variables.look.appGrid( arguments.ix, arguments.ry + 1, pw1, chosen, true );
+				variables.look.appGrid( arguments.ix, arguments.ry + 1, pw1, chosen, true, variables.gridRows );
 			}
 		}
 	}
