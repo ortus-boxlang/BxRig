@@ -76,7 +76,7 @@ Night shift on Hyprland runs `wlsunset` with your time zone's sunrise and sunset
 
 ## Trackpads and Apple devices
 
-`bxrig input gestures --yes` sets up three-finger swipes (workspaces, overview) with `libinput-gestures`. `bxrig input doctor` checks Magic Mouse and Magic Trackpad support (the kernel driver, Bluetooth, the `input` group). For Option-key characters like a Mac, pick the **English (US, Macintosh)** keyboard layout in the wizard. `bxrig airplay on` starts an AirPlay receiver.
+`bxrig input gestures --yes` sets up three-finger swipes (workspaces, overview) with `libinput-gestures`. `bxrig input doctor` checks Magic Mouse and Magic Trackpad support (the kernel driver, loaded or built in, Bluetooth, the `input` group). `bxrig input status` finds Apple Magic and Logitech devices and `bxrig input offer` installs the helpers for them (Solaar for Logitech, libratbag and Piper for gaming mice, upower): see [Mice, trackpads and keyboards](input.md). For Option-key characters like a Mac, pick the **English (US, Macintosh)** keyboard layout in the wizard. `bxrig airplay on` starts an AirPlay receiver.
 
 ## Hot corners
 

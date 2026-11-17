@@ -31,7 +31,7 @@ Exit codes: 0 answers written, 130 cancelled (nothing written), 2 usage, 4 unrea
       { "type": "info",    "label": "...", "help": "..." } ] } ] }
 ```
 
-Any question may carry `"when": { "id": "other_question", "in": ["a", "b"] }` (or `"equals": "a"`): it is shown only while that answer matches, and a hidden question is left out of the review and the answers file.
+Any question may carry `"when": { "id": "other_question", "in": ["a", "b"] }` (or `"equals": "a"`): it is shown only while that answer matches, and a hidden question is left out of the review and the answers file. `"when": { "any": [ {...}, {...} ] }` lists conditions and one is enough; a question with `"hidden": true` is never shown and is not in the answers file, it only carries a value (what the system detected) that other `when`s read (the Input page's `input_detected`).
 
 A whole page may carry `when` too: it is then skipped by Next and Back and left out of the sidebar, the step count, the review and the result. `bxrig init` adds one page per catalog group after the Apps page this way (see `AppPages`), shown only for "Customize".
 

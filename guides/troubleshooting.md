@@ -13,7 +13,8 @@ Start with `bxrig status` and the doctors; each prints a fix next to every faile
 | Something is missing after setup | `bxrig status`, then `bxrig init` |
 | Installer failed | read `~/.cache/bxrig/install.log` |
 | GPU or drivers | `bxrig gpu doctor` |
-| Magic Mouse, Trackpad, Bluetooth | `bxrig input doctor` |
+| Magic Mouse, Trackpad, Bluetooth | `bxrig input doctor`, `bxrig input apple` |
+| Logitech mouse or keyboard | `bxrig input logitech`, `bxrig input offer` |
 | Dolphin "Open with" is empty | `bxrig dolphin doctor --fix` |
 | App launcher or menu | `bxrig runner doctor` |
 | Containers | `bxrig containers doctor` |
