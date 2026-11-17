@@ -179,8 +179,8 @@ end
 
 local function stat(value, caption)
 	return ui.column({ flexGrow = 1, gap = 1, align = "center" }, {
-		ui.label({ text = value, fontSize = 14, fontWeight = "semibold", textAlign = "center" }),
-		ui.label({ text = string.upper(caption), fontSize = 9, color = "on_surface_variant", textAlign = "center" }),
+		ui.label({ text = value, fontSize = 14, fontWeight = "semibold", textAlign = "center", maxLines = 1 }),
+		ui.label({ text = string.upper(caption), fontSize = 9, color = "on_surface_variant", textAlign = "center", maxLines = 1 }),
 	})
 end
 
@@ -189,7 +189,7 @@ local function batteryCard(b)
 	local low = pct <= 20 and b.state == "discharging"
 	local stats = {}
 	if (tonumber(b.watts) or -1) >= 0 then
-		table.insert(stats, stat(string.format("%.1f W", b.watts), "power"))
+		table.insert(stats, stat(string.format("%.1fW", b.watts), "power"))
 	end
 	if (tonumber(b.health_percent) or -1) >= 0 then
 		table.insert(stats, stat(string.format("%d%%", b.health_percent), "health"))
@@ -208,15 +208,17 @@ local function batteryCard(b)
 		ui.progress({ progress = math.max(0, math.min(1, pct / 100)), fill = low and "error" or "primary", track = "on_surface/0.12", height = 8, radius = 4 }),
 	}
 	if #stats > 0 then
-		table.insert(kids, ui.row({ gap = 4, paddingV = 2 }, stats))
+		table.insert(kids, ui.row({ gap = 4, paddingV = 2, flexGrow = 1 }, stats))
 	end
-	return ui.column({ gap = 8, padding = 12, radius = 12, fill = "surface_container" }, kids)
+	return ui.column({ gap = 8, padding = 12, radius = 12, fill = "surface_container", align = "stretch" }, kids)
 end
 
--- A row of buttons, one per option, the current one filled.
-local function picker(key, options, current, onPick)
+-- Buttons, one per option, the current one filled. perRow (default all in one row) wraps them into rows of that many, so long labels are not cut.
+local function picker(key, options, current, onPick, perRow)
+	local rows = {}
 	local buttons = {}
-	for _, opt in ipairs(options) do
+	local per = perRow or #options
+	for i, opt in ipairs(options) do
 		local on = current == opt.id
 		table.insert(buttons, ui.button({
 			key = key .. "-" .. opt.id,
@@ -232,8 +234,15 @@ local function picker(key, options, current, onPick)
 				end
 			end,
 		}))
+		if #buttons == per or i == #options then
+			table.insert(rows, ui.row({ gap = 4 }, buttons))
+			buttons = {}
+		end
 	end
-	return ui.row({ gap = 4 }, buttons)
+	if #rows == 1 then
+		return rows[1]
+	end
+	return ui.column({ gap = 4 }, rows)
 end
 
 -- The lid action to show as selected: no drop-in means the systemd default, suspend.
@@ -407,11 +416,11 @@ render = function()
 				ui.label({ text = "On battery", fontSize = 11, color = "on_surface_variant" }),
 				picker("lid-battery", LID, lidChoice(data.lid_battery), function(opt)
 					inTerminal("Lid on battery", { "power", "lid", "battery", opt.id, "--yes" })
-				end),
+				end, 2),
 				ui.label({ text = "On AC power", fontSize = 11, color = "on_surface_variant" }),
 				picker("lid-ac", LID, lidChoice(data.lid_ac), function(opt)
 					inTerminal("Lid on AC power", { "power", "lid", "ac", opt.id, "--yes" })
-				end),
+				end, 2),
 				ui.label({ text = "Applies from the next login. Asks for your password in a terminal.", fontSize = 11, color = "on_surface_variant", maxLines = 2 }),
 			}))
 		end
