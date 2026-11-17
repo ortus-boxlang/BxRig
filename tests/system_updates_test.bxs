@@ -1,0 +1,70 @@
+// system updates: the update parsers, the restart rule and the pacman.log time, with a fake runner. Run from src/: (cd src && matchbox ../tests/system_updates_test.bxs)
+testkit = new lib.Check( "system_updates" );
+cli = new bxrig.util.Cli( "0" );
+// a fake machine: which programs exist and what the checkers print
+fake = { has: { pacman: true, checkupdates: true, yay: true }, repo: "", aur: "", repoExit: 0, aurExit: 0, uname: "6.17.8-1-cachyos", log: "", snapper: false };
+runner = function( argv, timeout ) {
+	var a = argv;
+	if ( a[ 1 ] == "sh" && a[ 2 ] == "-c" ) return { exitCode: ( structKeyExists( fake.has, a[ 5 ] ) && fake.has[ a[ 5 ] ] ) ? 0 : 1, output: "", timeout: false };
+	if ( a[ 1 ] == "checkupdates" ) return { exitCode: fake.repoExit, output: fake.repo, timeout: false };
+	if ( a[ 1 ] == "yay" ) return { exitCode: fake.aurExit, output: fake.aur, timeout: false };
+	if ( a[ 1 ] == "uname" ) return { exitCode: 0, output: fake.uname & chr( 10 ), timeout: false };
+	if ( a[ 1 ] == "grep" ) return { exitCode: len( fake.log ) ? 0 : 1, output: fake.log, timeout: false };
+	return { exitCode: 1, output: "", timeout: false };
+};
+su = new bxrig.SystemUpdates( cli, runner );
+proc = new bxrig.util.Proc( runner );
+pm = new bxrig.util.Pacman( proc );
+
+// ---- parsing ----
+rows = pm.parseUpgrades( "linux 6.1-1 -> 6.2-1" & chr( 10 ) & "mesa 25.2.5-1 -> 25.2.6-1" & chr( 10 ) & "garbage line" & chr( 10 ) & chr( 10 ) );
+testkit.check( "two rows, the garbage skipped", rows.len() == 2 );
+testkit.check( "a row has name, old and new", rows[ 2 ].name == "mesa" && rows[ 2 ].old == "25.2.5-1" && rows[ 2 ].new == "25.2.6-1" );
+testkit.check( "a held package line is still read", pm.parseUpgrades( "foo 1-1 -> 2-1 [ignored]" ).len() == 1 );
+testkit.check( "no text, no rows", pm.parseUpgrades( "" ).len() == 0 );
+
+// ---- the restart rule ----
+testkit.check( "linux is a kernel", su.isKernel( "linux" ) );
+testkit.check( "the kernel flavours are kernels", su.isKernel( "linux-lts" ) && su.isKernel( "linux-zen" ) && su.isKernel( "linux-hardened" ) && su.isKernel( "linux-cachyos" ) && su.isKernel( "linux-cachyos-lts" ) && su.isKernel( "linux-cachyos-bore" ) && su.isKernel( "linux-rt-lts" ) );
+testkit.check( "headers, docs, firmware and module packages are not kernels", !su.isKernel( "linux-headers" ) && !su.isKernel( "linux-lts-headers" ) && !su.isKernel( "linux-cachyos-headers" ) && !su.isKernel( "linux-firmware" ) && !su.isKernel( "linux-api-headers" ) && !su.isKernel( "linux-cachyos-nvidia" ) && !su.isKernel( "linux-zen-docs" ) && !su.isKernel( "linux-tools" ) );
+testkit.check( "systemd, glibc, firmware, microcode and the nvidia driver need a restart", su.rebootKind( "systemd" ) == "systemd" && su.rebootKind( "glibc" ) == "glibc" && su.rebootKind( "linux-firmware" ) == "firmware" && su.rebootKind( "intel-ucode" ) == "microcode" && su.rebootKind( "amd-ucode" ) == "microcode" && su.rebootKind( "nvidia-utils" ) == "nvidia driver" && su.rebootKind( "nvidia-open-dkms" ) == "nvidia driver" );
+testkit.check( "ordinary packages do not", su.rebootKind( "mesa" ) == "" && su.rebootKind( "systemd-libs" ) == "" && su.rebootKind( "firefox" ) == "" && su.rebootKind( "nvidia-settings" ) == "" );
+reasons = su.pendingReasons( [ { name: "systemd" }, { name: "mesa" }, { name: "linux-cachyos" } ] );
+testkit.check( "reasons name the package and the kind", reasons.len() == 2 && reasons[ 1 ] == "systemd" && reasons[ 2 ] == "linux-cachyos (kernel)" );
+
+// ---- the pacman.log time ----
+testkit.check( "an ISO stamp with an offset is UTC", su.logEpoch( "[2026-11-15T21:42:10+0100] [PACMAN] starting full system upgrade" ) == 1794775330 );
+testkit.check( "a negative offset adds", su.logEpoch( "[2026-11-15T21:42:10-0500] [PACMAN] starting full system upgrade" ) == 1794796930 );
+testkit.check( "the old stamp has no seconds or offset", su.logEpoch( "[2026-11-15 21:42] [PACMAN] starting full system upgrade" ) == 1794778920 );
+testkit.check( "not a stamp is 0", su.logEpoch( "hello" ) == 0 );
+
+// ---- the report ----
+fake.repo = "linux-cachyos 6.17.8-1 -> 6.17.9-1" & chr( 10 ) & "mesa 25.2.5-1 -> 25.2.6-1" & chr( 10 );
+fake.aur = "paru-bin 2.1.0-1 -> 2.1.1-1" & chr( 10 );
+fake.log = "[2026-11-14T10:00:00+0000] [PACMAN] starting full system upgrade" & chr( 10 ) & "[2026-11-15T21:42:10+0100] [PACMAN] starting full system upgrade" & chr( 10 );
+// (the whole report, with the restart check and the log, runs in tests/system-updates-test.sh: those read the process environment)
+testkit.check( "the helper is yay when it is there", new bxrig.util.Aur( proc ).helper() == "yay" );
+fake.has.yay = false; fake.has.paru = true;
+testkit.check( "paru is used when there is no yay", new bxrig.util.Aur( proc ).helper() == "paru" && new bxrig.util.Aur( proc ).available() );
+fake.has.paru = false;
+testkit.check( "no helper: unavailable", !new bxrig.util.Aur( proc ).available() );
+fake.has.yay = true;
+pu = pm.pendingUpdates();
+testkit.check( "pendingUpdates lists the repo rows", pu.ok && pu.rows.len() == 2 );
+fake.repoExit = 2; fake.repo = "";
+testkit.check( "checkupdates exit 2 means none, not an error", pm.pendingUpdates().ok && pm.pendingUpdates().rows.len() == 0 );
+fake.repoExit = 1; fake.repo = "error: failed to synchronize all databases";
+testkit.check( "checkupdates exit 1 is an error with its text", !pm.pendingUpdates().ok && find( "synchronize", pm.pendingUpdates().error ) > 0 );
+au = new bxrig.util.Aur( proc );
+fake.aurExit = 0; fake.aur = "paru-bin 2.1.0-1 -> 2.1.1-1" & chr( 10 );
+testkit.check( "AUR rows are read", au.pendingUpdates().ok && au.pendingUpdates().rows.len() == 1 );
+fake.aurExit = 1; fake.aur = "";
+testkit.check( "yay -Qua exit 1 with no output means none", au.pendingUpdates().ok && au.pendingUpdates().rows.len() == 0 );
+fake.aurExit = 1; fake.aur = "error: could not reach the AUR";
+testkit.check( "yay -Qua failing with text is an error", !au.pendingUpdates().ok );
+fake.has.checkupdates = false;
+r = su.report();
+testkit.check( "without checkupdates the report is not ok", !r.ok && find( "pacman-contrib", r.error ) > 0 );
+fake.has.pacman = false;
+testkit.check( "without pacman the report is not ok", !su.report().ok );
+testkit.done();

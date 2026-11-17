@@ -893,20 +893,23 @@ Updates, snapshots, DNS, kernels, keys and secrets.
 
 ### `bxrig system` {#bxrig-system}
 
-Update the system (a snapshot first), lock, suspend, log out, reboot, shut down.
+See what is waiting to be updated, update the system (a snapshot first), lock, suspend, log out, reboot, shut down.
 
 ```text
-bxrig system update [--yes] | lock | suspend | logout|reboot|shutdown [--yes] [--dry-run] [--json]
+bxrig system updates [--json]
+bxrig system update [--yes] [--dry-run] [--json]
+bxrig system lock | suspend | logout|reboot|shutdown [--yes] [--dry-run] [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
 
 ```bash
+bxrig system updates --json
 bxrig system update --yes
 bxrig system reboot --yes
 ```
 
-> lock and suspend act at once; logout, reboot and shutdown need --yes (the menu asks first).
+> updates only reads: repository and AUR counts and the package list, and whether a restart is needed (exit 4 without checkupdates from pacman-contrib). lock and suspend act at once; logout, reboot and shutdown need --yes (the menu asks first).
 
 ### `bxrig security` {#bxrig-security}
 

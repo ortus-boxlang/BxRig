@@ -294,6 +294,7 @@ class {
 				CLIExit( xit.usage() );
 				break;
 			case "system":
+				if ( p.len() == 2 && p[2] == "updates" ) CLIExit( new bxrig.SystemUpdates( cli ).run( asJson ) );
 				if ( p.len() == 2 && p[2] == "update" ) CLIExit( new bxrig.Update( cli ).systemUpdate( structKeyExists( args.options, "yes" ), asJson ) );
 				if ( p.len() == 2 && arrayFind( [ "lock", "suspend", "logout", "reboot", "shutdown" ], p[2] ) ) CLIExit( new bxrig.SystemActions( cli ).run( p[2], structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
 				println( new bxrig.CommandSpec().usage( "system" ) ); CLIExit( xit.usage() ); break;
