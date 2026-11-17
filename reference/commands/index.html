@@ -859,12 +859,22 @@ bxrig secrets run ANTHROPIC_API_KEY -- claude
 bxrig secrets list
 </code></pre>
 <h3 id="bxrig-vpn-bxrig-vpn"><a href="#bxrig-vpn-bxrig-vpn" id="bxrig-vpn-bxrig-vpn" name="bxrig-vpn-bxrig-vpn" class="anchor"></a><code>bxrig vpn</code> {#bxrig-vpn}</h3>
-<p>VPN post-install steps for NordVPN.</p>
-<pre><code class="language-text">bxrig vpn nordvpn setup [--yes] [--json]
+<p>VPNs in one list: saved NetworkManager profiles and the VPN apps (NordVPN, NordLayer, Tailscale, Mullvad); connect, disconnect, pick a place.</p>
+<pre><code class="language-text">bxrig vpn list | status [NAME] | locations NAME [--json]
+bxrig vpn connect NAME [--location=PLACE] | disconnect [NAME] [--dry-run] [--json]
+bxrig vpn set allow_several=true|false [--yes] [--dry-run] [--json]
+bxrig vpn nordvpn setup [--yes] [--json]
 </code></pre>
-<p>Changes the system: needs <code>--yes</code>. Without it you get the plan (exit 2); <code>--dry-run</code> shows it and exits 0.</p>
-<pre><code class="language-bash">bxrig vpn nordvpn setup --yes
+<pre><code class="language-bash">bxrig vpn list
+bxrig vpn connect tailscale
+bxrig vpn connect nordvpn --location=Germany
+bxrig vpn disconnect
+bxrig vpn set allow_several=true --yes
+bxrig vpn nordvpn setup --yes
 </code></pre>
+<blockquote>
+<p>NAME is a provider from <code>vpn list</code> (nordvpn, nordlayer, tailscale, mullvad) or a saved profile as listed there (<code>nm:Home</code>). Choosing one disconnects the one that is connected first, unless <code>allow_several=true</code> (Tailscale next to another VPN; routes and DNS can clash). connect and disconnect act at once and take <code>--dry-run</code>; <code>set</code> and <code>nordvpn setup</code> need <code>--yes</code>. The providers are data (<code>catalog/vpn-providers.json</code>, extend with <code>~/.config/bxrig/vpn-providers.json</code>). <code>list</code> is empty when no VPN is installed; the other verbs exit 4 then. <code>--location</code> takes a value from <code>vpn locations NAME</code> (<code>default</code> connects as it is, <code>none</code> clears a Tailscale exit node). The top bar VPN icon (plugin <code>bxrig/vpn</code>) is the same list.</p>
+</blockquote>
 <h3 id="bxrig-cloud-bxrig-cloud"><a href="#bxrig-cloud-bxrig-cloud" id="bxrig-cloud-bxrig-cloud" name="bxrig-cloud-bxrig-cloud" class="anchor"></a><code>bxrig cloud</code> {#bxrig-cloud}</h3>
 <p>Cloud storage with rclone: remotes, mounts as systemd user units.</p>
 <pre><code class="language-text">bxrig cloud remotes | configure | mount NAME [--path=DIR] [--yes] | unmount NAME [--yes] | status [--json]
@@ -1312,7 +1322,7 @@ bxrig wifi status --json
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/reference/commands.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/reference/commands.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 17, 2026, 9&#x3a;55&#x3a;53 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Command%20reference&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Freference%2Fcommands%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/reference/commands.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/reference/commands.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 17, 2026, 9&#x3a;58&#x3a;28 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Command%20reference&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Freference%2Fcommands%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
