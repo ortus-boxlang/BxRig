@@ -42,23 +42,65 @@ class BarLayouts {
 		};
 	}
 
+	// The bar widget NoctaliaConfig writes -> the chip that previews it (NoctaliaConfig.zones is the one place that owns the order).
+	function widgetChips() {
+		return { "bxrig-menu": "logo", workspaces: "ws", active_window: "win", "bxrig-clock": "clock", weather: "weather", media: "media",
+			"bxrig-agents": "agents", screenshot: "cap", "bxrig-system": "sys", "bxrig-dev": "dev", "bxrig-vpn": "vpn", tray: "tray",
+			clipboard: "clip", network: "net", bluetooth: "bt", volume: "vol", brightness: "bright", battery: "bat", notifications: "bell",
+			"bxrig-quick": "quick", "control-center": "ctl" };
+	}
+
+	// The chip ids of one zone of a layout, in the order NoctaliaConfig writes them (the battery chip is always listed: the preview says laptop only).
+	function zoneChips( key, zone ) {
+		var z = new bxrig.NoctaliaConfig().zones( arguments.key, { dock: true, battery: true } )[ arguments.zone ];
+		var m = widgetChips();
+		var out = [];
+		for ( var w in z ) if ( structKeyExists( m, w ) ) out.append( m[ w ] );
+		return out;
+	}
+
+	// "Logo menu, workspaces, ..." from the chip labels, in bar order.
+	function listChips( ids ) {
+		var names = { logo: "logo menu", ws: "workspaces", win: "active window", clock: "clock", media: "media", agents: "agents", dev: "Developer",
+			sys: "System", cap: "capture", tray: "tray", clip: "clipboard history", net: "network", vpn: "VPN", bt: "bluetooth", vol: "volume",
+			bright: "brightness", bat: "battery (laptop only)", bell: "notifications", quick: "quick settings", ctl: "control center", weather: "weather" };
+		var out = [];
+		for ( var i in arguments.ids ) out.append( names[ i ] );
+		return out;
+	}
+
 	function layout( key ) {
 		var all = {
 			minimal: { name: "Minimal", tag: "", desc: "Quiet, like a Mac menu bar. The dock holds your apps.",
-				L: [ "logo", "ws", "win" ], C: [ "clock" ], R: [ "tray", "net", "vol", "bat", "bell", "quick", "ctl" ],
-				inc: "Logo menu, workspaces, active window, clock, tray, network, volume, battery (laptop only), notifications, quick settings and the control center. No capture icon.",
+				L: [ "logo", "ws", "win" ], C: [ "clock" ], R: [],
+				inc: "",
 				note: "", detail: "Minimal: the fewest icons. Everything else is one click away in the logo menu and the control center." },
 			standard: { name: "Standard", tag: "recommended, default", desc: "The balanced bar: what you use every day, nothing you rarely touch.",
-				L: [ "logo", "ws", "win" ], C: [ "clock", "media" ], R: [ "agents", "dev", "sys", "cap", "tray", "clip", "net", "vpn", "bt", "vol", "bat", "bell", "quick", "ctl" ],
-				inc: "Logo menu, workspaces, active window, clock, media, agents, Developer, System, capture, tray, clipboard history, network, VPN, bluetooth, volume, battery (laptop only), notifications, quick settings and the control center last.",
+				L: [ "logo", "ws", "win" ], C: [ "clock", "media" ], R: [],
+				inc: "",
 				note: "", detail: "Standard: the recommended bar, the one you get if you just press Enter." },
 			dense: { name: "Dense", tag: "developer", desc: "Every status in view at once. Needs a wide screen.",
-				L: [ "logo", "ws", "win" ], C: [ "clock", "weather", "media" ], R: [ "agents", "dev", "sys", "cap", "tray", "clip", "net", "vpn", "bt", "vol", "bright", "bat", "bell", "quick", "ctl" ],
-				inc: "Everything in Standard, plus brightness and weather.",
+				L: [ "logo", "ws", "win" ], C: [ "clock", "weather", "media" ], R: [],
+				inc: "",
 				note: "Caffeine is not a bar icon: it stays a switch in Quick settings.", detail: "Dense: for developers with a wide screen; a small one hides some icons." }
 		};
-		var l = all[ valid( arguments.key ) ? arguments.key : "standard" ];
-		l.key = valid( arguments.key ) ? arguments.key : "standard";
+		var k = valid( arguments.key ) ? arguments.key : "standard";
+		var l = all[ k ];
+		l.key = k;
+		l.L = zoneChips( k, "start" );
+		l.C = zoneChips( k, "center" );
+		l.R = zoneChips( k, "end" );
+		var words = [];
+		for ( var w in listChips( l.L ) ) words.append( w );
+		for ( var w in listChips( l.C ) ) words.append( w );
+		for ( var w in listChips( l.R ) ) words.append( w );
+		var text = "";
+		for ( var i = 1; i <= words.len(); i++ ) {
+			var piece = i == 1 ? ucase( left( words[ i ], 1 ) ) & mid( words[ i ], 2, 200 ) : words[ i ];
+			text &= i == 1 ? piece : ( i == words.len() ? " and the " & piece : ", " & piece );
+		}
+		l.inc = k == "dense" ? "Everything in Standard, plus brightness and weather." : text & ".";
+		if ( k == "minimal" ) l.inc &= " No capture icon.";
 		return l;
 	}
 

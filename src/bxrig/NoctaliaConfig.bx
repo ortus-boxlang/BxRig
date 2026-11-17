@@ -40,14 +40,23 @@ class NoctaliaConfig {
 	function defaultLayout() { return "standard"; }
 	function validLayout( name ) { return arrayFind( layouts(), arguments.name ) > 0; }
 
-	// The one-line description of each layout (the wizard preview and `appearance bar layout status` show it).
+	// The words that name each bar widget in descriptions (battery is listed: it appears on a laptop).
+	function widgetWords() {
+		return { "bxrig-menu": "logo", workspaces: "workspaces", active_window: "active window", launcher: "launcher", "bxrig-clock": "clock", weather: "weather", media: "media",
+			"bxrig-agents": "agents", screenshot: "capture", "bxrig-system": "system", "bxrig-dev": "developer", "bxrig-vpn": "VPN", tray: "tray", clipboard: "clipboard",
+			network: "network", bluetooth: "bluetooth", volume: "volume", brightness: "brightness", battery: "battery", notifications: "notifications",
+			"bxrig-quick": "quick settings", "control-center": "control center" };
+	}
+
+	// The one-line description of each layout (the wizard preview and `appearance bar layout status` show it), written from zones() so it cannot drift from the config.
 	function describe( layout ) {
-		var d = {
-			minimal: "logo, workspaces, active window | clock | quick settings, tray, network, volume, battery, notifications, control center",
-			standard: "logo, workspaces, active window | clock, media | agents, capture, system, developer, tray, clipboard, network, bluetooth, volume, battery, notifications, quick settings, control center",
-			dense: "Standard plus weather and brightness (caffeine is a switch in quick settings, not an icon)"
-		};
-		return structKeyExists( d, arguments.layout ) ? d[ arguments.layout ] : "";
+		if ( !validLayout( arguments.layout ) ) return "";
+		if ( compare( arguments.layout, "dense" ) == 0 ) return "Standard plus weather and brightness (caffeine is a switch in quick settings, not an icon)";
+		var z = zones( arguments.layout, { dock: true, battery: true } );
+		var w = widgetWords();
+		var parts = [];
+		for ( var zone in [ "start", "center", "end" ] ) parts.append( z[ zone ].map( function( n ) { return w[ n ]; } ).toList( ", " ) );
+		return parts.toList( " | " );
 	}
 
 	// The clock reads "Nov 5 - 04:00".

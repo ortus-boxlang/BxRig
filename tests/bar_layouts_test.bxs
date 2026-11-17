@@ -9,6 +9,12 @@ testkit.check( "Dense adds brightness and weather to Standard", bl.carries( "den
 testkit.check( "Minimal keeps workspaces, the active window and quick settings (DESKTOP-DECISIONS.md)", bl.carries( "minimal", "ws" ) && bl.carries( "minimal", "win" ) && bl.carries( "minimal", "quick" ) && !bl.carries( "minimal", "clip" ) );
 function ids( k ) { var l = bl.layout( k ); var out = []; for ( var z in [ l.L, l.C, l.R ] ) for ( var i in z ) out.append( i ); return out; }
 function holds( big, small ) { for ( var i in small ) if ( !arrayFind( big, i ) ) return false; return true; }
+nc = new bxrig.NoctaliaConfig();
+canon = "agents,cap,sys,dev,vpn,tray,clip,net,bt,vol,bat,bell,quick,ctl";
+testkit.check( "the Standard and Dense right zone is the canonical order agents, capture, system, dev, vpn, tray, clipboard, network, bluetooth, volume, battery, notifications, quick, control center", bl.layout( "standard" ).R.toList( "," ) == canon && bl.layout( "dense" ).R.toList( "," ) == "agents,cap,sys,dev,vpn,tray,clip,net,bt,vol,bright,bat,bell,quick,ctl" );
+testkit.check( "the previews come from NoctaliaConfig.zones: every layout's three zones have as many chips as widgets", [ "minimal", "standard", "dense" ].every( function( k ) { var z = nc.zones( k, { dock: true, battery: true } ); var l = bl.layout( k ); return l.L.len() == z.start.len() && l.C.len() == z.center.len() && l.R.len() == z.end.len(); } ) );
+testkit.check( "the inc sentence lists the right zone in bar order, VPN included", find( "agents, Developer", bl.layout( "standard" ).inc ) == 0 && find( "capture, System, Developer, VPN, tray", bl.layout( "standard" ).inc ) > 0 );
+testkit.check( "the described layouts (appearance bar layout status) list system before developer and VPN", find( "capture, system, developer, VPN, tray", nc.describe( "standard" ) ) > 0 && find( "capture, system, developer, VPN, tray", nc.describe( "minimal" ) ) == 0 );
 testkit.check( "each layout holds the one before it (Minimal in Standard in Dense)", holds( ids( "standard" ), ids( "minimal" ) ) && holds( ids( "dense" ), ids( "standard" ) ) );
 testkit.check( "clipboard history is on the right, quick settings then control center last", bl.layout( "standard" ).R[ bl.layout( "standard" ).R.len() ] == "ctl" && bl.layout( "standard" ).R[ bl.layout( "standard" ).R.len() - 1 ] == "quick" && bl.carries( "standard", "clip" ) );
 testkit.check( "every chip id used is a known chip", ids( "dense" ).filter( function( i ) { return !structKeyExists( bl.chips(), i ); } ).len() == 0 );
