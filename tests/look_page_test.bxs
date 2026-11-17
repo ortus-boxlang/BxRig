@@ -95,5 +95,14 @@ view3.paint( app3, 5, 120, 40 );
 testkit.check( "colours: a theme applied meanwhile is not picked up between checks", view3.kit().color( "BASE" ) == nordBase );
 view3.paint( app3, 20, 120, 40 );
 testkit.check( "colours: it is picked up within a second (20 frames), so applying a theme from the Themes page recolours the screen", view3.kit().color( "BASE" ) == gruvBase );
+// the theme row follows a theme applied meanwhile
+lp = new bxrig.LookPage( false, new bxrig.Palette( env ) ); lp.load();
+app4 = new bxrig.ControlCenterApp( [ lp ], "look" );
+fileWrite( home & "/cfg/bxrig/theme.json", '{"name":"nord","mode":"theme"}' );
+view3.paint( app4, 20, 120, 40 );
+testkit.check( "the Look page's Color theme row shows the applied theme (Nord) within a second", find( "Nord", tui.render_to_string( 120, 40 ) ) > 0 );
+fileWrite( home & "/cfg/bxrig/theme.json", '{"name":"gruvbox","mode":"theme"}' );
+view3.paint( app4, 40, 120, 40 );
+testkit.check( "and the next theme after that (Gruvbox)", find( "Gruvbox", tui.render_to_string( 120, 40 ) ) > 0 );
 testkit.check( "colours: the whole screen is drawn with it (the fill is the new base)", nordBase != gruvBase );
 testkit.done();

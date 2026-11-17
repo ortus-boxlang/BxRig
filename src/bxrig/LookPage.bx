@@ -6,8 +6,10 @@
 // bxrig command like any other in the Control Center: the plan (the command with --dry-run) first, then a y runs it. Values come from LookData.
 //   id() title() icon() load() state() keys() paint( kit, x, y, w, h, tick, phase ) onKey( key ) act( hit ) onScroll( dir ) usesLeft()
 class LookPage {
-	function init( demo = false ) {
+	function init( demo = false, palette = "" ) {
+		variables.palette = isSimpleValue( arguments.palette ) ? new bxrig.Palette() : arguments.palette;   // a Palette made with an Env: tests
 		variables.data = new bxrig.LookData( arguments.demo );
+		variables.demo = arguments.demo;
 		variables.look = {};
 		variables.cursor = 1;
 		variables.loaded = false;
@@ -105,6 +107,11 @@ class LookPage {
 		var k = arguments.kit;
 		var C = function( n ) { return k.color( n ); };
 		var pv = new bxrig.LookPreview( k );
+		// the theme can change under the page (applied from the Themes page): look again once a second
+		if ( variables.loaded && !variables.demo && arguments.tick mod 20 == 0 ) {
+			var applied = variables.palette.activeName();
+			if ( len( applied ) ) variables.look.theme = applied;
+		}
 		var l = variables.loaded ? variables.look : variables.data.defaults();
 		var ico = k.icon( icon() );
 		if ( len( ico ) ) k.put( arguments.x + 1, arguments.y, ico, C( "GREEN" ), C( "BASE" ) );
@@ -163,15 +170,18 @@ class LookPage {
 			}
 			cy += gh;
 		}
-		// the selected setting: what it does and the command behind it
+		// the selected setting: what it does (two lines at most) and the command behind it
 		var cur = rws[ variables.cursor ];
-		if ( cy + 5 <= bottom ) {
-			k.panel( px, cy, pw, 5, "Selected", false, arguments.phase );
-			k.fillRect( px + 1, cy + 1, pw - 2, 3, C( "MANTLE" ) );
+		var dl = k.wrap( cur.desc, pw - 6 );
+		var shown = min( 2, dl.len() );
+		var sh = 4 + shown;
+		if ( cy + sh <= bottom ) {
+			k.panel( px, cy, pw, sh, "Selected", false, arguments.phase );
+			k.fillRect( px + 1, cy + 1, pw - 2, sh - 2, C( "MANTLE" ) );
 			k.put( px + 2, cy + 1, cur.label, C( "TEXT" ), C( "MANTLE" ), true );
-			for ( var line in k.wrap( cur.desc, pw - 6 ) ) { k.put( px + 2, cy + 2, line, C( "SUB" ), C( "MANTLE" ) ); break; }
-			var kx = k.put( px + 2, cy + 3, " $ ", C( "CRUST" ), C( "GREEN" ), true );
-			k.put( kx + 1, cy + 3, k.trunc( cur.cmd, pw - 10 ), C( "TEXT" ), C( "MANTLE" ) );
+			for ( var n = 1; n <= shown; n++ ) k.put( px + 2, cy + 1 + n, dl[ n ], C( "SUB" ), C( "MANTLE" ) );
+			var kx = k.put( px + 2, cy + 2 + shown, " $ ", C( "CRUST" ), C( "GREEN" ), true );
+			k.put( kx + 1, cy + 2 + shown, k.trunc( cur.cmd, pw - 10 ), C( "TEXT" ), C( "MANTLE" ) );
 		} else if ( cy + 1 <= bottom ) {
 			k.put( px + 2, cy, k.trunc( cur.desc, pw - 4 ), C( "SUB" ), C( "BASE" ) );
 		}
