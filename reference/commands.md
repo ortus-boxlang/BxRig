@@ -893,20 +893,25 @@ Updates, snapshots, DNS, kernels, keys and secrets.
 
 ### `bxrig system` {#bxrig-system}
 
-Update the system (a snapshot first), lock, suspend, log out, reboot, shut down.
+See what is waiting to be updated, update the system (a snapshot first), lock, suspend, log out, reboot, shut down.
 
 ```text
-bxrig system update [--yes] | lock | suspend | logout|reboot|shutdown [--yes] [--dry-run] [--json]
+bxrig system updates [--json]
+bxrig system update [--repo | --aur | --all] [--yes] [--dry-run] [--json]
+bxrig system lock | suspend | logout|reboot|shutdown [--yes] [--dry-run] [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
 
 ```bash
+bxrig system updates --json
 bxrig system update --yes
+bxrig system update --repo --dry-run
+bxrig system update --aur --yes
 bxrig system reboot --yes
 ```
 
-> lock and suspend act at once; logout, reboot and shutdown need --yes (the menu asks first).
+> updates only reads: repository and AUR counts and the package list, and whether a restart is needed (exit 4 without checkupdates from pacman-contrib). update takes a snapshot first, then updates the repository (--repo), the AUR (--aur, exit 4 without yay or paru) or both (--all, the default). lock and suspend act at once; logout, reboot and shutdown need --yes (the menu asks first).
 
 ### `bxrig security` {#bxrig-security}
 
@@ -1125,12 +1130,14 @@ bxrig backup data include|exclude add|remove PATH_OR_PATTERN
 bxrig backup send ID|all --to=TARGET [--from=TARGET] [--yes]
 bxrig backup export data ID --to=FILE.tar|FILE.zip [--path=/PATH] [--target=NAME] [--yes]
 bxrig backup export config ID --to=FILE.tar.gz [--yes]
+bxrig backup status [--json]
 bxrig backup timeline [--local] [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
 
 ```bash
+bxrig backup status --json
 bxrig backup config now
 bxrig backup config list
 bxrig backup config diff 20261113T153000

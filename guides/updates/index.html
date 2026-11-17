@@ -235,7 +235,7 @@
 		
 		
 		
-			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#channels">Channels</a></li><li class="toc-level-2"><a href="#update-bxrig">Update BxRig</a></li><li class="toc-level-2"><a href="#get-told-about-updates">Get told about updates</a></li><li class="toc-level-2"><a href="#update-the-system">Update the system</a></li><li class="toc-level-2"><a href="#agent-skills">Agent skills</a></li></ul></details>
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#channels">Channels</a></li><li class="toc-level-2"><a href="#update-bxrig">Update BxRig</a></li><li class="toc-level-2"><a href="#get-told-about-updates">Get told about updates</a></li><li class="toc-level-2"><a href="#see-what-is-waiting">See what is waiting</a></li><li class="toc-level-2"><a href="#update-the-system">Update the system</a></li><li class="toc-level-2"><a href="#agent-skills">Agent skills</a></li></ul></details>
 		
 
 		
@@ -264,9 +264,24 @@ bxrig update apply --yes        # download, verify, replace atomically
 bxrig update notifications off
 </code></pre>
 <p>The notification covers BxRig and pending system packages.</p>
-<h2 id="update-the-system"><a href="#update-the-system" id="update-the-system" name="update-the-system" class="anchor"></a>Update the system</h2>
-<pre><code class="language-bash">bxrig system update --yes       # snapshot first (snapper or timeshift), then pacman -Syu and yay -Sua
+<h2 id="see-what-is-waiting"><a href="#see-what-is-waiting" id="see-what-is-waiting" name="see-what-is-waiting" class="anchor"></a>See what is waiting</h2>
+<pre><code class="language-bash">bxrig system updates            # counts, the package list and whether a restart is needed
+bxrig system updates --json     # the same as data for scripts and the System panel in the bar
 </code></pre>
+<p>It reads only: repository packages from <code>checkupdates</code> (the <code>pacman-contrib</code> package) and AUR packages from <code>yay -Qua</code> or <code>paru -Qua</code>. It exits 0 even when updates are waiting, and 4 when <code>checkupdates</code> is missing or cannot reach the mirrors.</p>
+<p>A restart is called for in two cases, and <code>needs_reboot</code> is true for either:</p>
+<ul>
+<li><strong>Pending.</strong> An update in the list replaces a kernel (<code>linux</code>, <code>linux-lts</code>, <code>linux-zen</code>, <code>linux-cachyos</code> and the other flavours, not their <code>-headers</code> or <code>-docs</code>), <code>systemd</code>, <code>glibc</code>, <code>linux-firmware</code>, a CPU microcode package (<code>intel-ucode</code>, <code>amd-ucode</code>) or the NVIDIA driver. <code>reboot_pending</code> is true.</li>
+<li><strong>Stale.</strong> The kernel that runs is gone from <code>/usr/lib/modules</code>, which means an update already replaced it. <code>reboot_stale</code> is true.</li>
+</ul>
+<p><code>reboot_reasons</code> says why in words. The last full system upgrade comes from <code>/var/log/pacman.log</code>.</p>
+<h2 id="update-the-system"><a href="#update-the-system" id="update-the-system" name="update-the-system" class="anchor"></a>Update the system</h2>
+<pre><code class="language-bash">bxrig system update             # the plan: the snapshot step, then the update steps (exit 2)
+bxrig system update --yes       # snapshot first (snapper or timeshift), then pacman -Syu and yay -Sua
+bxrig system update --repo --yes   # the snapshot and the repository packages only
+bxrig system update --aur --yes    # the snapshot and the AUR packages only (yay, else paru; exit 4 without one)
+</code></pre>
+<p><code>--all</code> is the default. Every scope takes the snapshot first, and says so when snapper and timeshift are both missing. In a terminal each step is named as it starts, and a restart is mentioned at the end when the kernel was replaced.</p>
 <h2 id="agent-skills"><a href="#agent-skills" id="agent-skills" name="agent-skills" class="anchor"></a>Agent skills</h2>
 <p><code>bxrig skills update --yes</code> refreshes the skills BxRig installed.</p>
 
@@ -274,7 +289,7 @@ bxrig update notifications off
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/updates.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/updates.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 17, 2026, 10&#x3a;02&#x3a;38 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Updates%20and%20channels&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fupdates%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/updates.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/updates.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 17, 2026, 10&#x3a;05&#x3a;10 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Updates%20and%20channels&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fupdates%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
@@ -318,7 +333,7 @@ bxrig update notifications off
 			
 			
 				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
-					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#channels">Channels</a></li><li class="toc-level-2"><a href="#update-bxrig">Update BxRig</a></li><li class="toc-level-2"><a href="#get-told-about-updates">Get told about updates</a></li><li class="toc-level-2"><a href="#update-the-system">Update the system</a></li><li class="toc-level-2"><a href="#agent-skills">Agent skills</a></li></ul></nav>
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#channels">Channels</a></li><li class="toc-level-2"><a href="#update-bxrig">Update BxRig</a></li><li class="toc-level-2"><a href="#get-told-about-updates">Get told about updates</a></li><li class="toc-level-2"><a href="#see-what-is-waiting">See what is waiting</a></li><li class="toc-level-2"><a href="#update-the-system">Update the system</a></li><li class="toc-level-2"><a href="#agent-skills">Agent skills</a></li></ul></nav>
 				</aside>
 			
 		</div>

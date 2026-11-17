@@ -800,15 +800,20 @@ bxrig notify battery
 <h2 id="system-and-security"><a href="#system-and-security" id="system-and-security" name="system-and-security" class="anchor"></a>System and security</h2>
 <p>Updates, snapshots, DNS, kernels, keys and secrets.</p>
 <h3 id="bxrig-system-bxrig-system"><a href="#bxrig-system-bxrig-system" id="bxrig-system-bxrig-system" name="bxrig-system-bxrig-system" class="anchor"></a><code>bxrig system</code> {#bxrig-system}</h3>
-<p>Update the system (a snapshot first), lock, suspend, log out, reboot, shut down.</p>
-<pre><code class="language-text">bxrig system update [--yes] | lock | suspend | logout|reboot|shutdown [--yes] [--dry-run] [--json]
+<p>See what is waiting to be updated, update the system (a snapshot first), lock, suspend, log out, reboot, shut down.</p>
+<pre><code class="language-text">bxrig system updates [--json]
+bxrig system update [--repo | --aur | --all] [--yes] [--dry-run] [--json]
+bxrig system lock | suspend | logout|reboot|shutdown [--yes] [--dry-run] [--json]
 </code></pre>
 <p>Changes the system: needs <code>--yes</code>. Without it you get the plan (exit 2); <code>--dry-run</code> shows it and exits 0.</p>
-<pre><code class="language-bash">bxrig system update --yes
+<pre><code class="language-bash">bxrig system updates --json
+bxrig system update --yes
+bxrig system update --repo --dry-run
+bxrig system update --aur --yes
 bxrig system reboot --yes
 </code></pre>
 <blockquote>
-<p>lock and suspend act at once; logout, reboot and shutdown need --yes (the menu asks first).</p>
+<p>updates only reads: repository and AUR counts and the package list, and whether a restart is needed (exit 4 without checkupdates from pacman-contrib). update takes a snapshot first, then updates the repository (--repo), the AUR (--aur, exit 4 without yay or paru) or both (--all, the default). lock and suspend act at once; logout, reboot and shutdown need --yes (the menu asks first).</p>
 </blockquote>
 <h3 id="bxrig-security-bxrig-security"><a href="#bxrig-security-bxrig-security" id="bxrig-security-bxrig-security" name="bxrig-security-bxrig-security" class="anchor"></a><code>bxrig security</code> {#bxrig-security}</h3>
 <p>Fingerprint and security key for sudo, SSH server, passwordless sudo, with guards.</p>
@@ -959,10 +964,12 @@ bxrig backup data include|exclude add|remove PATH_OR_PATTERN
 bxrig backup send ID|all --to=TARGET [--from=TARGET] [--yes]
 bxrig backup export data ID --to=FILE.tar|FILE.zip [--path=/PATH] [--target=NAME] [--yes]
 bxrig backup export config ID --to=FILE.tar.gz [--yes]
+bxrig backup status [--json]
 bxrig backup timeline [--local] [--json]
 </code></pre>
 <p>Changes the system: needs <code>--yes</code>. Without it you get the plan (exit 2); <code>--dry-run</code> shows it and exits 0.</p>
-<pre><code class="language-bash">bxrig backup config now
+<pre><code class="language-bash">bxrig backup status --json
+bxrig backup config now
 bxrig backup config list
 bxrig backup config diff 20261113T153000
 bxrig backup config restore 20261113T153000 --dry-run
@@ -1322,7 +1329,7 @@ bxrig wifi status --json
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/reference/commands.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/reference/commands.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 17, 2026, 10&#x3a;02&#x3a;38 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Command%20reference&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Freference%2Fcommands%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/reference/commands.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/reference/commands.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 17, 2026, 10&#x3a;05&#x3a;10 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Command%20reference&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Freference%2Fcommands%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
