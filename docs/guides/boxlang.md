@@ -38,6 +38,14 @@ bxrig boxlang matchbox env set OPENAI_API_KEY sk-... --yes
 bxrig boxlang matchbox log-level debug --yes
 ```
 
+BxRig writes the result of every command to its own MatchBox log, `~/.matchbox/logs/bxrig.log`, as `[bxrig] boxlang exit 4`. MatchBox keeps warnings and errors by default, so a normal run writes nothing and a failed precondition (exit 4) or a failure (exit 5 or 6) is recorded. To see every command, set the level of the `bxrig` logger in `~/.matchbox/config/boxlang.json`:
+
+```json
+{ "logging": { "loggers": { "bxrig": { "level": "INFO" } } } }
+```
+
+Exit 0 is written at `INFO`, a usage error or plan (2) and an update notice (10) at `DEBUG`, and exits 1, 3 and 4 as warnings. Nothing is written with an older MatchBox that has no runtime home.
+
 These files and folders belong to MatchBox releases that have a runtime home. With an older MatchBox the commands still work on the files, but nothing reads them.
 
 ## Compile to a native binary
