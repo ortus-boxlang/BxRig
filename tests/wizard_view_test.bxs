@@ -70,4 +70,10 @@ app = new bxrig.WizardApp( spec2 ); app.onKey( "Enter" ); for ( i = 1; i <= 10; 
 view.paint( app, 100, 100, 44 ); t = tui.render_to_string( 100, 44 );
 testkit.check( "the API keys help wraps: its last words are on screen at 100 columns", find( "Stored in your desktop keyring", t ) > 0 && find( "shell history", t ) > 0 );
 
+// ---- the review keeps room for the answer when a question label is long (the answers used to shrink to two characters) ----
+longSpec = jsonDeserialize( '{"title":"T","pages":[{"id":"a","title":"A","questions":[{"type":"choice","id":"c","label":"Event Calendar with an agenda instead of the plain clock in the top panel","default":"red","options":[{"value":"red","label":"Crimson answer"}]}]}]}' );
+app = new bxrig.WizardApp( longSpec ); app.gotoReview();
+view.paint( app, 100, 100, 36 ); t = tui.render_to_string( 100, 36 );
+testkit.check( "a long review label is cut and its answer is shown whole", find( "Crimson answer", t ) > 0 );
+
 testkit.done( "all passed" );
