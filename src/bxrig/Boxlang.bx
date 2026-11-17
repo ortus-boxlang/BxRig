@@ -82,6 +82,125 @@ class Boxlang {
 		return variables.out.say( "ok", { tool: arguments.tool, version: arguments.version }, arguments.asJson, [ arguments.tool & " now uses " & arguments.version ] );
 	}
 
+	// MatchBox keeps its own files, created on its first run: the home (~/.matchbox, or MATCHBOX_HOME) with config/boxlang.json and logs/,
+	// and the user .env file (~/.matchbox.env). A ./.env and a ./boxlang.json in the directory a program runs in are read too.
+	function mbHome() {
+		var e = new bxrig.util.Env();
+		return e.named( "matchboxHome", e.home() & "/.matchbox" );
+	}
+
+	function mbConfigFile() { return mbHome() & "/config/boxlang.json"; }
+
+	function mbEnvFile() { return new bxrig.util.Env().home() & "/.matchbox.env"; }
+
+	// `matchbox status | log-level LEVEL | env list|set KEY VALUE|unset KEY` (`matchbox use VERSION` is use( "mvm", ... )).
+	function matchbox( action, args, yes, dry, asJson ) {
+		var a = arguments.args;
+		if ( arguments.action == "status" && !a.len() ) return mbStatus( arguments.asJson );
+		if ( arguments.action == "log-level" && a.len() == 1 ) return mbLogLevel( a[ 1 ], arguments.yes, arguments.dry, arguments.asJson );
+		if ( arguments.action == "env" && a.len() >= 1 ) return mbEnv( a[ 1 ], a.len() > 1 ? a.slice( 2 ) : [], arguments.yes, arguments.dry, arguments.asJson );
+		return variables.out.usage( "usage: bxrig boxlang matchbox use VERSION | status | log-level LEVEL | env list | env set KEY VALUE | env unset KEY", arguments.asJson );
+	}
+
+	function mbStatus( asJson ) {
+		var e = new bxrig.util.Env();
+		var cwd = e.named( "pwd", "." );
+		var home = mbHome();
+		var logs = [];
+		if ( directoryExists( home & "/logs" ) ) for ( var f in directoryList( home & "/logs", false, "name" ) ) if ( right( f, 4 ) == ".log" ) logs.append( f );
+		logs.sort( "text" );
+		var d = {
+			version: versionOf( "matchbox", "--version" ), home: home, home_exists: directoryExists( home ),
+			config: mbConfigFile(), config_exists: fileExists( mbConfigFile() ),
+			project_config: cwd & "/boxlang.json", project_config_exists: fileExists( cwd & "/boxlang.json" ),
+			env_user: mbEnvFile(), env_user_exists: fileExists( mbEnvFile() ),
+			env_project: cwd & "/.env", env_project_exists: fileExists( cwd & "/.env" ),
+			logs_dir: home & "/logs", logs: logs
+		};
+		var yn = function( ok, yes, no ) { return ok ? yes : no; };
+		return variables.out.say( "ok", d, arguments.asJson, [
+				"MatchBox:  " & ( len( d.version ) ? d.version : "not installed" ),
+				"Home:      " & d.home & "  (" & yn( d.home_exists, "exists", "created on the first run of a MatchBox that has a home" ) & ")",
+				"Config:    " & d.config & "  (" & yn( d.config_exists, "present", "missing" ) & ")",
+				"Project:   " & d.project_config & "  (" & yn( d.project_config_exists, "present, layered over the home config", "none" ) & ")",
+				"Env files: " & d.env_user & " (" & yn( d.env_user_exists, "present", "none" ) & "), " & d.env_project & " (" & yn( d.env_project_exists, "present", "none" ) & ")",
+				"Logs:      " & d.logs_dir & "  (" & logs.len() & " file" & yn( logs.len() == 1, "", "s" ) & ")" & ( logs.len() ? ": " & logs.toList( ", " ) : "" )
+			] );
+	}
+
+	// Sets logging.rootLevel in the home's config/boxlang.json by editing the one value, so its comments stay. Without a config file it writes a small one.
+	function mbLogLevel( level, yes, dry, asJson ) {
+		var lv = uCase( trim( arguments.level ) );
+		if ( !arrayFind( [ "ERROR", "WARN", "INFO", "DEBUG", "TRACE", "OFF" ], lv ) ) return variables.out.precondition( "bad log level " & arguments.level & " (ERROR, WARN, INFO, DEBUG, TRACE or OFF)", arguments.asJson );
+		var file = mbConfigFile();
+		var nl = chr( 10 );
+		var body = "";
+		if ( fileExists( file ) ) {
+			var old = fileRead( file );
+			// The one `"rootLevel": "X"` token is replaced as exact text (this MatchBox's reReplace has no backreferences), so nothing else moves.
+			var token = reMatch( '"rootLevel"\s*:\s*"[A-Za-z]+"', old );
+			if ( token.len() != 1 ) return variables.out.precondition( file & " must have exactly one logging.rootLevel to change; edit it by hand", arguments.asJson );
+			body = replace( old, token[ 1 ], '"rootLevel": "' & lv & '"' );
+		} else {
+			body = "{" & nl & chr( 9 ) & '"logging": { "rootLevel": "' & lv & '" }' & nl & "}" & nl;
+		}
+		if ( !arguments.yes || arguments.dry ) return new bxrig.util.Mutation( variables.out ).show( "set logging.rootLevel to " & lv, { file: file, level: lv }, arguments.asJson, arguments.dry, [ "  file: " & file ] );
+		try {
+			directoryCreate( getDirectoryFromPath( file ), true, true );
+			fileWrite( file, body );
+		} catch ( any e ) { return variables.out.failed( "could not write " & file & ": " & e.message, arguments.asJson ); }
+		return variables.out.say( "ok", { file: file, level: lv }, arguments.asJson, [ "logging.rootLevel is " & lv & " in " & file ] );
+	}
+
+	// The key of one .env line, or "" for a blank line or a comment.
+	function mbEnvKey( line ) {
+		var t = trim( arguments.line );
+		if ( !len( t ) || left( t, 1 ) == chr( 35 ) ) return "";
+		if ( left( t, 7 ) == "export " ) t = trim( mid( t, 8 ) );
+		var at = find( "=", t );
+		return at > 1 ? trim( left( t, at - 1 ) ) : "";
+	}
+
+	// `env list` names the keys of ~/.matchbox.env and never shows a value; `set` and `unset` change one line and keep the rest (mode 600).
+	function mbEnv( action, args, yes, dry, asJson ) {
+		var file = mbEnvFile();
+		var nl = chr( 10 );
+		var lines = fileExists( file ) ? listToArray( fileRead( file ), nl, true ) : [];
+		while ( lines.len() && !len( trim( lines[ lines.len() ] ) ) ) lines.deleteAt( lines.len() );
+		if ( arguments.action == "list" && !arguments.args.len() ) {
+			var keys = [];
+			var shown = [ file & ( fileExists( file ) ? "" : "  (none yet)" ) ];
+			for ( var l in lines ) { var k = mbEnvKey( l ); if ( len( k ) ) { keys.append( k ); shown.append( "  " & k ); } }
+			return variables.out.say( "ok", { file: file, exists: fileExists( file ), keys: keys }, arguments.asJson, shown );
+		}
+		var isSet = arguments.action == "set" && arguments.args.len() == 2;
+		var isUnset = arguments.action == "unset" && arguments.args.len() == 1;
+		if ( !isSet && !isUnset ) return variables.out.usage( "usage: bxrig boxlang matchbox env list | set KEY VALUE | unset KEY", arguments.asJson );
+		var key = arguments.args[ 1 ];
+		if ( !reFind( "^[A-Za-z_][A-Za-z0-9_]{0,63}$", key ) ) return variables.out.precondition( "bad name " & key & " (letters, digits and _, not starting with a digit)", arguments.asJson );
+		var out = [];
+		var found = false;
+		if ( isSet ) {
+			var v = arguments.args[ 2 ];
+			if ( find( chr( 10 ), v ) || find( chr( 13 ), v ) ) return variables.out.precondition( "the value cannot contain a line break", arguments.asJson );
+			if ( find( '"', v ) && find( "'", v ) ) return variables.out.precondition( "the value cannot contain both quote characters", arguments.asJson );
+			var q = ( reFind( "[\s#]", v ) || left( v, 1 ) == '"' || left( v, 1 ) == "'" ) ? ( find( '"', v ) ? "'" : '"' ) : "";
+			var entry = key & "=" & q & v & q;
+			for ( var l2 in lines ) {
+				if ( mbEnvKey( l2 ) == key ) { if ( !found ) out.append( entry ); found = true; } else out.append( l2 );
+			}
+			if ( !found ) out.append( entry );
+		} else {
+			for ( var l3 in lines ) { if ( mbEnvKey( l3 ) == key ) found = true; else out.append( l3 ); }
+			if ( !found ) return variables.out.precondition( key & " is not set in " & file, arguments.asJson );
+		}
+		if ( !arguments.yes || arguments.dry ) return new bxrig.util.Mutation( variables.out ).show( ( isSet ? "set " : "remove " ) & key & " in " & file, { file: file, key: key, action: arguments.action }, arguments.asJson, arguments.dry, [ "  file: " & file & " (mode 600)", "  the value is not shown" ] );
+		var made = variables.proc.exec( [ "sh", "-c", 'umask 077; touch "$1" && chmod 600 "$1"', "_", file ], 10 );
+		if ( made.exitCode != 0 ) return variables.out.failed( "could not create " & file, arguments.asJson );
+		try { fileWrite( file, out.toList( nl ) & nl ); } catch ( any e ) { return variables.out.failed( "could not write " & file & ": " & e.message, arguments.asJson ); }
+		return variables.out.say( "ok", { file: file, key: key, action: arguments.action }, arguments.asJson, [ ( isSet ? "Set " : "Removed " ) & key & " in " & file ] );
+	}
+
 	// ForgeBox: [ { slug, title, version, description } ]. The API (saas-forgebox, api-v1): /entries/<typeSlug>?max=&offset=&searchTerm=;
 	// max is capped at 50 per call, so the pages are followed until one comes back short (at most 20 pages).
 	function forgeboxModules( term ) {

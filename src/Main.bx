@@ -329,6 +329,7 @@ class {
 				if ( blSub == "status" && p.len() <= 2 ) CLIExit( bl.status( asJson ) );
 				if ( blSub == "use" && p.len() == 3 ) CLIExit( bl.use( "bvm", p[3], asJson ) );
 				if ( blSub == "matchbox" && p.len() == 4 && p[3] == "use" ) CLIExit( bl.use( "mvm", p[4], asJson ) );
+				if ( blSub == "matchbox" && p.len() >= 3 && arrayFind( [ "status", "log-level", "env" ], p[3] ) ) CLIExit( bl.matchbox( p[3], p.len() > 3 ? p.slice( 4 ) : [], structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
 				if ( blSub == "modules" && p.len() >= 3 ) CLIExit( bl.modules( p[3], p.len() > 3 ? p.slice( 4 ) : [], asJson ) );
 				if ( blSub == "vscode" && p.len() == 2 ) CLIExit( bl.vscode( asJson ) );
 				if ( blSub == "links" && p.len() == 2 ) CLIExit( bl.showLinks( asJson ) );

@@ -1229,16 +1229,19 @@ BoxLang, editors, databases, containers, virtual machines and AI agents.
 
 ### `bxrig boxlang` {#bxrig-boxlang}
 
-BoxLang status, modules (ForgeBox), the VS Code extension, links.
+BoxLang status, MatchBox home, logs and .env, modules (ForgeBox), the VS Code extension, links.
 
 ```text
-bxrig boxlang status | use VERSION | matchbox use VERSION | modules list|search TEXT|install SLUG...|installed|outdated|update | vscode | links | welcome [--json]
+bxrig boxlang status | use VERSION | matchbox use VERSION | matchbox status | matchbox log-level LEVEL [--yes] | matchbox env list|set KEY VALUE|unset KEY [--yes] | modules list|search TEXT|install SLUG...|installed|outdated|update | vscode | links | welcome [--json]
 ```
 
 ```bash
 bxrig boxlang status
 bxrig boxlang modules list
 bxrig boxlang use 1.8.0
+bxrig boxlang matchbox status
+bxrig boxlang matchbox log-level debug --yes
+bxrig boxlang matchbox env set OPENAI_API_KEY sk-... --yes
 ```
 
 ### `bxrig editor` {#bxrig-editor}
