@@ -122,4 +122,7 @@ testkit.check( "the page shows once the answer matches, counts as a step and its
 a.onKey( "Enter" ); a.gotoPage( 1 ); a.nextPage();
 testkit.check( "next lands on it", a.pageIndex() == 2 && a.stepOf( 2 ) == 2 );
 
+a = mk();
+testkit.check( "the welcome version is the program version, not a number in the page file", a.spec().version == new bxrig.util.Version().current() && !jsonDeserialize( new bxrig.WizardData().demoPages() ).keyExists( "version" ) );
+
 testkit.done( "all passed" );

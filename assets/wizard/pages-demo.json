@@ -1,7 +1,6 @@
 {
 	"title": "BxRig",
 	"tagline": "Your dev rig. Beautiful by default.",
-	"version": "0.12.0",
 	"pages": [
 		{
 			"id": "desktop",

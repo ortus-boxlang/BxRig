@@ -112,4 +112,4 @@ Changes follow the contract in `docs/architecture/COMMAND-CONTRACT.md`: plan bef
 
 ## Status
 
-Version 0.11.0-dev. The tests run against fake tools, so features that need real hardware or a live desktop (Hyprland, Noctalia, KVM virtual machines, GPUs, the signed install from the download bucket) are marked as unverified in the contract until they have been run on a real CachyOS machine.
+The version is the one in `box.json` (`bxrig version` prints it). The tests run against fake tools, so features that need real hardware or a live desktop (Hyprland, Noctalia, KVM virtual machines, GPUs, the signed install from the download bucket) are marked as unverified in the contract until they have been run on a real CachyOS machine.

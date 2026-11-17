@@ -1,7 +1,7 @@
 // The setup wizard's state and behaviour, with no drawing: which screen is showing, the answers so far, and what each key
 // or click does. WizardView draws it, Wizard runs the loop. Because nothing here touches the terminal it is unit tested.
 //
-// The pages come from a spec struct (see assets/wizard/pages-demo.json): { title, tagline, version, pages: [ { id, title,
+// The pages come from a spec struct (see assets/wizard/pages-demo.json): { title, tagline, pages: [ { id, title,
 // intro, questions: [ { type: choice|multi|text|number|confirm|info, id, label, help, ... } ] } ] }.
 // Answers are a flat struct id -> value (string, array of strings, number or boolean).
 //
@@ -9,6 +9,7 @@
 class WizardApp {
 	function init( spec, preset = {} ) {
 		variables.spec = arguments.spec;
+		variables.spec.version = new bxrig.util.Version().current();   // the one source of the version (box.json via gen-version.sh); the page files carry none
 		variables.screen = "welcome";
 		variables.page = 1;
 		variables.furthest = 0;   // the highest step reached: pages 1..n, then n + 1 for the review
