@@ -10,7 +10,8 @@
 //                                and the public key built into this binary from keys/release.pub). A bad or missing signature is exit 5. A build
 //                                without an embedded key (development) does not verify, only checks the SHA-256
 //   notifications on|off|status  a user timer (bxrig-update-check.timer, daily) running `bxrig update check --notify`
-//   system update [--yes]        snapshot first (snapper or timeshift when present), then `sudo pacman -Syu` and, with yay, `yay -Sua`
+//   system update [--repo|--aur|--all] [--yes] [--dry-run]   snapshot first (snapper or timeshift when present), then `sudo pacman -Syu` (--repo),
+//                                the AUR helper's `-Sua` (--aur, yay or paru) or both (--all, the default)
 // BASE is https://downloads.ortussolutions.com/ortussolutions/bxrig (BXRIG_BASE_URL overrides it). Exit: 0 done, 2 plan without --yes,
 // 4 precondition, 5 download or verify failed, 6 a command failed, 10 an update is available (check only).
 class Update {
@@ -172,23 +173,35 @@ class Update {
 		return variables.out.say( "ok", { enabled: true }, arguments.asJson, [ "Update notifications are on: a daily check, shown as a desktop notification." ] );
 	}
 
-	// `system update [--yes]`
-	function systemUpdate( yes, asJson ) {
+	// `system update [--repo|--aur|--all] [--yes] [--dry-run]`: a snapshot first (snapper or timeshift when present), then the repository
+	// packages (`sudo pacman -Syu`), the AUR packages (yay or paru `-Sua`), or both (the default). scope is repo, aur or all.
+	// Text mode names each step as it starts, so a terminal shows the snapshot and the progress. Exit 2 plan, 4 no AUR helper for --aur, 6 a step failed.
+	function systemUpdate( yes, asJson, scope = "all", dry = false ) {
 		var snap = variables.proc.has( "snapper" ) ? [ "sudo", "snapper", "create", "--description", "before bxrig system update" ] : ( variables.proc.has( "timeshift" ) ? [ "sudo", "timeshift", "--create", "--comments", "before bxrig system update" ] : [] );
+		var wantRepo = compare( arguments.scope, "aur" ) != 0;
+		var wantAur = compare( arguments.scope, "repo" ) != 0;
+		if ( !wantRepo && !variables.aur.available() ) return variables.out.say( "precondition", { error: "no AUR helper installed (yay or paru)" }, arguments.asJson, [ "error: no AUR helper installed (yay or paru), so there is nothing to update from the AUR" ] );
 		var steps = [];
 		if ( snap.len() ) steps.append( snap );
-		steps.append( variables.pacman.upgradeArgv() );
-		if ( variables.aur.available() ) steps.append( variables.aur.upgradeArgv() );
-		var data = { steps: steps.map( function( s ) { return s.toList( " " ); } ), snapshot: snap.len() > 0 };
-		if ( !arguments.yes ) {
+		if ( wantRepo ) steps.append( variables.pacman.upgradeArgv() );
+		if ( wantAur && variables.aur.available() ) steps.append( variables.aur.upgradeArgv() );
+		var data = { scope: arguments.scope, steps: steps.map( function( s ) { return s.toList( " " ); } ), snapshot: snap.len() > 0 };
+		if ( !arguments.yes || arguments.dry ) {
 			var shown = data.steps.map( function( st ) { return "  " & st; } );
 			shown.append( snap.len() ? "A snapshot is taken first." : "No snapshot tool found (snapper or timeshift): the update runs without one." );
-			return variables.out.plan( "", data, arguments.asJson, false, shown );
+			return variables.out.plan( "", data, arguments.asJson, arguments.dry, shown );
 		}
+		var n = 0;
 		for ( var s in steps ) {
+			n++;
+			if ( !arguments.asJson ) println( "[" & n & "/" & steps.len() & "] " & s.toList( " " ) );
 			var r = variables.proc.exec( s, 3600 );
+			if ( !arguments.asJson && len( trim( r.output ) ) ) println( trim( r.output ) );
 			if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: s.toList( " " ) & " failed" }, arguments.asJson, [ "error: " & s.toList( " " ) & " failed (exit " & r.exitCode & ")" ] );
 		}
-		return variables.out.say( "ok", data, arguments.asJson, [ "The system is up to date." ] );
+		var lines = [ wantRepo && wantAur ? "The system is up to date." : ( wantRepo ? "The repository packages are up to date." : "The AUR packages are up to date." ) ];
+		data.needs_reboot = new bxrig.SystemUpdates( variables.cli, variables.proc.runner() ).rebootStale();
+		if ( data.needs_reboot ) lines.append( "A restart is needed to use the new kernel." );
+		return variables.out.say( "ok", data, arguments.asJson, lines );
 	}
 }

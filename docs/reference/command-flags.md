@@ -162,6 +162,9 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `time` | `--path` | any |  |
 | `nightshift` | `--location` | value | `40.4` |
 | `notify` | `--history` | bool |  |
+| `system` | `--repo` | bool |  |
+| `system` | `--aur` | bool |  |
+| `system` | `--all` | bool |  |
 | `ssh` | `--email` | value | `me` |
 | `secrets` | `--from-file` | value |  |
 | `secrets` | `--keyring` | value |  |

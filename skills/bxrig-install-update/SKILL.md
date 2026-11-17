@@ -21,7 +21,7 @@ No human input: `... | bash -s -- --yes [--answers answers.json] [--channel stab
 - Channels: `bxrig update channel stable|beta`. stable is tagged releases; beta is a build of every push to development (bleeding edge).
 - `bxrig update notifications on|off|status`: a daily user timer that shows a desktop notification.
 - `bxrig system updates [--json]`: what is waiting (repo and AUR counts, the package list, restart needed, last upgrade). Read only.
-- `bxrig system update --yes`: snapshot first (snapper or timeshift), then `pacman -Syu` and `yay -Sua`.
+- `bxrig system update [--repo|--aur|--all] --yes`: snapshot first (snapper or timeshift), then `pacman -Syu` (`--repo`), the AUR helper `-Sua` (`--aur`) or both (default).
 
 ## Move to another machine
 

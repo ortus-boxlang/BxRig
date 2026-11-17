@@ -57,8 +57,13 @@ A restart is called for in two cases, and `needs_reboot` is true for either:
 ## Update the system
 
 ```bash
+bxrig system update             # the plan: the snapshot step, then the update steps (exit 2)
 bxrig system update --yes       # snapshot first (snapper or timeshift), then pacman -Syu and yay -Sua
+bxrig system update --repo --yes   # the snapshot and the repository packages only
+bxrig system update --aur --yes    # the snapshot and the AUR packages only (yay, else paru; exit 4 without one)
 ```
+
+`--all` is the default. Every scope takes the snapshot first, and says so when snapper and timeshift are both missing. In a terminal each step is named as it starts, and a restart is mentioned at the end when the kernel was replaced.
 
 ## Agent skills
 
