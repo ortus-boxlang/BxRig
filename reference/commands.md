@@ -1650,14 +1650,24 @@ bxrig gpu doctor
 
 ### `bxrig input` {#bxrig-input}
 
-Input devices: doctor, trackpad gestures.
+Input devices: Apple Magic Mouse and Trackpad, Logitech, the helpers for them, the older doctor and trackpad gestures.
 
 ```text
+bxrig input status [--json]
+bxrig input offer [--for=detect|apple|logitech|both|none] [--yes] [--dry-run] [--json]
+bxrig input apple [--scroll-speed=0..63] [--yes] [--dry-run] [--json]
+bxrig input logitech [--json]
+bxrig input undo [--yes] [--dry-run] [--json]
 bxrig input doctor | gestures [--yes] [--dry-run] [--json]
 ```
 
+Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
+
 ```bash
-bxrig input doctor
+bxrig input status
+bxrig input offer --dry-run
+bxrig input apple --scroll-speed=48 --yes
+bxrig input logitech
 ```
 
 ### `bxrig audio` {#bxrig-audio}
