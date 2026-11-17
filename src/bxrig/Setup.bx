@@ -65,14 +65,8 @@ class Setup {
 
 	// True when a previous `setup plasma` turned bluetooth.service on.
 	function plasmaBluetooth() {
-		var file = plasmaStateFile();
-		if ( !fileExists( file ) ) return false;
-		try {
-			var data = jsonDeserialize( fileRead( file ) );
-			return structKeyExists( data, "bluetooth" ) && data.bluetooth == true;
-		} catch ( any e ) {
-			return false;
-		}
+		var data = new bxrig.util.JsonStore().load( plasmaStateFile() );
+		return structKeyExists( data, "bluetooth" ) && data.bluetooth == true;
 	}
 
 	// Node.js through nvm: nvm is a shell function, so it is probed by sourcing nvm.sh in a bash subshell ("" when none).
