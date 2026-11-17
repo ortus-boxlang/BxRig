@@ -235,7 +235,7 @@
 		
 		
 		
-			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#the-three-bars">The three bars</a></li><li class="toc-level-2"><a href="#where-the-changes-go">Where the changes go</a></li></ul></details>
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#the-three-bars">The three bars</a></li><li class="toc-level-2"><a href="#where-the-changes-go">Where the changes go</a></li><li class="toc-level-2"><a href="#text-in-large-letters">Text in large letters</a></li></ul></details>
 		
 
 		
@@ -293,12 +293,29 @@ bxrig appearance apply                    # push everything you chose again
 <li><strong>Backgrounds</strong> are read from <code>~/Pictures/BxRig</code>, <code>~/Pictures</code> and the current theme's folder.</li>
 </ul>
 <p>The menu has all of this under Appearance.</p>
+<h2 id="text-in-large-letters"><a href="#text-in-large-letters" id="text-in-large-letters" name="text-in-large-letters" class="anchor"></a>Text in large letters</h2>
+<p><code>bxrig ascii</code> draws text in large letters with FIGlet fonts, the way <code>figlet</code> and Omarchy's <code>omarchy ascii</code> do, and paints it with a colour or a gradient. The BxRig logo is drawn the same way, in DOS Rebel.</p>
+<pre><code class="language-bash">bxrig ascii BxRig                                  # DOS Rebel, the brand gradient
+bxrig ascii Hello --font=ansi-shadow --gradient=sunset
+bxrig ascii OK --font=calvin-s --color=#00ff78     # small letters, one colour
+bxrig ascii Deploy --gradient=#ff5f6d,#ffc371,#00dbff --direction=diagonal
+bxrig ascii Theme --gradient=theme                 # your theme's accent colours
+echo &quot;build ok&quot; | bxrig ascii                      # the text from stdin
+bxrig ascii fonts                                  # every font, in its own name
+</code></pre>
+<ul>
+<li><strong>Fonts:</strong> <code>dos-rebel</code> (the default, 8 rows), <code>ansi-shadow</code> (6 rows) and <code>calvin-s</code> (3 rows, for narrow terminals). They ship inside BxRig, so nothing is installed.</li>
+<li><strong><code>--color</code>:</strong> <code>#rrggbb</code>, <code>#rgb</code>, <code>theme</code> (your theme's accent) or a name: black, white, gray, red, orange, yellow, green, cyan, blue, purple, magenta, pink, boxlang, bxrig.</li>
+<li><strong><code>--gradient</code>:</strong> a preset (<code>brand</code>, <code>theme</code>, <code>sunset</code>, <code>ocean</code>, <code>fire</code>, <code>forest</code>, <code>candy</code>, <code>rainbow</code>) or your own two or more colours separated by commas. <code>--direction</code> runs it <code>horizontal</code> (the default), <code>vertical</code> or <code>diagonal</code>.</li>
+<li><strong>When it colours:</strong> without <code>--color</code> or <code>--gradient</code> you get the brand gradient in a terminal and plain text in a pipe or file. <code>--color</code> and <code>--gradient</code> colour even in a pipe. <code>--plain</code> and the <code>NO_COLOR</code> variable always give plain text.</li>
+<li><code>--json</code> returns the lines, the font and the size.</li>
+</ul>
 
 	
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/appearance.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/appearance.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 17, 2026, 1&#x3a;41&#x3a;18 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Appearance&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fappearance%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/appearance.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/appearance.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 17, 2026, 2&#x3a;05&#x3a;51 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Appearance&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fappearance%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
@@ -342,7 +359,7 @@ bxrig appearance apply                    # push everything you chose again
 			
 			
 				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
-					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#the-three-bars">The three bars</a></li><li class="toc-level-2"><a href="#where-the-changes-go">Where the changes go</a></li></ul></nav>
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#the-three-bars">The three bars</a></li><li class="toc-level-2"><a href="#where-the-changes-go">Where the changes go</a></li><li class="toc-level-2"><a href="#text-in-large-letters">Text in large letters</a></li></ul></nav>
 				</aside>
 			
 		</div>
