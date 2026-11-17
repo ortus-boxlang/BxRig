@@ -318,9 +318,11 @@ class {
 				if ( p.len() == 2 && p[2] == "doctor" ) CLIExit( new bxrig.MacExtras( cli ).gpu( asJson ) );
 				println( new bxrig.CommandSpec().usage( "gpu doctor" ) ); CLIExit( xit.usage() ); break;
 			case "input":
-				if ( p.len() == 2 && p[2] == "doctor" ) CLIExit( new bxrig.MacExtras( cli ).inputDoctor( asJson ) );
-				if ( p.len() == 2 && p[2] == "gestures" ) CLIExit( new bxrig.MacExtras( cli ).gestures( structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
-				println( new bxrig.CommandSpec().usage( "input" ) ); CLIExit( xit.usage() ); break;
+				// Apple Magic and Logitech devices: status, offer, apple, logitech, undo, doctor, gestures. See COMMAND-CONTRACT.md 13.65.
+				inWords = [];
+				for ( ini = 2; ini <= p.len(); ini++ ) inWords.append( p[ ini ] );
+				CLIExit( new bxrig.Input( cli ).run( inWords, args.options, structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
+				break;
 			case "airplay":
 				if ( p.len() == 2 ) CLIExit( new bxrig.MacExtras( cli ).airplay( p[2], asJson ) );
 				println( new bxrig.CommandSpec().usage( "airplay" ) ); CLIExit( xit.usage() ); break;

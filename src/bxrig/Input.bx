@@ -1,0 +1,362 @@
+// `bxrig input ...`: Apple Magic Mouse and Trackpad, Logitech mice and keyboards, and the helpers for them (COMMAND-CONTRACT section 13.65).
+//   input status [--json]                 the devices found (Apple and Logitech, by transport, name and battery), the kernel drivers (loaded or built in),
+//                                         the helpers installed (solaar, piper, ratbagd, libinput-gestures, upower) and what is missing
+//   input offer [--for=detect|apple|logitech|both] [--yes] [--dry-run] [--json]
+//                                         the plan to install the helpers the devices call for: Logitech: solaar (and piper and libratbag for a gaming mouse
+//                                         by its name, said to be a guess); Apple: upower for the battery and, on Hyprland with a trackpad, libinput-gestures.
+//                                         A plan (exit 2) until --yes. What it installs is remembered, so `input undo` removes only that.
+//   input apple [--json] [--scroll-speed=N] [--yes] [--dry-run]
+//                                         the Apple checks: the driver (loaded or built in), the Bluetooth service, the battery, the driver's module options.
+//                                         --scroll-speed (0 to 63, the kernel's range) writes /etc/modprobe.d/bxrig-magicmouse.conf with sudo; exit 4 when the
+//                                         kernel has no hid_magicmouse driver
+//   input logitech [--json]               receivers and devices, the drivers, the udev rule, Solaar's own view (solaar show) when it is installed
+//   input undo [--yes] [--dry-run]        removes what `input offer` installed and the modprobe.d file `input apple` wrote
+//   input doctor | gestures               the older checks (MacExtras): libinput-gestures workspace swipes on Hyprland
+// There is no gesture writer: Hyprland's own gesture config differs by version and is not verified here, so the libinput-gestures path stays.
+// Test overrides: BXRIG_SYS_HID, BXRIG_SYS_INPUT, BXRIG_SYS_MODULE, BXRIG_HID_DRIVERS, BXRIG_UDEV_DIR, BXRIG_MODPROBE_DIR (see InputDevices).
+// Exit: 0 done, 2 bad usage or a plan without --yes, 4 precondition (no driver for --scroll-speed, nothing to undo), 5 and 6 and 7 as `install`, 8 a modprobe file
+// that is not BxRig's. Not verified on real hardware: Magic Trackpad 2, Magic Mouse 2, MX Master (the research and tests use a fake sysfs).
+class Input {
+	function init( cli, runner = "" ) {
+		variables.environ = new bxrig.util.Env();
+		variables.cli = arguments.cli;
+		variables.runnerArg = arguments.runner;
+		variables.out = new bxrig.util.Out( variables.cli, "input" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.pacman = new bxrig.util.Pacman( variables.proc );
+		variables.systemd = new bxrig.util.Systemd( variables.proc );
+		variables.dev = new bxrig.InputDevices( arguments.runner );
+		return this;
+	}
+
+	// ---- facts ----
+
+	// The helpers `status` reports: catalog id, the program that shows it is installed, what it is for.
+	function helperList() {
+		return [
+			{ id: "solaar", binary: "solaar", purpose: "Logitech devices: buttons, DPI, battery" },
+			{ id: "piper", binary: "piper", purpose: "gaming mice (the window over libratbag)" },
+			{ id: "libratbag", binary: "ratbagd", purpose: "gaming mice (the service Piper talks to)" },
+			{ id: "libinput-gestures", binary: "libinput-gestures", purpose: "trackpad swipes on Hyprland" },
+			{ id: "upower", binary: "upower", purpose: "battery levels" }
+		];
+	}
+
+	function stateFile() { return new bxrig.ConfigService().quiet( true ).stateDir() & "/input-helpers.json"; }
+	function modprobeDir() { return variables.environ.named( "modprobeDir", "/etc/modprobe.d" ); }
+	function modprobeFile() { return modprobeDir() & "/bxrig-magicmouse.conf"; }
+	function scrollMax() { return 63; }
+	function onPlasma() { return new bxrig.util.Desktop().shell() == "plasma"; }
+
+	// The helpers that are on this machine: { id: true } (the program is on the PATH, or the package is installed).
+	function helpersInstalled() {
+		var out = {};
+		var have = variables.pacman.available() ? variables.pacman.installed() : {};
+		var cat = new bxrig.Catalog().load();
+		for ( var h in helperList() ) {
+			var ok = variables.proc.has( h.binary );
+			if ( !ok ) for ( var a in cat.apps ) if ( compare( a.id, h.id ) == 0 && structKeyExists( a, "targets" ) && a.targets.len() ) {
+				ok = true;
+				for ( var t in a.targets ) if ( !structKeyExists( have, t ) ) ok = false;
+			}
+			out[ h.id ] = ok;
+		}
+		return out;
+	}
+
+	function drivers() {
+		var d = {};
+		d.hid_magicmouse = { state: variables.dev.driverState( "hid_magicmouse", "magicmouse" ) };
+		d.hid_logitech_dj = { state: variables.dev.driverState( "hid_logitech_dj", "logitech-djreceiver" ) };
+		d.hid_logitech_hidpp = { state: variables.dev.driverState( "hid_logitech_hidpp", "logitech-hidpp-device" ) };
+		return d;
+	}
+
+	function batteryText( d ) {
+		if ( arguments.d.battery < 0 ) return "";
+		return "  battery " & arguments.d.battery & "%" & ( len( arguments.d.battery_status ) ? " (" & lCase( arguments.d.battery_status ) & ")" : "" );
+	}
+
+	function pad( text, width ) {
+		return arguments.text & repeatString( " ", max( 1, arguments.width - len( arguments.text ) ) );
+	}
+
+	function deviceLines( devices ) {
+		var lines = [];
+		for ( var d in arguments.devices ) lines.append( "  " & pad( d.kind, 19 ) & variables.dev.label( d ) & batteryText( d ) );
+		return lines;
+	}
+
+	// ---- status ----
+
+	function statusCmd( asJson ) {
+		var devices = variables.dev.scan();
+		var drv = drivers();
+		var helpers = helpersInstalled();
+		var wanted = wantedHelpers( devices, "detect" );
+		var missing = wanted.ids.filter( function( id ) { return !helpers[ id ]; } );
+		var data = { devices: devices, drivers: drv, helpers: helpers, missing: missing, detected: wanted.detected };
+		var lines = [ "Devices" ];
+		if ( devices.len() ) for ( var l in deviceLines( devices ) ) lines.append( l );
+		else lines.append( "  none found (no Apple Magic or Logitech device is paired or plugged in)" );
+		lines.append( "Drivers" );
+		for ( var name in [ "hid_magicmouse", "hid_logitech_dj", "hid_logitech_hidpp" ] ) lines.append( "  " & pad( name, 20 ) & drv[ name ].state );
+		lines.append( "Helpers" );
+		for ( var h in helperList() ) lines.append( "  " & ( helpers[ h.id ] ? "ok    " : "no    " ) & pad( h.id, 18 ) & h.purpose );
+		if ( missing.len() ) {
+			lines.append( "Missing for the devices found: " & missing.toList( ", " ) );
+			lines.append( "See the plan: bxrig input offer" );
+		} else if ( devices.len() ) lines.append( "Nothing is missing for the devices found." );
+		return variables.out.say( "ok", data, arguments.asJson, lines );
+	}
+
+	// ---- the offer ----
+
+	// What the devices (or the user's choice) call for: { ids, detected: { apple, logitech, gaming, trackpad }, reasons: { id: text }, guesses: [ text ] }.
+	// forWhat: detect (what is found), apple, logitech, both, none.
+	function wantedHelpers( devices, forWhat ) {
+		var apple = variables.dev.ofVendor( arguments.devices, "apple" );
+		var logi = variables.dev.ofVendor( arguments.devices, "logitech" );
+		var det = { apple: apple.len() > 0, logitech: logi.len() > 0, gaming: false, trackpad: false };
+		for ( var d in logi ) if ( d.gaming ) det.gaming = true;
+		for ( var a in apple ) if ( compare( a.kind, "apple-trackpad" ) == 0 ) det.trackpad = true;
+		var useApple = arguments.forWhat == "apple" || arguments.forWhat == "both" || ( arguments.forWhat == "detect" && det.apple );
+		var useLogi = arguments.forWhat == "logitech" || arguments.forWhat == "both" || ( arguments.forWhat == "detect" && det.logitech );
+		var out = { ids: [], detected: det, reasons: {}, guesses: [] };
+		var add = function( id, why ) { if ( !arrayFind( out.ids, id ) ) { out.ids.append( id ); out.reasons[ id ] = why; } };
+		if ( useLogi ) {
+			add( "solaar", "buttons, DPI, scroll and battery of Logitech devices (Logi Options+ on a Mac); installs a udev rule with uaccess" );
+			if ( det.gaming ) {
+				add( "libratbag", "the service that configures gaming mice (report rate, DPI, profiles)" );
+				add( "piper", "the window over libratbag for gaming mice" );
+				var gnames = logi.filter( function( x ) { return x.gaming; } ).map( function( x ) { return x.name; } );
+				out.guesses.append( gnames.toList( ", " ) & ( gnames.len() == 1 ? " looks" : " look" ) & " like a gaming mouse by the name (G-series, G Pro, Superlight, Lightspeed or Gaming): a guess; libratbag and Piper only help gaming mice" );
+			}
+		}
+		if ( useApple ) {
+			if ( ( det.trackpad || arguments.forWhat == "apple" || arguments.forWhat == "both" ) && !onPlasma() ) add( "libinput-gestures", "three-finger swipes for workspaces on Hyprland (writes nothing until `bxrig input gestures --yes`)" );
+		}
+		if ( ( useApple || useLogi ) && ( apple.len() || logi.len() || arguments.forWhat != "detect" ) ) add( "upower", "battery levels of wireless devices" );
+		return out;
+	}
+
+	function offerLines( devices, want, install, forWhat ) {
+		var lines = [];
+		for ( var d in arguments.devices ) lines.append( "Found: " & variables.dev.label( d ) & ( d.battery >= 0 ? ", battery " & d.battery & "%" : "" ) );
+		if ( !arguments.devices.len() ) lines.append( "No Apple Magic or Logitech device was found; you asked for " & arguments.forWhat & " anyway." );
+		if ( want.detected.logitech || arguments.forWhat == "logitech" || arguments.forWhat == "both" ) lines.append( "Logi Options+ on a Mac manages buttons, DPI, scroll and battery. On Linux that is Solaar." );
+		if ( want.detected.apple || arguments.forWhat == "apple" || arguments.forWhat == "both" ) lines.append( "Apple Magic devices already work through the kernel driver (hid_magicmouse). Helpers add the battery and, with a trackpad on Hyprland, swipes." );
+		for ( var g in want.guesses ) lines.append( "Guess: " & g );
+		var cat = new bxrig.Catalog().load();
+		for ( var id in arguments.install ) {
+			var app = {};
+			for ( var a in cat.apps ) if ( compare( a.id, id ) == 0 ) app = a;
+			lines.append( "  Install: " & pad( id, 18 ) & "(" & ( app.repo ?: app.source ?: "catalog" ) & ") " & ( want.reasons[ id ] ?: "" ) );
+		}
+		return lines;
+	}
+
+	function offerCmd( opts, yes, dry, asJson ) {
+		var forWhat = structKeyExists( arguments.opts, "for" ) ? lCase( arguments.opts[ "for" ] & "" ) : "detect";
+		if ( !arrayFind( [ "detect", "apple", "logitech", "both", "none" ], forWhat ) ) return variables.out.usage( "--for is detect, apple, logitech, both or none, not " & forWhat, arguments.asJson );
+		var devices = variables.dev.scan();
+		var want = wantedHelpers( devices, forWhat );
+		var helpers = helpersInstalled();
+		var install = want.ids.filter( function( id ) { return !helpers[ id ]; } );
+		var already = want.ids.filter( function( id ) { return helpers[ id ]; } );
+		var data = { requested: forWhat, devices: devices, detected: want.detected, install: install, already_installed: already, guesses: want.guesses, undo: "bxrig input undo" };
+		if ( !install.len() ) {
+			var lines = [];
+			if ( forWhat == "none" ) lines.append( "Input devices: nothing to set up (none chosen)." );
+			else if ( !devices.len() && forWhat == "detect" ) lines.append( "No Apple Magic or Logitech device was found, so there is nothing to offer. (Choose one anyway: bxrig input offer --for=apple|logitech|both)" );
+			else lines.append( "The helpers for these devices are already installed" & ( already.len() ? " (" & already.toList( ", " ) & ")" : "" ) & ". Nothing to do." );
+			return variables.out.say( "ok", data, arguments.asJson, lines );
+		}
+		var cat = new bxrig.Catalog().load();
+		var names = variables.pacman.available() ? variables.pacman.installed() : {};
+		var self = this;
+		var req = { ids: install, profile: "", optional: false, shell: "", installed: function( a ) {
+				if ( !structKeyExists( a, "targets" ) || !a.targets.len() ) return false;
+				for ( var t in a.targets ) if ( !structKeyExists( names, t ) ) return false;
+				return true;
+			} };
+		var res = new bxrig.Resolver().resolve( cat, req );
+		if ( res.errors.len() ) return variables.out.usage( res.errors.toList( "; " ), arguments.asJson );
+		var inst = new bxrig.Installer( variables.runnerArg );
+		var built = inst.steps( res.selected, inst.isRoot() );
+		data.commands = [];
+		for ( var st in built.steps ) for ( var c in st.commands ) data.commands.append( c.toList( " " ) );
+		if ( !arguments.yes || arguments.dry ) {
+			var extra = offerLines( devices, want, install, forWhat );
+			for ( var c2 in data.commands ) extra.append( "  " & c2 );
+			extra.append( "  Undo: bxrig input undo (removes only what this installs)" );
+			return variables.out.plan( "install input helpers (" & install.toList( ", " ) & ")", data, arguments.asJson, arguments.dry, extra );
+		}
+		var needsAur = false;
+		for ( var s2 in built.steps ) if ( s2.kind == "aur" || s2.kind == "pkgbuild" ) needsAur = true;
+		if ( needsAur && inst.isRoot() ) return variables.out.precondition( "AUR builds never run as root; nothing was changed", arguments.asJson );
+		if ( needsAur && !new bxrig.util.Aur( inst.proc() ).available() ) return variables.out.precondition( "yay is not installed (bootstrap/install.sh installs it); nothing was changed", arguments.asJson );
+		var result = inst.run( built.steps );
+		for ( var b in built.blocked ) result.failed.append( b );
+		var exit = ( !built.steps.len() && built.blocked.len() ) ? 3 : inst.exitCode( result );
+		remember( result.done, cat );
+		data.done = result.done;
+		data.failed = result.failed;
+		var out = [];
+		for ( var dn in result.done ) out.append( "Installed: " & dn.id );
+		for ( var f in result.failed ) out.append( "Failed: " & f.id & " (" & f.error & ")" );
+		if ( result.done.len() ) out.append( "Undo: bxrig input undo" );
+		return variables.out.say( exit, data, arguments.asJson, out );
+	}
+
+	// ---- what was installed, for undo ----
+
+	function readState() {
+		var j = new bxrig.util.JsonStore().load( stateFile(), {} );
+		var s = { packages: [], files: [] };
+		if ( isStruct( j ) && structKeyExists( j, "packages" ) && isArray( j.packages ) ) s.packages = j.packages;
+		if ( isStruct( j ) && structKeyExists( j, "files" ) && isArray( j.files ) ) s.files = j.files;
+		return s;
+	}
+
+	function writeState( s ) {
+		new bxrig.ConfigService().quiet( true ).writeAtomic( stateFile(), jsonSerialize( { packages: arguments.s.packages, files: arguments.s.files, time: now() & "" } ), "600" );
+	}
+
+	// Remembers the packages of the apps that were installed (and not there before: the resolver skips what is installed).
+	function remember( done, cat ) {
+		if ( !arguments.done.len() ) return;
+		var s = readState();
+		for ( var d in arguments.done ) for ( var a in arguments.cat.apps ) if ( compare( a.id, d.id ) == 0 && structKeyExists( a, "targets" ) ) for ( var t in a.targets ) if ( !arrayFind( s.packages, t ) ) s.packages.append( t );
+		writeState( s );
+	}
+
+	function undoCmd( yes, dry, asJson ) {
+		var s = readState();
+		if ( !s.packages.len() && !s.files.len() ) return variables.out.precondition( "nothing to undo: BxRig has not installed input helpers or written the modprobe file", arguments.asJson );
+		var cmds = [];
+		if ( s.packages.len() ) cmds.append( variables.pacman.removeArgv( s.packages ) );
+		for ( var f in s.files ) cmds.append( [ "sudo", "rm", "-f", f ] );
+		var data = { packages: s.packages, files: s.files };
+		if ( !arguments.yes || arguments.dry ) {
+			var lines = [];
+			for ( var c in cmds ) lines.append( "  " & c.toList( " " ) );
+			lines.append( "  Your own settings (~/.config/solaar and so on) are kept." );
+			return variables.out.plan( "remove the input helpers BxRig installed", data, arguments.asJson, arguments.dry, lines );
+		}
+		for ( var x in cmds ) {
+			var r = variables.proc.exec( x, 300 );
+			if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ), step: x.toList( " " ) }, arguments.asJson, [ "error: " & x.toList( " " ) & ": " & trim( r.output ) ] );
+		}
+		if ( fileExists( stateFile() ) ) fileDelete( stateFile() );
+		return variables.out.say( "ok", data, arguments.asJson, [ "Removed " & ( s.packages.len() ? s.packages.toList( ", " ) : "no packages" ) & ( s.files.len() ? " and " & s.files.toList( ", " ) : "" ) & "." ] );
+	}
+
+	// ---- Apple ----
+
+	function dropIn( speed ) {
+		return "# Written by `bxrig input apple --scroll-speed`. Remove this file to go back to the kernel default (32)." & chr( 10 )
+		& "options hid_magicmouse scroll_speed=" & arguments.speed & chr( 10 );
+	}
+
+	function appleCmd( opts, yes, dry, asJson ) {
+		var setting = structKeyExists( arguments.opts, "scroll-speed" );
+		var speed = setting ? arguments.opts[ "scroll-speed" ] & "" : "";
+		if ( setting && ( !reFind( "^[0-9]{1,2}$", speed ) || val( speed ) > scrollMax() ) ) return variables.out.usage( "--scroll-speed is a whole number from 0 to " & scrollMax() & " (the kernel's range), not " & speed, arguments.asJson );
+		var devices = variables.dev.ofVendor( variables.dev.scan(), "apple" );
+		var state = variables.dev.driverState( "hid_magicmouse", "magicmouse" );
+		var params = variables.dev.moduleParams( "hid_magicmouse" );
+		var bt = trim( variables.systemd.state( "bluetooth" ) ) == "active";
+		var data = {
+			devices: devices, driver: { module: "hid_magicmouse", state: state }, parameters: params, scroll_speed_range: { min: 0, max: scrollMax(), kernel_default: 32 },
+			bluetooth: bt, upower: variables.proc.has( "upower" ), libinput_gestures: variables.proc.has( "libinput-gestures" ), modprobe_file: modprobeFile()
+		};
+		var present = state != "absent";
+		var lines = [];
+		if ( devices.len() ) for ( var l in deviceLines( devices ) ) lines.append( l ); else lines.append( "  no Apple Magic device is paired or plugged in" );
+		lines.append( ( present ? "ok    " : "FIX   " ) & "kernel driver hid_magicmouse: " & state & ( state == "available" ? " (loads when a Magic Mouse or Trackpad connects)" : "" ) & ( present ? "" : " (this kernel has no hid_magicmouse; Magic devices will not scroll or click properly)" ) );
+		lines.append( ( bt ? "ok    " : "FIX   " ) & "bluetooth service" & ( bt ? "" : ": sudo systemctl enable --now bluetooth (bluez and bluez-utils)" ) );
+		var anyNoBattery = false;
+		for ( var d in devices ) if ( d.connected && d.battery < 0 ) anyNoBattery = true;
+		lines.append( ( !anyNoBattery || data.upower ? "ok    " : "info  " ) & "battery: " & ( data.upower ? "upower is installed" : "install upower for battery levels: bxrig input offer" ) );
+		if ( structCount( params ) ) {
+			for ( var k in [ "scroll_speed", "scroll_acceleration", "emulate_scroll_wheel", "emulate_3button" ] ) if ( structKeyExists( params, k ) ) lines.append( "info  " & pad( k, 22 ) & params[ k ] );
+		} else lines.append( "info  module options are not visible (the driver is not loaded or the kernel hides them)" );
+		lines.append( "info  scroll_speed takes 0 to " & scrollMax() & " (default 32): bxrig input apple --scroll-speed=N --yes" );
+		if ( !present ) return variables.out.say( "precondition", mergeData( data, { error: "the kernel has no hid_magicmouse driver" } ), arguments.asJson, lines );
+		if ( !setting ) return variables.out.say( "ok", data, arguments.asJson, lines );
+		// the setter: one modprobe.d file, written with sudo
+		var file = modprobeFile();
+		if ( fileExists( file ) && !findNoCase( "Written by `bxrig input apple", fileRead( file ) ) ) return variables.out.say( "conflict", mergeData( data, { error: file & " exists and is not BxRig's" } ), arguments.asJson, [ "error: " & file & " exists and was not written by BxRig; edit it yourself or remove it first" ] );
+		var sf = new bxrig.util.SystemFile( variables.proc );
+		var tmp = sf.tempPath( "magicmouse" );
+		var cmds = [ sf.installArgv( tmp, file ) ];
+		data.scroll_speed = int( val( speed ) );
+		data.file = file;
+		data.commands = cmds.map( function( c ) { return c.toList( " " ); } );
+		var plan = [ "  write " & file & ": options hid_magicmouse scroll_speed=" & speed, "  sudo install ..." ];
+		if ( state == "built-in" ) plan.append( "  warning: hid_magicmouse is built into this kernel, so modprobe.d options are not read; add hid_magicmouse.scroll_speed=" & speed & " to the kernel command line instead" );
+		else plan.append( "  note: it applies the next time the module loads (reconnect the device or reboot)" );
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "set the Magic Mouse and Trackpad scroll speed to " & speed, data, arguments.asJson, arguments.dry, plan );
+		fileWrite( tmp, dropIn( speed ) );
+		var r = variables.proc.exec( cmds[ 1 ], 30 );
+		try { fileDelete( tmp ); } catch ( any e ) {}
+		if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+		var s = readState();
+		if ( !arrayFind( s.files, file ) ) { s.files.append( file ); writeState( s ); }
+		var done = [ "scroll_speed=" & speed & " written to " & file ];
+		if ( state == "built-in" ) done.append( "The driver is built in: also add hid_magicmouse.scroll_speed=" & speed & " to the kernel command line." );
+		else done.append( "It applies the next time the module loads (reconnect the device or reboot)." );
+		done.append( "Undo: bxrig input undo" );
+		return variables.out.say( "ok", data, arguments.asJson, done );
+	}
+
+	function mergeData( a, b ) {
+		var out = duplicate( arguments.a );
+		for ( var k in arguments.b ) out[ k ] = arguments.b[ k ];
+		return out;
+	}
+
+	// ---- Logitech ----
+
+	function logitechCmd( asJson ) {
+		var devices = variables.dev.ofVendor( variables.dev.scan(), "logitech" );
+		var receivers = devices.filter( function( d ) { return compare( d.kind, "logitech-receiver" ) == 0; } );
+		var others = devices.filter( function( d ) { return compare( d.kind, "logitech-receiver" ) != 0; } );
+		var drv = drivers();
+		var rule = variables.dev.udevRule( "42-logitech-unify-permissions.rules" );
+		var solaar = variables.proc.has( "solaar" );
+		var show = { ran: false, exit: -1, devices: [] };
+		if ( solaar ) {
+			var r = variables.proc.exec( [ "solaar", "show" ], 30 );
+			show.ran = true; show.exit = r.exitCode;
+			// a line "    1: MX Master 3S" under "Paired devices:" (the layout of Solaar's text output; not verified on real hardware)
+			if ( r.exitCode == 0 ) for ( var l in listToArray( r.output, chr( 10 ) ) ) if ( reFind( "^\s+[0-9]+:\s+\S", l ) ) show.devices.append( trim( l ) );
+		}
+		var data = { receivers: receivers, devices: others, drivers: { hid_logitech_dj: drv.hid_logitech_dj, hid_logitech_hidpp: drv.hid_logitech_hidpp }, solaar: { installed: solaar, show: show }, udev_rule: rule, udev_rule_file: "42-logitech-unify-permissions.rules" };
+		var lines = [];
+		if ( receivers.len() ) for ( var rc in receivers ) lines.append( "receiver  " & variables.dev.label( rc ) );
+		for ( var d in others ) lines.append( pad( d.kind, 19 ) & variables.dev.label( d ) & batteryText( d ) & ( d.gaming ? "  (gaming mouse by its name: a guess)" : "" ) );
+		if ( !devices.len() ) lines.append( "No Logitech device or receiver was found." );
+		lines.append( "info  drivers: hid_logitech_dj " & drv.hid_logitech_dj.state & ", hid_logitech_hidpp " & drv.hid_logitech_hidpp.state );
+		lines.append( ( solaar ? "ok    " : "FIX   " ) & "solaar" & ( solaar ? "" : ": bxrig install solaar (or bxrig input offer)" ) );
+		if ( solaar ) lines.append( "info  solaar show: " & ( show.exit == 0 ? show.devices.len() & " paired device" & ( show.devices.len() == 1 ? "" : "s" ) & " listed" : "failed (exit " & show.exit & ")" ) );
+		lines.append( ( rule ? "ok    " : ( solaar ? "FIX   " : "info  " ) ) & "udev rule 42-logitech-unify-permissions.rules" & ( rule ? "" : solaar ? ": missing, reinstall the solaar package" : ": comes with the solaar package" ) );
+		return variables.out.say( "ok", data, arguments.asJson, lines );
+	}
+
+	// ---- dispatch ----
+
+	function run( words, opts = {}, yes = false, dry = false, asJson = false ) {
+		var verb = arguments.words.len() ? arguments.words[ 1 ] : "";
+		var n = arguments.words.len();
+		if ( verb == "doctor" && n == 1 ) return new bxrig.MacExtras( variables.cli, variables.runnerArg ).inputDoctor( arguments.asJson );
+		if ( verb == "gestures" && n == 1 ) return new bxrig.MacExtras( variables.cli, variables.runnerArg ).gestures( arguments.yes, arguments.dry, arguments.asJson );
+		if ( verb == "status" && n == 1 ) return statusCmd( arguments.asJson );
+		if ( verb == "offer" && n == 1 ) return offerCmd( arguments.opts, arguments.yes, arguments.dry, arguments.asJson );
+		if ( verb == "apple" && n == 1 ) return appleCmd( arguments.opts, arguments.yes, arguments.dry, arguments.asJson );
+		if ( verb == "logitech" && n == 1 ) return logitechCmd( arguments.asJson );
+		if ( verb == "undo" && n == 1 ) return undoCmd( arguments.yes, arguments.dry, arguments.asJson );
+		return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "input" ), arguments.asJson );
+	}
+}

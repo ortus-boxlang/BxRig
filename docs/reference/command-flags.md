@@ -277,3 +277,5 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `record` | `--region` | bool |  |
 | `record` | `--audio` | value | `desktop` |
 | `dolphin` | `--fix` | bool |  |
+| `input` | `--for` | value |  |
+| `input` | `--scroll-speed` | value | `0..63` |

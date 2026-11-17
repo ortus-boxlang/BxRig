@@ -2647,15 +2647,32 @@
 				},
 				{
 					"name": "input",
-					"summary": "Input devices: doctor, trackpad gestures.",
+					"summary": "Input devices: Apple Magic Mouse and Trackpad, Logitech, the helpers for them, the older doctor and trackpad gestures.",
 					"usage": [
+						"input status [--json]",
+						"input offer [--for=detect|apple|logitech|both|none] [--yes] [--dry-run] [--json]",
+						"input apple [--scroll-speed=0..63] [--yes] [--dry-run] [--json]",
+						"input logitech [--json]",
+						"input undo [--yes] [--dry-run] [--json]",
 						"input doctor | gestures [--yes] [--dry-run] [--json]"
 					],
 					"examples": [
-						"bxrig input doctor"
+						"bxrig input status",
+						"bxrig input offer --dry-run",
+						"bxrig input apple --scroll-speed=48 --yes",
+						"bxrig input logitech"
 					],
-					"mutates": false,
-					"flags": []
+					"mutates": true,
+					"flags": [
+						{
+							"name": "for",
+							"type": "value"
+						},
+						{
+							"name": "scroll-speed",
+							"type": "value"
+						}
+					]
 				},
 				{
 					"name": "audio",
