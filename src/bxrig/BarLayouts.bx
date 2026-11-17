@@ -55,7 +55,7 @@ class BarLayouts {
 			dense: { name: "Dense", tag: "developer", desc: "Every status in view at once. Needs a wide screen.",
 				L: [ "logo", "ws", "win" ], C: [ "clock", "weather", "media" ], R: [ "agents", "dev", "sys", "cap", "tray", "clip", "net", "vpn", "bt", "vol", "bright", "bat", "bell", "quick", "ctl" ],
 				inc: "Everything in Standard, plus brightness and weather.",
-				note: "Caffeine is not a bar icon: it stays a switch in Quick settings.", detail: "Dense: for developers with a wide screen. On a small screen the bar runs out of room and hides some icons." }
+				note: "Caffeine is not a bar icon: it stays a switch in Quick settings.", detail: "Dense: for developers with a wide screen; a small one hides some icons." }
 		};
 		var l = all[ valid( arguments.key ) ? arguments.key : "standard" ];
 		l.key = valid( arguments.key ) ? arguments.key : "standard";

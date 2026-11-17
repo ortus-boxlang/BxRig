@@ -33,5 +33,10 @@ testkit.check( "drawn: Standard shows the capture icon, Minimal does not", find(
 testkit.check( "drawn: the clock reads Nov 5 - 04:00", find( "Nov 5 - 04:00", draw( "standard" ) ) > 0 );
 tui.begin_frame(); h = pv.appGrid( 0, 0, 40, "launchpad", true ); g1 = tui.render_to_string( 80, 14 );
 tui.begin_frame(); pv.appGrid( 0, 0, 40, "terminal", true ); g2 = tui.render_to_string( 80, 14 );
-testkit.check( "app grids: Launchpad has big tiles and a search box, Terminal-style has key hints and square corners", h == pv.gridHeight( 2 ) && find( "Search apps", g1 ) > 0 && find( "╭", g1 ) > 0 && find( "▀▀▀▀▀", g1 ) > 0 && find( "/ search apps", g2 ) > 0 && find( "esc", g2 ) > 0 && find( "┌", g2 ) > 0 && find( "╭", g2 ) == 0 );
+testkit.check( "app grids: Launchpad has big tiles and a search box, Terminal-style has key hints and square corners", h == pv.gridHeight( 2 ) && find( "Search apps", g1 ) > 0 && find( "╭", g1 ) > 0 && find( "◆", g1 ) > 0 && find( "/ search apps", g2 ) > 0 && find( "esc", g2 ) > 0 && find( "┌", g2 ) > 0 && find( "╭", g2 ) == 0 );
+// the wizard page and the data agree: same layouts in the same order, the page's description is the layout's own text
+spec = jsonDeserialize( new bxrig.WizardData().demoPages() );
+barQ = spec.pages.filter( function( pg ) { return pg.id == "top_bar"; } )[ 1 ].questions[ 1 ];
+testkit.check( "the Top bar layout page lists BarLayouts.order(), labelled with the layout names", barQ.options.map( function( o ) { return o.value; } ).toList( "," ) == bl.order().toList( "," ) && barQ.options.filter( function( o ) { return o.label == bl.layout( o.value ).name; } ).len() == 3 );
+testkit.check( "each option's description starts with the layout's detail and names the command", barQ.options.filter( function( o ) { return left( o.description, len( bl.layout( o.value ).detail ) ) == bl.layout( o.value ).detail && find( "bxrig appearance bar layout " & o.value, o.description ) > 0; } ).len() == 3 );
 testkit.done();

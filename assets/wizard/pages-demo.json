@@ -216,7 +216,7 @@
 				{
 					"type": "choice",
 					"id": "theme",
-					"label": "Theme",
+					"label": "Dark or light",
 					"default": "dark",
 					"options": [
 						{
@@ -450,7 +450,7 @@
 						{
 							"value": "dense",
 							"label": "Dense",
-							"description": "Dense: for developers with a wide screen. On a small screen the bar runs out of room and hides some icons. Change it later: bxrig appearance bar layout dense."
+							"description": "Dense: for developers with a wide screen; a small one hides some icons. Change it later: bxrig appearance bar layout dense."
 						}
 					]
 				},

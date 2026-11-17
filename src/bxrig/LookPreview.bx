@@ -96,7 +96,7 @@ class LookPreview {
 
 	function apps() {
 		return [ [ "BxRig", "◆", "ok" ], [ "Center", "▣", "cy" ], [ "Term", "❯", "ok" ], [ "Files", "▤", "y" ], [ "Web", "◍", "cy" ], [ "Mail", "✉", "m" ], [ "Editor", "✎", "pk" ],
-			[ "Notes", "☰", "y" ], [ "Backup", "↻", "cy" ], [ "Themes", "◐", "m" ], [ "Prefs", "⚙", "r" ], [ "Music", "♪", "m" ], [ "Videos", "▶", "r" ], [ "Docs", "≡", "cy" ] ];
+			[ "Notes", "▥", "y" ], [ "Backup", "◎", "cy" ], [ "Themes", "◐", "m" ], [ "Prefs", "⚙", "r" ], [ "Music", "♪", "m" ], [ "Videos", "▶", "r" ], [ "Docs", "≡", "cy" ] ];
 	}
 
 	// The height of a grid preview of `rows` rows of apps.
@@ -138,7 +138,6 @@ class LookPreview {
 				var col = role( a[ 3 ] );
 				k.fillRect( cx + 1, cy, 5, 2, col );
 				k.put( cx + 3, cy, a[ 2 ], k.color( "CRUST" ), col, true );
-				k.put( cx + 1, cy + 1, "▀▀▀▀▀", k.color( "CRUST" ), col );
 				k.put( cx + int( ( 7 - len( a[ 1 ] ) ) / 2 ), cy + 2, a[ 1 ], k.color( "TEXT" ), bg );
 			}
 		}
@@ -156,7 +155,7 @@ class LookPreview {
 			for ( var dr in [ "ok", "cy", "y" ] ) tx = k.put( tx, dy, " ▪ ", role( dr ), k.color( "SURFACE0" ) );
 		} else {
 			var lx = arguments.x + 4;
-			lx = k.put( lx, dy, " ⠿ ", k.color( "TEXT" ), k.color( "SURFACE0" ) );
+			lx = k.put( lx, dy, " ▦ ", k.color( "TEXT" ), k.color( "SURFACE0" ) );
 			lx = k.put( lx, dy, " │ ", k.color( "SURFACE1" ), bg );
 			for ( var d2 in [ "ok", "cy", "y" ] ) { lx = k.put( lx, dy, " ▪ ", k.color( "CRUST" ), role( d2 ) ); lx++; }
 		}
