@@ -1,5 +1,6 @@
 --!nonstrict
--- BxRig theme switcher (Omarchy-style): "Search themes…" box, theme list on the
+-- BxRig Quick settings, page 2: the theme switcher (Omarchy-style). It is the panel `themes` of bxrig/quick, opened by the "Themes" row of
+-- the first page (panel.luau) or with `noctalia msg panel-toggle bxrig/quick:themes`. "Search themes…" box, theme list on the
 -- left with the current one marked "✓ Current", the highlighted theme's
 -- preview and an Information section on the right, "Apply Theme ↵" footer.
 --
@@ -206,7 +207,7 @@ local function render()
 		statusColor = "error"
 	end
 	local footer = ui.row({ align = "center", gap = 8, paddingH = 14, paddingV = 8, fill = "surface_container", radius = 10 }, {
-		ui.glyph({ name = "palette", size = 16, color = "on_surface_variant" }),
+		ui.button({ glyph = "arrow-left", text = "Quick settings", variant = "ghost", controlSize = "sm", onClick = "onBack" }),
 		ui.label({ text = status, fontSize = 12, color = statusColor, flexGrow = 1, maxLines = 1 }),
 		ui.button({
 			text = "Apply Theme  ↵",
@@ -280,6 +281,11 @@ function onSubmit()
 		end
 	end, 60000)
 	panel.close()
+end
+
+-- Back to page 1. Opening a panel replaces the open one (the shell keeps one panel in its slot), so this does not close first.
+function onBack()
+	noctalia.togglePanel("bxrig/quick:panel")
 end
 
 function onKey(chord, pressed)

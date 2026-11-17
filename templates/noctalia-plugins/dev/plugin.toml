@@ -1,0 +1,38 @@
+# BxRig Developer: a code glyph in the bar (with the number of things running) that opens the
+# developer popover: Databases, Containers and Virtual machines, each with start and stop.
+# Data: `bxrig db list --json`, `bxrig containers list --json`, `bxrig vm list --json`
+# (15 s while the popover is open, 2 min in the background for the bar badge).
+# Open the panel from a keybind with:
+#   noctalia msg panel-toggle bxrig/dev:panel
+
+id = "bxrig/dev"
+name = "Developer (BxRig)"
+version = "1.0.0"
+plugin_api = 43
+author = "bxrig"
+license = "MIT"
+dependencies = ["bxrig"]
+tags = ["developer", "database", "containers", "vm", "bxrig"]
+icon = "code"
+description = "Local databases, containers and virtual machines at a glance: state, ports, start and stop, connection strings, logs; fed by bxrig."
+
+[[setting]]
+key = "command"
+type = "string"
+label_key = "settings.command.label"
+description_key = "settings.command.description"
+default = "bxrig"
+
+[[widget]]
+id = "bar"
+entry = "bar.luau"
+
+[[panel]]
+id = "panel"
+entry = "panel.luau"
+width = 420
+height = "content"
+max_height = 640
+placement = "attached"
+position = "auto"
+open_near_click = true

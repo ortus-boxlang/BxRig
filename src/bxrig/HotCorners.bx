@@ -49,7 +49,7 @@ class HotCorners {
 			lock: "noctalia msg session lock",
 			launcher: "noctalia msg panel-toggle launcher",
 			agents: "noctalia msg panel-toggle bxrig/agents:panel",
-			themes: "noctalia msg panel-toggle bxrig/themes:panel"
+			themes: "noctalia msg panel-toggle bxrig/quick:themes"
 		};
 		return structKeyExists( m, arguments.action ) ? m[ arguments.action ] : "";
 	}

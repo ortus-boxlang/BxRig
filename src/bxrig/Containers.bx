@@ -2,15 +2,19 @@
 //   doctor                  checks: Podman installed, rootless, subuid/subgid, compose, the user socket, the docker shim
 //   socket enable [--yes]   starts the rootless API socket (systemctl --user enable --now podman.socket) and prints DOCKER_HOST
 //   docker-compat [--yes]   installs podman-docker (a `docker` command that runs Podman) and podman-compose (`sudo pacman -S --needed`)
+//   list                    every container on the configured engine (the one `bxrig db engine` chose, Podman by default): name, image, state, ports, created
+//   start|stop|restart NAME one container, by its engine name (reversible, so no --yes, like `db stop` and `vm stop`)
+//   logs NAME [--lines=N]   the last N log lines (default 200, 1 to 10000)
 // podman-docker conflicts with the docker package, so it is refused while docker is installed. Package names checked on archlinux.org
 // 2026-11-12 (podman-docker ships /usr/bin/docker; podman ships podman.socket as a user unit too).
-// Exit: 0 done / all checks pass, 2 plan without --yes, 4 precondition (or a check failed in `doctor`), 6 a command failed.
+// Exit: 0 done / all checks pass, 2 plan without --yes or bad usage, 4 precondition (no container engine, no such container, or a check failed in `doctor`), 6 a command failed.
 class Containers {
 	function init( cli, runner = "" ) {
 		variables.cli = arguments.cli;
 		variables.proc = new bxrig.util.Proc( arguments.runner );
 		variables.pacman = new bxrig.util.Pacman( variables.proc );
 		variables.systemd = new bxrig.util.Systemd( variables.proc );
+		variables.text = new bxrig.util.Text();
 		return this;
 	}
 
@@ -65,5 +69,109 @@ class Containers {
 		var r = variables.proc.exec( variables.pacman.installArgv( pkgs ), 1800 );
 		if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: could not install " & pkgs.toList( ", " ) & ": " & trim( r.output ) ] );
 		return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Installed " & pkgs.toList( ", " ) & ". `docker` now runs Podman. Optional: bxrig containers socket enable" ] );
+	}
+
+	// ---- containers on the configured engine ----
+
+	// The container engine program: the one `bxrig db engine` chose, Podman by default.
+	function engineCli() { return new bxrig.Db( variables.cli ).engineCli(); }
+
+	function engineExec( args, timeout = 60 ) {
+		var argv = [ engineCli() ];
+		for ( var a in arguments.args ) argv.append( a );
+		return variables.proc.exec( argv, arguments.timeout );
+	}
+
+	function engineAvailable() {
+		try { return engineExec( [ "--version" ], 20 ).exitCode == 0; } catch ( any e ) { return false; }
+	}
+
+	// The host ports of an engine `Ports` text ("127.0.0.1:5432->5432/tcp, [::]:5432->5432/tcp", or a range "0.0.0.0:8000-8002->8000-8002/tcp"),
+	// each once, in order; a range gives its first and last port.
+	function hostPorts( text ) {
+		var out = [];
+		for ( var part in listToArray( arguments.text, "," ) ) {
+			var m = reFind( "([0-9]+)(-[0-9]+)?->", part, 1, true );
+			if ( m.pos[ 1 ] == 0 ) continue;
+			var found = [ int( mid( part, m.pos[ 2 ], m.len[ 2 ] ) ) ];
+			if ( m.pos.len() >= 3 && m.pos[ 3 ] > 0 ) found.append( int( mid( part, m.pos[ 3 ] + 1, m.len[ 3 ] - 1 ) ) );
+			for ( var port in found ) if ( !arrayFind( out, port ) ) out.append( port );
+		}
+		return out;
+	}
+
+	// database and vm containers are the ones `bxrig db` and `bxrig vm` made; the rest are plain containers.
+	function kindOf( name ) {
+		if ( left( arguments.name, 9 ) == "bxrig-db-" ) return "database";
+		if ( left( arguments.name, 9 ) == "bxrig-vm-" ) return "vm";
+		return "container";
+	}
+
+	// `ps -a` output (one container per line: name|image|state|ports|created) as rows.
+	function parseList( text ) {
+		var rows = [];
+		for ( var line in listToArray( arguments.text, chr( 10 ) ) ) {
+			var parts = listToArray( trim( line ), "|", true );
+			if ( parts.len() < 3 || !len( parts[ 1 ] ) ) continue;
+			var ports = parts.len() >= 4 ? parts[ 4 ] : "";
+			rows.append( { name: parts[ 1 ], image: parts[ 2 ], state: lcase( parts[ 3 ] ), ports: hostPorts( ports ), ports_text: ports, created: parts.len() >= 5 ? parts[ 5 ] : "", kind: kindOf( parts[ 1 ] ) } );
+		}
+		return rows;
+	}
+
+	function noEngine( cmd, asJson ) {
+		var msg = engineCli() & " was not found" & ( engineCli() == "podman" ? " (install it with: bxrig profile-install containers; or choose Docker with: bxrig db engine docker)" : "" );
+		return variables.cli.say( arguments.cmd, "precondition", { error: msg, engine: engineCli() }, arguments.asJson, [ "error: " & msg ] );
+	}
+
+	// `containers list [--json]`
+	function list( asJson ) {
+		var cmd = "containers list";
+		if ( !engineAvailable() ) return noEngine( cmd, arguments.asJson );
+		var r = engineExec( [ "ps", "-a", "--format", "{{.Names}}|{{.Image}}|{{.State}}|{{.Ports}}|{{.CreatedAt}}" ], 30 );
+		if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: variables.proc.why( r ), engine: engineCli() }, arguments.asJson, [ "error: " & variables.proc.why( r ) ] );
+		var rows = parseList( r.output );
+		var lines = rows.map( function( c ) { return left( c.name & repeatString( " ", 28 ), 28 ) & " " & left( c.state & repeatString( " ", 8 ), 8 ) & " " & c.image & ( len( c.ports_text ) ? "  " & c.ports_text : "" ); } );
+		if ( !rows.len() ) lines.append( "No containers on " & engineCli() & "." );
+		return variables.cli.say( cmd, "ok", { engine: engineCli(), containers: rows }, arguments.asJson, lines );
+	}
+
+	// "running", "exited", ... or "" when there is no such container.
+	function stateOf( name ) {
+		try {
+			var r = engineExec( [ "container", "inspect", "--format", "{{.State.Status}}", arguments.name ], 30 );
+			return r.exitCode == 0 ? lcase( trim( r.output ) ) : "";
+		} catch ( any e ) { return ""; }
+	}
+
+	// `containers start|stop|restart NAME`
+	function act( verb, name, asJson ) {
+		var cmd = "containers " & arguments.verb;
+		if ( !new bxrig.util.Names().valid( "engine-container", arguments.name ) ) return variables.cli.fail( cmd, "usage", "Bad container name " & arguments.name, arguments.asJson );
+		if ( !engineAvailable() ) return noEngine( cmd, arguments.asJson );
+		var state = stateOf( arguments.name );
+		if ( !len( state ) ) return variables.cli.fail( cmd, "precondition", arguments.name & " does not exist (bxrig containers list)", arguments.asJson );
+		var data = { name: arguments.name, engine: engineCli() };
+		if ( arguments.verb == "start" && state == "running" ) return variables.cli.say( cmd, "ok", variables.text.merge( data, { state: "running", already: true } ), arguments.asJson, [ arguments.name & " is already running" ] );
+		if ( arguments.verb == "stop" && state != "running" && state != "paused" ) return variables.cli.say( cmd, "ok", variables.text.merge( data, { state: state, already: true } ), arguments.asJson, [ arguments.name & " is not running" ] );
+		var r = engineExec( [ arguments.verb, arguments.name ], arguments.verb == "start" ? 120 : 240 );
+		var done = { start: "Started ", stop: "Stopped ", restart: "Restarted " };
+		if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", variables.text.merge( data, { error: variables.proc.why( r ) } ), arguments.asJson, [ "error: " & variables.proc.why( r ) ] );
+		return variables.cli.say( cmd, "ok", variables.text.merge( data, { state: arguments.verb == "stop" ? "exited" : "running" } ), arguments.asJson, [ done[ arguments.verb ] & arguments.name ] );
+	}
+
+	// `containers logs NAME [--lines=N]`
+	function logs( name, lines, asJson ) {
+		var cmd = "containers logs";
+		if ( !new bxrig.util.Names().valid( "engine-container", arguments.name ) ) return variables.cli.fail( cmd, "usage", "Bad container name " & arguments.name, arguments.asJson );
+		var n = len( arguments.lines ) ? arguments.lines : 200;
+		if ( !isNumeric( n ) || int( n ) != n || n < 1 || n > 10000 ) return variables.cli.fail( cmd, "usage", "--lines must be a whole number from 1 to 10000", arguments.asJson );
+		n = int( n );
+		if ( !engineAvailable() ) return noEngine( cmd, arguments.asJson );
+		if ( !len( stateOf( arguments.name ) ) ) return variables.cli.fail( cmd, "precondition", arguments.name & " does not exist (bxrig containers list)", arguments.asJson );
+		var r = engineExec( [ "logs", "--tail", n & "", arguments.name ], 60 );
+		// a container writes to both streams and `logs` passes them on separately: show both
+		var text = r.exitCode == 0 ? reReplace( r.output & ( structKeyExists( r, "error" ) && len( r.error & "" ) ? chr( 10 ) & r.error : "" ), "[\r\n]+$", "" ) : variables.proc.why( r );
+		return variables.cli.say( cmd, r.exitCode == 0 ? "ok" : "failed", { name: arguments.name, lines: n, logs: text }, arguments.asJson, [ text ] );
 	}
 }

@@ -59,7 +59,7 @@ Ours: BxRig, BxRig Cyan, BxRig Forest, BxRig Midnight and BxRig Ember (dark), Bx
 
 ## The theme switcher
 
-On Hyprland the bar's palette button, or <kbd>Super</kbd>+<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>, opens the theme switcher: type to filter, see the theme's wallpaper, <kbd>Enter</kbd> applies it everywhere at once.
+On Hyprland the Themes row of the bar's quick settings popover (the sliders button), or <kbd>Super</kbd>+<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>, opens the theme switcher: type to filter, see the theme's wallpaper, <kbd>Enter</kbd> applies it everywhere at once.
 
 <video src="../assets/clips/theme-switcher.webm" poster="../assets/screenshots/panel-theme-switcher.webp" autoplay loop muted playsinline width="100%"></video>
 

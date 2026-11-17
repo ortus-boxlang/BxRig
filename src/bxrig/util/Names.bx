@@ -1,6 +1,6 @@
 // Names the user types (a secret, a remote, a package, a theme, ...): one rule per kind, one sentence per kind. A bad name is a usage error (exit 2).
 //   valid( kind, value ) -> true or false        rule( kind ) -> "letters, digits and dashes, starting with a letter (up to 31 characters)"
-// Kinds: slug (NAS and backup names), vm, theme, label (remote, web app, session), container, secret, package, model.
+// Kinds: slug (NAS and backup names), vm, theme, label (remote, web app, session), container (a BxRig database name), engine-container (any container on the engine), secret, package, model.
 class Names {
 	function table() {
 		var t = {};
@@ -9,6 +9,7 @@ class Names {
 		t[ "theme" ] = { re: "^[a-z0-9][a-z0-9-]{0,40}$", rule: "lower case letters, digits and dashes (up to 41 characters)" };
 		t[ "label" ] = { re: "^[A-Za-z0-9_-]{1,40}$", rule: "letters, digits, - and _ (up to 40 characters)" };
 		t[ "container" ] = { re: "^[a-zA-Z0-9-]{1,40}$", rule: "letters, digits and hyphens (up to 40 characters)" };
+		t[ "engine-container" ] = { re: "^[A-Za-z0-9][A-Za-z0-9_.-]{0,126}$", rule: "letters, digits and . _ - (up to 127 characters, not starting with a dash), as the container engine names them" };
 		t[ "secret" ] = { re: "^[A-Z_][A-Z0-9_]{0,63}$", rule: "capital letters, digits and underscores, like ANTHROPIC_API_KEY" };
 		t[ "package" ] = { re: "^[a-z0-9@._+-]{1,100}$", rule: "lower case letters, digits and @ . _ + - (up to 100 characters)" };
 		t[ "model" ] = { re: "^[A-Za-z0-9._:/-]{1,100}$", rule: "letters, digits and . _ : / - (for example qwen3:8b)" };

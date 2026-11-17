@@ -1,0 +1,123 @@
+// The BxRig Noctalia plugins quick (bxrig/quick) and power (bxrig/power): manifest, files, translations and a structural check of the Luau.
+// Run from src/: (cd src && matchbox ../tests/plugin_quick_power_test.bxs)
+// There is no Luau interpreter in CI, so this reads the scripts as text: every file a manifest names exists, the blocks balance
+// (function/if/for/while ... end), the bxrig commands a control runs are the ones the CLI has, and no em dash is in any file.
+testkit = new lib.Check( "quick and power plugins" );
+root = expandPath( "../templates/noctalia-plugins" );
+
+// The script text without comments and string literals, so a keyword inside a message does not count.
+function bare( text ) {
+	var out = "";
+	var lines = listToArray( text, chr( 10 ), true );
+	for ( var line in lines ) {
+		var t = line;
+		var i = 1;
+		var res = "";
+		var q = "";
+		while ( i <= len( t ) ) {
+			var ch = mid( t, i, 1 );
+			if ( len( q ) ) {
+				if ( compare( ch, "\" ) == 0 ) { i += 2; continue; }
+				if ( compare( ch, q ) == 0 ) q = "";
+			} else if ( compare( ch, '"' ) == 0 || compare( ch, "'" ) == 0 ) { q = ch; res &= '""'; }
+			else if ( compare( ch, "-" ) == 0 && compare( mid( t, i, 2 ), "--" ) == 0 ) break;
+			else res &= ch;
+			i++;
+		}
+		out &= res & chr( 10 );
+	}
+	return out;
+}
+
+// Opens minus closes of Luau blocks: function, if...then, for...do, while...do, repeat...until, `do` blocks all close with end (repeat with until).
+function balance( text ) {
+	var s = " " & reReplace( bare( text ), "[^A-Za-z_0-9]", " ", "all" ) & " ";
+	var words = listToArray( s, " ", false );
+	var depth = 0;
+	var loopHead = 0; // a for or while waits for its `do`, which opens the block (so the for/while itself must not count twice)
+	for ( var w in words ) {
+		if ( compare( w, "function" ) == 0 || compare( w, "if" ) == 0 ) depth++;
+		else if ( compare( w, "for" ) == 0 || compare( w, "while" ) == 0 ) { loopHead++; }
+		else if ( compare( w, "do" ) == 0 ) { if ( loopHead > 0 ) loopHead--; depth++; }
+		else if ( compare( w, "elseif" ) == 0 ) { /* no new block: the `if` it continues is open, and its `then` is not counted */ }
+		else if ( compare( w, "end" ) == 0 ) depth--;
+	}
+	return depth;
+}
+
+function textOf( rel ) { return fileRead( root & "/" & rel ); }
+
+// An `elseif ... then` is not a new `if`: the word list above never counts `elseif`, but `if` inside it is not a separate word, so depth is right.
+// The helper module is shared by every plugin and must stay identical.
+agentsHelper = textOf( "agents/bxrig.luau" );
+
+for ( p in [ "quick", "power" ] ) {
+	dir = root & "/" & p;
+	testkit.check( p & ": the folder exists", directoryExists( dir ) );
+	if ( !directoryExists( dir ) ) continue;
+	manifest = textOf( p & "/plugin.toml" );
+	testkit.check( p & ": id bxrig/" & p & ", plugin_api 43, author bxrig", find( 'id = "bxrig/' & p & '"', manifest ) > 0 && find( "plugin_api = 43", manifest ) > 0 && find( 'author = "bxrig"', manifest ) > 0 );
+	testkit.check( p & ": the plugin-level command setting", find( 'key = "command"', manifest ) > 0 && find( 'default = "bxrig"', manifest ) > 0 );
+	// every entry = "x.luau" exists
+	ok = true; entries = 0;
+	for ( line in listToArray( manifest, chr( 10 ) ) ) {
+		if ( reFind( '^entry = "', trim( line ) ) ) {
+			entries++;
+			f = listFirst( listRest( trim( line ), '"' ), '"' );
+			if ( !fileExists( dir & "/" & f ) ) { ok = false; println( "  missing " & f ); }
+		}
+	}
+	testkit.check( p & ": every entry script of the manifest exists (" & entries & ")", ok && entries > 0 );
+	testkit.check( p & ": bxrig.luau is the shared helper, byte for byte", compare( textOf( p & "/bxrig.luau" ), agentsHelper ) == 0 );
+	tr = jsonDeserialize( textOf( p & "/translations/en.json" ) );
+	testkit.check( p & ": translations/en.json has the command setting texts and a title", structKeyExists( tr, "title" ) && structKeyExists( tr.settings, "command" ) && structKeyExists( tr.settings.command, "label" ) && structKeyExists( tr.settings.command, "description" ) );
+	ok = true;
+	for ( f in directoryList( dir, false, "name" ) ) {
+		if ( right( f, 5 ) == ".luau" ) {
+			t = textOf( p & "/" & f );
+			if ( compare( left( t, 12 ), "--!nonstrict" ) != 0 ) { ok = false; println( "  no --!nonstrict in " & f ); }
+			if ( balance( t ) != 0 ) { ok = false; println( "  unbalanced blocks in " & f & " (" & balance( t ) & ")" ); }
+		}
+	}
+	testkit.check( p & ": every script is nonstrict and its blocks balance", ok );
+	ok = true;
+	for ( f in directoryList( dir, true, "path" ) ) {
+		if ( !directoryExists( f ) && find( chr( 8212 ), fileRead( f ) ) ) { ok = false; println( "  em dash in " & f ); }
+	}
+	testkit.check( p & ": no em dash in any file", ok );
+}
+
+// ---- quick ----
+m = textOf( "quick/plugin.toml" );
+testkit.check( "quick: bar widget, the quick panel (attached, near the click) and the themes panel (floating, exclusive keyboard)",
+	find( 'id = "bar"', m ) > 0 && find( 'id = "panel"', m ) > 0 && find( 'id = "themes"', m ) > 0 && find( 'placement = "attached"', m ) > 0 && find( 'keyboard_focus = "exclusive"', m ) > 0 );
+testkit.check( "quick: the themes page keeps its keys (Up, Down, Page_Up, Page_Down, Return, KP_Enter)", find( 'capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter"]', m ) > 0 );
+qp = textOf( "quick/panel.luau" );
+for ( c in [ '"toggle", "stay-awake"', '"notify", "dnd"', '"theme", "mode"', '"appearance", "dock"', '"appearance", "appgrid"', '"appearance", "bar", "layout"', '"appearance", "battery-percent"', '"time", "format"' ] ) {
+	testkit.check( "quick panel runs " & c, find( c, qp ) > 0 );
+}
+testkit.check( "quick panel: every command is run with --yes", find( 'table.insert(argv, "--yes")', qp ) > 0 );
+testkit.check( "quick panel: the clock presets are Nov 5 - 04:00, 04:00, 04:00 AM and ISO", find( "%b %-d - %H:%M", qp ) > 0 && find( '"%H:%M"', qp ) > 0 && find( "%I:%M %p", qp ) > 0 && find( "%Y-%m-%d %H:%M", qp ) > 0 );
+testkit.check( "quick panel: the Themes row opens the themes page, the Control Center button runs `tui look` in a terminal", find( 'togglePanel("bxrig/quick:themes")', qp ) > 0 && find( "runInTerminal", qp ) > 0 && find( "tui look", qp ) > 0 );
+testkit.check( "quick panel: the night light button opens the control center Home tab", find( '"panel-toggle", "control-center", "home"', qp ) > 0 );
+tp = textOf( "quick/themes.luau" );
+testkit.check( "quick themes page: Enter runs `theme set NAME --yes`, the list comes from `theme list --json`", find( '"theme", "set", name, "--yes"', tp ) > 0 && find( '"theme", "list", "--json"', tp ) > 0 );
+testkit.check( "quick bar widget is the sliders glyph in a palette role and opens bxrig/quick:panel", find( "adjustments-horizontal", textOf( "quick/bar.luau" ) ) > 0 && find( 'color = "tertiary"', textOf( "quick/bar.luau" ) ) > 0 && find( 'togglePanel("bxrig/quick:panel")', textOf( "quick/bar.luau" ) ) > 0 );
+
+// ---- power ----
+pm = textOf( "power/plugin.toml" );
+testkit.check( "power: a panel only (no bar widget), attached and near the click", find( "[[panel]]", pm ) > 0 && find( "[[widget]]", pm ) == 0 && find( 'placement = "attached"', pm ) > 0 && find( "open_near_click = true", pm ) > 0 && find( 'id = "panel"', pm ) > 0 );
+pp = textOf( "power/panel.luau" );
+for ( c in [ '"power", "status", "--json"', '"power", "profile", p.id', '"power", "lid", "battery", opt.id, "--yes"', '"power", "lid", "ac", opt.id, "--yes"', '"system", "suspend"', '"power", "hibernate", "--yes"', '"power", "hibernate", "--dry-run", "--json"', '"power", "charge-limit"' ] ) {
+	testkit.check( "power panel runs " & c, find( c, pp ) > 0 );
+}
+testkit.check( "power panel: refreshes every 15 s while open", find( "REFRESH_MS = 15000", pp ) > 0 && find( "setWantsSecondTicks(true)", pp ) > 0 && find( "function update()", pp ) > 0 );
+testkit.check( "power panel: Suspend and Hibernate ask first, the charge limit slider is shown only when supported", find( 'confirm = "suspend"', pp ) > 0 && find( 'confirm = "hibernate"', pp ) > 0 && find( "charge_limit_supported == true", pp ) > 0 && find( "ui.slider", pp ) > 0 );
+testkit.check( "power panel: the sudo commands run in a terminal, 'Open Power page' opens the control center Power tab", find( "runInTerminal", pp ) > 0 && find( '"panel-toggle", "control-center", "power"', pp ) > 0 && find( "Open Power page", pp ) > 0 );
+// the JSON the panel reads: power status in a fake sysfs is checked in power-test.sh; here the keys it uses must be the ones the command writes
+ps = fileRead( expandPath( "../src/bxrig/Power.bx" ) );
+for ( k in [ "time_remaining_minutes", "health_percent", "cycles", "charge_limit_supported", "charge_limit", "on_ac", "lid_battery", "lid_ac", "state", "watts" ] ) {
+	testkit.check( "power panel and Power.bx agree on the key " & k, find( k, pp ) > 0 && find( k, ps ) > 0 );
+}
+
+testkit.done( "all passed" );

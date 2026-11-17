@@ -121,7 +121,7 @@ class Db {
 		return variables.cli.say( "db engines", "ok", { engines: rows }, arguments.asJson, lines );
 	}
 
-	// `db list`: BxRig's containers, running or not.
+	// `db list`: BxRig's containers, running or not. Each row has the engine's status text and a plain `state` (running, paused, created, exited).
 	function list( asJson ) {
 		if ( !engineAvailable() ) return variables.cli.say( "db list", "precondition", { error: engineCli() & " was not found" }, arguments.asJson, [ "error: " & engineCli() & " was not found" ] );
 		var r = engineExec( [ "ps", "-a", "--filter", "label=io.bxrig.database=true", "--format", "{{.Names}}|{{.Status}}|{{.Image}}" ], 30 );
@@ -131,11 +131,20 @@ class Db {
 			var parts = listToArray( trim( line ), "|", true );
 			if ( parts.len() < 3 ) continue;
 			var meta = readMeta( parts[ 1 ] );
-			items.append( { container: parts[ 1 ], status: parts[ 2 ], image: parts[ 3 ], engine: meta.engine ?: "", name: meta.name ?: "", port: meta.port ?: 0 } );
+			items.append( { container: parts[ 1 ], status: parts[ 2 ], state: stateFromStatus( parts[ 2 ] ), image: parts[ 3 ], engine: meta.engine ?: "", name: meta.name ?: "", port: meta.port ?: 0 } );
 			lines.append( parts[ 1 ] & "  " & parts[ 2 ] & "  " & parts[ 3 ] );
 		}
 		if ( !items.len() ) lines.append( "No BxRig databases yet. Start one with: bxrig db start ENGINE --yes" );
 		return variables.cli.say( "db list", r.exitCode == 0 ? "ok" : "failed", { engine: engineCli(), databases: items }, arguments.asJson, lines );
+	}
+
+	// "running", "paused", "created" or "exited" from a `ps` status text ("Up 2 hours", "Up 2 hours (Paused)", "Created", "Exited (0) 3 days ago"); the same words `vm list` uses.
+	function stateFromStatus( status ) {
+		var st = lcase( arguments.status );
+		if ( find( "(paused)", st ) ) return "paused";
+		if ( left( st, 2 ) == "up" ) return "running";
+		if ( left( st, 7 ) == "created" ) return "created";
+		return "exited";
 	}
 
 	function readMeta( container ) {

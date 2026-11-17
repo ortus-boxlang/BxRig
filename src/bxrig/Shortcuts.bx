@@ -196,7 +196,7 @@ class Shortcuts {
 			row( "notify-all", G.note, "Notifications: all of them, to read and act on", "Super+Shift+Comma", "Super+Shift+Comma", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle control-center notifications")' ),
 			row( "world-clock", G.note, "World clock", "Super+Alt+W", "Super+Alt+W", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle bxrig/clock:panel")' ),
 			row( "agents-panel", G.note, "Coding agents: launch one, see its limits", "Super+Alt+A", "Super+Alt+A", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle bxrig/agents:panel")' ),
-			row( "theme-switcher", G.note, "Theme switcher (search, preview, Enter applies)", "Super+Ctrl+Shift+Space", "Super+Ctrl+Shift+Space", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle bxrig/themes:panel")' ),
+			row( "theme-switcher", G.note, "Theme switcher (search, preview, Enter applies)", "Super+Ctrl+Shift+Space", "Super+Ctrl+Shift+Space", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle bxrig/quick:themes")' ),
 			// windows
 			row( "close", G.win, "Close the window", "Super+Q", "Super+Q", "hypr-bind", "hl.dsp.window.close()" ),
 			row( "close-alt", G.win, "Close the window (Omarchy's key)", "Super+W", "", "hypr-bind", "hl.dsp.window.close()" ),

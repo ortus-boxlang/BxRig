@@ -1,0 +1,123 @@
+// vpn: the parsers of each provider's output, the data adapters (argv templates, connect steps, profiles), and the commands with a fake runner
+// (nothing is started). Run from src/: (cd src && matchbox ../tests/vpn_test.bxs)
+testkit = new lib.Check( "vpn" );
+nl = chr( 10 );
+tb = chr( 9 );
+vp = new bxrig.VpnParsers();
+
+// ---- NordVPN ----
+r = vp.status( "nordvpn", "Status: Connected" & nl & "Hostname: de1234.nordvpn.com" & nl & "Country: Germany" & nl & "City: Berlin" & nl, 0 );
+testkit.check( "nordvpn: connected with city and country", r.state == "connected" && r.location == "Berlin, Germany" );
+testkit.check( "nordvpn: disconnected", vp.status( "nordvpn", "Status: Disconnected", 0 ).state == "disconnected" );
+testkit.check( "nordvpn: connecting", vp.status( "nordvpn", "Status: Connecting", 0 ).state == "connecting" );
+testkit.check( "nordvpn: spinner characters and carriage returns before the text are ignored", vp.status( "nordvpn", chr( 13 ) & "-" & chr( 13 ) & "Status: Connected" & nl, 0 ).state == "connected" );
+testkit.check( "nordvpn: a missing daemon is unavailable", vp.status( "nordvpn", "Whoops! Cannot reach System Daemon.", 1 ).state == "unavailable" );
+testkit.check( "nordvpn: not logged in says so", vp.status( "nordvpn", "You are not logged in.", 1 ).state == "login" );
+w = vp.locations( "words", "Albania Argentina" & nl & "United_States" & tb & "Albania" & nl );
+testkit.check( "nordvpn countries: words, underscores read as spaces, duplicates dropped", w.len() == 3 && w[ 3 ].value == "United_States" && w[ 3 ].label == "United States" );
+
+// ---- Tailscale ----
+tsOn = '{"BackendState":"Running","Peer":{"nodekey:a":{"HostName":"home","DNSName":"home.tail1.ts.net.","ExitNodeOption":true,"ExitNode":true,"Online":true},"nodekey:b":{"HostName":"fra-exit","ExitNodeOption":true,"Online":false},"nodekey:c":{"HostName":"laptop","ExitNodeOption":false}}}';
+r = vp.status( "tailscale", tsOn, 0 );
+testkit.check( "tailscale: Running with an exit node", r.state == "connected" && r.location == "exit node home" );
+testkit.check( "tailscale: Stopped is disconnected", vp.status( "tailscale", '{"BackendState":"Stopped","Peer":{}}', 0 ).state == "disconnected" );
+testkit.check( "tailscale: NeedsLogin asks to log in", vp.status( "tailscale", '{"BackendState":"NeedsLogin"}', 0 ).state == "login" );
+testkit.check( "tailscale: no daemon (not JSON) is unavailable", vp.status( "tailscale", "failed to connect to local tailscaled", 1 ).state == "unavailable" );
+l = vp.locations( "tailscale", tsOn );
+testkit.check( "tailscale exit nodes: only the peers that offer it, sorted, offline marked", l.len() == 2 && l[ 1 ].value == "fra-exit" && l[ 1 ].label == "fra-exit (offline)" && l[ 2 ].value == "home" );
+
+// ---- Mullvad ----
+testkit.check( "mullvad: Disconnected", vp.status( "mullvad", "Disconnected" & nl, 0 ).state == "disconnected" );
+r = vp.status( "mullvad", "Connected to se-got-wg-001 in Gothenburg, Sweden" & nl, 0 );
+testkit.check( "mullvad: old style line gives the place after 'in'", r.state == "connected" && r.location == "Gothenburg, Sweden" );
+r = vp.status( "mullvad", "Connected" & nl & "    Relay:                se-got-wg-001" & nl & "    Visible location:     Sweden, Gothenburg. IPv4: 1.2.3.4" & nl, 0 );
+testkit.check( "mullvad: new style gives the visible location", r.state == "connected" && r.location == "Sweden, Gothenburg" );
+testkit.check( "mullvad: Connecting and Tunnel status prefix", vp.status( "mullvad", "Tunnel status: Connecting..." & nl, 0 ).state == "connecting" );
+relays = "Albania (al)" & nl & tb & "Tirana (tia) @ 41.33N, 19.82E" & nl & tb & tb & "al-tia-wg-001 (31.1.1.1) - WireGuard, hosted by X" & nl & "Sweden (se)" & nl & tb & "Gothenburg (got) @ 57.7N, 11.9E" & nl & tb & tb & "se-got-wg-001 (1.2.3.4) - WireGuard" & nl & tb & "Malmo (mma) @ 55.6N, 13.0E" & nl;
+l = vp.locations( "mullvad", relays );
+testkit.check( "mullvad relay list: countries and cities, servers skipped", l.len() == 5 && l[ 1 ].value == "al" && l[ 2 ].value == "al tia" && l[ 2 ].label == "Albania, Tirana" && l[ 5 ].value == "se mma" );
+
+// ---- NordLayer (text not documented: tolerant) ----
+testkit.check( "nordlayer: connected / not connected / logged out", vp.status( "nordlayer", "Status: Connected" & nl & "Gateway: eu-office", 0 ).state == "connected" && vp.status( "nordlayer", "Not connected", 0 ).state == "disconnected" && vp.status( "nordlayer", "You are logged out. Please log in.", 1 ).state == "login" );
+g = vp.locations( "nordlayer", "ID  NAME" & nl & "eu-office  Europe Office" & nl & "us-east  US East" & nl & "----" & nl );
+testkit.check( "nordlayer gateways: first word is the id, header and rules skipped", g.len() == 2 && g[ 1 ].value == "eu-office" && g[ 1 ].label == "Europe Office (eu-office)" && g[ 2 ].value == "us-east" );
+testkit.check( "an unknown parser gives unknown, not an error", vp.status( "nope", "x", 0 ).state == "unknown" && vp.locations( "nope", "x" ).len() == 0 );
+
+// ---- adapters ----
+calls = [];
+answers = {};
+runner = function( argv, timeout ) {
+	line = argv.toList( " " );
+	calls.append( line );
+	for ( k in answers ) if ( find( k, line ) ) return { exitCode: answers[ k ].code, timeout: false, output: answers[ k ].out };
+	return { exitCode: 0, timeout: false, output: "" };
+};
+function ran( cmd ) { for ( c in calls ) if ( c == cmd ) return true; return false; }
+ad = new bxrig.VpnAdapters( runner );
+ids = ad.providers().map( function( s ) { return s.id; } ).toList( "," );
+testkit.check( "the shipped providers: NordVPN, NordLayer, Tailscale, Mullvad (Proton VPN left out, unverified)", ids == "nordvpn,nordlayer,tailscale,mullvad" );
+testkit.check( "argv: {location} is one argument, {location*} is the words, a flag value is filled in", ad.argv( [ "x", "{location}" ], { location: "a b" } ).len() == 2 && ad.argv( [ "x", "{location*}" ], { location: "se got" } ).len() == 3 && ad.argv( [ "t", "--exit-node={location}" ], { location: "home" } )[ 2 ] == "--exit-node=home" );
+nord = ad.find( "nordvpn" );
+ts = ad.find( "tailscale" );
+mull = ad.find( "mullvad" );
+testkit.check( "steps: no place connects as it is", ad.steps( nord, "" ).len() == 1 && ad.steps( nord, "default" )[ 1 ].toList( " " ) == "nordvpn connect" );
+testkit.check( "steps: a place on a connect-to provider is one command", ad.steps( nord, "Germany" ).len() == 1 && ad.steps( nord, "Germany" )[ 1 ].toList( " " ) == "nordvpn connect Germany" );
+s = ad.steps( ts, "home" );
+testkit.check( "steps: tailscale connects, then picks the exit node", s.len() == 2 && s[ 1 ].toList( " " ) == "tailscale up" && s[ 2 ].toList( " " ) == "tailscale set --exit-node=home" );
+testkit.check( "steps: none clears the tailscale exit node", ad.steps( ts, "none" )[ 2 ].toList( " " ) == "tailscale set --exit-node=" );
+s = ad.steps( mull, "se got" );
+testkit.check( "steps: mullvad picks the place first, then connects (country and city are two arguments)", s.len() == 2 && s[ 1 ].toList( " " ) == "mullvad relay set location se got" && s[ 2 ].toList( " " ) == "mullvad connect" );
+testkit.check( "locations are checked: no leading dash, no shell characters", ad.validLocation( "United_States" ) && ad.validLocation( "se got" ) && !ad.validLocation( "--help" ) && !ad.validLocation( "a;b" ) && !ad.validLocation( "$(x)" ) && !ad.validLocation( "" ) );
+pl = ad.pickList( ts );
+testkit.check( "pick list: the provider's reserved entries come first", pl[ 1 ].value == "default" && pl[ 2 ].value == "none" && pl[ 2 ].label == "No exit node" );
+answers = { "tailscale status --json": { code: 0, out: tsOn } };
+pl = ad.pickList( ts );
+testkit.check( "pick list: then the places the provider lists", pl.len() == 4 && pl[ 4 ].value == "home" );
+profText = "Wired connection 1:uuid-1:802-3-ethernet:yes" & nl & "Home\: WG:uuid-2:wireguard:no" & nl & "Work VPN:uuid-3:vpn:yes" & nl & "lo:uuid-4:loopback:yes" & nl;
+pr = ad.parseProfiles( profText, [ "vpn", "wireguard" ] );
+testkit.check( "profiles: only vpn and wireguard, \: in a name is a colon, active is read", pr.len() == 2 && pr[ 1 ].name == "Home: WG" && !pr[ 1 ].active && pr[ 1 ].id == "nm:Home: WG" && pr[ 2 ].active && pr[ 2 ].uuid == "uuid-3" );
+
+// ---- a provider added by the user ----
+tmp = testkit.tmp();
+testkit.text( tmp & "/vpn-providers.json", '{"providers":[{"id":"acme","name":"Acme VPN","binary":"acmevpn","verified":"no","note":"mine","status":{"argv":["acmevpn","status"],"parser":"mullvad"},"connect":["acmevpn","up"],"disconnect":["acmevpn","down"]},{"id":"mullvad","name":"Mullvad (mine)","binary":"mullvad","verified":"no","note":"","status":{"argv":["mullvad","status"],"parser":"mullvad"},"connect":["mullvad","connect"],"disconnect":["mullvad","disconnect"]}]}' );
+ad2 = new bxrig.VpnAdapters( runner, tmp & "/vpn-providers.json" );
+testkit.check( "a user file adds a provider and replaces one by id", ad2.find( "acme" ).name == "Acme VPN" && ad2.find( "mullvad" ).name == "Mullvad (mine)" && ad2.providers().len() == 5 );
+
+// ---- the command (list, status, connect, disconnect, locations) ----
+cli = new bxrig.util.Cli( "0.0.0" );
+function setup( have, st ) {
+	arrayClear( calls );
+	structClear( answers );
+	for ( b in [ "nordvpn", "nordlayer", "tailscale", "mullvad", "nmcli" ] ) answers[ "_ " & b ] = { code: find( b, have ) ? 0 : 1, out: "" };
+	for ( k in st ) answers[ k ] = st[ k ];
+	return new bxrig.Vpn( cli, runner );
+}
+none = setup( "", {} );
+testkit.check( "list: empty when nothing is installed, exit 0", none.list( true ) == 0 );
+testkit.check( "status, connect, disconnect with nothing installed: exit 4", none.status( "", true ) == 4 && none.connect( "tailscale", "", false, true ) == 4 && none.disconnect( "", false, true ) == 4 );
+testkit.check( "an unknown name is exit 2, a profile name without NetworkManager exit 4", none.connect( "nonesuch", "", false, true ) == 2 && none.connect( "nm:Home", "", false, true ) == 4 );
+vpn = setup( "nordvpn tailscale nmcli", {
+		"nordvpn status": { code: 0, out: "Status: Connected" & nl & "Country: Germany" & nl & "City: Berlin" },
+		"tailscale status --json": { code: 0, out: '{"BackendState":"Stopped","Peer":{}}' },
+		"nmcli -t -f NAME,UUID,TYPE,ACTIVE connection show": { code: 0, out: "Work VPN:uuid-3:vpn:no" & nl }
+	} );
+testkit.check( "list: profiles and the installed apps (NordLayer and Mullvad are not installed)", vpn.list( true ) == 0 && vpn.rows().len() == 3 );
+testkit.check( "status: one provider; an uninstalled known provider is exit 4", vpn.status( "nordvpn", true ) == 0 && vpn.status( "mullvad", true ) == 4 && vpn.status( "nonesuch", true ) == 2 );
+calls = [];
+testkit.check( "connect --dry-run lists the disconnect and the connect, and runs none of them", vpn.connect( "tailscale", "", true, true ) == 0 && !ran( "nordvpn disconnect" ) && !ran( "tailscale up" ) );
+calls = [];
+code = vpn.connect( "tailscale", "home", false, true );
+testkit.check( "connect: the connected VPN is disconnected first, then tailscale up, then the exit node", code == 0 && ran( "nordvpn disconnect" ) && ran( "tailscale up" ) && ran( "tailscale set --exit-node=home" ) );
+calls = [];
+testkit.check( "connect to a profile runs nmcli up for its uuid", vpn.connect( "nm:Work VPN", "", false, true ) == 0 && ran( "nmcli connection up uuid uuid-3" ) );
+testkit.check( "connect to something already connected is a no-op", ( function() { arrayClear( calls ); return vpn.connect( "nordvpn", "", false, true ) == 0 && !ran( "nordvpn connect" ); } )() );
+testkit.check( "a place on a profile or a bad place is exit 2", vpn.connect( "nm:Work VPN", "x", false, true ) == 2 && vpn.connect( "nordvpn", "--help", false, true ) == 2 && vpn.connect( "tailscale", "a;b", false, true ) == 2 );
+calls = [];
+code = vpn.disconnect( "", false, true );
+testkit.check( "disconnect with no name disconnects what is connected", code == 0 && ran( "nordvpn disconnect" ) && !ran( "tailscale down" ) );
+testkit.check( "disconnect of something that is off is a no-op", ( function() { arrayClear( calls ); return vpn.disconnect( "tailscale", false, true ) == 0 && !ran( "tailscale down" ); } )() );
+testkit.check( "locations: tailscale has reserved entries; a profile has none (exit 0)", vpn.locations( "tailscale", true ) == 0 && vpn.locations( "nm:Work VPN", true ) == 0 && vpn.locations( "nonesuch", true ) == 2 );
+testkit.check( "run: an unknown verb and a bad set are exit 2", vpn.run( [ "frobnicate" ], {}, true ) == 2 && vpn.run( [ "set", "colour=red" ], { yes: true }, true ) == 2 && vpn.run( [ "set", "allow_several=maybe" ], { yes: true }, true ) == 2 && vpn.run( [ "set" ], {}, true ) == 2 );
+testkit.check( "set without --yes is a plan (exit 2) and with --dry-run exit 0", vpn.run( [ "set", "allow_several=true" ], {}, true ) == 2 && vpn.run( [ "set", "allow_several=true" ], { yes: true, "dry-run": true }, true ) == 0 );
+
+testkit.done( "vpn tests passed" );

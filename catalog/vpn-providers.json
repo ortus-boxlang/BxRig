@@ -1,0 +1,204 @@
+{
+	"schema": 1,
+	"notes": "One adapter per VPN app: how BxRig asks its status, connects, disconnects, lists locations and picks one. Adding a provider is one more object here (or in ~/.config/bxrig/vpn-providers.json, which adds or replaces providers by id); the code only knows the parser names. argv templates are arrays, never shell strings; {location} is one argument, {location*} is the location split on spaces (mullvad: country and city). verified: yes = every command was read in the vendor's own documentation, partial = some were (see note), no = none were.",
+	"providers": [
+		{
+			"id": "nordvpn",
+			"name": "NordVPN",
+			"binary": "nordvpn",
+			"install": "nordvpn",
+			"verified": "yes",
+			"note": "status, connect, disconnect and countries are on support.nordvpn.com (checked 2026-11-17). Picking a country by name (connect COUNTRY, names as `nordvpn countries` prints them) is from `nordvpn help connect`, not from that page. Log in once with `nordvpn login`; `bxrig vpn nordvpn setup` starts the daemon.",
+			"status": {
+				"argv": [
+					"nordvpn",
+					"status"
+				],
+				"parser": "nordvpn"
+			},
+			"connect": [
+				"nordvpn",
+				"connect"
+			],
+			"connect_to": [
+				"nordvpn",
+				"connect",
+				"{location}"
+			],
+			"disconnect": [
+				"nordvpn",
+				"disconnect"
+			],
+			"locations": {
+				"argv": [
+					"nordvpn",
+					"countries"
+				],
+				"parser": "words"
+			},
+			"default_label": "Recommended",
+			"coexist": false
+		},
+		{
+			"id": "nordlayer",
+			"name": "NordLayer",
+			"binary": "nordlayer",
+			"install": "nordlayer",
+			"verified": "partial",
+			"note": "help.nordlayer.com confirms `nordlayer connect GATEWAY-ID` and `nordlayer settings set` (checked 2026-11-17). status, gateways and disconnect, and the text they print, are NOT in the pages read: the parsers are tolerant and the output may need adjusting. Never run it with sudo; your user must be in the nordlayer group (log out and in after the install). Log in with the NordLayer app first.",
+			"status": {
+				"argv": [
+					"nordlayer",
+					"status"
+				],
+				"parser": "nordlayer"
+			},
+			"connect": [
+				"nordlayer",
+				"connect"
+			],
+			"connect_to": [
+				"nordlayer",
+				"connect",
+				"{location}"
+			],
+			"disconnect": [
+				"nordlayer",
+				"disconnect"
+			],
+			"locations": {
+				"argv": [
+					"nordlayer",
+					"gateways"
+				],
+				"parser": "nordlayer"
+			},
+			"default_label": "Last gateway",
+			"coexist": false
+		},
+		{
+			"id": "tailscale",
+			"name": "Tailscale",
+			"binary": "tailscale",
+			"install": "tailscale",
+			"verified": "yes",
+			"note": "tailscale up, down, set --exit-node=NAME (empty value clears it), exit-node list and status --json are on tailscale.com/kb/1080/cli (checked 2026-11-17). The JSON fields read (BackendState, Peer, ExitNode, ExitNodeOption, HostName) are the ones the Tailscale client's status struct has; the page only says the output is detailed JSON. Needs `sudo tailscale set --operator=$USER` once, or tailscaled run for your user.",
+			"status": {
+				"argv": [
+					"tailscale",
+					"status",
+					"--json"
+				],
+				"parser": "tailscale"
+			},
+			"connect": [
+				"tailscale",
+				"up"
+			],
+			"select": [
+				"tailscale",
+				"set",
+				"--exit-node={location}"
+			],
+			"select_order": "after",
+			"select_none": [
+				"tailscale",
+				"set",
+				"--exit-node="
+			],
+			"disconnect": [
+				"tailscale",
+				"down"
+			],
+			"locations": {
+				"argv": [
+					"tailscale",
+					"status",
+					"--json"
+				],
+				"parser": "tailscale"
+			},
+			"default_label": "Keep the current exit node",
+			"none_label": "No exit node",
+			"coexist": true
+		},
+		{
+			"id": "mullvad",
+			"name": "Mullvad",
+			"binary": "mullvad",
+			"install": "mullvad",
+			"verified": "yes",
+			"note": "status, connect, disconnect, relay list and relay set location COUNTRY [CITY] are on mullvad.net/en/help/how-use-mullvad-cli (checked 2026-11-17). The text of status and relay list is read by the parsers; its exact lines vary between app versions.",
+			"status": {
+				"argv": [
+					"mullvad",
+					"status"
+				],
+				"parser": "mullvad"
+			},
+			"connect": [
+				"mullvad",
+				"connect"
+			],
+			"select": [
+				"mullvad",
+				"relay",
+				"set",
+				"location",
+				"{location*}"
+			],
+			"select_order": "before",
+			"disconnect": [
+				"mullvad",
+				"disconnect"
+			],
+			"locations": {
+				"argv": [
+					"mullvad",
+					"relay",
+					"list"
+				],
+				"parser": "mullvad"
+			},
+			"default_label": "The saved location",
+			"coexist": false
+		}
+	],
+	"profiles": {
+		"id_prefix": "nm:",
+		"name": "Network profiles",
+		"binary": "nmcli",
+		"verified": "yes",
+		"note": "Saved NetworkManager connections of type vpn or wireguard (nmcli connection show, up, down: networkmanager.dev nmcli manual, checked 2026-11-17). Import a .ovpn or WireGuard file with `nmcli connection import type openvpn file X`.",
+		"list": [
+			"nmcli",
+			"-t",
+			"-f",
+			"NAME,UUID,TYPE,ACTIVE",
+			"connection",
+			"show"
+		],
+		"types": [
+			"vpn",
+			"wireguard"
+		],
+		"up": [
+			"nmcli",
+			"connection",
+			"up",
+			"uuid",
+			"{uuid}"
+		],
+		"down": [
+			"nmcli",
+			"connection",
+			"down",
+			"uuid",
+			"{uuid}"
+		]
+	},
+	"left_out": {
+		"proton-vpn": "The Proton VPN command line was not verified against Proton's documentation: no adapter row until it is.",
+		"wireguard": "wg-quick needs root for every up and down: use a NetworkManager WireGuard profile instead (Network profiles)."
+	}
+}

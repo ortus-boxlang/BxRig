@@ -175,6 +175,7 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `secrets` | `--show` | bool |  |
 | `secrets` | `--strict` | bool |  |
 | `secrets` | `--type` | value |  |
+| `vpn` | `--location` | value |  |
 | `cloud` | `--path` | value |  |
 | `dotfiles` | `--method` | value |  |
 | `dotfiles` | `--overwrite` | bool |  |
@@ -250,6 +251,7 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `db` | `--password-file` | bool |  |
 | `db` | `--port` | bool |  |
 | `db` | `--show-password` | bool |  |
+| `containers` | `--lines` | value | `100` |
 | `vm` | `--cpus` | value |  |
 | `vm` | `--disk` | value | `6` |
 | `vm` | `--fullscreen` | bool |  |

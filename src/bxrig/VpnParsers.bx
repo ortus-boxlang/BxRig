@@ -1,0 +1,214 @@
+// The text of the VPN apps, read once (pure, no I/O): the parsers that catalog/vpn-providers.json names. Everything else about a provider is data.
+//   status( parser, text, exitCode )  { state, location, detail }   state: connected | connecting | disconnected | login | unavailable | unknown
+//   locations( parser, text )         [ { value, label } ]          value is what the connect command takes, label what people read
+// Parsers: nordvpn, nordlayer, tailscale, mullvad (status and locations), words (locations only). The wording of each tool's output is not
+// guaranteed by the vendors: an unknown line gives "unknown" or no entry, never an error.
+class VpnParsers {
+	function init() {
+		return this;
+	}
+
+	function lines( text ) {
+		var out = [];
+		for ( var l in listToArray( replace( arguments.text & "", chr( 13 ), chr( 10 ), "all" ), chr( 10 ), true ) ) out.append( l );
+		return out;
+	}
+
+	function result( state, location = "", detail = "" ) {
+		return { state: arguments.state, location: arguments.location, detail: arguments.detail };
+	}
+
+	function status( parser, text, exitCode = 0 ) {
+		var t = arguments.text & "";
+		var p = arguments.parser;
+		if ( compare( p, "nordvpn" ) == 0 ) return nordvpnStatus( t, arguments.exitCode );
+		if ( compare( p, "nordlayer" ) == 0 ) return nordlayerStatus( t, arguments.exitCode );
+		if ( compare( p, "tailscale" ) == 0 ) return tailscaleStatus( t, arguments.exitCode );
+		if ( compare( p, "mullvad" ) == 0 ) return mullvadStatus( t, arguments.exitCode );
+		return result( "unknown", "", "no parser named " & p );
+	}
+
+	function locations( parser, text ) {
+		var t = arguments.text & "";
+		var p = arguments.parser;
+		if ( compare( p, "words" ) == 0 ) return wordLocations( t );
+		if ( compare( p, "nordlayer" ) == 0 ) return gatewayLocations( t );
+		if ( compare( p, "tailscale" ) == 0 ) return tailscaleLocations( t );
+		if ( compare( p, "mullvad" ) == 0 ) return mullvadLocations( t );
+		return [];
+	}
+
+	// The text after "Key:" on the first line that starts with the key (any case), trimmed, or "".
+	function field( lines, key ) {
+		var k = lcase( arguments.key ) & ":";
+		for ( var l in arguments.lines ) {
+			var t = trim( l );
+			if ( compare( lcase( left( t, len( k ) ) ), k ) == 0 ) return trim( mid( t, len( k ) + 1, len( t ) ) );
+		}
+		return "";
+	}
+
+	// ---- NordVPN: "Status: Connected", "Country: Germany", "City: Berlin" ----
+	function nordvpnStatus( text, code ) {
+		var ls = lines( arguments.text );
+		var st = lcase( field( ls, "Status" ) );
+		if ( !len( st ) ) {
+			var low = lcase( arguments.text );
+			if ( find( "log in", low ) || find( "logged in", low ) || find( "login", low ) ) return result( "login", "", "log in with: nordvpn login" );
+			if ( arguments.code != 0 || find( "daemon", low ) ) return result( "unavailable", "", trim( arguments.text ) );
+			return result( "unknown" );
+		}
+		var country = field( ls, "Country" );
+		var city = field( ls, "City" );
+		var where = len( city ) && len( country ) ? city & ", " & country : city & country;
+		if ( compare( st, "connected" ) == 0 ) return result( "connected", where );
+		if ( compare( st, "connecting" ) == 0 ) return result( "connecting", where );
+		return result( "disconnected" );
+	}
+
+	// ---- NordLayer: the text of status is not documented; read the words in it ----
+	function nordlayerStatus( text, code ) {
+		var low = lcase( arguments.text );
+		var ls = lines( arguments.text );
+		var gw = field( ls, "Gateway" );
+		if ( !len( trim( low ) ) ) return arguments.code != 0 ? result( "unavailable", "", "nordlayer did not answer" ) : result( "unknown" );
+		if ( find( "log in", low ) || find( "logged out", low ) || find( "not logged", low ) || find( "login required", low ) ) return result( "login", "", "log in with the NordLayer app" );
+		if ( find( "not connected", low ) || find( "disconnected", low ) ) return result( "disconnected" );
+		if ( find( "connecting", low ) ) return result( "connecting", gw );
+		if ( find( "connected", low ) ) return result( "connected", gw );
+		if ( arguments.code != 0 ) return result( "unavailable", "", trim( arguments.text ) );
+		return result( "unknown" );
+	}
+
+	// ---- Tailscale: `tailscale status --json` ----
+	function peerName( peer ) {
+		var p = arguments.peer;
+		if ( structKeyExists( p, "HostName" ) && len( p.HostName ) ) return p.HostName;
+		if ( structKeyExists( p, "DNSName" ) && len( p.DNSName ) ) return listFirst( p.DNSName, "." );
+		return "";
+	}
+
+	function flag( s, key ) {
+		return structKeyExists( arguments.s, arguments.key ) && isBoolean( arguments.s[ arguments.key ] ) && arguments.s[ arguments.key ];
+	}
+
+	function tailscaleStatus( text, code ) {
+		var j = {};
+		try { j = jsonDeserialize( arguments.text ); } catch ( any e ) { j = {}; }
+		if ( !isStruct( j ) || !structKeyExists( j, "BackendState" ) ) return result( "unavailable", "", trim( arguments.text ) );
+		var st = j.BackendState & "";
+		var exitNode = "";
+		if ( structKeyExists( j, "Peer" ) && isStruct( j.Peer ) ) {
+			for ( var k in j.Peer ) {
+				var peer = j.Peer[ k ];
+				if ( isStruct( peer ) && flag( peer, "ExitNode" ) ) exitNode = peerName( peer );
+			}
+		}
+		var where = len( exitNode ) ? "exit node " & exitNode : "";
+		if ( compare( st, "Running" ) == 0 ) return result( "connected", where );
+		if ( compare( st, "Starting" ) == 0 ) return result( "connecting" );
+		if ( compare( st, "NeedsLogin" ) == 0 || compare( st, "NeedsMachineAuth" ) == 0 ) return result( "login", "", "log in with: tailscale up" );
+		if ( compare( st, "Stopped" ) == 0 ) return result( "disconnected" );
+		return result( "unknown", "", st );
+	}
+
+	// The exit nodes: peers that offer to be one. Sorted by name; an offline one says so.
+	function tailscaleLocations( text ) {
+		var j = {};
+		try { j = jsonDeserialize( arguments.text ); } catch ( any e ) { j = {}; }
+		var out = [];
+		if ( !isStruct( j ) || !structKeyExists( j, "Peer" ) || !isStruct( j.Peer ) ) return out;
+		var names = [];
+		var seen = {};
+		for ( var k in j.Peer ) {
+			var peer = j.Peer[ k ];
+			if ( !isStruct( peer ) || !flag( peer, "ExitNodeOption" ) ) continue;
+			var n = peerName( peer );
+			if ( !len( n ) || structKeyExists( seen, n ) ) continue;
+			seen[ n ] = structKeyExists( peer, "Online" ) && isBoolean( peer.Online ) && !peer.Online ? n & " (offline)" : n;
+			names.append( n );
+		}
+		arraySort( names, "textnocase" );
+		for ( var name in names ) out.append( { value: name, label: seen[ name ] } );
+		return out;
+	}
+
+	// ---- Mullvad: "Connected to se-got-wg-001 in Gothenburg, Sweden", "Disconnected", "Connecting..." ----
+	function mullvadStatus( text, code ) {
+		var ls = lines( arguments.text );
+		var first = "";
+		for ( var l in ls ) { if ( len( trim( l ) ) ) { first = trim( l ); break; } }
+		if ( !len( first ) ) return arguments.code != 0 ? result( "unavailable", "", "mullvad did not answer" ) : result( "unknown" );
+		if ( compare( lcase( left( first, 15 ) ), "tunnel status: " ) == 0 ) first = trim( mid( first, 16, len( first ) ) );
+		var low = lcase( first );
+		var vis = field( ls, "Visible location" );
+		if ( len( vis ) ) {
+			var dot = find( ". ", vis );
+			if ( dot ) vis = left( vis, dot - 1 );
+		}
+		if ( compare( left( low, 9 ), "connected" ) == 0 ) {
+			if ( !len( vis ) ) { var at = find( " in ", first ); if ( at ) vis = trim( mid( first, at + 4, len( first ) ) ); }
+			return result( "connected", vis );
+		}
+		if ( compare( left( low, 10 ), "connecting" ) == 0 ) return result( "connecting" );
+		if ( compare( left( low, 12 ), "disconnected" ) == 0 || compare( left( low, 13 ), "disconnecting" ) == 0 || compare( left( low, 7 ), "blocked" ) == 0 ) return result( "disconnected" );
+		if ( arguments.code != 0 ) return result( "unavailable", "", trim( arguments.text ) );
+		return result( "unknown" );
+	}
+
+	// `mullvad relay list`: "Sweden (se)" at the left margin, then indented "Gothenburg (got) @ 57.7N, 11.9E", then the servers (no " @ ").
+	// value is what `mullvad relay set location` takes: "se" or "se got".
+	function mullvadLocations( text ) {
+		var out = [];
+		var cc = "";
+		var country = "";
+		for ( var l in lines( arguments.text ) ) {
+			if ( !len( trim( l ) ) ) continue;
+			var indented = compare( left( l, 1 ), " " ) == 0 || compare( left( l, 1 ), chr( 9 ) ) == 0;
+			var t = trim( l );
+			var m = reFind( "^(.+) \(([a-z0-9-]+)\)", t, 1, true );
+			if ( m.pos[ 1 ] == 0 ) continue;
+			var label = mid( t, m.pos[ 2 ], m.len[ 2 ] );
+			var code = mid( t, m.pos[ 3 ], m.len[ 3 ] );
+			if ( !indented ) {
+				cc = code;
+				country = label;
+				out.append( { value: cc, label: country } );
+			} else if ( find( " @ ", t ) && len( cc ) ) {
+				out.append( { value: cc & " " & code, label: country & ", " & label } );
+			}
+		}
+		return out;
+	}
+
+	// ---- plain lists ----
+	// `nordvpn countries`: names separated by white space, spaces written as underscores (United_States).
+	function wordLocations( text ) {
+		var out = [];
+		var seen = {};
+		for ( var w in listToArray( reReplace( arguments.text & "", "[ " & chr( 9 ) & chr( 10 ) & chr( 13 ) & "]+", " ", "all" ), " " ) ) {
+			var v = trim( w );
+			if ( !len( v ) || structKeyExists( seen, v ) ) continue;
+			seen[ v ] = true;
+			out.append( { value: v, label: replace( v, "_", " ", "all" ) } );
+		}
+		return out;
+	}
+
+	// `nordlayer gateways`: its layout is not documented. One gateway per line: the first word is the id, the rest the name; a header,
+	// a rule or a line that does not start with an id-looking word is skipped.
+	function gatewayLocations( text ) {
+		var out = [];
+		for ( var l in lines( arguments.text ) ) {
+			var t = trim( l );
+			if ( !len( t ) ) continue;
+			var sp = reFind( "[ " & chr( 9 ) & "]", t );
+			var id = sp ? left( t, sp - 1 ) : t;
+			var rest = sp ? trim( mid( t, sp + 1, len( t ) ) ) : "";
+			if ( reFind( "^[A-Za-z0-9][A-Za-z0-9._-]{1,60}$", id ) == 0 ) continue;
+			if ( listFindNoCase( "gateways,gateway,id,name,available,id:", id ) ) continue;
+			out.append( { value: id, label: len( rest ) ? rest & " (" & id & ")" : id } );
+		}
+		return out;
+	}
+}

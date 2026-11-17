@@ -2602,6 +2602,30 @@
 			}
 		},
 		{
+			"id": "nordlayer",
+			"name": "NordLayer",
+			"description": "NordLayer business VPN client for Linux (a community AUR package of the vendor's .deb)",
+			"description_source": "curated",
+			"kind": "desktop",
+			"group": "network",
+			"category": "Networking",
+			"tier": "optional",
+			"source": "aur",
+			"targets": [
+				"nordlayer"
+			],
+			"homepage": "https://nordlayer.com/download/linux/",
+			"macos": "NordLayer (same)",
+			"origin": [
+				"owner-request"
+			],
+			"verified_on": "2026-11-17",
+			"note": "The AUR package nordlayer (checked on the AUR RPC 2026-11-17, 3.6.0) repackages the vendor's .deb from downloads.nordlayer.com; the vendor itself ships only .deb and .rpm. After the install log out and in so your user joins the nordlayer group, then log in with the NordLayer app. Never run it with sudo. Used by `bxrig vpn`.",
+			"profiles": {
+				"networking": "optional"
+			}
+		},
+		{
 			"id": "openvpn",
 			"name": "OpenVPN",
 			"description": "Open source VPN client and server",

@@ -2421,6 +2421,11 @@
 							"value": "nordvpn",
 							"label": "NordVPN",
 							"description": "NordVPN's command-line client (AUR). BxRig also enables its service and your group."
+						},
+						{
+							"value": "nordlayer",
+							"label": "NordLayer",
+							"description": "NordLayer's business VPN client (AUR). Log out and in once so you join its group."
 						}
 					]
 				},

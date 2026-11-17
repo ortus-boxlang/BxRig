@@ -78,6 +78,7 @@ run "$binary" db logs postgres | grep -q "log line from $c-postgres-default" || 
 # info hides the password unless asked
 out="$(run "$binary" db info postgres)"; [[ "$out" == *'postgresql://postgres:********@127.0.0.1:5432/postgres'* && "$out" != *"$pw"* ]] || fail "info masks the password: $out"
 run "$binary" db info postgres --show-password | grep -q "postgresql://postgres:$pw@127.0.0.1:5432/postgres" || fail 'info --show-password'
+run "$binary" db info postgres --show-password --json | jq -e --arg pw "$pw" '.data.url == "postgresql://postgres:" + $pw + "@127.0.0.1:5432/postgres"' >/dev/null || fail 'info --show-password --json carries the connection string (the bar plugin copies it)'
 run "$binary" db info postgres --json | jq -e '.data.host == "127.0.0.1" and .data.port == 5432 and (.data.url | contains("********")) and .data.password_file != ""' >/dev/null || fail 'info --json'
 [[ "$(code "$binary" db info mysql)" == 4 ]] || fail 'info for an unknown instance exits 4'
 
@@ -85,6 +86,7 @@ run "$binary" db info postgres --json | jq -e '.data.host == "127.0.0.1" and .da
 run "$binary" db start postgres --name=app --port=5433 --yes >/dev/null || fail 'second instance'
 grep -q -- '-p 127.0.0.1:5433:5432' "$FAKE/containers/$c-postgres-app/run" || fail 'custom host port'
 run "$binary" db list | grep -q "$c-postgres-app" || fail 'list shows both'
+run "$binary" db list --json | jq -e '.data.databases | length > 0 and all(.state == "running" and (.status | startswith("Up")) and (.container | startswith("bxrig-db-")))' >/dev/null || fail "list json state: $(run "$binary" db list --json)"
 
 # engines with other shapes
 run "$binary" db start redis --yes >/dev/null || fail 'redis'

@@ -1,0 +1,45 @@
+// The Developer bar plugin: the data its popover reads (containers list parsing, db list state) and the plugin files.
+// Run from src/: (cd src && matchbox ../tests/dev_plugin_test.bxs)
+testkit = new lib.Check( "developer plugin" );
+ct = new bxrig.Containers( new bxrig.util.Cli( "test" ) );
+testkit.check( "ports: one published port, the IPv6 twin is the same port", ct.hostPorts( "127.0.0.1:5432->5432/tcp, [::]:5432->5432/tcp" ).toList( "," ) == "5432" );
+testkit.check( "ports: several, in order", ct.hostPorts( "0.0.0.0:8080->80/tcp, 0.0.0.0:8443->443/tcp" ).toList( "," ) == "8080,8443" );
+testkit.check( "ports: a range gives its first and last port", ct.hostPorts( "0.0.0.0:8000-8002->8000-8002/tcp" ).toList( "," ) == "8000,8002" );
+testkit.check( "ports: an unpublished port and an empty text give none", ct.hostPorts( "80/tcp" ).len() == 0 && ct.hostPorts( "" ).len() == 0 );
+rows = ct.parseList( "web|docker.io/library/nginx:1.27|Running|0.0.0.0:8080->80/tcp|2026-11-10 09:00:00" & chr( 10 ) & "bxrig-db-postgres-default|postgres:17|exited||2026-11-09" & chr( 10 ) & "bxrig-vm-lab|webtop|running|127.0.0.1:3001->3001/tcp|x" & chr( 10 ) & "garbage" & chr( 10 ) );
+testkit.check( "list: three rows, the garbage line is skipped", rows.len() == 3 );
+testkit.check( "list: name, image, lower case state, ports, created", rows[ 1 ].name == "web" && rows[ 1 ].image == "docker.io/library/nginx:1.27" && rows[ 1 ].state == "running" && rows[ 1 ].ports.toList( "," ) == "8080" && rows[ 1 ].created == "2026-11-10 09:00:00" );
+testkit.check( "list: kinds container, database, vm", rows[ 1 ].kind == "container" && rows[ 2 ].kind == "database" && rows[ 3 ].kind == "vm" );
+testkit.check( "list: a row with no ports has an empty list", rows[ 2 ].ports.len() == 0 && rows[ 2 ].ports_text == "" );
+nm = new bxrig.util.Names();
+testkit.check( "names: engine names pass, options and spaces do not", nm.valid( "engine-container", "web_1.a-b" ) && !nm.valid( "engine-container", "-rf" ) && !nm.valid( "engine-container", "a b" ) && !nm.valid( "engine-container", "" ) && !nm.valid( "engine-container", "a;b" ) );
+db = new bxrig.Db( new bxrig.util.Cli( "test" ) );
+testkit.check( "db state: Up is running, Paused wins, Created, anything else exited", db.stateFromStatus( "Up 2 hours" ) == "running" && db.stateFromStatus( "Up 2 hours (Paused)" ) == "paused" && db.stateFromStatus( "Created" ) == "created" && db.stateFromStatus( "Exited (0) 3 days ago" ) == "exited" && db.stateFromStatus( "" ) == "exited" );
+
+// the plugin files
+root = "../templates/noctalia-plugins/";
+files = [ "plugin.toml", "bar.luau", "panel.luau", "dev.luau", "bxrig.luau", "translations/en.json" ];
+ok = true; for ( f in files ) if ( !fileExists( root & "dev/" & f ) ) ok = false;
+testkit.check( "dev plugin: every file is there", ok );
+toml = fileRead( root & "dev/plugin.toml" );
+testkit.check( "dev plugin: id bxrig/dev, plugin_api 43, a bar widget and a panel entry", find( 'id = "bxrig/dev"', toml ) > 0 && find( "plugin_api = 43", toml ) > 0 && find( 'entry = "bar.luau"', toml ) > 0 && find( 'entry = "panel.luau"', toml ) > 0 );
+testkit.check( "dev plugin: the shared bxrig.luau is the same as the agents one", fileRead( root & "dev/bxrig.luau" ) == fileRead( root & "agents/bxrig.luau" ) );
+testkit.check( "dev plugin: the translations are valid JSON with the command setting", jsonDeserialize( fileRead( root & "dev/translations/en.json" ) ).settings.command.label == "bxrig command" );
+ok = true;
+for ( f in [ "bar.luau", "panel.luau", "dev.luau" ] ) {
+	src = fileRead( root & "dev/" & f );
+	for ( mod in [ "bxrig.luau", "dev.luau", "panel.luau" ] ) if ( find( 'require("./' & mod & '")', src ) > 0 && !fileExists( root & "dev/" & mod ) ) ok = false;
+}
+testkit.check( "dev plugin: every require names a file of the plugin", ok && find( 'require("./dev.luau")', fileRead( root & "dev/panel.luau" ) ) > 0 );
+dashes = chr( 8212 ) & "|" & chr( 8211 );
+ok = true;
+for ( f in files ) if ( reFind( dashes, fileRead( root & "dev/" & f ) ) ) ok = false;
+testkit.check( "dev plugin: no em or en dashes", ok );
+src = fileRead( root & "dev/panel.luau" );
+testkit.check( "dev plugin: the panel runs the bxrig commands it documents", find( '"db", "start"', src ) > 0 && find( '"containers", "restart"', src ) > 0 && find( '"vm", "start"', src ) > 0 && find( "containers logs", src ) > 0 && find( "tui machines", src ) > 0 && find( "runInTerminal", src ) > 0 );
+testkit.check( "dev plugin: stop goes through a second click", find( 'confirmButton(key .. "-stop"', src ) > 0 );
+// the starter installs it
+starter = new bxrig.Starter( true );
+targets = starter.entries().map( function( e ) { return e.target; } ).filter( function( t ) { return find( "/noctalia/plugins/dev/", t ) > 0; } );
+testkit.check( "starter: the dev plugin's files are installed beside the other plugins", targets.len() == 6 );
+testkit.done( "all passed" );

@@ -30,7 +30,7 @@ class SystemState {
 
 	// The catalog id an option stands for ("" when it is not an app).
 	function catalogId( qid, value ) {
-		var vpn = { tailscale: "tailscale", wireguard: "wireguard", openvpn: "openvpn", mullvad: "mullvad", proton: "proton-vpn", nordvpn: "nordvpn" };
+		var vpn = { tailscale: "tailscale", wireguard: "wireguard", openvpn: "openvpn", mullvad: "mullvad", proton: "proton-vpn", nordvpn: "nordvpn", nordlayer: "nordlayer" };
 		if ( arguments.qid == "vpn" ) return structKeyExists( vpn, arguments.value ) ? vpn[ arguments.value ] : "";
 		if ( arguments.qid == "launcher" || arguments.qid == "menu" ) return new bxrig.Runner().catalogId( arguments.value );
 		return structKeyExists( variables.byId, arguments.value ) ? arguments.value : "";

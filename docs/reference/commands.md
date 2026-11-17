@@ -813,12 +813,14 @@ bxrig display brightness set 40
 
 ### `bxrig power` {#bxrig-power}
 
-Laptop power: profile, lid action, setup of the power tools, doctor.
+Laptop power: battery details, profile, lid action on battery and on AC, hibernate, charge limit, setup of the power tools, doctor.
 
 ```text
 bxrig power status [--json]
 bxrig power profile [performance|balanced|saver]
-bxrig power lid suspend|lock|ignore [--yes]
+bxrig power lid [battery|ac] suspend|hibernate|lock|ignore [--yes]
+bxrig power hibernate [--yes]
+bxrig power charge-limit [PERCENT|off|status] [--yes]
 bxrig power setup [--yes] [--force]
 bxrig power doctor [--json]
 ```
@@ -826,12 +828,16 @@ bxrig power doctor [--json]
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
 
 ```bash
+bxrig power status --json
 bxrig power profile saver
-bxrig power lid lock --yes
+bxrig power lid battery hibernate --yes
+bxrig power lid ac lock --yes
+bxrig power hibernate --dry-run
+bxrig power charge-limit 80 --yes
 bxrig power doctor
 ```
 
-> `power setup` does nothing on a machine without a battery unless you add --force.
+> `power status --json` has one entry per battery (percent, state, watts, time_remaining_minutes, health_percent, cycles, charge_limit; -1 when unknown) and the lid action on battery and on AC. `power lid ACTION` without battery or ac sets both. `power hibernate` exits 4 unless disk swap (zram does not count), the kernel resume= parameter and the kernel are ready; it is a plan (exit 2) without --yes. `power charge-limit` writes the kernel attribute charge_control_end_threshold and keeps it with a small systemd unit; it exits 4 on a battery without that attribute (not verified on real hardware). `power setup` does nothing on a machine without a battery unless you add --force.
 
 ### `bxrig time` {#bxrig-time}
 
@@ -1005,17 +1011,25 @@ bxrig secrets list
 
 ### `bxrig vpn` {#bxrig-vpn}
 
-VPN post-install steps for NordVPN.
+VPNs in one list: saved NetworkManager profiles and the VPN apps (NordVPN, NordLayer, Tailscale, Mullvad); connect, disconnect, pick a place.
 
 ```text
+bxrig vpn list | status [NAME] | locations NAME [--json]
+bxrig vpn connect NAME [--location=PLACE] | disconnect [NAME] [--dry-run] [--json]
+bxrig vpn set allow_several=true|false [--yes] [--dry-run] [--json]
 bxrig vpn nordvpn setup [--yes] [--json]
 ```
 
-Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
-
 ```bash
+bxrig vpn list
+bxrig vpn connect tailscale
+bxrig vpn connect nordvpn --location=Germany
+bxrig vpn disconnect
+bxrig vpn set allow_several=true --yes
 bxrig vpn nordvpn setup --yes
 ```
+
+> NAME is a provider from `vpn list` (nordvpn, nordlayer, tailscale, mullvad) or a saved profile as listed there (`nm:Home`). Choosing one disconnects the one that is connected first, unless `allow_several=true` (Tailscale next to another VPN; routes and DNS can clash). connect and disconnect act at once and take `--dry-run`; `set` and `nordvpn setup` need `--yes`. The providers are data (`catalog/vpn-providers.json`, extend with `~/.config/bxrig/vpn-providers.json`). `list` is empty when no VPN is installed; the other verbs exit 4 then. `--location` takes a value from `vpn locations NAME` (`default` connects as it is, `none` clears a Tailscale exit node). The top bar VPN icon (plugin `bxrig/vpn`) is the same list.
 
 ### `bxrig cloud` {#bxrig-cloud}
 
@@ -1318,16 +1332,21 @@ bxrig db info postgres
 
 ### `bxrig containers` {#bxrig-containers}
 
-Podman helpers: doctor, rootless socket, docker compatibility wrappers.
+Containers on the configured engine (Podman or Docker): list, start, stop, restart, logs; Podman helpers: doctor, rootless socket, docker compatibility.
 
 ```text
 bxrig containers doctor | socket enable [--yes] | docker-compat [--yes] [--json]
+bxrig containers list [--json]
+bxrig containers start|stop|restart NAME [--json]
+bxrig containers logs NAME [--lines=N] [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
 
 ```bash
 bxrig containers doctor
+bxrig containers list --json
+bxrig containers logs web --lines=100
 ```
 
 ### `bxrig vm` {#bxrig-vm}

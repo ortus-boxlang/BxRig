@@ -17,15 +17,16 @@ assert c['bar']['order'] == ['main'] and c['bar']['main']['position'] == 'top'
 m = c['bar']['main']
 # Standard: logo, workspaces, active window | clock, media | ... quick settings, control center (the grid button is in the dock)
 assert m['start'] == ['bxrig-menu', 'workspaces', 'active_window'] and m['center'] == ['bxrig-clock', 'media']
-assert m['end'][-2:] == ['bxrig-themes', 'control-center'] and 'battery' not in m['end'] and 'launcher' not in m['start']
+assert m['end'][-2:] == ['bxrig-quick', 'control-center'] and 'battery' not in m['end'] and 'launcher' not in m['start']
 assert c['widget']['bxrig-clock']['type'] == 'bxrig/clock:bar' and c['plugin_settings']['bxrig/clock']['format'] == '%b %-d - %H:%M'
 assert c['widget']['bxrig-menu']['type'] == 'custom_button' and 'setsid bxrig menu' in c['widget']['bxrig-menu']['actions']['left']
 assert c['widget']['bxrig-menu']['custom_image'].endswith('/plates/bxrig-menu.svg')
 assert m['capsule'] is False and 'capsule_border' not in m
 assert c['dock']['enabled'] is True and c['dock']['launcher_position'] == 'start' and c['dock']['launcher_custom_image'].endswith('/plates/bxrig-grid.svg')
 assert c['shell']['setup_wizard_enabled'] is False and c['shell']['launcher']['app_grid'] is True
-assert 'bxrig-agents' in m['end'] and 'bxrig-themes' in m['end']
-assert c['plugins']['enabled'] == ['bxrig/clock', 'bxrig/agents', 'bxrig/themes']
+assert 'bxrig-agents' in m['end'] and 'bxrig-quick' in m['end'] and 'caffeine' not in m['end']
+assert m['end'].index('bxrig-dev') == m['end'].index('screenshot') + 1 and c['widget']['bxrig-dev']['type'] == 'bxrig/dev:bar'
+assert c['plugins']['enabled'] == ['bxrig/clock', 'bxrig/agents', 'bxrig/quick', 'bxrig/dev', 'bxrig/power']
 assert c['notification']['group_by_app'] is True and c['notification']['border_color'] == 'primary'
 assert c['wallpaper']['directory'] == sys.argv[2] + '/Pictures/BxRig'
 assert c['wallpaper']['default']['path'].endswith('/bxrig.jpg')
