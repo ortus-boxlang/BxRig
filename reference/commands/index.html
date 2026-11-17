@@ -641,16 +641,20 @@ bxrig theme vscode --yes
 <p>A theme colours the bar, terminals, btop, Neovim, GTK and Qt apps, tmux, fzf, launchers and (on Plasma) the colour scheme. VS Code is opt-in.</p>
 </blockquote>
 <h3 id="bxrig-appearance-bxrig-appearance"><a href="#bxrig-appearance-bxrig-appearance" id="bxrig-appearance-bxrig-appearance" name="bxrig-appearance-bxrig-appearance" class="anchor"></a><code>bxrig appearance</code> {#bxrig-appearance}</h3>
-<p>Bar, dock, windows, animations, layout, fonts and backgrounds, one setting at a time.</p>
+<p>Bar layout, dock, app grid, battery percentage, windows, animations, layout, fonts and backgrounds, one setting at a time.</p>
 <pre><code class="language-text">bxrig appearance status|apply [--json]
 bxrig appearance bar show|hide|toggle
 bxrig appearance bar position top|bottom|left|right
 bxrig appearance bar style opaque|glassy|clear
 bxrig appearance bar clock ID
 bxrig appearance bar battery on|off
-bxrig appearance dock show|hide|toggle
+bxrig appearance bar layout minimal|standard|dense|status [--yes]
+bxrig appearance dock show|hide
+bxrig appearance dock on|off|toggle|status [--yes]
 bxrig appearance dock mode always|autohide|off
 bxrig appearance dock position bottom|left|right
+bxrig appearance appgrid launchpad|terminal|status [--yes]
+bxrig appearance battery-percent on|off|status [--yes]
 bxrig appearance windows gaps on|off
 bxrig appearance windows corners theme|rounded|sharp
 bxrig appearance windows opacity opaque|glassy
@@ -667,13 +671,15 @@ bxrig appearance background next
 bxrig appearance background random
 </code></pre>
 <pre><code class="language-bash">bxrig appearance bar position bottom
+bxrig appearance bar layout minimal --yes
+bxrig appearance dock off --yes
 bxrig appearance windows gaps off
 bxrig appearance layout columns
 bxrig appearance font install cascadia --yes
 bxrig appearance background random
 </code></pre>
 <blockquote>
-<p>Settings act at once (no --yes); --dry-run shows the commands. What you choose is remembered, and <code>appearance apply</code> pushes it again.</p>
+<p>Settings act at once (no --yes); --dry-run shows the commands. What you choose is remembered, and <code>appearance apply</code> pushes it again. <code>bar layout</code>, <code>dock on|off|toggle</code>, <code>appgrid</code> and <code>battery-percent</code> rewrite ~/.config/noctalia/config.toml (backup kept; a file with changes of your own needs --yes). The <code>terminal</code> app grid style is only stored for now: nothing draws it yet.</p>
 </blockquote>
 <h3 id="bxrig-hotcorners-bxrig-hotcorners"><a href="#bxrig-hotcorners-bxrig-hotcorners" id="bxrig-hotcorners-bxrig-hotcorners" name="bxrig-hotcorners-bxrig-hotcorners" class="anchor"></a><code>bxrig hotcorners</code> {#bxrig-hotcorners}</h3>
 <p>Hot corners: an action for each screen corner (overview, notifications, show desktop, lock, launcher, agents, themes).</p>
@@ -725,12 +731,13 @@ bxrig power doctor
 <p><code>power setup</code> does nothing on a machine without a battery unless you add --force.</p>
 </blockquote>
 <h3 id="bxrig-time-bxrig-time"><a href="#bxrig-time-bxrig-time" id="bxrig-time-bxrig-time" name="bxrig-time-bxrig-time" class="anchor"></a><code>bxrig time</code> {#bxrig-time}</h3>
-<p>The time zone: show, set, set from your IP after travelling, follow your location, network time, and the world clock.</p>
+<p>The time zone: show, set, set from your IP after travelling, follow your location, network time, the bar clock format, and the world clock.</p>
 <pre><code class="language-text">bxrig time status [--json]
 bxrig time zone [--list | ZONE] [--yes]
 bxrig time sync [--yes]
 bxrig time auto on|off|status [--yes]
 bxrig time ntp on|off [--yes]
+bxrig time format [FORMAT | default]
 bxrig time world [status | set ZONE,ZONE... | add ZONE | remove ZONE | on | off] [--yes] [--json]
 </code></pre>
 <p>Changes the system: needs <code>--yes</code>. Without it you get the plan (exit 2); <code>--dry-run</code> shows it and exits 0.</p>
@@ -738,9 +745,10 @@ bxrig time world [status | set ZONE,ZONE... | add ZONE | remove ZONE | on | off]
 bxrig time sync --yes
 bxrig time auto on --yes
 bxrig time world set Europe/Madrid,America/New_York --yes
+bxrig time format &quot;%a %-I:%M %p&quot;
 </code></pre>
 <blockquote>
-<p><code>time auto on</code> sends your Wi-Fi networks or IP address to a location web service; the plan says so first.</p>
+<p><code>time auto on</code> sends your Wi-Fi networks or IP address to a location web service; the plan says so first. <code>time format</code> sets the bar clock's text in Noctalia date format tokens (or MMM d - HH:mm patterns); it acts at once and rewrites the Noctalia config.</p>
 </blockquote>
 <h3 id="bxrig-toggle-bxrig-toggle"><a href="#bxrig-toggle-bxrig-toggle" id="bxrig-toggle-bxrig-toggle" name="bxrig-toggle-bxrig-toggle" class="anchor"></a><code>bxrig toggle</code> {#bxrig-toggle}</h3>
 <p>Quick switches. Today: stay awake (Noctalia caffeine).</p>
@@ -1274,7 +1282,7 @@ bxrig wifi status --json
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/reference/commands.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/reference/commands.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 17, 2026, 12&#x3a;57&#x3a;07 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Command%20reference&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Freference%2Fcommands%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/reference/commands.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/reference/commands.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 17, 2026, 1&#x3a;36&#x3a;53 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Command%20reference&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Freference%2Fcommands%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 

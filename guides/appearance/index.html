@@ -26,8 +26,8 @@
 
 	
 	
-		<meta name="description" content="The bar, dock, windows, animations, fonts and backgrounds, one setting at a time.">
-		<meta property="og:description" content="The bar, dock, windows, animations, fonts and backgrounds, one setting at a time.">
+		<meta name="description" content="The bar layouts, dock, app grid, windows, animations, fonts and backgrounds, one setting at a time.">
+		<meta property="og:description" content="The bar layouts, dock, app grid, windows, animations, fonts and backgrounds, one setting at a time.">
 	
 
 	
@@ -225,7 +225,7 @@
 		</h1>
 		
 		
-			<p class="page-summary">The bar, dock, windows, animations, fonts and backgrounds, one setting at a time.</p>
+			<p class="page-summary">The bar layouts, dock, app grid, windows, animations, fonts and backgrounds, one setting at a time.</p>
 		
 		
 		
@@ -235,7 +235,7 @@
 		
 		
 		
-			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#where-the-changes-go">Where the changes go</a></li></ul></details>
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#the-three-bars">The three bars</a></li><li class="toc-level-2"><a href="#where-the-changes-go">Where the changes go</a></li></ul></details>
 		
 
 		
@@ -246,6 +246,11 @@ bxrig appearance bar position bottom      # top, bottom, left, right
 bxrig appearance bar style glassy         # opaque, glassy, clear
 bxrig appearance bar clock iso            # ten clock formats (time-24h, sunday-12h, date-24h, iso ...)
 bxrig appearance bar battery on           # the percentage next to the battery
+bxrig appearance bar layout minimal       # minimal, standard (the default), dense, status
+bxrig appearance dock off                 # on, off, toggle, status: the grid button moves between the dock and the bar
+bxrig appearance appgrid launchpad        # launchpad, terminal, status
+bxrig appearance battery-percent on       # laptops only
+bxrig time format &quot;%a %-I:%M %p&quot;          # the bar clock's text; default &quot;%b %-d - %H:%M&quot; reads Nov 5 - 04:00
 bxrig appearance dock mode autohide       # always, autohide, off
 bxrig appearance windows gaps off         # no gaps and no borders
 bxrig appearance windows corners sharp    # theme, rounded, sharp
@@ -259,9 +264,30 @@ bxrig appearance font cascadia            # Noctalia and the terminals follow
 bxrig appearance background random        # or: list, set NAME, next
 bxrig appearance apply                    # push everything you chose again
 </code></pre>
+<h2 id="the-three-bars"><a href="#the-three-bars" id="the-three-bars" name="the-three-bars" class="anchor"></a>The three bars</h2>
+<p><code>bxrig appearance bar layout</code> picks one of three bars. Standard is the default. They all end with quick settings and then the control center, and they use bare icons coloured by the theme: only the logo button and the Launchpad grid carry a plate (a tile with an outline, so it stays visible on dark and Retro bars).</p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Layout</th><th>Start</th><th>Center</th><th>End</th></tr>
+</thead>
+<tbody>
+<tr><td>Minimal</td><td>logo, workspaces, active window</td><td>clock</td><td>tray, network, volume, battery*, notifications, quick settings, control center</td></tr>
+<tr><td>Standard</td><td>logo, workspaces, active window</td><td>clock, media</td><td>agents, capture, tray, clipboard history, network, Bluetooth, volume, battery*, notifications, quick settings, control center</td></tr>
+<tr><td>Dense</td><td>as Standard</td><td>clock, weather, media</td><td>as Standard, plus brightness and caffeine</td></tr>
+</tbody>
+</table></div>
+<p>* The battery widget is written only when a battery is found (a laptop). It shows the percentage; <code>appearance battery-percent off</code> hides the number.</p>
+<ul>
+<li><strong>Logo</strong> opens the BxRig menu (<code>bxrig menu</code>). <strong>Clock</strong> is one widget: the time as text, a popover with your local time, the other zones you follow (<code>bxrig time world</code>) and a Calendar button; right click opens the Noctalia calendar.</li>
+<li><strong>Dock</strong> is on by default. The Launchpad grid is its first button, so the grid is not in the bar; with <code>dock off</code> the grid button returns to the bar, right after the logo.</li>
+<li><strong>Quick settings</strong> is the theme switcher for now. Planned widgets that are not built yet and so are on no bar: System (updates, backups), Developer (databases, containers, VMs), VPN, a Power panel for the battery, and a real quick-settings popover.</li>
+<li><strong>App grid</strong>: <code>launchpad</code> is the launcher's grid view. <code>terminal</code> (a Terminal-style grid) is only remembered for now: nothing draws it yet, so the launcher keeps the Launchpad grid.</li>
+<li><strong>Clock format</strong> uses Noctalia's date format tokens (<a href="https://docs.noctalia.dev/noctalia/configuration/date-format-tokens/">https://docs.noctalia.dev/noctalia/configuration/date-format-tokens/</a>). A pattern without a <code>%</code>, like <code>MMM d - HH:mm</code>, is read as letters (yyyy MM dd HH mm ss a ...) and converted.</li>
+</ul>
+<p>These five settings (<code>bar layout</code>, <code>dock on|off|toggle</code>, <code>appgrid</code>, <code>battery-percent</code>, <code>time format</code>) rewrite <code>~/.config/noctalia/config.toml</code> through the config service: the theme and wallpaper you have are kept, a backup is made, and a running Noctalia reloads the file. If the file has changes of your own, the command shows a plan and <code>--yes</code> replaces it (the backup keeps yours). Noctalia's own settings window stores its changes separately and wins over the file; if the bar does not follow a change, look at <code>~/.local/state/noctalia/settings.toml</code>. The plate images are written to <code>~/.local/share/bxrig/plates/</code>. Noctalia's own first-run wizard is turned off in this config.</p>
 <h2 id="where-the-changes-go"><a href="#where-the-changes-go" id="where-the-changes-go" name="where-the-changes-go" class="anchor"></a>Where the changes go</h2>
 <ul>
-<li><strong>Noctalia</strong> (bar, dock, clock, battery, font, corner radius) is changed with <code>noctalia msg config-set</code>, so your <code>config.toml</code> is not edited. Without Noctalia the choice is saved and <code>appearance apply</code> pushes it later.</li>
+<li><strong>Noctalia</strong> (bar position and style, dock mode and position, battery, font, corner radius) is changed with <code>noctalia msg config-set</code>, so your <code>config.toml</code> is not edited. Without Noctalia the choice is saved and <code>appearance apply</code> pushes it later.</li>
 <li><strong>Hyprland</strong> window looks (gaps, corners, opacity, animations, layout) are one generated file, <code>~/.config/bxrig/theme/look.lua</code>, loaded by <code>bxrig.lua</code>. BxRig reloads Hyprland after a change. Your own <code>hyprland.lua</code> is never touched.</li>
 <li><strong>Fonts</strong> come from seven Nerd Fonts. Changing the font also updates the terminal configs BxRig wrote, but never one you edited (it tells you which).</li>
 <li><strong>Backgrounds</strong> are read from <code>~/Pictures/BxRig</code>, <code>~/Pictures</code> and the current theme's folder.</li>
@@ -272,7 +298,7 @@ bxrig appearance apply                    # push everything you chose again
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/appearance.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/appearance.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 17, 2026, 12&#x3a;57&#x3a;07 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Appearance&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fappearance%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/appearance.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/appearance.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 17, 2026, 1&#x3a;36&#x3a;53 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Appearance&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fappearance%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
@@ -316,7 +342,7 @@ bxrig appearance apply                    # push everything you chose again
 			
 			
 				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
-					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#where-the-changes-go">Where the changes go</a></li></ul></nav>
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#the-three-bars">The three bars</a></li><li class="toc-level-2"><a href="#where-the-changes-go">Where the changes go</a></li></ul></nav>
 				</aside>
 			
 		</div>

@@ -682,7 +682,7 @@ bxrig theme vscode --yes
 
 ### `bxrig appearance` {#bxrig-appearance}
 
-Bar, dock, windows, animations, layout, fonts and backgrounds, one setting at a time.
+Bar layout, dock, app grid, battery percentage, windows, animations, layout, fonts and backgrounds, one setting at a time.
 
 ```text
 bxrig appearance status|apply [--json]
@@ -691,9 +691,13 @@ bxrig appearance bar position top|bottom|left|right
 bxrig appearance bar style opaque|glassy|clear
 bxrig appearance bar clock ID
 bxrig appearance bar battery on|off
-bxrig appearance dock show|hide|toggle
+bxrig appearance bar layout minimal|standard|dense|status [--yes]
+bxrig appearance dock show|hide
+bxrig appearance dock on|off|toggle|status [--yes]
 bxrig appearance dock mode always|autohide|off
 bxrig appearance dock position bottom|left|right
+bxrig appearance appgrid launchpad|terminal|status [--yes]
+bxrig appearance battery-percent on|off|status [--yes]
 bxrig appearance windows gaps on|off
 bxrig appearance windows corners theme|rounded|sharp
 bxrig appearance windows opacity opaque|glassy
@@ -712,13 +716,15 @@ bxrig appearance background random
 
 ```bash
 bxrig appearance bar position bottom
+bxrig appearance bar layout minimal --yes
+bxrig appearance dock off --yes
 bxrig appearance windows gaps off
 bxrig appearance layout columns
 bxrig appearance font install cascadia --yes
 bxrig appearance background random
 ```
 
-> Settings act at once (no --yes); --dry-run shows the commands. What you choose is remembered, and `appearance apply` pushes it again.
+> Settings act at once (no --yes); --dry-run shows the commands. What you choose is remembered, and `appearance apply` pushes it again. `bar layout`, `dock on|off|toggle`, `appgrid` and `battery-percent` rewrite ~/.config/noctalia/config.toml (backup kept; a file with changes of your own needs --yes). The `terminal` app grid style is only stored for now: nothing draws it yet.
 
 ### `bxrig hotcorners` {#bxrig-hotcorners}
 
@@ -788,7 +794,7 @@ bxrig power doctor
 
 ### `bxrig time` {#bxrig-time}
 
-The time zone: show, set, set from your IP after travelling, follow your location, network time, and the world clock.
+The time zone: show, set, set from your IP after travelling, follow your location, network time, the bar clock format, and the world clock.
 
 ```text
 bxrig time status [--json]
@@ -796,6 +802,7 @@ bxrig time zone [--list | ZONE] [--yes]
 bxrig time sync [--yes]
 bxrig time auto on|off|status [--yes]
 bxrig time ntp on|off [--yes]
+bxrig time format [FORMAT | default]
 bxrig time world [status | set ZONE,ZONE... | add ZONE | remove ZONE | on | off] [--yes] [--json]
 ```
 
@@ -806,9 +813,10 @@ bxrig time zone Europe/Madrid --yes
 bxrig time sync --yes
 bxrig time auto on --yes
 bxrig time world set Europe/Madrid,America/New_York --yes
+bxrig time format "%a %-I:%M %p"
 ```
 
-> `time auto on` sends your Wi-Fi networks or IP address to a location web service; the plan says so first.
+> `time auto on` sends your Wi-Fi networks or IP address to a location web service; the plan says so first. `time format` sets the bar clock's text in Noctalia date format tokens (or MMM d - HH:mm patterns); it acts at once and rewrites the Noctalia config.
 
 ### `bxrig toggle` {#bxrig-toggle}
 
