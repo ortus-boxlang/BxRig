@@ -1578,15 +1578,29 @@
 				},
 				{
 					"name": "vpn",
-					"summary": "VPN post-install steps for NordVPN.",
+					"summary": "VPNs in one list: saved NetworkManager profiles and the VPN apps (NordVPN, NordLayer, Tailscale, Mullvad); connect, disconnect, pick a place.",
 					"usage": [
+						"vpn list | status [NAME] | locations NAME [--json]",
+						"vpn connect NAME [--location=PLACE] | disconnect [NAME] [--dry-run] [--json]",
+						"vpn set allow_several=true|false [--yes] [--dry-run] [--json]",
 						"vpn nordvpn setup [--yes] [--json]"
 					],
 					"examples": [
+						"bxrig vpn list",
+						"bxrig vpn connect tailscale",
+						"bxrig vpn connect nordvpn --location=Germany",
+						"bxrig vpn disconnect",
+						"bxrig vpn set allow_several=true --yes",
 						"bxrig vpn nordvpn setup --yes"
 					],
-					"mutates": true,
-					"flags": []
+					"mutates": false,
+					"flags": [
+						{
+							"name": "location",
+							"type": "value"
+						}
+					],
+					"note": "NAME is a provider from `vpn list` (nordvpn, nordlayer, tailscale, mullvad) or a saved profile as listed there (`nm:Home`). Choosing one disconnects the one that is connected first, unless `allow_several=true` (Tailscale next to another VPN; routes and DNS can clash). connect and disconnect act at once and take `--dry-run`; `set` and `nordvpn setup` need `--yes`. The providers are data (`catalog/vpn-providers.json`, extend with `~/.config/bxrig/vpn-providers.json`). `list` is empty when no VPN is installed; the other verbs exit 4 then. `--location` takes a value from `vpn locations NAME` (`default` connects as it is, `none` clears a Tailscale exit node). The top bar VPN icon (plugin `bxrig/vpn`) is the same list."
 				},
 				{
 					"name": "cloud",

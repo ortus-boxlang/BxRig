@@ -171,6 +171,7 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `secrets` | `--show` | bool |  |
 | `secrets` | `--strict` | bool |  |
 | `secrets` | `--type` | value |  |
+| `vpn` | `--location` | value |  |
 | `cloud` | `--path` | value |  |
 | `dotfiles` | `--method` | value |  |
 | `dotfiles` | `--overwrite` | bool |  |

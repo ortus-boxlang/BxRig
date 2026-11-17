@@ -1,3 +1,16 @@
+// `bxrig vpn`: one list of the VPNs you can use (saved NetworkManager profiles and the VPN apps), whatever the provider.
+//   vpn list [--json]                      the installed providers and profiles with their state (an empty list when none is installed)
+//   vpn status [NAME] [--json]             what is connected (one provider with NAME)
+//   vpn connect NAME [--location=PLACE]    connect; the VPN that is connected now is disconnected first unless allow_several is on
+//   vpn disconnect [NAME]                  disconnect NAME, or everything that is connected
+//   vpn locations NAME [--json]            the places NAME can connect to (countries, exit nodes, gateways)
+//   vpn set allow_several=true|false --yes whether several VPNs may be connected at once (default false), saved in ~/.config/bxrig/vpn.json
+//   vpn nordvpn setup [--yes]              the steps NordVPN needs after its package is installed (below)
+// NAME is a provider id from `vpn list` (nordvpn, nordlayer, tailscale, mullvad) or a profile as it is listed there (nm:Home WireGuard).
+// The providers are data (catalog/vpn-providers.json, VpnAdapters); only the parsers of their output are code (VpnParsers).
+// connect and disconnect start or stop a program, so they act at once and take --dry-run (COMMAND-CONTRACT 2.11); set needs --yes.
+// Exit: 0 done, 2 bad usage or an unknown name, 4 no VPN installed (or NAME is not), 6 a command failed.
+//
 // `bxrig vpn nordvpn setup [--yes]`: the steps NordVPN needs after its package is installed (the AUR package prints them as notes):
 //   sudo systemctl enable --now nordvpnd       the daemon
 //   sudo gpasswd -a USER nordvpn               your user joins the nordvpn group (log out and in, or reboot, for it to count)
@@ -8,7 +21,251 @@ class Vpn {
 		variables.cli = arguments.cli;
 		variables.inst = new bxrig.Installer( arguments.runner );
 		variables.systemd = new bxrig.util.Systemd( variables.inst.proc() );
+		variables.environ = new bxrig.util.Env();
+		variables.proc = variables.inst.proc();
+		variables.adapters = new bxrig.VpnAdapters( arguments.runner, variables.environ.config( "vpn-providers.json" ) );
+		variables.out = new bxrig.util.Out( variables.cli, "vpn" );
 		return this;
+	}
+
+	// ---- settings (~/.config/bxrig/vpn.json, through the config service) ----
+	function settingsFile() { return variables.environ.config( "vpn.json" ); }
+
+	function toBool( v ) {
+		var t = lcase( trim( arguments.v & "" ) );
+		return compare( t, "true" ) == 0 || compare( t, "on" ) == 0 || compare( t, "yes" ) == 0 || compare( t, "1" ) == 0;
+	}
+
+	function settings() {
+		var s = new bxrig.util.JsonStore().read( settingsFile(), { allow_several: false } );
+		return { allow_several: toBool( s.allow_several ) };
+	}
+
+	// ---- the rows: every installed provider and saved profile with its state ----
+	// A row is { id, item, down }: item is what `list --json` shows, down the argv that disconnects it.
+	function rows() {
+		var out = [];
+		var ps = variables.adapters.profileSpec();
+		for ( var p in variables.adapters.profiles() ) {
+			var item = { id: p.id, name: p.name, group: "profiles", kind: p.type, state: p.active ? "connected" : "disconnected", connected: p.active, location: "", detail: "", can_pick: false, coexist: false, verified: ps.verified, note: "" };
+			out.append( { id: p.id, item: item, down: variables.adapters.argv( ps.down, { uuid: p.uuid } ), up: variables.adapters.argv( ps.up, { uuid: p.uuid } ) } );
+		}
+		for ( var s in variables.adapters.providers() ) {
+			if ( !variables.adapters.installed( s ) ) continue;
+			var st = variables.adapters.state( s );
+			var it = { id: s.id, name: s.name, group: "apps", kind: "app", state: st.state, connected: compare( st.state, "connected" ) == 0, location: st.location, detail: st.detail, can_pick: variables.adapters.canPick( s ), coexist: variables.adapters.hasKey( s, "coexist" ) && s.coexist == true, verified: s.verified, note: s.note };
+			out.append( { id: s.id, item: it, down: s.disconnect, up: s.connect } );
+		}
+		return out;
+	}
+
+	function items( rows ) {
+		var out = [];
+		for ( var r in arguments.rows ) out.append( r.item );
+		return out;
+	}
+
+	function connectedIds( rows ) {
+		var out = [];
+		for ( var r in arguments.rows ) if ( r.item.connected ) out.append( r.id );
+		return out;
+	}
+
+	function rowOf( rows, id ) {
+		for ( var r in arguments.rows ) if ( compare( r.id, arguments.id ) == 0 ) return r;
+		return {};
+	}
+
+	// "Install one: bxrig install nordvpn ..." for an empty list.
+	function installHint() {
+		var ids = [];
+		for ( var s in variables.adapters.providers() ) if ( variables.adapters.hasKey( s, "install" ) ) ids.append( s.install );
+		return "Install a VPN app: bxrig install " & ids.toList( " | " ) & "  (saved VPN and WireGuard profiles of NetworkManager are listed too)";
+	}
+
+	function installChoices() {
+		var out = [];
+		for ( var s in variables.adapters.providers() ) if ( variables.adapters.hasKey( s, "install" ) ) out.append( { id: s.id, name: s.name, install: s.install } );
+		return out;
+	}
+
+	// The line people read for a state: "connected, Germany, Berlin", "off", "log in first".
+	function stateText( item ) {
+		var i = arguments.item;
+		if ( i.connected ) return "connected" & ( len( i.location ) ? ", " & i.location : "" );
+		if ( compare( i.state, "connecting" ) == 0 ) return "connecting";
+		if ( compare( i.state, "login" ) == 0 ) return "log in first" & ( len( i.detail ) ? " (" & i.detail & ")" : "" );
+		if ( compare( i.state, "unavailable" ) == 0 ) return "not running" & ( len( i.detail ) ? " (" & left( replace( i.detail, chr( 10 ), " ", "all" ), 60 ) & ")" : "" );
+		if ( compare( i.state, "unknown" ) == 0 ) return "state unknown";
+		return "off";
+	}
+
+	function line( item ) {
+		var t = new bxrig.util.Text();
+		return "  " & t.pad( arguments.item.id, 22 ) & " " & t.pad( arguments.item.name, 22 ) & " " & stateText( arguments.item );
+	}
+
+	// ---- vpn list ----
+	function list( asJson ) {
+		var out = variables.out.sub( "vpn list" );
+		var rs = rows();
+		var set = settings();
+		var data = { providers: items( rs ), connected: connectedIds( rs ), allow_several: set.allow_several, install: installChoices() };
+		var lines = [];
+		if ( !rs.len() ) {
+			lines.append( "No VPN is installed." );
+			lines.append( installHint() );
+			return out.say( "ok", data, arguments.asJson, lines );
+		}
+		var groups = [ { key: "profiles", title: "Network profiles" }, { key: "apps", title: "VPN apps" } ];
+		for ( var g in groups ) {
+			var has = false;
+			for ( var r in rs ) {
+				if ( compare( r.item.group, g.key ) != 0 ) continue;
+				if ( !has ) { lines.append( g.title ); has = true; }
+				lines.append( line( r.item ) );
+			}
+		}
+		lines.append( "One at a time: " & ( set.allow_several ? "no (allow_several is on)" : "yes (connecting one disconnects the other first)" ) );
+		return out.say( "ok", data, arguments.asJson, lines );
+	}
+
+	// ---- vpn status [NAME] ----
+	function status( name, asJson ) {
+		var out = variables.out.sub( "vpn status" );
+		var rs = rows();
+		var set = settings();
+		if ( !rs.len() ) return out.precondition( "no VPN is installed. " & installHint(), arguments.asJson );
+		if ( len( arguments.name ) ) {
+			var r = rowOf( rs, arguments.name );
+			if ( !structCount( r ) ) return missing( out, arguments.name, arguments.asJson );
+			var lines = [ r.item.name & ": " & stateText( r.item ) ];
+			if ( len( r.item.note ) ) lines.append( "note: " & r.item.note );
+			return out.say( "ok", { provider: r.item, allow_several: set.allow_several }, arguments.asJson, lines );
+		}
+		var on = [];
+		for ( var x in rs ) if ( x.item.connected ) on.append( x.item.name & ( len( x.item.location ) ? " (" & x.item.location & ")" : "" ) );
+		var text = on.len() ? "Connected: " & on.toList( ", " ) : "Not connected";
+		return out.say( "ok", { connected: connectedIds( rs ), providers: items( rs ), allow_several: set.allow_several }, arguments.asJson, [ text ] );
+	}
+
+	// A name that is not in the rows: a known provider that is not installed is exit 4, anything else exit 2.
+	function missing( out, name, asJson ) {
+		var spec = variables.adapters.find( arguments.name );
+		if ( structCount( spec ) ) return arguments.out.precondition( spec.name & " is not installed (bxrig install " & ( variables.adapters.hasKey( spec, "install" ) ? spec.install : spec.id ) & ")", arguments.asJson );
+		var ps = variables.adapters.profileSpec();
+		if ( compare( left( arguments.name, len( ps.id_prefix ) ), ps.id_prefix ) == 0 && !variables.proc.has( ps.binary ) ) return arguments.out.precondition( ps.binary & " (NetworkManager) is not installed, so there are no network profiles", arguments.asJson );
+		return arguments.out.usage( "unknown VPN: " & arguments.name & " (bxrig vpn list shows the names)", arguments.asJson );
+	}
+
+	// ---- vpn locations NAME ----
+	function locations( name, asJson ) {
+		var out = variables.out.sub( "vpn locations" );
+		if ( !len( arguments.name ) ) return out.usage( "usage: bxrig vpn locations NAME", arguments.asJson );
+		var rs = rows();
+		var r = rowOf( rs, arguments.name );
+		if ( !structCount( r ) ) return missing( out, arguments.name, arguments.asJson );
+		var spec = variables.adapters.find( r.id );
+		var list = structCount( spec ) && variables.adapters.canPick( spec ) ? variables.adapters.pickList( spec ) : [];
+		var lines = [];
+		if ( !list.len() ) lines.append( r.item.name & " has no places to choose: its profile or app decides." );
+		for ( var l in list ) lines.append( "  " & new bxrig.util.Text().pad( l.value, 26 ) & " " & l.label );
+		return out.say( "ok", { provider: r.id, can_pick: list.len() > 0, current: r.item.location, locations: list }, arguments.asJson, lines );
+	}
+
+	// ---- vpn connect NAME [--location=PLACE] ----
+	function connect( name, location, dry, asJson ) {
+		var out = variables.out.sub( "vpn connect" );
+		if ( !len( arguments.name ) ) return out.usage( "usage: bxrig vpn connect NAME [--location=PLACE]", arguments.asJson );
+		var rs = rows();
+		var r = rowOf( rs, arguments.name );
+		if ( !structCount( r ) ) return missing( out, arguments.name, arguments.asJson );
+		var spec = variables.adapters.find( r.id );
+		var loc = arguments.location;
+		if ( len( loc ) ) {
+			if ( !structCount( spec ) || !variables.adapters.canPick( spec ) ) return out.usage( r.item.name & " has no places to choose (--location)", arguments.asJson );
+			var reserved = compare( loc, variables.adapters.defaultValue() ) == 0 || compare( loc, variables.adapters.noneValue() ) == 0;
+			if ( !reserved && !variables.adapters.validLocation( loc ) ) return out.usage( "that place is not valid: " & loc, arguments.asJson );
+			if ( compare( loc, variables.adapters.noneValue() ) == 0 && !variables.adapters.hasKey( spec, "select_none" ) ) return out.usage( r.item.name & " cannot clear a place", arguments.asJson );
+		}
+		var set = settings();
+		var cmds = [];
+		var off = [];
+		var stay = [];
+		for ( var o in rs ) {
+			if ( compare( o.id, r.id ) == 0 || !o.item.connected ) continue;
+			if ( set.allow_several ) { stay.append( o.item.name ); continue; }
+			cmds.append( o.down );
+			off.append( o.id );
+		}
+		if ( r.item.connected && !len( loc ) ) {
+			return out.say( "ok", { provider: r.id, connected: true, changed: false, disconnected: [] }, arguments.asJson, [ r.item.name & " is already connected" ] );
+		}
+		if ( structCount( spec ) ) { for ( var c in variables.adapters.steps( spec, loc ) ) cmds.append( c ); }
+		else cmds.append( r.up );
+		if ( stay.len() && !arguments.asJson ) println( "note: " & stay.toList( ", " ) & " stays connected (allow_several is on). Two VPNs at once can clash on routes and DNS." );
+		var data = { provider: r.id, location: loc, disconnected: off, kept: stay, allow_several: set.allow_several };
+		var title = "connect " & r.item.name & ( len( loc ) ? " (" & loc & ")" : "" ) & ( off.len() ? ", after disconnecting " & off.toList( ", " ) : "" );
+		return new bxrig.util.Mutation( out, variables.proc ).run( title, cmds, true, arguments.dry, arguments.asJson, data, [], 120 );
+	}
+
+	// ---- vpn disconnect [NAME] ----
+	function disconnect( name, dry, asJson ) {
+		var out = variables.out.sub( "vpn disconnect" );
+		var rs = rows();
+		if ( !rs.len() ) return out.precondition( "no VPN is installed. " & installHint(), arguments.asJson );
+		var cmds = [];
+		var ids = [];
+		if ( len( arguments.name ) ) {
+			var r = rowOf( rs, arguments.name );
+			if ( !structCount( r ) ) return missing( out, arguments.name, arguments.asJson );
+			if ( !r.item.connected && compare( r.item.state, "disconnected" ) == 0 ) return out.say( "ok", { disconnected: [], changed: false }, arguments.asJson, [ r.item.name & " is not connected" ] );
+			cmds.append( r.down );
+			ids.append( r.id );
+		} else {
+			for ( var x in rs ) if ( x.item.connected ) { cmds.append( x.down ); ids.append( x.id ); }
+			if ( !cmds.len() ) return out.say( "ok", { disconnected: [], changed: false }, arguments.asJson, [ "Nothing is connected" ] );
+		}
+		return new bxrig.util.Mutation( out, variables.proc ).run( "disconnect " & ids.toList( ", " ), cmds, true, arguments.dry, arguments.asJson, { disconnected: ids }, [], 60 );
+	}
+
+	// ---- vpn set KEY=VALUE ----
+	function setCmd( words, yes, dry, asJson ) {
+		var out = variables.out.sub( "vpn set" );
+		var usage = "usage: bxrig vpn set allow_several=true|false --yes";
+		if ( arguments.words.len() != 1 || !find( "=", arguments.words[ 1 ] ) ) return out.usage( usage, arguments.asJson );
+		var at = find( "=", arguments.words[ 1 ] );
+		var key = lcase( trim( left( arguments.words[ 1 ], at - 1 ) ) );
+		var raw = lcase( trim( mid( arguments.words[ 1 ], at + 1, len( arguments.words[ 1 ] ) ) ) );
+		if ( compare( key, "allow_several" ) != 0 ) return out.usage( "unknown setting: " & key & ". " & usage, arguments.asJson );
+		if ( !listFindNoCase( "true,false,on,off,yes,no", raw ) ) return out.usage( "allow_several is true or false, not " & raw, arguments.asJson );
+		var want = toBool( raw );
+		var data = { key: key, value: want };
+		if ( !arguments.yes || arguments.dry ) return out.plan( "set the VPN setting " & key & " to " & want, data, arguments.asJson, arguments.dry, [ "  " & settingsFile() ] );
+		var cur = settings();
+		cur.allow_several = want;
+		if ( new bxrig.util.JsonStore().write( "vpn-settings", settingsFile(), cur ) != 0 ) return out.failed( "could not save " & settingsFile(), arguments.asJson );
+		return out.say( "ok", data, arguments.asJson, [ key & " is " & want & ( want ? ": several VPNs may be connected at once (they can clash on routes and DNS)" : ": connecting one VPN disconnects the other first" ) ] );
+	}
+
+	// ---- the router ----
+	// words: what follows `vpn`; options: the flags (location, yes, dry-run).
+	function run( words, options = {}, asJson = false ) {
+		var w = arguments.words;
+		var verb = w.len() ? w[ 1 ] : "";
+		var rest = [];
+		for ( var i = 2; i <= w.len(); i++ ) rest.append( w[ i ] );
+		var yes = structKeyExists( arguments.options, "yes" );
+		var dry = structKeyExists( arguments.options, "dry-run" );
+		var location = structKeyExists( arguments.options, "location" ) ? arguments.options.location & "" : "";
+		if ( compare( verb, "nordvpn" ) == 0 && rest.len() == 1 && compare( rest[ 1 ], "setup" ) == 0 ) return nordvpn( yes, arguments.asJson );
+		if ( compare( verb, "list" ) == 0 && !rest.len() ) return list( arguments.asJson );
+		if ( compare( verb, "status" ) == 0 && rest.len() <= 1 ) return status( rest.len() ? rest[ 1 ] : "", arguments.asJson );
+		if ( compare( verb, "connect" ) == 0 && rest.len() == 1 ) return connect( rest[ 1 ], location, dry, arguments.asJson );
+		if ( compare( verb, "disconnect" ) == 0 && rest.len() <= 1 ) return disconnect( rest.len() ? rest[ 1 ] : "", dry, arguments.asJson );
+		if ( compare( verb, "locations" ) == 0 && rest.len() == 1 ) return locations( rest[ 1 ], arguments.asJson );
+		if ( compare( verb, "set" ) == 0 ) return setCmd( rest, yes, dry, arguments.asJson );
+		return variables.out.usage( "unknown vpn command. " & new bxrig.CommandSpec().usage( "vpn" ), arguments.asJson );
 	}
 
 	function nordvpn( yes, asJson ) {

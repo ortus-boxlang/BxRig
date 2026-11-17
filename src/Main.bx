@@ -193,10 +193,10 @@ class {
 				CLIExit( xit.usage() );
 				break;
 			case "vpn":
-				// Post-install steps for VPN clients. See COMMAND-CONTRACT.md 13.20.
-				if ( p.len() == 3 && p[2] == "nordvpn" && p[3] == "setup" ) CLIExit( new bxrig.Vpn( cli ).nordvpn( structKeyExists( args.options, "yes" ), asJson ) );
-				println( new bxrig.CommandSpec().usage( "vpn nordvpn setup" ) );
-				CLIExit( xit.usage() );
+				// VPNs in one list (profiles and apps), and the NordVPN post-install steps. See COMMAND-CONTRACT.md 13.20 and 13.58.
+				vpWords = [];
+				for ( vpi = 2; vpi <= p.len(); vpi++ ) vpWords.append( p[ vpi ] );
+				CLIExit( new bxrig.Vpn( cli ).run( vpWords, args.options, asJson ) );
 				break;
 			case "clipboard":
 				// Clipboard history with cliphist. See COMMAND-CONTRACT.md 13.18.

@@ -1,0 +1,176 @@
+// The VPN adapters as data: catalog/vpn-providers.json (packed with BxRig) plus the user's ~/.config/bxrig/vpn-providers.json, which adds a
+// provider or replaces one by id. This class only reads the specs, fills in the argv templates and runs the status and location probes through
+// Proc and VpnParsers; it has no branch for any one provider. See docs/architecture/COMMAND-CONTRACT.md 13.58.
+//   providers()                  every spec, the file's order, the user's additions last
+//   find( id )                   one spec or {}
+//   argv( template, vars )       a template with {location}, {location*}, {uuid} filled in (an array of arguments)
+//   state( spec )                { state, location, detail } from the status command (a missing binary is "unavailable")
+//   locations( spec )            [ { value, label } ] from the locations command ([] when the provider has none)
+//   steps( spec, location )      the commands that connect, as an array of argv
+//   profiles()                   the saved NetworkManager VPN and WireGuard profiles: [ { id, name, uuid, type, active } ]
+class VpnAdapters {
+	function init( runner = "", userFile = "" ) {
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.parsers = new bxrig.VpnParsers();
+		variables.userFile = arguments.userFile;
+		variables.data = "";
+		return this;
+	}
+
+	function proc() { return variables.proc; }
+
+	// The parsed data file: the packed one, with the user's providers laid over it.
+	function load() {
+		if ( isStruct( variables.data ) ) return variables.data;
+		var d = jsonDeserialize( new bxrig.util.Res().trimmed( "catalog/vpn-providers.json" ) );
+		if ( len( variables.userFile ) && fileExists( variables.userFile ) ) {
+			var mine = new bxrig.util.JsonStore().load( variables.userFile, {} );
+			if ( isStruct( mine ) && structKeyExists( mine, "providers" ) && isArray( mine.providers ) ) {
+				for ( var up in mine.providers ) {
+					if ( !isStruct( up ) || !structKeyExists( up, "id" ) ) continue;
+					var at = 0;
+					for ( var i = 1; i <= d.providers.len(); i++ ) if ( compare( d.providers[ i ].id, up.id ) == 0 ) at = i;
+					if ( at > 0 ) d.providers[ at ] = up; else d.providers.append( up );
+				}
+			}
+		}
+		variables.data = d;
+		return d;
+	}
+
+	function providers() { return load().providers; }
+
+	function find( id ) {
+		for ( var s in providers() ) if ( compare( s.id, arguments.id ) == 0 ) return s;
+		return {};
+	}
+
+	function profileSpec() { return load().profiles; }
+
+	// Is the provider's program on the PATH?
+	function installed( spec ) {
+		return variables.proc.has( arguments.spec.binary );
+	}
+
+	function hasKey( s, key ) {
+		return structKeyExists( arguments.s, arguments.key );
+	}
+
+	// A template filled in. An argument that is exactly "{name}" becomes the value; "{name*}" becomes the value's words (several arguments);
+	// "--flag={name}" has the value put in. The templates are arrays, so nothing is ever read by a shell.
+	function argv( template, vars = {} ) {
+		var out = [];
+		for ( var a in arguments.template ) {
+			var cur = a;
+			var done = false;
+			for ( var k in arguments.vars ) {
+				if ( compare( cur, "{" & k & "*}" ) == 0 ) {
+					for ( var w in listToArray( arguments.vars[ k ], " " ) ) out.append( w );
+					done = true;
+				} else if ( compare( cur, "{" & k & "}" ) == 0 ) {
+					out.append( arguments.vars[ k ] );
+					done = true;
+				} else if ( find( "{" & k & "}", cur ) ) {
+					cur = replace( cur, "{" & k & "}", arguments.vars[ k ], "all" );
+				}
+				if ( done ) break;
+			}
+			if ( !done ) out.append( cur );
+		}
+		return out;
+	}
+
+	// ---- probes ----
+	function state( spec ) {
+		var s = arguments.spec;
+		var r = variables.proc.exec( s.status.argv, 8 );
+		if ( r.exitCode == 127 ) return variables.parsers.result( "unavailable", "", trim( r.output ) );
+		return variables.parsers.status( s.status.parser, r.output, r.exitCode );
+	}
+
+	function locations( spec ) {
+		var s = arguments.spec;
+		if ( !hasKey( s, "locations" ) ) return [];
+		var r = variables.proc.exec( s.locations.argv, 30 );
+		if ( r.exitCode != 0 ) return [];
+		return variables.parsers.locations( s.locations.parser, r.output );
+	}
+
+	// Whether the provider can pick a place at all (a connect with a location, or a select command).
+	function canPick( spec ) {
+		return hasKey( arguments.spec, "connect_to" ) || hasKey( arguments.spec, "select" );
+	}
+
+	// The reserved location values: "default" connects as it is, "none" clears the choice (when the provider can).
+	function defaultValue() { return "default"; }
+	function noneValue() { return "none"; }
+
+	// The location entries a picker shows: the reserved ones first (by the provider's labels), then the provider's own list.
+	function pickList( spec ) {
+		var s = arguments.spec;
+		var out = [ { value: defaultValue(), label: hasKey( s, "default_label" ) ? s.default_label : "Default" } ];
+		if ( hasKey( s, "select_none" ) ) out.append( { value: noneValue(), label: hasKey( s, "none_label" ) ? s.none_label : "None" } );
+		for ( var l in locations( s ) ) out.append( l );
+		return out;
+	}
+
+	// A value the commands may be given: no leading dash (a program would read it as an option), plain characters, one line.
+	function validLocation( value ) {
+		return reFind( "^[A-Za-z0-9_][A-Za-z0-9 ._:@()-]{0,79}$", arguments.value ) > 0;
+	}
+
+	// The commands that connect, in order. A location of "" or "default" connects as it is; "none" connects and clears the choice.
+	function steps( spec, location = "" ) {
+		var s = arguments.spec;
+		var loc = arguments.location;
+		var vars = { location: loc };
+		if ( !len( loc ) || compare( loc, defaultValue() ) == 0 ) return [ s.connect ];
+		if ( compare( loc, noneValue() ) == 0 ) return hasKey( s, "select_none" ) ? [ s.connect, s.select_none ] : [ s.connect ];
+		if ( hasKey( s, "connect_to" ) ) return [ argv( s.connect_to, vars ) ];
+		if ( hasKey( s, "select" ) ) {
+			var pick = argv( s.select, vars );
+			var before = hasKey( s, "select_order" ) && compare( s.select_order, "before" ) == 0;
+			return before ? [ pick, s.connect ] : [ s.connect, pick ];
+		}
+		return [ s.connect ];
+	}
+
+	// ---- NetworkManager profiles ----
+	// One line of `nmcli -t` output split at the colons that are not written \: ; "\:" and "\\" are unescaped.
+	function splitTerse( line ) {
+		var out = [];
+		var cur = "";
+		var t = arguments.line;
+		var i = 1;
+		while ( i <= len( t ) ) {
+			var ch = mid( t, i, 1 );
+			if ( compare( ch, "\" ) == 0 && i < len( t ) ) { cur &= mid( t, i + 1, 1 ); i += 2; continue; }
+			if ( compare( ch, ":" ) == 0 ) { out.append( cur ); cur = ""; i++; continue; }
+			cur &= ch;
+			i++;
+		}
+		out.append( cur );
+		return out;
+	}
+
+	// The saved profiles of the kinds the spec lists (vpn, wireguard), newest first as nmcli prints them.
+	function parseProfiles( text, types ) {
+		var out = [];
+		for ( var l in variables.parsers.lines( arguments.text ) ) {
+			if ( !len( trim( l ) ) ) continue;
+			var f = splitTerse( l );
+			if ( f.len() < 4 ) continue;
+			if ( !arrayFindNoCase( arguments.types, f[ 3 ] ) ) continue;
+			out.append( { id: profileSpec().id_prefix & f[ 1 ], name: f[ 1 ], uuid: f[ 2 ], type: f[ 3 ], active: compare( lcase( f[ 4 ] ), "yes" ) == 0 } );
+		}
+		return out;
+	}
+
+	function profiles() {
+		var ps = profileSpec();
+		if ( !variables.proc.has( ps.binary ) ) return [];
+		var r = variables.proc.exec( ps.list, 15 );
+		if ( r.exitCode != 0 ) return [];
+		return parseProfiles( r.output, ps.types );
+	}
+}
