@@ -66,14 +66,14 @@ testkit.check( "data: the demo values", new bxrig.LookData( true ).load().clock_
 
 // the status answers a fake bxrig gives
 fake = { selfData: function( args, timeout = 30 ) {
-	var key = args.toList( " " );
-	if ( key == "appearance bar layout status" ) return { layout: "dense", dock: false, battery: true };
-	if ( key == "appearance appgrid status" ) return { appgrid: "terminal" };
-	if ( key == "appearance battery-percent status" ) return { battery_percent: "on", battery_found: false };
-	if ( key == "time format" ) return { format: "%H:%M", sample: "04:00" };
-	if ( key == "keys show" ) return { shortcuts: [ { id: "x", keys: "a" }, { id: "bar-toggle", keys: "Super+Alt+B" } ] };
-	return {};
-} };
+		var key = args.toList( " " );
+		if ( key == "appearance bar layout status" ) return { layout: "dense", dock: false, battery: true };
+		if ( key == "appearance appgrid status" ) return { appgrid: "terminal" };
+		if ( key == "appearance battery-percent status" ) return { battery_percent: "on", battery_found: false };
+		if ( key == "time format" ) return { format: "%H:%M", sample: "04:00" };
+		if ( key == "keys show" ) return { shortcuts: [ { id: "x", keys: "a" }, { id: "bar-toggle", keys: "Super+Alt+B" } ] };
+		return {};
+	} };
 got = new bxrig.LookData( false, fake ).load();
 testkit.check( "data: the layout, dock, grid, battery, clock and toggle key come from the status commands", got.layout == "dense" && got.dock == false && got.appgrid == "terminal" && got.battery_percent == "on" && got.battery_found == false && got.clock_format == "%H:%M" && got.clock_sample == "04:00" && got.bar_toggle_keys == "Super+Alt+B" );
 
