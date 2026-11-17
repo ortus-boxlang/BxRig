@@ -12,4 +12,18 @@ run "$binary" status | grep -q 'Default apps not installed:' || fail 'status tex
 
 # init --from-system --print-answers: what the machine has, as wizard answers
 run "$binary" init --from-system --print-answers --json | jq -e '.data.answers.terminal == "ghostty" and (.data.answers.ai_agents | index("claude-code") != null)' >/dev/null || fail "from-system: $(run "$binary" init --from-system --print-answers --json)"
+# the Look pages start from what the desktop has now: theme.json and the appearance status commands (a fake bxrig answers them)
+mkdir -p "$tmp/cfg/bxrig"; echo '{"name":"nord","mode":"theme"}' > "$tmp/cfg/bxrig/theme.json"
+cat > "$tmp/self" <<'FAKE'
+#!/usr/bin/env bash
+case "$*" in
+	"appearance bar layout status --json") echo '{"ok":true,"data":{"layout":"dense"}}' ;;
+	"appearance appgrid status --json") echo '{"ok":true,"data":{"appgrid":"terminal"}}' ;;
+	*) echo "usage"; exit 2 ;;
+esac
+FAKE
+chmod +x "$tmp/self"
+run env BXRIG_SELF="$tmp/self" "$binary" init --from-system --print-answers --json | jq -e '.data.answers.bar_layout == "dense" and .data.answers.appgrid_style == "terminal" and .data.answers.theme_name == "nord"' >/dev/null || fail "look prefill: $(run env BXRIG_SELF="$tmp/self" "$binary" init --from-system --print-answers --json)"
+# a bxrig that does not know the appearance commands (or fails) leaves the defaults alone
+run env BXRIG_SELF=/bin/false "$binary" init --from-system --print-answers --json | jq -e '(.data.answers | has("bar_layout") | not) and (.data.answers | has("appgrid_style") | not) and .data.answers.theme_name == "nord"' >/dev/null || fail 'look prefill without the status commands'
 echo "status-test ok"

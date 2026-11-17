@@ -11,7 +11,7 @@ class InitPlan {
 
 	// Answers that shape the Hyprland starter (applied by `setup hyprland`; pending when Hyprland is not being set up).
 	function hyprlandKeys() {
-		return [ "workspaces", "natural_scroll", "layouts", "theme", "wallpaper", "bar_position", "dock" ];
+		return [ "workspaces", "natural_scroll", "layouts", "theme", "wallpaper", "bar_position", "dock", "bar_layout", "appgrid_style" ];
 	}
 
 	// The value of an answer, or a fallback when it was not answered.
@@ -44,9 +44,14 @@ class InitPlan {
 		return true;
 	}
 
+	// The top bar layouts and app grid styles `bxrig appearance` knows (the wizard's Top bar layout and App grid style pages).
+	function barLayouts() { return new bxrig.BarLayouts().order(); }
+	function gridStyles() { return [ "launchpad", "terminal" ]; }
+
 	// The plan: { steps, pending, errors }. shellMap (optional): catalog app id -> its shells, to keep desktop-specific apps off
-	// the other desktop when "customize" picked them.
-	function plan( answers, shellMap = {} ) {
+	// the other desktop when "customize" picked them. current (optional): what the machine has now, { theme }: the theme that is applied
+	// already, so choosing the default theme again (back from another) still runs `theme set`.
+	function plan( answers, shellMap = {}, current = {} ) {
 		var a = arguments.answers;
 		var out = { steps: [], pending: [], errors: [] };
 		var desktops = pick( a, "desktops" );
@@ -89,7 +94,8 @@ class InitPlan {
 		// a chosen launcher or menu program is themed too (the rofi, fuzzel and wofi files are part of `theme set`), so it is never stock after setup,
 		// even with the default BxRig theme
 		var runnerChosen = len( pick( a, "launcher" ) ) > 0 || len( pick( a, "menu" ) ) > 0;
-		if ( ( wantsHypr || wantsPlasma || runnerChosen ) && len( themeName ) && ( themeName != "bxrig" || runnerChosen ) ) {
+		var themeNow = structKeyExists( arguments.current, "theme" ) ? arguments.current.theme : "";
+		if ( ( wantsHypr || wantsPlasma || runnerChosen ) && len( themeName ) && ( themeName != "bxrig" || runnerChosen || ( len( themeNow ) && themeNow != themeName ) ) ) {
 			var thargv = [ "bxrig", "theme", "set", themeName ];
 			if ( pick( a, "theme" ) == "auto" ) thargv.append( "--mode=auto" );
 			out.steps.append( { id: "theme", title: "apply the " & themeName & " colour theme", argv: thargv, optional: true } );
@@ -97,6 +103,13 @@ class InitPlan {
 		// the bar and the dock (Noctalia, so Hyprland only); optional: Noctalia may not be running during the install
 		if ( wantsHypr && len( pick( a, "bar_position" ) ) ) out.steps.append( { id: "bar", title: "put the bar at the " & a.bar_position, argv: [ "bxrig", "appearance", "bar", "position", a.bar_position ], optional: true } );
 		if ( wantsHypr && structKeyExists( a, "dock" ) ) out.steps.append( { id: "dock", title: ( isSet( a.dock ) ? "show" : "hide" ) & " the dock", argv: [ "bxrig", "appearance", "dock", isSet( a.dock ) ? "show" : "hide" ], optional: true } );
+		// the top bar layout and the app grid style (Noctalia, so Hyprland only), after the bar and the dock
+		var layoutPick = pick( a, "bar_layout" );
+		if ( len( layoutPick ) && !arrayFind( barLayouts(), layoutPick ) ) out.errors.append( "bar_layout: unknown value " & layoutPick );
+		else if ( wantsHypr && len( layoutPick ) ) out.steps.append( { id: "bar-layout", title: "top bar layout: " & new bxrig.BarLayouts().layout( layoutPick ).name, argv: [ "bxrig", "appearance", "bar", "layout", layoutPick ], optional: true } );
+		var gridPick = pick( a, "appgrid_style" );
+		if ( len( gridPick ) && !arrayFind( gridStyles(), gridPick ) ) out.errors.append( "appgrid_style: unknown value " & gridPick );
+		else if ( wantsHypr && len( gridPick ) ) out.steps.append( { id: "appgrid", title: "app grid style: " & ( gridPick == "terminal" ? "Terminal-style" : "Launchpad" ), argv: [ "bxrig", "appearance", "appgrid", gridPick ], optional: true } );
 		// world clock: the globe and the zones you follow, or off
 		if ( structKeyExists( a, "world_clock" ) ) {
 			var zones = pick( a, "world_clock_zones", [] );

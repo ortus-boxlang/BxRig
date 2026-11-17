@@ -96,7 +96,7 @@ class Init {
 
 	// Runs the plan for these answers. yes/dryRun as every mutating command: no --yes prints it (exit 2), --dry-run exits 0.
 	function run( answers, yes, dryRun, asJson ) {
-		var plan = new bxrig.InitPlan().plan( arguments.answers, shellMap() );
+		var plan = new bxrig.InitPlan().plan( arguments.answers, shellMap(), { theme: new bxrig.Palette().activeName() } );
 		var data = { steps: plan.steps, pending: plan.pending, errors: plan.errors, done: [], failed: [], skipped: [] };
 		// what the install step would add and what is already there (left alone)
 		data.apps = appsSplit( plan );

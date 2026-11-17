@@ -57,6 +57,12 @@ class SystemState {
 		return "";
 	}
 
+	// One field of a `bxrig appearance ... status --json` answer ("" when the command is missing, fails or has no such field): what the desktop is set to now.
+	function appearanceValue( args, field ) {
+		var d = new bxrig.util.Proc().selfData( arguments.args, 20 );
+		return structKeyExists( d, arguments.field ) && isSimpleValue( d[ arguments.field ] ) ? toString( d[ arguments.field ] ) : "";
+	}
+
 	// The answers the system implies for one question, or "" when it says nothing: { value, installed }.
 	function question( q ) {
 		var res = { value: "", installed: [] };
@@ -77,6 +83,9 @@ class SystemState {
 		} else if ( id == "terminal" ) res.value = defaultTerminal();
 		else if ( id == "default_browser" ) res.value = defaultBrowser();
 		else if ( id == "ai_default" ) res.value = readJson( cfgHome & "/ai.json" ).default ?: "";
+		else if ( id == "theme_name" ) res.value = new bxrig.Palette().activeName();
+		else if ( id == "bar_layout" ) res.value = appearanceValue( [ "appearance", "bar", "layout", "status" ], "layout" );
+		else if ( id == "appgrid_style" ) res.value = appearanceValue( [ "appearance", "appgrid", "status" ], "appgrid" );
 		else if ( id == "launcher" ) res.value = readJson( cfgHome & "/runner.json" ).provider ?: "";
 		else if ( id == "menu" ) res.value = readJson( cfgHome & "/runner.json" ).menu_provider ?: "";
 		else if ( id == "container_engine" ) {

@@ -223,4 +223,16 @@ allCatalog = true;
 for ( v in pmValues ) { app = cat.find( cat.load(), v ); if ( !structKeyExists( app, "category" ) || compare( app.category, "Security" ) != 0 ) allCatalog = false; }
 testkit.check( "every password manager option is a Security app of the catalog", allCatalog );
 for ( v in [ "proton-pass", "enpass", "nordpass", "keeper", "bitwarden-cli", "pass", "gopass" ] ) testkit.check( "password manager " & v & " installs by its catalog id", cmd( ip.plan( { password_manager: v } ), "apps" ) == "bxrig install " & v );
+// ---- the top bar layout, app grid style and theme pages ----
+p = ip.plan( { desktops: "hyprland", bar_layout: "dense", appgrid_style: "terminal", theme_name: "nord", bar_position: "top", dock: true } );
+testkit.check( "bar layout and app grid steps run `appearance` after the desktop setup, theme, bar and dock", ids( p ) == "hyprland,theme,bar,dock,bar-layout,appgrid,xremap,session" || ids( p ) == "hyprland,theme,bar,dock,bar-layout,appgrid,xremap,default-terminal,session" || reFind( "^hyprland,theme,bar,dock,bar-layout,appgrid", ids( p ) ) > 0 );
+testkit.check( "the commands are `bxrig appearance bar layout X` and `appearance appgrid X`, optional (Noctalia may not run during the install)", cmd( p, "bar-layout" ) == "bxrig appearance bar layout dense" && cmd( p, "appgrid" ) == "bxrig appearance appgrid terminal" && p.steps.filter( function( s ) { return ( s.id == "bar-layout" || s.id == "appgrid" ) && ( s.optional ?: false ); } ).len() == 2 );
+testkit.check( "the theme step is `theme set X`", cmd( p, "theme" ) == "bxrig theme set nord" );
+testkit.check( "the defaults add the layout and the grid: standard and launchpad", cmd( ip.plan( { desktops: "hyprland", bar_layout: "standard", appgrid_style: "launchpad" } ), "bar-layout" ) == "bxrig appearance bar layout standard" && cmd( ip.plan( { desktops: "both", appgrid_style: "launchpad" } ), "appgrid" ) == "bxrig appearance appgrid launchpad" );
+testkit.check( "no bar or grid step without Hyprland: the answers are pending", find( "bar-layout", ids( ip.plan( { desktops: "plasma", bar_layout: "dense" } ) ) ) == 0 && ip.plan( { desktops: "plasma", bar_layout: "dense", appgrid_style: "terminal" } ).pending.toList( "," ) == "bar_layout,appgrid_style" );
+testkit.check( "an unknown layout or grid is an error, not a command", ip.plan( { desktops: "hyprland", bar_layout: "huge" } ).errors.len() == 1 && ip.plan( { desktops: "hyprland", appgrid_style: "list" } ).errors.len() == 1 );
+// going back to the default theme from another one still runs `theme set`: the planner is told what is applied now
+testkit.check( "bxrig chosen again while nord is applied runs theme set bxrig", cmd( ip.plan( { desktops: "hyprland", theme_name: "bxrig" }, {}, { theme: "nord" } ), "theme" ) == "bxrig theme set bxrig" && find( "theme", ids( ip.plan( { desktops: "hyprland", theme_name: "bxrig" }, {}, { theme: "bxrig" } ) ) ) == 0 );
+testkit.check( "the theme step is `theme set X` for KDE only too (the theme page is for every desktop)", cmd( ip.plan( { desktops: "plasma", theme_name: "nord" } ), "theme" ) == "bxrig theme set nord" );
+
 testkit.done( "all passed" );
