@@ -15,13 +15,7 @@ class Starter {
 		var home = new bxrig.util.Env().named( "home", "" );
 		var out = new bxrig.NoctaliaConfig().entries( cfg, home, variables.opts.theme, variables.opts.wallpaper, new bxrig.BarSettings( new bxrig.util.Cli( new bxrig.util.Version().current() ) ).options() );
 		out.append( { name: "hyprland", target: cfg & "/hypr/hyprland.lua", mode: "644", content: hyprlandText() } );
-		// the BxRig Noctalia plugins (clock, agents, quick settings with the theme switcher): Noctalia finds them in its local plugin folder; config.toml enables them
-		var plugins = new bxrig.util.Env().xdgData( "noctalia/plugins" );
-		for ( var n in new bxrig.TemplateData().names() ) {
-			if ( left( n, 17 ) != "noctalia-plugins/" ) continue;
-			var rel = mid( n, 18, len( n ) );
-			out.append( { name: "noctalia-plugin-" & replace( replace( rel, "/", "-", "all" ), ".", "-", "all" ), target: plugins & "/" & rel, mode: "644", content: new bxrig.TemplateData().text( n ) } );
-		}
+		for ( var pe in new bxrig.TemplateData().pluginEntries() ) out.append( pe );
 		return out;
 	}
 

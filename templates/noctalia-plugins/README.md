@@ -8,6 +8,7 @@ Noctalia v5 plugins (author id `bxrig`). Each folder is one plugin.
 | `agents/` | `bxrig/agents` | bar widget `bar`, panel `panel` | `bxrig ai panel --json`, every 60 s while open; launch runs `bxrig ai launch <id>` |
 | `system/` | `bxrig/system` | bar widget `bar` (a glyph and the number of waiting updates, hidden at 0), panel `panel` (tabs Updates and Backups) | `bxrig system updates --json` every 10 min in the background and every 60 s while open; `bxrig backup status --json` every 60 s while open; Update all runs `bxrig system update --yes` in a terminal; Back up now runs each row's own command in a terminal; Open Time Machine runs `bxrig timemachine` in a terminal |
 | `dev/` | `bxrig/dev` | bar widget `bar` (a code glyph and the number running), panel `panel` (tabs Databases, Containers, VMs) | `bxrig db list --json`, `bxrig containers list --json`, `bxrig vm list --json`; every 15 s while open, every 2 min for the badge |
+| `vpn/` | `bxrig/vpn` | bar widget `bar` (a shield glyph: primary green while connected, muted otherwise, hidden when nothing is installed), panel `panel` (one list, two groups, place picker) | `bxrig vpn list --json`, every 10 s while open and every 60 s in the background; places `bxrig vpn locations NAME --json`; `bxrig vpn connect NAME [--location=VALUE]`, `bxrig vpn disconnect NAME`, `bxrig vpn set allow_several=true|false --yes` |
 | `quick/` | `bxrig/quick` | bar widget `bar`, panel `panel` (switches and pickers), panel `themes` (theme switcher) | the `status` of each setting on open; each control runs its bxrig command with `--yes`; themes: `bxrig theme list --json` on open, Enter runs `bxrig theme set <name> --yes` |
 | `power/` | `bxrig/power` | panel `panel` only, no bar widget: the battery widget opens it | `bxrig power status --json`, every 15 s while open; profile `bxrig power profile`, lid `bxrig power lid battery|ac ACTION --yes`, `bxrig system suspend`, `bxrig power hibernate --yes`, `bxrig power charge-limit N --yes` |
 
@@ -19,7 +20,7 @@ Noctalia finds hand-placed plugins in `~/.local/share/noctalia/plugins/<folder>/
 
 ```sh
 mkdir -p ~/.local/share/noctalia/plugins
-for p in clock agents system quick dev power; do
+for p in clock agents system quick dev power vpn; do
   rm -rf ~/.local/share/noctalia/plugins/$p
   cp -r templates/noctalia-plugins/$p ~/.local/share/noctalia/plugins/$p
 done
@@ -29,6 +30,7 @@ noctalia msg plugins enable bxrig/system
 noctalia msg plugins enable bxrig/quick
 noctalia msg plugins enable bxrig/dev
 noctalia msg plugins enable bxrig/power
+noctalia msg plugins enable bxrig/vpn
 noctalia msg plugins list | grep bxrig     # each shows "enabled"
 ```
 
@@ -36,7 +38,7 @@ Enabling adds the id to `enabled = [...]` under `[plugins]` in Noctalia's state-
 
 ```toml
 [plugins]
-enabled = ["bxrig/clock", "bxrig/agents", "bxrig/system", "bxrig/quick", "bxrig/dev", "bxrig/power"]
+enabled = ["bxrig/clock", "bxrig/agents", "bxrig/system", "bxrig/quick", "bxrig/dev", "bxrig/power", "bxrig/vpn"]
 ```
 
 To disable a plugin and keep its files: `noctalia msg plugins disable bxrig/<name>`.
@@ -53,6 +55,7 @@ noctalia msg panel-toggle bxrig/dev:panel
 noctalia msg panel-toggle bxrig/quick:panel
 noctalia msg panel-toggle bxrig/quick:themes
 noctalia msg panel-toggle bxrig/power:panel
+noctalia msg panel-toggle bxrig/vpn:panel
 ```
 
 Example Hyprland binds:
@@ -90,12 +93,15 @@ type = "bxrig/quick:bar"           # sliders -> quick settings (the theme switch
 [widget.bxrig-dev]
 type = "bxrig/dev:bar"             # code glyph + number running -> developer popover
 
+[widget.bxrig-vpn]
+type = "bxrig/vpn:bar"             # shield (green while connected), hides itself when no VPN is installed -> VPN list
+
 [bar.main]
 center = ["bxrig-clock", "media"]
-end = ["bxrig-agents", "screenshot", "bxrig-system", "bxrig-dev", "tray", "network", "bluetooth", "volume", "battery", "notifications", "bxrig-quick", "control-center"]
+end = ["bxrig-agents", "screenshot", "bxrig-system", "bxrig-dev", "bxrig-vpn", "tray", "network", "bluetooth", "volume", "battery", "notifications", "bxrig-quick", "control-center"]
 ```
 
-`bxrig appearance bar layout minimal|standard|dense` writes the whole bar (these widgets, the built-in ones, the dock) into config.toml for you; the three layouts are in `docs/guides/appearance.md`. Planned BxRig widgets that are not built yet and therefore not on any bar: `bxrig-vpn`. Caffeine is not a bar widget: it is a switch in quick settings. The power panel (`bxrig/power`) has no bar widget either: the built-in battery widget opens it.
+`bxrig appearance bar layout minimal|standard|dense` writes the whole bar (these widgets, the built-in ones, the dock) into config.toml for you; the three layouts are in `docs/guides/appearance.md`. Caffeine is not a bar widget: it is a switch in quick settings. The power panel (`bxrig/power`) has no bar widget either: the built-in battery widget opens it.
 
 The battery widget is the built-in one (written only on a laptop). A left click opens the BxRig power panel, a right click the control center Power tab, and the separate `power_profile` widget stays off the bar (battery and power are one panel):
 
@@ -137,6 +143,9 @@ command = "~/.local/bin/bxrig"
 command = "~/.local/bin/bxrig"
 
 [plugin_settings."bxrig/dev"]
+command = "~/.local/bin/bxrig"
+
+[plugin_settings."bxrig/vpn"]
 command = "~/.local/bin/bxrig"
 ```
 
@@ -186,3 +195,13 @@ The plugins read the envelope `{"ok": true, "data": {...}}`. When `ok` is false,
 - Copy puts a database connection string (with its password) or a VM address on the clipboard through the shell (`noctalia.copyToClipboard`), so nothing secret is on a command line; `wl-copy` is the fallback when the shell cannot.
 - Logs opens `bxrig containers logs NAME --lines=500` in a terminal (`noctalia.runInTerminal`), paged with `less`. "Open Machines page" opens `bxrig tui machines`.
 - Without a container engine the Databases and Containers tabs say "No container engine installed" and how to install Podman; the VMs tab still lists the saved VMs.
+
+## The VPN popover
+
+- One pick-one list in two groups. **Network profiles** are the saved NetworkManager connections of type `vpn` or `wireguard` (`nmcli`); **VPN apps** are NordVPN, NordLayer, Tailscale and Mullvad, the ones that are installed. A row has a state dot, the name, one line of state ("Connected · Berlin, Germany", "Off", "Log in first"), a pin button where the app can pick a place, and a switch. The adapters (which command each app takes) are data in `catalog/vpn-providers.json`; see `docs/architecture/COMMAND-CONTRACT.md` 13.58.
+- Switching one on disconnects the VPN that is connected first. The switch at the bottom, "Allow more than one at the same time" (`bxrig vpn set allow_several=true --yes`), lifts that (Tailscale next to another VPN); a line then warns that two VPNs can clash on routes and DNS.
+- The pin button opens a second page with a search box and the places of that app (`bxrig vpn locations NAME --json`: NordVPN countries, Tailscale exit nodes, Mullvad countries and cities, NordLayer gateways); a click runs `bxrig vpn connect NAME --location=VALUE`.
+- The shield in the bar is a bare glyph in one palette role: `primary` (the brand green) with a check while a VPN is connected, `on_surface_variant` while none is. Noctalia has no success role, so `primary` is "connected". It hides itself when `bxrig vpn list` is empty (no VPN app and no saved VPN profile); when two VPNs are connected it shows their number.
+- Empty list: the popover (open it with `noctalia msg panel-toggle bxrig/vpn:panel`) says "No VPN is installed" and has an install button per app that runs `bxrig install NAME --yes` in a terminal that waits for Enter.
+- `bxrig vpn list --json`: `data.providers[]`: `{id, name, group ("profiles"|"apps"), kind, state ("connected"|"connecting"|"disconnected"|"login"|"unavailable"|"unknown"), connected, location, detail, can_pick, coexist, verified, note}`, plus `data.connected[]` (ids), `data.allow_several` and `data.install[]` (`{id, name, install}`).
+- The bar shield refreshes every 60 s; the popover every 10 s while it is open, and the shield follows the popover through `noctalia.state`.

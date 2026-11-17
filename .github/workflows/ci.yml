@@ -149,6 +149,7 @@ jobs:
           (cd src && matchbox ../tests/launchers_programs_test.bxs)
           (cd src && matchbox ../tests/hardware_status_test.bxs)
           (cd src && matchbox ../tests/vpn_test.bxs)
+          (cd src && matchbox ../tests/plugin_vpn_test.bxs)
           (cd src && matchbox ../tests/noctalia_config_test.bxs)
           (cd src && matchbox ../tests/dev_plugin_test.bxs)
           (cd src && matchbox ../tests/bar_settings_test.bxs)

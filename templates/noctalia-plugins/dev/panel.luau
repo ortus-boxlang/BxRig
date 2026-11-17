@@ -154,8 +154,8 @@ local function openLogs(container)
 		return
 	end
 	local cmd = shq(bxrig.command()) .. " containers logs " .. shq(container) .. " --lines=500"
-	-- the pager keeps the terminal open; without less the output is followed by a prompt
-	noctalia.runInTerminal(cmd .. " | { command -v less >/dev/null 2>&1 && less -R +G || { cat; printf '\\nPress Enter to close '; read -r _; }; }")
+	-- the pager keeps the terminal open; without less the output is followed by a prompt (read from the tty: stdin is the pipe, already at its end)
+	noctalia.runInTerminal(cmd .. " | { command -v less >/dev/null 2>&1 && less -R +G || { cat; printf '\\nPress Enter to close '; read -r _ </dev/tty; }; }")
 	panel.close()
 end
 
