@@ -1,0 +1,70 @@
+// `bxrig ascii`: text drawn in large letters (FIGlet fonts, see Figlet) and painted with a colour or a gradient (see AsciiColor).
+//   ascii TEXT... [--font=NAME] [--color=COLOR | --gradient=SPEC] [--direction=horizontal|vertical|diagonal] [--plain] [--json]
+//   ascii fonts [--json]       every bundled font, drawn in its own name
+// Colour: without --color or --gradient the brand gradient is used in a terminal and nothing when the output goes to a pipe or file;
+// --color or --gradient paint even into a pipe; --plain and NO_COLOR always leave the colour out. With no TEXT the first line of
+// stdin is drawn (`echo hi | bxrig ascii`). Exit: 0 drawn, 2 usage (no text, an unknown font, colour, gradient or direction).
+class Ascii {
+	function init( cli ) {
+		variables.cli = arguments.cli;
+		variables.figlet = new bxrig.Figlet();
+		variables.color = new bxrig.AsciiColor();
+		return this;
+	}
+
+	function usage( asJson, message ) {
+		return variables.cli.say( "ascii", "usage", { error: arguments.message }, arguments.asJson, [ "error: " & arguments.message, new bxrig.CommandSpec().usage( "ascii" ) ] );
+	}
+
+	// opts: { font, color, gradient, direction, plain }; terminal: stdout is a terminal.
+	function text( words, opts, asJson, terminal ) {
+		var t = arguments.words.toList( " " );
+		if ( !len( trim( t ) ) ) t = cliRead();
+		if ( !len( trim( t ) ) ) return usage( arguments.asJson, "no text to draw (bxrig ascii TEXT, or pipe it in)" );
+		var o = arguments.opts;
+		var font = len( o.font ?: "" ) ? o.font : variables.figlet.defaultFont();
+		if ( !variables.figlet.known( font ) ) return usage( arguments.asJson, "unknown font " & font & " (" & variables.figlet.names().toList( ", " ) & ")" );
+		var direction = len( o.direction ?: "" ) ? o.direction : "horizontal";
+		if ( !arrayFind( variables.color.directions(), direction ) ) return usage( arguments.asJson, "unknown direction " & direction & " (" & variables.color.directions().toList( ", " ) & ")" );
+		var paint = choose( o, arguments.terminal );
+		if ( len( paint.error ) ) return usage( arguments.asJson, paint.error );
+		var lines = variables.figlet.render( t, font );
+		if ( arguments.asJson ) {
+			println( variables.cli.envelope( "ascii", 0, { text: t, font: font, width: variables.figlet.width( lines ), height: lines.len(), lines: lines } ) );
+			return 0;
+		}
+		for ( var l in ( paint.stops.len() ? variables.color.paint( lines, paint.stops, direction ) : lines ) ) println( l );
+		return 0;
+	}
+
+	// The colour stops to paint with ([] for none) or an error: { stops, error }.
+	function choose( opts, terminal ) {
+		var o = arguments.opts;
+		var explicit = len( o.color ?: "" ) || len( o.gradient ?: "" );
+		if ( len( o.color ?: "" ) && len( o.gradient ?: "" ) ) return { stops: [], error: "use --color or --gradient, not both" };
+		if ( ( o.plain ?: false ) || variables.color.disabled() || ( !explicit && !arguments.terminal ) ) return { stops: [], error: "" };
+		if ( len( o.color ?: "" ) ) {
+			var c = variables.color.parseColor( o.color );
+			return len( c ) ? { stops: [ c ], error: "" } : { stops: [], error: "not a colour: " & o.color & " (#rrggbb, #rgb, theme or a name: " & structKeyArray( variables.color.names() ).sort( "text" ).toList( ", " ) & ")" };
+		}
+		var g = variables.color.stops( len( o.gradient ?: "" ) ? o.gradient : "brand" );
+		return { stops: g.stops, error: g.error };
+	}
+
+	function fonts( asJson, terminal ) {
+		var names = variables.figlet.names();
+		if ( arguments.asJson ) {
+			println( variables.cli.envelope( "ascii", 0, { fonts: names, default: variables.figlet.defaultFont() } ) );
+			return 0;
+		}
+		var paint = !variables.color.disabled() && arguments.terminal;
+		var brand = variables.color.presets().brand;
+		for ( var n in names ) {
+			println( n & ( n == variables.figlet.defaultFont() ? " (default)" : "" ) );
+			var lines = variables.figlet.render( n, n );
+			for ( var l in ( paint ? variables.color.paint( lines, brand ) : lines ) ) println( l );
+			println( "" );
+		}
+		return 0;
+	}
+}

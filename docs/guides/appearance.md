@@ -36,3 +36,23 @@ bxrig appearance apply                    # push everything you chose again
 - **Backgrounds** are read from `~/Pictures/BxRig`, `~/Pictures` and the current theme's folder.
 
 The menu has all of this under Appearance.
+
+## Text in large letters
+
+`bxrig ascii` draws text in large letters with FIGlet fonts, the way `figlet` and Omarchy's `omarchy ascii` do, and paints it with a colour or a gradient. The BxRig logo is drawn the same way, in DOS Rebel.
+
+```bash
+bxrig ascii BxRig                                  # DOS Rebel, the brand gradient
+bxrig ascii Hello --font=ansi-shadow --gradient=sunset
+bxrig ascii OK --font=calvin-s --color=#00ff78     # small letters, one colour
+bxrig ascii Deploy --gradient=#ff5f6d,#ffc371,#00dbff --direction=diagonal
+bxrig ascii Theme --gradient=theme                 # your theme's accent colours
+echo "build ok" | bxrig ascii                      # the text from stdin
+bxrig ascii fonts                                  # every font, in its own name
+```
+
+- **Fonts:** `dos-rebel` (the default, 8 rows), `ansi-shadow` (6 rows) and `calvin-s` (3 rows, for narrow terminals). They ship inside BxRig, so nothing is installed.
+- **`--color`:** `#rrggbb`, `#rgb`, `theme` (your theme's accent) or a name: black, white, gray, red, orange, yellow, green, cyan, blue, purple, magenta, pink, boxlang, bxrig.
+- **`--gradient`:** a preset (`brand`, `theme`, `sunset`, `ocean`, `fire`, `forest`, `candy`, `rainbow`) or your own two or more colours separated by commas. `--direction` runs it `horizontal` (the default), `vertical` or `diagonal`.
+- **When it colours:** without `--color` or `--gradient` you get the brand gradient in a terminal and plain text in a pipe or file. `--color` and `--gradient` colour even in a pipe. `--plain` and the `NO_COLOR` variable always give plain text.
+- `--json` returns the lines, the font and the size.

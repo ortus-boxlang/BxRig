@@ -45,7 +45,7 @@ Settings that only touch your own config (a theme, the bar, the font) act at onc
 
 ## All commands
 
-**Start here**: [`init`](#bxrig-init), [`refresh`](#bxrig-refresh), [`reinstall`](#bxrig-reinstall), [`wizard`](#bxrig-wizard), [`status`](#bxrig-status), [`doctor`](#bxrig-doctor), [`update`](#bxrig-update), [`version`](#bxrig-version), [`menu`](#bxrig-menu), [`apps`](#bxrig-apps), [`help`](#bxrig-help)
+**Start here**: [`init`](#bxrig-init), [`refresh`](#bxrig-refresh), [`reinstall`](#bxrig-reinstall), [`wizard`](#bxrig-wizard), [`status`](#bxrig-status), [`doctor`](#bxrig-doctor), [`update`](#bxrig-update), [`ascii`](#bxrig-ascii), [`version`](#bxrig-version), [`menu`](#bxrig-menu), [`apps`](#bxrig-apps), [`help`](#bxrig-help)
 
 **Install and remove**: [`install`](#bxrig-install), [`remove`](#bxrig-remove), [`pkg`](#bxrig-pkg), [`catalog`](#bxrig-catalog), [`plan`](#bxrig-plan), [`install-plan`](#bxrig-install-plan), [`optional-plan`](#bxrig-optional-plan), [`profile-plan`](#bxrig-profile-plan), [`profile-install-plan`](#bxrig-profile-install-plan), [`profile-install`](#bxrig-profile-install), [`optional-install`](#bxrig-optional-install), [`profile-list`](#bxrig-profile-list), [`optional-list`](#bxrig-optional-list), [`desktop-list`](#bxrig-desktop-list), [`tui-list`](#bxrig-tui-list), [`web-list`](#bxrig-web-list), [`package-status`](#bxrig-package-status), [`package-source`](#bxrig-package-source), [`dev-plan`](#bxrig-dev-plan), [`prerequisites`](#bxrig-prerequisites), [`apps-doctor`](#bxrig-apps-doctor), [`web`](#bxrig-web), [`toolchain`](#bxrig-toolchain)
 
@@ -168,6 +168,27 @@ bxrig update notifications on
 ```
 
 > Exit 10 from `update check` means an update is available.
+
+### `bxrig ascii` {#bxrig-ascii}
+
+Text in large letters (FIGlet fonts), painted with a colour or a gradient.
+
+```text
+bxrig ascii TEXT... [--font=dos-rebel|ansi-shadow|calvin-s] [--color=COLOR | --gradient=SPEC] [--direction=horizontal|vertical|diagonal] [--plain] [--json]
+bxrig ascii fonts [--json]
+```
+
+```bash
+bxrig ascii BxRig
+bxrig ascii "Hello" --font=ansi-shadow --gradient=sunset
+bxrig ascii OK --color=#00ff78
+bxrig ascii Rainbow --gradient=rainbow --direction=diagonal
+bxrig ascii Theme --gradient=theme
+bxrig ascii deploy --gradient=#ff5f6d,#ffc371,#00dbff
+bxrig ascii fonts
+```
+
+> COLOR is #rrggbb, #rgb, theme (the accent of the theme that is on) or a name (black, white, gray, red, orange, yellow, green, cyan, blue, purple, magenta, pink, boxlang, bxrig). SPEC is a preset (brand, theme, sunset, ocean, fire, forest, candy, rainbow) or two or more colours separated by commas. Without --color or --gradient the brand gradient is used in a terminal and no colour into a pipe; --plain and NO_COLOR leave colour out. With no TEXT the first line of stdin is drawn.
 
 ### `bxrig version` {#bxrig-version}
 

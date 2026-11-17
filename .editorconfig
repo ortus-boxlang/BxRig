@@ -15,6 +15,12 @@ tab_width = 4
 indent_style = space
 indent_size = 2
 
+# FIGlet fonts: every glyph row ends with an endmark, and spaces before it are part of the letter
+[*.flf]
+indent_style = unset
+trim_trailing_whitespace = false
+insert_final_newline = unset
+
 # Markdown: indentation and trailing spaces carry meaning
 [*.md]
 indent_style = unset

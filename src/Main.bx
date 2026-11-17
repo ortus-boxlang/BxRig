@@ -34,6 +34,14 @@ class {
 		}
 
 		switch ( cmd ) {
+			case "ascii":
+				// Text in large letters, with colour. See bxrig.Ascii.
+				asc = new bxrig.Ascii( cli );
+				if ( p.len() == 2 && p[2] == "fonts" ) CLIExit( asc.fonts( asJson, CLIIsTerminal() ) );
+				ascWords = [];
+				for ( ascI = 2; ascI <= p.len(); ascI++ ) ascWords.append( p[ ascI ] );
+				CLIExit( asc.text( ascWords, { font: args.options.font ?: "", color: args.options.color ?: "", gradient: args.options.gradient ?: "", direction: args.options.direction ?: "", plain: structKeyExists( args.options, "plain" ) }, asJson, CLIIsTerminal() ) );
+				break;
 			case "version":
 				new bxrig.Brand().show( cli, appVersion, asJson, CLIIsTerminal() );
 				break;

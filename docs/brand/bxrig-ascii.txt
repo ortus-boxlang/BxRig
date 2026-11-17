@@ -1,13 +1,15 @@
 BXRIG ASCII art (capitals in the terminal; the logo banner keeps BxRig) (monospace; the TUIs paint it with the brand gradient, cyan #00DBFF to green #00FF78).
 
-LARGE (38 columns, 6 rows)
+LARGE (58 columns, 8 rows): BXRIG in the DOS Rebel FIGlet font (assets/fonts/dos-rebel.flf), what `bxrig ascii` draws by default
 
-████    ██  ██  ████    ██████    ████
-██  ██  ██  ██  ██  ██    ██    ██
-████      ██    ████      ██    ██
-██  ██    ██    ██  ██    ██    ██  ██
-██  ██  ██  ██  ██  ██    ██    ██  ██
-████    ██  ██  ██  ██  ██████    ████
+ ███████████  █████ █████ ███████████   █████   █████████
+░░███░░░░░███░░███ ░░███ ░░███░░░░░███ ░░███   ███░░░░░███
+ ░███    ░███ ░░███ ███   ░███    ░███  ░███  ███     ░░░
+ ░██████████   ░░█████    ░██████████   ░███ ░███
+ ░███░░░░░███   ███░███   ░███░░░░░███  ░███ ░███    █████
+ ░███    ░███  ███ ░░███  ░███    ░███  ░███ ░░███  ░░███
+ ███████████  █████ █████ █████   █████ █████ ░░█████████
+░░░░░░░░░░░  ░░░░░ ░░░░░ ░░░░░   ░░░░░ ░░░░░   ░░░░░░░░░
 
 SMALL (19 columns, 3 rows)
 
