@@ -1,0 +1,115 @@
+// `bxrig about`: the BxRig laptop logo beside this rig's hardware, dev stack and look, drawn by fastfetch with the BxRig config.
+//   about [--wait] [--plain] [--json]
+// The files (see AboutLogo and templates/fastfetch.jsonc):
+//   ~/.config/bxrig/theme/fastfetch-logo.ans   the logo in the theme's colours, rewritten by `bxrig theme set`
+//   ~/.config/bxrig/fastfetch.jsonc            the managed config `bxrig about` runs
+//   ~/.config/fastfetch/config.jsonc           a copy for plain `fastfetch`, written once by `bxrig setup shell` (yours afterwards)
+// A missing logo or managed config is written first. Without fastfetch the logo, version and tagline are shown with a hint to install it.
+// --wait asks for Enter before returning (the launcher's About window closes when the command ends); --plain leaves the colour out.
+// Exit: 0 shown, 6 a file could not be written.
+class About {
+	function init( cli = "", version = "" ) {
+		variables.cli = arguments.cli;
+		variables.version = arguments.version;
+		variables.config = new bxrig.ConfigService().quiet( true );
+		variables.logo = new bxrig.AboutLogo();
+		return this;
+	}
+
+	function cfg() { return variables.config.cfgHome(); }
+	function logoPath( cfgHome = cfg() ) { return arguments.cfgHome & "/bxrig/theme/fastfetch-logo.ans"; }
+	function configPath( cfgHome = cfg() ) { return arguments.cfgHome & "/bxrig/fastfetch.jsonc"; }
+	function starterPath( cfgHome = cfg() ) { return arguments.cfgHome & "/fastfetch/config.jsonc"; }
+
+	// The fastfetch config: the template with the logo's path filled in.
+	function configText( cfgHome = cfg() ) {
+		return replace( new bxrig.TemplateData().text( "fastfetch.jsonc" ), "{{logo}}", logoPath( arguments.cfgHome ), "all" );
+	}
+
+	// The logo file's text for a palette (AboutLogo.palette).
+	function logoText( pal ) { return variables.logo.text( arguments.pal ); }
+
+	// The palette of the theme that is on, or the brand palette without one.
+	function currentPalette() {
+		try {
+			var th = new bxrig.Theme( new bxrig.util.Cli( "" ) );
+			var st = th.readState();
+			if ( len( st.name ) ) {
+				var t = th.find( st.name );
+				if ( t.found ) {
+					var p = new bxrig.ThemeColors().parse( t.colorsText );
+					if ( p.ok ) return variables.logo.palette( p.colors );
+				}
+			}
+		} catch ( any e ) {}
+		return variables.logo.brand();
+	}
+
+	function themeName() {
+		try { return new bxrig.Theme( new bxrig.util.Cli( "" ) ).readState().name; } catch ( any e ) { return ""; }
+	}
+
+	// The config service entries `bxrig setup shell` writes (the logo is the theme's).
+	function shellEntries( cfgHome ) {
+		var text = configText( arguments.cfgHome );
+		return [
+			{ name: "fastfetch-bxrig", target: configPath( arguments.cfgHome ), mode: "644", content: text, once: false },
+			{ name: "fastfetch", target: starterPath( arguments.cfgHome ), mode: "644", content: text, once: true }
+		];
+	}
+
+	// Writes the logo and the managed config when they are missing. Returns the names that could not be written.
+	function ensure() {
+		var failed = [];
+		var wanted = [
+			{ name: "fastfetch-logo", target: logoPath(), mode: "644", content: logoText( currentPalette() ) },
+			{ name: "fastfetch-bxrig", target: configPath(), mode: "644", content: configText() }
+		];
+		for ( var e in wanted ) {
+			if ( variables.config.configState( e ) != "missing" ) continue;
+			if ( variables.config.configWrite( e, e.content, "apply", true, false ) != 0 ) failed.append( e.name );
+		}
+		return failed;
+	}
+
+	function data() {
+		var proc = new bxrig.util.Proc();
+		return {
+			name: "BxRig", version: variables.version, tagline: new bxrig.Brand().tagline(), theme: themeName(),
+			poweredBy: "BoxLang", site: "https://" & variables.logo.site(), docs: new bxrig.util.Urls().docs(),
+			fastfetch: proc.has( "fastfetch" ), config: configPath(), logo: logoPath()
+		};
+	}
+
+	function show( asJson, terminal, plain = false, wait = false ) {
+		if ( arguments.asJson ) {
+			println( variables.cli.envelope( "about", 0, data() ) );
+			return 0;
+		}
+		var failed = ensure();
+		if ( failed.len() ) {
+			println( "error: could not write " & failed.toList( ", " ) );
+			return new bxrig.util.Exit().failed();
+		}
+		var color = !arguments.plain && arguments.terminal && !new bxrig.AsciiColor().disabled();
+		var proc = new bxrig.util.Proc();
+		if ( proc.has( "fastfetch" ) ) {
+			var argv = [ "fastfetch", "--config", configPath(), "--pipe", color ? "false" : "true" ];
+			if ( !color ) { argv.append( "--logo" ); argv.append( "none" ); }
+			var r = proc.exec( argv, 60 );
+			println( reReplace( r.output, "\n+$", "" ) );
+			if ( !color ) for ( var pl in variables.logo.plainLines() ) println( pl );
+		} else {
+			for ( var l in ( color ? variables.logo.lines( currentPalette() ) : variables.logo.plainLines() ) ) println( l );
+			println( "" );
+			println( "BxRig " & variables.version & ". " & new bxrig.Brand().tagline() );
+			println( "Install fastfetch for the full About (hardware, dev stack and look): bxrig install fastfetch" );
+		}
+		if ( arguments.wait ) {
+			println( "" );
+			println( "Press Enter to close." );
+			cliRead();
+		}
+		return 0;
+	}
+}

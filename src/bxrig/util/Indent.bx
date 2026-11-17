@@ -1,12 +1,12 @@
 // The files BxRig writes use tabs for indentation, like its own source (scripts/format.sh). ConfigService runs every
 // config it writes or compares through tabs( text, path ), so a generator may build its text with spaces.
 // Only leading spaces change, step by step (each step of 2 or 4 spaces becomes a tab, leftover alignment stays);
-// YAML (tabs are not allowed there) and Markdown keep their spaces, and text whose indent step is not clearly
+// YAML (tabs are not allowed there), Markdown and terminal art (.ans, where spaces are drawing) keep their spaces, and text whose indent step is not clearly
 // 2 or 4 spaces is left as it is.
 class Indent {
 	function tabs( text, path = "" ) {
 		var ext = lCase( listLast( getFileFromPath( arguments.path ), "." ) );
-		if ( arrayFind( [ "yml", "yaml", "md" ], ext ) ) return arguments.text;
+		if ( arrayFind( [ "yml", "yaml", "md", "ans" ], ext ) ) return arguments.text;
 		var lines = listToArray( arguments.text, chr( 10 ), true );
 		var widths = [];
 		for ( var l in lines ) {

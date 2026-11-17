@@ -2,6 +2,7 @@
 // zsh (the default) gets the packaged plugins (autosuggestions, syntax highlighting, completions) plus fzf and zoxide;
 // fish and bash get fzf, zoxide and Starship. Everything goes through the config service (backup, journal).
 //   ~/.config/starship.toml              starter, written once (yours afterwards)
+//   ~/.config/bxrig/fastfetch.jsonc      managed fastfetch config for `bxrig about`; ~/.config/fastfetch/config.jsonc a starter copy, written once
 //   ~/.config/bxrig/shell.<zsh|bash>   managed init, sourced from ~/.zshrc / ~/.bashrc by one marked block
 //   ~/.config/fish/conf.d/bxrig.fish   managed init (fish loads conf.d on its own, no rc edit)
 // The rc file is never replaced: the block is appended once, and only when the marker is missing.
@@ -17,7 +18,7 @@ class ShellConfig {
 	// The packages the shell setup needs for a shell (all official Arch packages).
 	function packages( shell ) {
 		var out = arguments.shell == "zsh" ? [ "zsh", "zsh-autosuggestions", "zsh-syntax-highlighting", "zsh-completions" ] : ( arguments.shell == "fish" ? [ "fish" ] : [] );
-		for ( var p in [ "starship", "fzf", "zoxide" ] ) out.append( p );
+		for ( var p in [ "starship", "fzf", "zoxide", "fastfetch" ] ) out.append( p );
 		return out;
 	}
 
@@ -47,6 +48,7 @@ class ShellConfig {
 	function entries( shell, cfgHome, home, rcText = "" ) {
 		var td = new bxrig.TemplateData();
 		var out = [ { name: "starship", target: arguments.cfgHome & "/starship.toml", mode: "644", content: td.text( "starship.toml" ), once: true } ];
+		for ( var ff in new bxrig.About().shellEntries( arguments.cfgHome ) ) out.append( ff );
 		if ( arguments.shell == "fish" ) {
 			out.append( { name: "shell-fish", target: arguments.cfgHome & "/fish/conf.d/bxrig.fish", mode: "644", content: td.text( "shell.fish" ), once: false } );
 		} else {

@@ -35,4 +35,21 @@ out="$(run "$binary" ascii x --font=nope || true)"; grep -q 'dos-rebel, ansi-sha
 out="$(run "$binary" ascii fonts)" || fail 'ascii fonts'
 for f in dos-rebel ansi-shadow calvin-s; do grep -q "^$f" <<<"$out" || fail "fonts lists $f"; done
 run "$binary" ascii fonts --json | jq -e '.data.fonts == ["dos-rebel","ansi-shadow","calvin-s"] and .data.default == "dos-rebel"' >/dev/null || fail 'fonts --json'
+# image: a picture as text art, through the embedded bx-image module (SVG and PNG)
+svg="$root/assets/brand/boxlang-icon-full.svg"; png="$root/assets/logo.png"
+out="$(run "$binary" ascii image "$svg" --width=24)" || fail 'ascii image svg'
+[[ "$out" != *"$esc"* ]] || fail 'no colour into a pipe'
+(( $(wc -l <<<"$out") >= 8 )) || fail "the icon is several rows: $out"
+grep -q '█' <<<"$out" || fail 'blocks style draws blocks'
+widest="$(LC_ALL=C.UTF-8 bash -c 'w=0; while IFS= read -r l; do (( ${#l} > w )) && w=${#l}; done; echo "$w"' <<<"$out")"
+(( widest <= 24 )) || fail "no wider than --width ($widest characters)"
+run "$binary" ascii image "$svg" --width=30 --json | jq -e '.ok and .data.width == 30 and .data.style == "blocks" and .data.height == (.data.lines | length) and .data.height > 5' >/dev/null || fail 'image --json'
+run "$binary" ascii image "$png" --width=40 --style=ascii --json | jq -e '.ok and .data.style == "ascii" and (.data.lines | length) > 0' >/dev/null || fail 'png, ascii style'
+script -qc "env -u NO_COLOR HOME=$tmp $binary ascii image $svg --width=20" /dev/null | grep -q "${esc}\[38;2;" || fail 'colour in a terminal'
+[[ "$(code "$binary" ascii image)" == 2 ]] || fail 'no path exits 2'
+[[ "$(code "$binary" ascii image "$svg" --width=2)" == 2 ]] || fail 'a bad width exits 2'
+[[ "$(code "$binary" ascii image "$svg" --style=nope)" == 2 ]] || fail 'a bad style exits 2'
+[[ "$(code "$binary" ascii image "$tmp/missing.png")" == 4 ]] || fail 'a missing picture exits 4'
+echo "not a picture" > "$tmp/bad.png"
+[[ "$(code "$binary" ascii image "$tmp/bad.png")" == 4 ]] || fail 'an unreadable picture exits 4'
 echo "ascii-test: ok"

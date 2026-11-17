@@ -424,7 +424,13 @@ if [[ "$mode" == --install-binary ]]; then
     [[ "$(tool_version matchbox)" == "$MATCHBOX_VERSION" ]] || { echo "MatchBox $MATCHBOX_VERSION is required (found: $(tool_version matchbox || true)). Run install.sh toolchains --yes first." >&2; exit 1; }
     cp -rL "$root/src" "$work/src"; chmod -R u+rwX,go+rX "$work/src"   # -L: src/resources links to the data folders
     echo "Building bxrig with MatchBox $MATCHBOX_VERSION"
-    if ! ( cd "$work" && PATH="$probe_path" matchbox --target native --output "$work/bxrig" src/Main.bx ) > "$work/build.log" 2>&1; then
+    # the BoxLang modules bxrig embeds (box.json toolchain.modules); --module must come before the program
+    mods=()
+    if [[ -x "$root/scripts/get-modules.sh" && "${BXRIG_SKIP_NETWORK:-0}" != 1 ]]; then   # offline: built without them
+      modlist="$(PATH="$probe_path" "$root/scripts/get-modules.sh" "$work/modules" 2>>"$work/build.log")" || { echo "Could not get the BoxLang modules bxrig embeds:" >&2; tail -n 5 "$work/build.log" >&2; exit 1; }
+      while IFS= read -r m; do [[ -n "$m" ]] && mods+=( --module "$m" ); done <<<"$modlist"
+    fi
+    if ! ( cd "$work" && PATH="$probe_path" matchbox "${mods[@]}" --target native --output "$work/bxrig" src/Main.bx ) >> "$work/build.log" 2>&1; then
       echo "Build failed; the installed copy was not touched. Last lines of the build log:" >&2; tail -n 20 "$work/build.log" >&2; exit 1
     fi
     candidate="$work/bxrig"

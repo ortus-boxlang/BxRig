@@ -229,10 +229,11 @@
 				},
 				{
 					"name": "ascii",
-					"summary": "Text in large letters (FIGlet fonts), painted with a colour or a gradient.",
+					"summary": "Text in large letters (FIGlet fonts) or a picture as text art, painted with a colour or a gradient.",
 					"usage": [
 						"ascii TEXT... [--font=dos-rebel|ansi-shadow|calvin-s] [--color=COLOR | --gradient=SPEC] [--direction=horizontal|vertical|diagonal] [--plain] [--json]",
-						"ascii fonts [--json]"
+						"ascii fonts [--json]",
+						"ascii image PATH [--width=N] [--style=blocks|ascii] [--plain] [--json]"
 					],
 					"examples": [
 						"bxrig ascii BxRig",
@@ -241,10 +242,13 @@
 						"bxrig ascii Rainbow --gradient=rainbow --direction=diagonal",
 						"bxrig ascii Theme --gradient=theme",
 						"bxrig ascii deploy --gradient=#ff5f6d,#ffc371,#00dbff",
-						"bxrig ascii fonts"
+						"bxrig ascii fonts",
+						"bxrig ascii image ~/Pictures/logo.png",
+						"bxrig ascii image logo.svg --width=60",
+						"bxrig ascii image photo.jpg --style=ascii --width=80"
 					],
 					"mutates": false,
-					"note": "COLOR is #rrggbb, #rgb, theme (the accent of the theme that is on) or a name (black, white, gray, red, orange, yellow, green, cyan, blue, purple, magenta, pink, boxlang, bxrig). SPEC is a preset (brand, theme, sunset, ocean, fire, forest, candy, rainbow) or two or more colours separated by commas. Without --color or --gradient the brand gradient is used in a terminal and no colour into a pipe; --plain and NO_COLOR leave colour out. With no TEXT the first line of stdin is drawn.",
+					"note": "COLOR is #rrggbb, #rgb, theme (the accent of the theme that is on) or a name (black, white, gray, red, orange, yellow, green, cyan, blue, purple, magenta, pink, boxlang, bxrig). SPEC is a preset (brand, theme, sunset, ocean, fire, forest, candy, rainbow) or two or more colours separated by commas. Without --color or --gradient the brand gradient is used in a terminal and no colour into a pipe; --plain and NO_COLOR leave colour out. With no TEXT the first line of stdin is drawn. `ascii image` draws a PNG, JPEG, GIF, WebP or SVG (read by the embedded bx-image module) WIDTH columns wide (default 48): blocks are half blocks in 24-bit colour, ascii is a brightness ramp in the picture's colours; transparent pixels stay blank.",
 					"flags": [
 						{
 							"name": "font",
@@ -261,6 +265,38 @@
 						{
 							"name": "direction",
 							"type": "value"
+						},
+						{
+							"name": "plain",
+							"type": "bool"
+						},
+						{
+							"name": "width",
+							"type": "value"
+						},
+						{
+							"name": "style",
+							"type": "value"
+						}
+					]
+				},
+				{
+					"name": "about",
+					"summary": "About this rig: the BxRig laptop logo beside the hardware, your dev stack and the look (fastfetch).",
+					"usage": [
+						"about [--wait] [--plain] [--json]"
+					],
+					"examples": [
+						"bxrig about",
+						"bxrig about --plain",
+						"bxrig about --json"
+					],
+					"mutates": false,
+					"note": "Runs fastfetch with ~/.config/bxrig/fastfetch.jsonc; the logo (~/.config/bxrig/theme/fastfetch-logo.ans) follows the theme and is rewritten by `bxrig theme set`. A missing logo or config is written first. Without fastfetch the logo, version and tagline are shown. --wait asks for Enter before returning (the launcher's About window uses it).",
+					"flags": [
+						{
+							"name": "wait",
+							"type": "bool"
 						},
 						{
 							"name": "plain",

@@ -20,7 +20,7 @@ import sys
 import tokenize
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SKIP_DIRS = {".git", "artifacts", "dist", "node_modules", "site", "target", ".bxsites"}
+SKIP_DIRS = {".git", ".cache", "artifacts", "dist", "node_modules", "site", "target", ".bxsites"}
 # src/resources and tests/resources only hold links to folders formatted on their own
 SKIP_PATHS = {os.path.join("src", "resources"), os.path.join("tests", "resources")}
 CODE = {".bx", ".bxs", ".bxm", ".cfc", ".cfm", ".js", ".lua", ".luau", ".py", ".sh", ".bash", ".zsh", ".fish",

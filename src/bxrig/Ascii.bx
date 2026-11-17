@@ -1,6 +1,7 @@
 // `bxrig ascii`: text drawn in large letters (FIGlet fonts, see Figlet) and painted with a colour or a gradient (see AsciiColor).
 //   ascii TEXT... [--font=NAME] [--color=COLOR | --gradient=SPEC] [--direction=horizontal|vertical|diagonal] [--plain] [--json]
 //   ascii fonts [--json]       every bundled font, drawn in its own name
+//   ascii image PATH [--width=N] [--style=blocks|ascii] [--plain] [--json]   a picture as text art (see image())
 // Colour: without --color or --gradient the brand gradient is used in a terminal and nothing when the output goes to a pipe or file;
 // --color or --gradient paint even into a pipe; --plain and NO_COLOR always leave the colour out. With no TEXT the first line of
 // stdin is drawn (`echo hi | bxrig ascii`). Exit: 0 drawn, 2 usage (no text, an unknown font, colour, gradient or direction).
@@ -49,6 +50,110 @@ class Ascii {
 		}
 		var g = variables.color.stops( len( o.gradient ?: "" ) ? o.gradient : "brand" );
 		return { stops: g.stops, error: g.error };
+	}
+
+	function styles() { return [ "blocks", "ascii" ]; }
+
+	// `ascii image PATH`: a picture (PNG, JPEG, GIF, WebP or SVG, read by the embedded bx-image module) as text art, `width` columns wide.
+	//   blocks  half blocks, two pixels per row, in 24-bit colour (shapes only without colour)
+	//   ascii   one character per cell from a brightness ramp, in the picture's colours
+	// Transparent pixels stay blank. Colour in a terminal, none into a pipe, with --plain or NO_COLOR. opts: { width, style, plain }.
+	// Exit: 0 drawn, 2 usage (no path, a bad width or style), 4 the picture cannot be read or this build has no image support.
+	function image( path, opts, asJson, terminal ) {
+		var o = arguments.opts;
+		if ( !len( trim( arguments.path ) ) ) return usage( arguments.asJson, "no picture to draw (bxrig ascii image PATH)" );
+		var w = len( o.width ?: "" ) ? o.width : 48;
+		if ( !isNumeric( w ) || int( w ) != w || w < 4 || w > 300 ) return usage( arguments.asJson, "the width is a whole number from 4 to 300: " & w );
+		var style = len( o.style ?: "" ) ? lCase( o.style ) : "blocks";
+		if ( !arrayFind( styles(), style ) ) return usage( arguments.asJson, "unknown style " & style & " (" & styles().toList( ", " ) & ")" );
+		if ( !fileExists( arguments.path ) ) return failed( arguments.asJson, "no such picture: " & arguments.path );
+		var px = [];
+		try {
+			px = imageGetPixels( imageRead( arguments.path, int( w ) ), "rgba" );
+		} catch ( any e ) {
+			var why = find( "Can only call functions", e.message ) || findNoCase( "not found", e.message ) && !findNoCase( "Unable to load", e.message )
+			? "this bxrig was built without image support (the bx-image module)" : e.message;
+			return failed( arguments.asJson, why );
+		}
+		var color = !( o.plain ?: false ) && arguments.terminal && !variables.color.disabled();
+		var lines = style == "ascii" ? asciiArt( px, color ) : blocksArt( px, color );
+		if ( arguments.asJson ) {
+			println( variables.cli.envelope( "ascii", 0, { path: arguments.path, style: style, width: int( w ), height: lines.len(), lines: style == "ascii" ? asciiArt( px, false ) : blocksArt( px, false ) } ) );
+			return 0;
+		}
+		for ( var l in lines ) println( l );
+		return 0;
+	}
+
+	function failed( asJson, message ) {
+		if ( arguments.asJson ) println( variables.cli.envelope( "ascii", 4, { error: arguments.message } ) );
+		else println( "error: " & arguments.message );
+		return new bxrig.util.Exit().precondition();
+	}
+
+	// A pixel [ r, g, b, a ] that counts as drawn.
+	function opaque( p ) { return arguments.p.len() >= 4 && arguments.p[ 4 ] >= 128; }
+	function fgOf( p ) { return chr( 27 ) & "[38;2;" & arguments.p[ 1 ] & ";" & arguments.p[ 2 ] & ";" & arguments.p[ 3 ] & "m"; }
+	function bgOf( p ) { return chr( 27 ) & "[48;2;" & arguments.p[ 1 ] & ";" & arguments.p[ 2 ] & ";" & arguments.p[ 3 ] & "m"; }
+
+	// Rows of [ r, g, b, a ] pixels as half blocks: the top pixel is the foreground, the bottom one the background.
+	function blocksArt( px, color ) {
+		var out = [];
+		var h = arguments.px.len();
+		for ( var y = 1; y <= h; y += 2 ) {
+			var top = arguments.px[ y ];
+			var bot = y + 1 <= h ? arguments.px[ y + 1 ] : [];
+			var s = ""; var last = "";
+			for ( var x = 1; x <= top.len(); x++ ) {
+				var t = top[ x ];
+				var b = bot.len() ? bot[ x ] : [ 0, 0, 0, 0 ];
+				var tOn = opaque( t ); var bOn = opaque( b );
+				var glyph = tOn && bOn ? ( arguments.color ? "▀" : "█" ) : ( tOn ? "▀" : ( bOn ? "▄" : " " ) );
+				if ( arguments.color ) {
+					var code = !tOn && !bOn ? "" : ( tOn && bOn ? fgOf( t ) & bgOf( b ) : fgOf( tOn ? t : b ) );
+					if ( code != last ) { s &= chr( 27 ) & "[0m" & code; last = code; }
+				}
+				s &= glyph;
+			}
+			out.append( arguments.color ? s & chr( 27 ) & "[0m" : reReplace( s, "[ ]+$", "" ) );
+		}
+		return trimRows( out );
+	}
+
+	// Rows of pixels as characters from a brightness ramp: one cell is two pixel rows (a cell is about twice as tall as it is wide).
+	function asciiArt( px, color ) {
+		var ramp = " .:-=+*##%@";
+		var out = [];
+		var h = arguments.px.len();
+		for ( var y = 1; y <= h; y += 2 ) {
+			var top = arguments.px[ y ];
+			var bot = y + 1 <= h ? arguments.px[ y + 1 ] : top;
+			var s = ""; var last = "";
+			for ( var x = 1; x <= top.len(); x++ ) {
+				var a = top[ x ]; var b = bot[ x ];
+				var alpha = ( a[ 4 ] + b[ 4 ] ) / 510;
+				var rgb = [ round( ( a[ 1 ] + b[ 1 ] ) / 2 ), round( ( a[ 2 ] + b[ 2 ] ) / 2 ), round( ( a[ 3 ] + b[ 3 ] ) / 2 ) ];
+				var luma = ( 0.299 * rgb[ 1 ] + 0.587 * rgb[ 2 ] + 0.114 * rgb[ 3 ] ) / 255;
+				var level = alpha < 0.5 ? 0 : max( 1, round( luma * ( len( ramp ) - 1 ) ) );
+				var ch = mid( ramp, level + 1, 1 );
+				if ( arguments.color && ch != " " ) {
+					var code = fgOf( rgb );
+					if ( code != last ) { s &= code; last = code; }
+				}
+				s &= ch;
+			}
+			out.append( arguments.color && len( last ) ? s & chr( 27 ) & "[0m" : reReplace( s, "[ ]+$", "" ) );
+		}
+		return trimRows( out );
+	}
+
+	// The lines without the blank rows above and below the picture.
+	function trimRows( lines ) {
+		var out = arguments.lines;
+		var blank = function( l ) { return !len( trim( reReplace( arguments.l, chr( 27 ) & "\[[0-9;]*m", "", "all" ) ) ); };
+		while ( out.len() && blank( out[ 1 ] ) ) out.deleteAt( 1 );
+		while ( out.len() && blank( out[ out.len() ] ) ) out.deleteAt( out.len() );
+		return out;
 	}
 
 	function fonts( asJson, terminal ) {

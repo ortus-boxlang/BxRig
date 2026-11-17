@@ -45,7 +45,7 @@ Settings that only touch your own config (a theme, the bar, the font) act at onc
 
 ## All commands
 
-**Start here**: [`init`](#bxrig-init), [`refresh`](#bxrig-refresh), [`reinstall`](#bxrig-reinstall), [`wizard`](#bxrig-wizard), [`status`](#bxrig-status), [`doctor`](#bxrig-doctor), [`update`](#bxrig-update), [`ascii`](#bxrig-ascii), [`version`](#bxrig-version), [`menu`](#bxrig-menu), [`apps`](#bxrig-apps), [`help`](#bxrig-help)
+**Start here**: [`init`](#bxrig-init), [`refresh`](#bxrig-refresh), [`reinstall`](#bxrig-reinstall), [`wizard`](#bxrig-wizard), [`status`](#bxrig-status), [`doctor`](#bxrig-doctor), [`update`](#bxrig-update), [`ascii`](#bxrig-ascii), [`about`](#bxrig-about), [`version`](#bxrig-version), [`menu`](#bxrig-menu), [`apps`](#bxrig-apps), [`help`](#bxrig-help)
 
 **Install and remove**: [`install`](#bxrig-install), [`remove`](#bxrig-remove), [`pkg`](#bxrig-pkg), [`catalog`](#bxrig-catalog), [`plan`](#bxrig-plan), [`install-plan`](#bxrig-install-plan), [`optional-plan`](#bxrig-optional-plan), [`profile-plan`](#bxrig-profile-plan), [`profile-install-plan`](#bxrig-profile-install-plan), [`profile-install`](#bxrig-profile-install), [`optional-install`](#bxrig-optional-install), [`profile-list`](#bxrig-profile-list), [`optional-list`](#bxrig-optional-list), [`desktop-list`](#bxrig-desktop-list), [`tui-list`](#bxrig-tui-list), [`web-list`](#bxrig-web-list), [`package-status`](#bxrig-package-status), [`package-source`](#bxrig-package-source), [`dev-plan`](#bxrig-dev-plan), [`prerequisites`](#bxrig-prerequisites), [`apps-doctor`](#bxrig-apps-doctor), [`web`](#bxrig-web), [`toolchain`](#bxrig-toolchain)
 
@@ -171,11 +171,12 @@ bxrig update notifications on
 
 ### `bxrig ascii` {#bxrig-ascii}
 
-Text in large letters (FIGlet fonts), painted with a colour or a gradient.
+Text in large letters (FIGlet fonts) or a picture as text art, painted with a colour or a gradient.
 
 ```text
 bxrig ascii TEXT... [--font=dos-rebel|ansi-shadow|calvin-s] [--color=COLOR | --gradient=SPEC] [--direction=horizontal|vertical|diagonal] [--plain] [--json]
 bxrig ascii fonts [--json]
+bxrig ascii image PATH [--width=N] [--style=blocks|ascii] [--plain] [--json]
 ```
 
 ```bash
@@ -186,9 +187,28 @@ bxrig ascii Rainbow --gradient=rainbow --direction=diagonal
 bxrig ascii Theme --gradient=theme
 bxrig ascii deploy --gradient=#ff5f6d,#ffc371,#00dbff
 bxrig ascii fonts
+bxrig ascii image ~/Pictures/logo.png
+bxrig ascii image logo.svg --width=60
+bxrig ascii image photo.jpg --style=ascii --width=80
 ```
 
-> COLOR is #rrggbb, #rgb, theme (the accent of the theme that is on) or a name (black, white, gray, red, orange, yellow, green, cyan, blue, purple, magenta, pink, boxlang, bxrig). SPEC is a preset (brand, theme, sunset, ocean, fire, forest, candy, rainbow) or two or more colours separated by commas. Without --color or --gradient the brand gradient is used in a terminal and no colour into a pipe; --plain and NO_COLOR leave colour out. With no TEXT the first line of stdin is drawn.
+> COLOR is #rrggbb, #rgb, theme (the accent of the theme that is on) or a name (black, white, gray, red, orange, yellow, green, cyan, blue, purple, magenta, pink, boxlang, bxrig). SPEC is a preset (brand, theme, sunset, ocean, fire, forest, candy, rainbow) or two or more colours separated by commas. Without --color or --gradient the brand gradient is used in a terminal and no colour into a pipe; --plain and NO_COLOR leave colour out. With no TEXT the first line of stdin is drawn. `ascii image` draws a PNG, JPEG, GIF, WebP or SVG (read by the embedded bx-image module) WIDTH columns wide (default 48): blocks are half blocks in 24-bit colour, ascii is a brightness ramp in the picture's colours; transparent pixels stay blank.
+
+### `bxrig about` {#bxrig-about}
+
+About this rig: the BxRig laptop logo beside the hardware, your dev stack and the look (fastfetch).
+
+```text
+bxrig about [--wait] [--plain] [--json]
+```
+
+```bash
+bxrig about
+bxrig about --plain
+bxrig about --json
+```
+
+> Runs fastfetch with ~/.config/bxrig/fastfetch.jsonc; the logo (~/.config/bxrig/theme/fastfetch-logo.ans) follows the theme and is rewritten by `bxrig theme set`. A missing logo or config is written first. Without fastfetch the logo, version and tagline are shown. --wait asks for Enter before returning (the launcher's About window uses it).
 
 ### `bxrig version` {#bxrig-version}
 

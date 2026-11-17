@@ -1,0 +1,181 @@
+// The About logo: the BxRig laptop drawn as pixel art in half blocks (two pixels per text row), BX in the DOS Rebel font on its screen, and
+// "BXRIG powered by BoxLang" with www.boxlang.io under it. 40 columns; 15 rows for the laptop plus 3 for the caption.
+// The laptop is drawn from code (a solid frame, never holes) and painted with a palette, so `bxrig theme set` can recolour it:
+//   palette( colors ) a palette from a parsed theme (ThemeColors.parse().colors), or the brand palette when the struct is empty
+//   cells( palette )  the laptop as rows of { ch, fg, bg } cells ("" for no colour)
+//   lines( palette )  the logo as 24-bit ANSI lines (what fastfetch's file-raw logo reads); plainLines() is the same without colour
+class AboutLogo {
+	function init() {
+		variables.tc = new bxrig.ThemeColors();
+		variables.esc = chr( 27 );
+		return this;
+	}
+
+	// Pixel size of the drawing: 40 x 29; the lid is the top 24 pixel rows.
+	function width() { return 40; }
+	function height() { return 29; }
+	function lidHeight() { return 24; }
+	function caption() { return "BXRIG powered by BoxLang"; }
+	function site() { return "www.boxlang.io"; }
+
+	// The screen inside the lid, in text cells (0-based, inclusive): columns 5..34, rows 1..10.
+	function screen() { return { x0: 5, x1: 34, y0: 1, y1: 10 }; }
+
+	// The brand palette: the frame runs green, cyan, blue like the laptop icon; BX runs cyan to green.
+	function brand() {
+		return { frame: [ "##00ff78", "##00dbff", "##087cff" ], text: [ "##00dbff", "##00ff78" ], screen: "##06182c", muted: "##6b7a99", foreground: "##e6edf3", link: "##00edbb" };
+	}
+
+	// A palette for a theme: the frame and BX run from the accent to bright cyan (colour 14, else 6), and the screen is the theme's darker
+	// background (or the background darkened), so on the bxrig theme it is the brand's green to cyan.
+	function palette( colors = {} ) {
+		var c = arguments.colors;
+		if ( !structKeyExists( c, "accent" ) || !structKeyExists( c, "background" ) ) return brand();
+		var second = structKeyExists( c, "color14" ) ? c.color14 : ( structKeyExists( c, "color6" ) ? c.color6 : c.foreground );
+		var light = structKeyExists( c, "mode" ) && c.mode == "light";
+		var screenColour = structKeyExists( c, "darker_background" ) ? c.darker_background : variables.tc.mix( c.background, light ? "##ffffff" : "##000000", 0.25 );
+		return {
+			frame: [ c.accent, variables.tc.mix( c.accent, second, 0.5 ), second ],
+			text: [ c.accent, second ],
+			screen: screenColour,
+			muted: structKeyExists( c, "color8" ) ? c.color8 : variables.tc.mix( c.background, c.foreground, 0.45 ),
+			foreground: c.foreground,
+			link: variables.tc.mix( c.accent, second, 0.5 )
+		};
+	}
+
+	// What the pixel at x, y (0-based) is: "F" frame, "S" screen, "N" trackpad notch or "" nothing.
+	function pixel( x, y ) {
+		var w = width(); var lid = lidHeight();
+		if ( arguments.y < lid ) {
+			if ( arguments.x < 3 || arguments.x > 36 ) return "";
+			// rounded corners
+			if ( ( arguments.x == 3 || arguments.x == 36 ) && ( arguments.y == 0 || arguments.y == lid - 1 ) ) return "";
+			if ( arguments.x <= 4 || arguments.x >= 35 || arguments.y <= 1 || arguments.y >= lid - 2 ) return "F";
+			return "S";
+		}
+		// the base: a deck wider than the lid that tapers at the top and bottom edge
+		var row = arguments.y - lid;
+		var inset = ( row == 0 || row == 4 ) ? 2 : 0;
+		if ( arguments.x < inset || arguments.x >= w - inset ) return "";
+		if ( row == 1 && arguments.x >= 17 && arguments.x <= 22 ) return "N";
+		return "F";
+	}
+
+	// The colour at t (0..1) along a list of stops.
+	function along( stops, t ) {
+		var n = arguments.stops.len();
+		if ( n == 1 ) return arguments.stops[ 1 ];
+		var pos = max( 0, min( 1, arguments.t ) ) * ( n - 1 );
+		var i = min( n - 2, int( pos ) );
+		return variables.tc.mix( arguments.stops[ i + 1 ], arguments.stops[ i + 2 ], pos - i );
+	}
+
+	function pixelColour( pal, x, y ) {
+		var kind = pixel( arguments.x, arguments.y );
+		if ( kind == "" ) return "";
+		if ( kind == "S" || kind == "N" ) return arguments.pal.screen;
+		// the frame gradient runs diagonally, top left to bottom right
+		return along( arguments.pal.frame, ( arguments.x / ( width() - 1 ) + arguments.y / ( height() - 1 ) ) / 2 );
+	}
+
+	// The laptop as rows of cells { ch, fg, bg }, with BX in DOS Rebel centred on the screen.
+	function cells( pal ) {
+		var p = arguments.pal;
+		var rows = [];
+		var h = height();
+		for ( var y = 0; y < h; y += 2 ) {
+			var row = [];
+			for ( var x = 0; x < width(); x++ ) {
+				var t = pixelColour( p, x, y );
+				var b = y + 1 < h ? pixelColour( p, x, y + 1 ) : "";
+				if ( len( t ) && len( b ) ) row.append( t == b ? { ch: "█", fg: t, bg: "" } : { ch: "▀", fg: t, bg: b } );
+				else if ( len( t ) ) row.append( { ch: "▀", fg: t, bg: "" } );
+				else if ( len( b ) ) row.append( { ch: "▄", fg: b, bg: "" } );
+				else row.append( { ch: " ", fg: "", bg: "" } );
+			}
+			rows.append( row );
+		}
+		// the screen: a clean background, then BX on it
+		var s = screen();
+		for ( var sy = s.y0; sy <= s.y1; sy++ ) {
+			for ( var sx = s.x0; sx <= s.x1; sx++ ) rows[ sy + 1 ][ sx + 1 ] = { ch: " ", fg: "", bg: p.screen };
+		}
+		var art = new bxrig.Figlet().render( "BX", "dos-rebel" );
+		var aw = new bxrig.Figlet().width( art );
+		var ox = s.x0 + int( ( s.x1 - s.x0 + 1 - aw ) / 2 );
+		var oy = s.y0 + int( ( s.y1 - s.y0 + 1 - art.len() ) / 2 );
+		for ( var j = 1; j <= art.len(); j++ ) {
+			var line = art[ j ];
+			for ( var i = 1; i <= len( line ); i++ ) {
+				var ch = mid( line, i, 1 );
+				if ( ch == " " ) continue;
+				var col = along( p.text, ( i - 1 ) / max( 1, aw - 1 ) );
+				// the font's shade characters are the letters' shadow: dimmed toward the screen
+				if ( ch == "░" ) col = variables.tc.mix( col, p.screen, 0.55 );
+				rows[ oy + j ][ ox + i ] = { ch: ch, fg: col, bg: p.screen };
+			}
+		}
+		return rows;
+	}
+
+	function fg( hex ) { var c = variables.tc.toRgb( arguments.hex ); return variables.esc & "[38;2;" & c[ 1 ] & ";" & c[ 2 ] & ";" & c[ 3 ] & "m"; }
+	function bg( hex ) { var c = variables.tc.toRgb( arguments.hex ); return variables.esc & "[48;2;" & c[ 1 ] & ";" & c[ 2 ] & ";" & c[ 3 ] & "m"; }
+	function reset() { return variables.esc & "[0m"; }
+
+	// The logo as ANSI lines: the laptop, a blank line, the caption and the site, each centred in 40 columns. An escape is written only when
+	// the colours change and every line ends with a reset.
+	function lines( pal ) {
+		var out = [];
+		for ( var row in cells( arguments.pal ) ) {
+			var s = ""; var lastFg = "-"; var lastBg = "-";
+			for ( var c in row ) {
+				if ( c.fg != lastFg || c.bg != lastBg ) {
+					s &= reset();
+					if ( len( c.fg ) ) s &= fg( c.fg );
+					if ( len( c.bg ) ) s &= bg( c.bg );
+					lastFg = c.fg; lastBg = c.bg;
+				}
+				s &= c.ch;
+			}
+			out.append( s & reset() );
+		}
+		var p = arguments.pal;
+		out.append( "" );
+		var word = "";
+		for ( var i = 1; i <= 5; i++ ) word &= fg( along( p.text, ( i - 1 ) / 4 ) ) & mid( "BXRIG", i, 1 );
+		out.append( pad( caption() ) & variables.esc & "[1m" & word & reset() & fg( p.muted ) & " powered by " & reset() & variables.esc & "[1m" & fg( p.foreground ) & "BoxLang" & reset() );
+		out.append( pad( site() ) & fg( p.link ) & site() & reset() );
+		return out;
+	}
+
+	// The logo file's text (what `bxrig theme set` writes to ~/.config/bxrig/theme/fastfetch-logo.ans).
+	function text( pal ) { return lines( arguments.pal ).toList( chr( 10 ) ) & chr( 10 ); }
+
+	// The same logo without colour: the frame's shape in blocks, the screen left blank and BX on it.
+	function plainLines() {
+		var out = [];
+		var drawn = cells( brand() );
+		var s = screen();
+		var h = height();
+		for ( var r = 1; r <= drawn.len(); r++ ) {
+			var line = "";
+			var y = ( r - 1 ) * 2;
+			for ( var x = 0; x < width(); x++ ) {
+				var inScreen = r - 1 >= s.y0 && r - 1 <= s.y1 && x >= s.x0 && x <= s.x1;
+				if ( inScreen ) { line &= drawn[ r ][ x + 1 ].ch; continue; }
+				var t = pixel( x, y ) == "F";
+				var b = y + 1 < h && pixel( x, y + 1 ) == "F";
+				line &= t && b ? "█" : ( t ? "▀" : ( b ? "▄" : " " ) );
+			}
+			out.append( reReplace( line, "[ ]+$", "" ) );
+		}
+		out.append( "" );
+		out.append( pad( caption() ) & caption() );
+		out.append( pad( site() ) & site() );
+		return out;
+	}
+
+	// Spaces that centre text in the logo's width.
+	function pad( text ) { return repeatString( " ", int( ( width() - len( arguments.text ) ) / 2 ) ); }
+}

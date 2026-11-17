@@ -10,5 +10,9 @@ mb="${MATCHBOX:-}"
 mkdir -p "$root/dist"
 "$root/bootstrap/gen-assets.sh" >/dev/null
 "$root/bootstrap/gen-version.sh" >/dev/null
-(cd "$root" && "$mb" --target native --output "$root/dist/bxrig" src/Main.bx)
+# the BoxLang modules bxrig embeds (box.json toolchain.modules), passed to MatchBox with --module
+modlist="$(MATCHBOX="$mb" "$root/scripts/get-modules.sh" "$root/.cache/modules")"
+mods=()
+while IFS= read -r m; do [[ -n "$m" ]] && mods+=( --module "$m" ); done <<<"$modlist"
+(cd "$root" && "$mb" "${mods[@]}" --target native --output "$root/dist/bxrig" src/Main.bx)
 echo "built $root/dist/bxrig with $("$mb" --version 2>&1 | head -1)"
