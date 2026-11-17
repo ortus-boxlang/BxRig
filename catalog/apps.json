@@ -6335,6 +6335,90 @@
 			"homepage": "https://github.com/nwg-piotr/nwg-displays"
 		},
 		{
+			"id": "solaar",
+			"name": "Solaar",
+			"description": "Logitech devices on Linux: buttons, DPI, scroll and battery (BxRig: input offer)",
+			"description_source": "curated",
+			"kind": "desktop",
+			"group": "desktop",
+			"category": "Desktop polish",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"solaar"
+			],
+			"repo": "extra",
+			"homepage": "https://pwr-solaar.github.io/Solaar/",
+			"macos": "Logi Options+",
+			"origin": [
+				"owner-request"
+			],
+			"verified_on": "2026-11-17"
+		},
+		{
+			"id": "piper",
+			"name": "Piper",
+			"description": "Settings window for gaming mice: DPI, report rate, profiles, buttons (over libratbag)",
+			"description_source": "curated",
+			"kind": "desktop",
+			"group": "desktop",
+			"category": "Desktop polish",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"piper"
+			],
+			"repo": "extra",
+			"homepage": "https://github.com/libratbag/piper",
+			"macos": "Logitech G HUB",
+			"origin": [
+				"owner-request"
+			],
+			"verified_on": "2026-11-17"
+		},
+		{
+			"id": "libratbag",
+			"name": "libratbag",
+			"description": "Service that configures gaming mice (Logitech HID++ and others); Piper talks to it",
+			"description_source": "curated",
+			"kind": "tui",
+			"group": "desktop",
+			"category": "Desktop polish",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"libratbag"
+			],
+			"repo": "extra",
+			"homepage": "https://github.com/libratbag/libratbag",
+			"macos": "Logitech G HUB",
+			"origin": [
+				"owner-request"
+			],
+			"verified_on": "2026-11-17"
+		},
+		{
+			"id": "upower",
+			"name": "UPower",
+			"description": "Battery levels of the laptop and of wireless mice, trackpads and keyboards",
+			"description_source": "curated",
+			"kind": "tui",
+			"group": "desktop",
+			"category": "Desktop polish",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"upower"
+			],
+			"repo": "extra",
+			"homepage": "https://upower.freedesktop.org",
+			"macos": "Battery in the menu bar",
+			"origin": [
+				"owner-request"
+			],
+			"verified_on": "2026-11-17"
+		},
+		{
 			"tier": "default",
 			"source": "pacman",
 			"repo": "extra",
