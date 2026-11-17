@@ -2170,15 +2170,25 @@
 				},
 				{
 					"name": "containers",
-					"summary": "Podman helpers: doctor, rootless socket, docker compatibility wrappers.",
+					"summary": "Containers on the configured engine (Podman or Docker): list, start, stop, restart, logs; Podman helpers: doctor, rootless socket, docker compatibility.",
 					"usage": [
-						"containers doctor | socket enable [--yes] | docker-compat [--yes] [--json]"
+						"containers doctor | socket enable [--yes] | docker-compat [--yes] [--json]",
+						"containers list [--json]",
+						"containers start|stop|restart NAME [--json]",
+						"containers logs NAME [--lines=N] [--json]"
 					],
 					"examples": [
-						"bxrig containers doctor"
+						"bxrig containers doctor",
+						"bxrig containers list --json",
+						"bxrig containers logs web --lines=100"
 					],
 					"mutates": true,
-					"flags": []
+					"flags": [
+						{
+							"name": "lines",
+							"type": "value"
+						}
+					]
 				},
 				{
 					"name": "vm",

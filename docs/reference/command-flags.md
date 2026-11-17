@@ -246,6 +246,7 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `db` | `--password-file` | bool |  |
 | `db` | `--port` | bool |  |
 | `db` | `--show-password` | bool |  |
+| `containers` | `--lines` | value | `100` |
 | `vm` | `--cpus` | value |  |
 | `vm` | `--disk` | value | `6` |
 | `vm` | `--fullscreen` | bool |  |

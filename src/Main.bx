@@ -248,6 +248,9 @@ class {
 				if ( ctSub == "doctor" && p.len() == 2 ) CLIExit( ct.doctor( asJson ) );
 				if ( ctSub == "socket" && p.len() == 3 && p[3] == "enable" ) CLIExit( ct.socketEnable( structKeyExists( args.options, "yes" ), asJson ) );
 				if ( ctSub == "docker-compat" && p.len() == 2 ) CLIExit( ct.dockerCompat( structKeyExists( args.options, "yes" ), asJson ) );
+				if ( ctSub == "list" && p.len() == 2 ) CLIExit( ct.list( asJson ) );
+				if ( arrayFind( [ "start", "stop", "restart" ], ctSub ) && p.len() == 3 ) CLIExit( ct.act( ctSub, p[3], asJson ) );
+				if ( ctSub == "logs" && p.len() == 3 ) CLIExit( ct.logs( p[3], args.options.lines ?: "", asJson ) );
 				println( new bxrig.CommandSpec().usage( "containers" ) );
 				CLIExit( xit.usage() );
 				break;
