@@ -23,5 +23,14 @@ const fs = require('fs'), path = require('path');
 		await p.screenshot({ path: path.resolve(__dirname, `icons/${size}.png`), omitBackground: true });
 		await p.close();
 	}
+	// The bar plates (assets/icons/plates/*.svg): 128 px PNGs next to the SVGs.
+	for (const name of ['bxrig-menu', 'bxrig-grid']) {
+		const p = await b.newPage({ viewport: { width: 128, height: 128 } });
+		const data = fs.readFileSync(path.resolve(__dirname, `icons/plates/${name}.svg`)).toString('base64');
+		await p.setContent(`<body style="margin:0;background:transparent"><img id="i" src="data:image/svg+xml;base64,${data}" width="128" height="128" style="display:block"></body>`);
+		await p.waitForFunction(() => document.getElementById('i').complete);
+		await p.screenshot({ path: path.resolve(__dirname, `icons/plates/${name}.png`), omitBackground: true });
+		await p.close();
+	}
 	await b.close();
 })();

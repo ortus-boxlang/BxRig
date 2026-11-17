@@ -6,7 +6,7 @@ mkdir -p "$tmp/bin" "$tmp/home"
 stub_id
 run() { env HOME="$tmp/home" PATH="$tmp/bin:$PATH" "$@"; }
 run "$binary" assets list | grep -q 'logo.png -> ' || fail 'list shows the targets'
-run "$binary" assets list --json | jq -e '(.data.assets | length) == 9' >/dev/null || fail 'list --json'
+run "$binary" assets list --json | jq -e '(.data.assets | length) == 13' >/dev/null || fail 'list --json'
 [[ "$(code "$binary" assets install)" == 2 ]] || fail 'install without --yes exits 2'
 [[ "$(code "$binary" assets install --dry-run)" == 0 ]] || fail 'dry run exits 0'
 [[ ! -e "$tmp/home/Pictures" ]] || fail 'plan or dry run wrote files'
@@ -19,6 +19,12 @@ for sz in 16 24 32 48 64 128 256; do
 	cmp "$tmp/home/.local/share/icons/hicolor/${sz}x${sz}/apps/bxrig.png" "$root/assets/icons/$sz.png" || fail "icon $sz differs"
 done
 cmp "$tmp/home/.local/share/icons/hicolor/scalable/apps/bxrig.svg" "$root/assets/icons/bxrig.svg" || fail 'scalable icon differs'
+# the bar plates (logo button and Launchpad grid) land in ~/.local/share/bxrig/plates, not in the icon theme
+for f in bxrig-menu.svg bxrig-menu.png bxrig-grid.svg bxrig-grid.png; do
+	cmp "$tmp/home/.local/share/bxrig/plates/$f" "$root/assets/icons/plates/$f" || fail "plate $f differs"
+done
+[[ -z "$(find "$tmp/home/.local/share/icons" -name '*plate*' -o -name 'bxrig-menu*' -o -name 'bxrig-grid*')" ]] || fail 'a plate went into the icon theme'
+run "$binary" assets list | grep -q 'plates/bxrig-grid.svg' || fail 'list shows the grid plate'
 # a file the user replaced is kept
 echo mine > "$tmp/home/Pictures/BxRig/bxrig.jpg"
 [[ "$(code "$binary" assets install --yes)" == 0 ]] || fail 're-run exits 0'

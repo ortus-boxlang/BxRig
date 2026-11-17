@@ -51,6 +51,23 @@ SMALL_INNER = (
 os.makedirs('icons', exist_ok=True)
 open('icons/bxrig.svg', 'w').write(icon_svg(LAPTOP_INNER))
 open('icons/bxrig-small.svg', 'w').write(icon_svg(SMALL_INNER))
+# Bar plates (the hybrid style: plates only on the logo button and on the Launchpad grid in the dock). A dark rounded tile with a gradient outline
+# and a soft halo (stacked low-opacity rounded squares, no SVG filters) so the plate stays visible on dark and Retro bars. Rendered to PNG by render.js.
+def plate_svg(inner, label):
+	return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="' + label + '">'
+		'<defs><linearGradient id="pg" x1="6" y1="6" x2="58" y2="58" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#00ff78"/><stop offset=".55" stop-color="#00dbff"/><stop offset="1" stop-color="#087cff"/></linearGradient></defs>'
+		'<rect x="1" y="1" width="62" height="62" rx="18" fill="url(#pg)" opacity=".16"/>'
+		'<rect x="3" y="3" width="58" height="58" rx="16" fill="url(#pg)" opacity=".26"/>'
+		'<rect x="5.5" y="5.5" width="53" height="53" rx="14" fill="#06182c" stroke="url(#pg)" stroke-width="2.4"/>' + inner + '</svg>\n')
+GRID_SQ = ''.join(
+	('<rect x="%.1f" y="%.1f" width="7.2" height="7.2" rx="2" fill="none" stroke="url(#pg)" stroke-width="1.5"/>' % (x + .75, y + .75)) if (r == 0 and k == 2)
+	else ('<rect x="%.1f" y="%.1f" width="9" height="9" rx="2.4" fill="url(#pg)"/>' % (x, y))
+	for r, y in enumerate((5, 19.5, 34)) for k, x in enumerate((5, 19.5, 34)))
+PLATE_GRID = plate_svg('<g transform="translate(14 14) scale(.75)">' + GRID_SQ + '</g>', 'Apps')
+PLATE_LOGO = plate_svg('<svg x="13" y="17.5" width="38" height="%.2f" viewBox="%s">%s</svg>' % (38 * 542 / 794, LAPTOP_VIEW, SMALL_INNER), 'BxRig menu')
+os.makedirs('icons/plates', exist_ok=True)
+open('icons/plates/bxrig-grid.svg', 'w').write(PLATE_GRID)
+open('icons/plates/bxrig-menu.svg', 'w').write(PLATE_LOGO)
 # logo: icon + wordmark, for dark backgrounds
 open('logo.svg', 'w').write(svg(720, 200, f'{mark(14, 20, 160)}{word(200, 124, 96, "start")}'))
 # The wallpapers are photographs made per theme (assets/wallpapers/<theme>.jpg, see assets/wallpapers/README.md), not drawn here.

@@ -19,7 +19,8 @@ summary: Where BxRig keeps things.
 | `~/.config/bxrig/runner.json` | launcher and menu program |
 | `~/.config/bxrig/update.json` | update channel and notification setting |
 | `~/.config/bxrig/skills.json` | the agent skills BxRig installed |
-| `~/.config/bxrig/appearance.json` | what you chose in `bxrig appearance` (bar, dock, windows, font) |
+| `~/.config/bxrig/appearance.json` | what you chose in `bxrig appearance` (bar layout, dock, app grid, battery percentage, clock format, windows, font) |
+| `~/.local/share/bxrig/plates/` | the logo-button and Launchpad-grid plates (SVG and PNG) the Noctalia bar and dock point at |
 | `~/.config/bxrig/display.json` | what you chose in `bxrig display` (scale, rotation, mirror, laptop panel) |
 | `~/.config/bxrig/theme.json` | the current theme and mode |
 | `~/.config/bxrig/theme/hypr.lua` | generated Hyprland border colours of the theme; never edit |

@@ -93,10 +93,7 @@ class SystemState {
 	// `scan( spec )`: { answers: { qid: value or [values] }, installed: { qid: [values] } }; only questions the system has something to say about appear.
 	// Is there a battery (a laptop)? BXRIG_POWER_DIR overrides /sys/class/power_supply for tests.
 	function hasBattery() {
-		var dir = new bxrig.util.Env().named( "powerDir", "/sys/class/power_supply" );
-		if ( !directoryExists( dir ) ) return false;
-		for ( var d in directoryList( dir, false, "name" ) ) if ( reFind( "^BAT", d ) ) return true;
-		return false;
+		return new bxrig.util.Battery().present();
 	}
 
 	function scan( spec ) {

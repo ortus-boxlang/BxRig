@@ -1,0 +1,10 @@
+// Is there a laptop battery? The one answer for the wizard's power question and for the bar (the battery widget is only written on a laptop).
+// A /sys/class/power_supply/BAT* entry means yes; BXRIG_POWER_DIR replaces the directory in tests.
+class Battery {
+	function present() {
+		var dir = new bxrig.util.Env().named( "powerDir", "/sys/class/power_supply" );
+		if ( !directoryExists( dir ) ) return false;
+		for ( var d in directoryList( dir, false, "name" ) ) if ( reFind( "^BAT", d ) ) return true;
+		return false;
+	}
+}

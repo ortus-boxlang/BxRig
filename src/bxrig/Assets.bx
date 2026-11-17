@@ -15,6 +15,8 @@ class Assets {
 	function target( name ) {
 		var home = variables.environ.home();
 		if ( left( name, 11 ) == "wallpapers/" ) return home & "/Pictures/BxRig/" & mid( name, 12, len( name ) );
+		// the bar plates (logo button and Launchpad grid): ~/.local/share/bxrig/plates/NAME, the paths the Noctalia config points at
+		if ( left( name, 13 ) == "icons/plates/" ) return plateDir() & "/" & mid( name, 14, len( name ) );
 		if ( left( name, 6 ) == "icons/" ) {
 			var data = variables.environ.xdgData();
 			if ( name == "icons/bxrig.svg" ) return data & "/icons/hicolor/scalable/apps/bxrig.svg";
@@ -27,8 +29,23 @@ class Assets {
 	// The images `assets install` writes: all but the boot splash's (those go to /usr/share/plymouth, by `setup boot`).
 	function userNames() { return variables.data.names().filter( function( n ) { return left( n, 9 ) != "plymouth/"; } ); }
 
-	// The app icon files (every size and the scalable SVG), as embedded names.
-	function iconNames() { return variables.data.names().filter( function( n ) { return left( n, 6 ) == "icons/"; } ); }
+	// The app icon files (every size and the scalable SVG), as embedded names. The bar plates are not app icons.
+	function iconNames() { return variables.data.names().filter( function( n ) { return left( n, 6 ) == "icons/" && left( n, 13 ) != "icons/plates/"; } ); }
+
+	function plateDir() { return variables.environ.xdgData() & "/bxrig/plates"; }
+
+	// Where a bar plate is written: plate( "bxrig-menu.svg" ). NoctaliaConfig points the logo button and the dock's grid button at these.
+	function plate( file ) { return target( "icons/plates/" & arguments.file ); }
+
+	// The bar plate files (embedded names).
+	function plateNames() { return variables.data.names().filter( function( n ) { return left( n, 13 ) == "icons/plates/"; } ); }
+
+	// Writes the bar plates that are missing (no network, nothing else): the bar config points at them. Returns the files written.
+	function ensurePlates() {
+		var out = [];
+		for ( var n in plateNames() ) if ( !fileExists( target( n ) ) ) { decode( n, target( n ) ); out.append( target( n ) ); }
+		return out;
+	}
 
 	// Writes one packed image to a path, byte for byte.
 	function decode( name, dest ) {
