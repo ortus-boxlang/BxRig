@@ -118,15 +118,14 @@ local function render()
 		table.insert(buttons, ui.button({ glyph = "close", variant = "ghost", controlSize = "sm", onClick = "onCloseClicked" }))
 	end
 	-- The buttons sit right of the title; an equal-width spacer on the left
-	-- keeps "World (globe) Clock" centered.
+	-- keeps the title centered.
 	local buttonsWidth = #buttons * 36
 	table.insert(sections, ui.column({ align = "stretch", gap = 2, paddingV = 2 }, {
 		ui.label({ text = hereText, fontSize = 12, color = "on_surface_variant", maxLines = 1, textAlign = "center" }),
 		ui.row({ align = "center", gap = 8 }, {
 			ui.spacer({ width = buttonsWidth }),
 			ui.spacer({ flexGrow = 1 }),
-			ui.label({ text = "World", fontSize = 18, fontWeight = "bold" }),
-			ui.glyph({ name = "world", size = 22, color = "primary" }),
+			ui.glyph({ name = "clock", size = 22, color = "primary" }),
 			ui.label({ text = "Clock", fontSize = 18, fontWeight = "bold" }),
 			ui.spacer({ flexGrow = 1 }),
 			ui.row({ width = buttonsWidth, gap = 4, justify = "end", align = "center" }, buttons),
