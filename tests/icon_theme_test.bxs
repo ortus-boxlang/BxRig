@@ -48,7 +48,7 @@ touch( "home/.local/share/icons/hicolor/48x48/apps/bxrig.png" );
 text( "home/.config/bxrig/runner.json", '{"icon_theme":"Papirus"}' );
 testkit.check( "chain: theme, Inherits, hicolor", make().chain().toList( "," ) == "Papirus,breeze,hicolor" );
 r = make().resolve( [ "go-previous", "system-run" ] );
-testkit.check( "icons are looked up in the theme named and hicolor only (Rofi does not follow Inherits)", r[ "go-previous" ] != "go-previous" );
+testkit.check( "icons are looked up in the theme named, the themes it Inherits (BxRig inherits Papirus-Dark) and hicolor", r[ "go-previous" ] == "go-previous" );
 testkit.check( "the last resort is the BxRig icon in the user's hicolor", r[ "system-run" ] == "bxrig" );
 // a theme that is only an index.theme inheriting another (elementary-xfce-dark) hops to the one that holds the icons
 text( "share/icons/Papirus-Dark/index.theme", "[Icon Theme]" & chr( 10 ) & "Inherits=Papirus" & chr( 10 ) );

@@ -21,6 +21,10 @@ class Launchers {
 		return this;
 	}
 
+	// The icon set in use (BxRig theme or Papirus alone): the BxRig-owned entries use the bxrig-* names with the bxrig set, the stock names (and the plain
+	// `bxrig` icon in hicolor) otherwise, so an entry always shows something whichever theme is selected.
+	function icons() { return new bxrig.IconChoice(); }
+
 	function appsDir() { return variables.environ.xdgData() & "/applications"; }
 	// The app icon files: [ { name: embedded name, file: where it goes } ] (every size and the scalable SVG).
 	function iconSet() {
@@ -35,10 +39,11 @@ class Launchers {
 
 	// The folders of the submenu: id, title, comment, icon (a freedesktop theme name), the pages in it. Anything not listed is at the top.
 	function folders() {
+		var ic = icons();
 		return [
-			{ id: "develop", title: "Develop", comment: "BoxLang, Java, Maven, Gradle, versions, databases, mail and ports", icon: "applications-development", pages: [ "boxlang", "java", "maven", "gradle", "versions", "databases", "mail", "ports" ] },
-			{ id: "system", title: "System", comment: "Machines, storage, secrets, logs, packages and shortcuts", icon: "applications-system", pages: [ "machines", "storage", "secrets", "logs", "packages", "shortcuts" ] },
-			{ id: "look", title: "Look", comment: "Look and themes", icon: "preferences-desktop-theme", pages: [ "look", "themes" ] }
+			{ id: "develop", title: "Develop", comment: "BoxLang, Java, Maven, Gradle, versions, databases, mail and ports", icon: ic.iconFor( "bxrig-develop", "applications-development" ), pages: [ "boxlang", "java", "maven", "gradle", "versions", "databases", "mail", "ports" ] },
+			{ id: "system", title: "System", comment: "Machines, storage, secrets, logs, packages and shortcuts", icon: ic.iconFor( "bxrig-system", "applications-system" ), pages: [ "machines", "storage", "secrets", "logs", "packages", "shortcuts" ] },
+			{ id: "look", title: "Look", comment: "Look and themes", icon: ic.iconFor( "bxrig-look", "preferences-desktop-theme" ), pages: [ "look", "themes" ] }
 		];
 	}
 
@@ -51,14 +56,15 @@ class Launchers {
 	// Everything that gets an entry: the wizard, the runner menu, the Control Center and About first, then one per page.
 	// { id, title, comment, argv (after the terminal, or the whole command when term is false), term, icon, category, file }
 	function items() {
+		var ic = icons();
 		var out = [
-			{ id: "wizard", title: "Setup Wizard", comment: "BxRig Setup Wizard: change any answer again, review, then apply (bxrig init)", argv: [ "init" ], term: true, icon: "system-run", category: "X-BxRig", file: extraFile( "wizard" ) },
-			{ id: "runner", title: "Runner Menu", comment: "The BxRig menu on your launcher", argv: [ "menu" ], term: false, icon: "system-search", category: "X-BxRig", file: extraFile( "runner" ) },
-			{ id: "controlcenter", title: "Control Center", comment: "BxRig Control Center, every page", argv: [ "tui" ], term: true, icon: "bxrig", category: "X-BxRig", file: extraFile( "controlcenter" ) },
-			{ id: "about", title: "About", comment: "About this rig: BxRig, the hardware, your dev stack and the look", argv: [ "about", "--wait" ], term: true, icon: "help-about", category: "X-BxRig", file: extraFile( "about" ) }
+			{ id: "wizard", title: "Setup Wizard", comment: "BxRig Setup Wizard: change any answer again, review, then apply (bxrig init)", argv: [ "init" ], term: true, icon: ic.iconFor( "bxrig-wizard", "system-run" ), category: "X-BxRig", file: extraFile( "wizard" ) },
+			{ id: "runner", title: "Runner Menu", comment: "The BxRig menu on your launcher", argv: [ "menu" ], term: false, icon: ic.iconFor( "bxrig-runner", "system-search" ), category: "X-BxRig", file: extraFile( "runner" ) },
+			{ id: "controlcenter", title: "Control Center", comment: "BxRig Control Center, every page", argv: [ "tui" ], term: true, icon: ic.iconFor( "bxrig-control-center", "bxrig" ), category: "X-BxRig", file: extraFile( "controlcenter" ) },
+			{ id: "about", title: "About", comment: "About this rig: BxRig, the hardware, your dev stack and the look", argv: [ "about", "--wait" ], term: true, icon: ic.iconFor( "bxrig-about", "help-about" ), category: "X-BxRig", file: extraFile( "about" ) }
 		];
 		for ( var p in new bxrig.ControlCenterPages().list() ) {
-			out.append( { id: p.id, title: p.title, comment: "BxRig " & p.title & " in a terminal", argv: [ "tui", p.id ], term: true, icon: "bxrig", category: categoryFor( p.id ), file: fileFor( p.id ) } );
+			out.append( { id: p.id, title: p.title, comment: "BxRig " & p.title & " in a terminal", argv: [ "tui", p.id ], term: true, icon: ic.iconFor( "bxrig-" & p.id, "bxrig" ), category: categoryFor( p.id ), file: fileFor( p.id ) } );
 		}
 		return out;
 	}
@@ -188,6 +194,24 @@ class Launchers {
 			catch ( any e ) { return variables.cli.say( cmd, "failed", { error: "Could not write the icon" }, arguments.asJson, [ "error: could not write " & ic.file ] ); }
 		}
 		return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Added " & plan.len() & " launchers to the application menu." & ( kept.len() ? " Kept " & kept.len() & " you edited." : "" ) ] );
+	}
+
+	// Rewrites the entries that are in the application menu (their icons follow the icon set; see `appearance icons`). No output; entries you edited are kept.
+	// Returns "off" when the launchers are not on, "none" when nothing had to change, else "rewrote N".
+	function refresh() {
+		var term = new bxrig.Ai( variables.cli, variables.runner ).terminal();
+		if ( !structKeyExists( term, "argv" ) ) return "no terminal";
+		var rs = rows( term.argv );
+		if ( !rs.filter( function( r ) { return r.state != "missing"; } ).len() ) return "off";
+		var n = 0;
+		for ( var r in rs ) {
+			if ( r.state == "missing" || r.state == "clean" || r.state == "drifted" || r.state == "blocked" ) continue;
+			if ( variables.config.configWrite( r.entry, r.entry.content, "apply", true, false ) == 0 ) n++;
+		}
+		for ( var x in extras().filter( function( e ) { return fileExists( e.target ) && mine( e.target ); } ) ) {
+			if ( variables.config.configState( x ) != "clean" && variables.config.configWrite( x, x.content, "apply", true, false ) == 0 ) n++;
+		}
+		return n ? "rewrote " & n : "none";
 	}
 
 	// `launchers off [--yes] [--dry-run]`: only entries BxRig wrote (marked) and still unedited go; the icon goes when it is still BxRig's.

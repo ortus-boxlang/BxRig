@@ -56,7 +56,7 @@ grep -q "terminal -e sh -c .* _ $tmp/self ai models list" "$FAKE/terminal.log" |
 # Apps (1) starts the app grid
 play 2 "$EXIT"; wait_for "$FAKE/terminal.log" || fail 'the wizard entry did not open a terminal'
 grep -q "terminal -e $tmp/self init$" "$FAKE/terminal.log" || fail "wizard entry: $(cat "$FAKE/terminal.log")"
-run "$binary" menu items --json | jq -e '.data.menu[1] | .kind == "term" and .argv == ["init"] and .themeIcon == "system-run"' >/dev/null || fail 'the wizard entry is the second section'
+run "$binary" menu items --json | jq -e '.data.menu[1] | .kind == "term" and .argv == ["init"] and .themeIcon == "bxrig-wizard"' >/dev/null || fail 'the wizard entry is the second section'
 run "$binary" menu items --json | jq -e '.data.menu as $m | ($m | map(select(.themeIcon == null)) | length) == 0 and ($m | map(.themeIcon) | unique | length) == 16' >/dev/null || fail 'every top-level section has its own icon'
 play 1 "$EXIT"; wait_for "$FAKE/spawn.log"; grep -q 'bxrig apps' "$FAKE/spawn.log" || fail "apps: $(cat "$FAKE/spawn.log")"
 # cancelling at the top leaves without running anything

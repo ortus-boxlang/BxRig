@@ -4,7 +4,7 @@
 //                     (gtk-3.0 and gtk-4.0 settings.ini, then gsettings), each only when that theme is installed; else the first installed of
 //                     Papirus, Adwaita, elementary-xfce, breeze, hicolor.
 //   resolve( names )  { name: icon that exists, ... }: for each wanted name the first of its candidates (the name, its -symbolic twin, a few
-//                     alternatives, then folder, application-x-executable and bxrig) found in that theme or hicolor; "" when none.
+//                     alternatives, then folder, application-x-executable and bxrig) found in that theme, the themes it Inherits (BxRig inherits Papirus-Dark) or hicolor; "" when none.
 // One `find` looks for every candidate at once, so a menu start costs one process whatever the theme size.
 // opts (tests): { home, share, noGsettings }. The folders searched: ~/.local/share/icons, ~/.icons, /usr/share/icons (BXRIG_SHARE_DIR replaces /usr/share).
 class IconTheme {
@@ -137,7 +137,12 @@ class IconTheme {
 			"utilities-system-monitor": [ "utilities-terminal", "applications-utilities" ],
 			"system-search": [ "edit-find", "search" ],
 			"application-exit": [ "window-close", "system-log-out" ],
-			"go-previous": [ "go-up", "back" ]
+			"go-previous": [ "go-up", "back" ],
+			// the BxRig theme's own icons, each with the stock name a theme without them (Papirus alone) has
+			"bxrig-apps": [ "applications-other", "applications-all" ], "bxrig-wizard": [ "system-run", "utilities-terminal" ], "bxrig-develop": [ "applications-development", "applications-engineering" ],
+			"bxrig-look": [ "preferences-desktop-theme", "preferences-desktop-wallpaper" ], "bxrig-updates": [ "system-software-update", "view-refresh" ], "bxrig-agents": [ "applications-science", "applications-engineering" ],
+			"bxrig-about": [ "help-about", "dialog-information" ], "bxrig-control-center": [ "utilities-system-monitor", "applications-utilities" ], "bxrig-runner": [ "system-search", "system-run" ],
+			"bxrig-system": [ "applications-system", "preferences-system" ]
 		};
 	}
 
@@ -160,7 +165,7 @@ class IconTheme {
 		var all = [];
 		for ( var w in wanted ) for ( var c in candidates( w ) ) if ( !arrayFind( all, c ) ) all.append( c );
 		var dirs = [];
-		for ( var t in [ name(), "hicolor" ] ) for ( var r in roots() ) if ( directoryExists( r & "/" & t ) && !arrayFind( dirs, r & "/" & t ) ) dirs.append( r & "/" & t );
+		for ( var t in chain( name() ) ) for ( var r in roots() ) if ( directoryExists( r & "/" & t ) && !arrayFind( dirs, r & "/" & t ) ) dirs.append( r & "/" & t );
 		var have = {};
 		if ( dirs.len() && all.len() ) {
 			var args = [];

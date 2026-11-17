@@ -431,10 +431,10 @@ class MenuTree {
 	// One freedesktop icon name per top-level section (every provider that draws icons falls back to none when the theme has no such icon).
 	function sectionIcons() {
 		return {
-			"Apps": "applications-other", "Setup wizard (re-run, prefilled)": "system-run", "Install": "system-software-install", "Remove": "edit-delete",
-			"Appearance": "preferences-desktop-theme", "Trigger": "input-keyboard", "Shortcuts": "preferences-desktop-keyboard-shortcuts", "Hardware": "computer", "Setup": "preferences-system", "Update": "system-software-update",
-			"Develop": "applications-development", "Agent": "applications-science", "Learn": "help-browser", "About": "help-about",
-			"System": "system-shutdown", "Control Center": "utilities-system-monitor"
+			"Apps": "bxrig-apps", "Setup wizard (re-run, prefilled)": "bxrig-wizard", "Install": "system-software-install", "Remove": "edit-delete",
+			"Appearance": "bxrig-look", "Trigger": "input-keyboard", "Shortcuts": "preferences-desktop-keyboard-shortcuts", "Hardware": "computer", "Setup": "preferences-system", "Update": "bxrig-updates",
+			"Develop": "bxrig-develop", "Agent": "bxrig-agents", "Learn": "help-browser", "About": "bxrig-about",
+			"System": "system-shutdown", "Control Center": "bxrig-control-center"
 		};
 	}
 }
