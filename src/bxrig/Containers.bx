@@ -86,9 +86,6 @@ class Containers {
 		try { return engineExec( [ "--version" ], 20 ).exitCode == 0; } catch ( any e ) { return false; }
 	}
 
-	// A name as the engine accepts it (the first character is never a dash, so it cannot be read as an option).
-	function validName( name ) { return reFind( "^[A-Za-z0-9][A-Za-z0-9_.-]{0,126}$", arguments.name ?: "" ) > 0; }
-
 	// The host ports of an engine `Ports` text ("127.0.0.1:5432->5432/tcp, [::]:5432->5432/tcp", or a range "0.0.0.0:8000-8002->8000-8002/tcp"),
 	// each once, in order; a range gives its first and last port.
 	function hostPorts( text ) {
@@ -150,7 +147,7 @@ class Containers {
 	// `containers start|stop|restart NAME`
 	function act( verb, name, asJson ) {
 		var cmd = "containers " & arguments.verb;
-		if ( !validName( arguments.name ) ) return variables.cli.fail( cmd, "usage", "Bad container name " & arguments.name, arguments.asJson );
+		if ( !new bxrig.util.Names().valid( "engine-container", arguments.name ) ) return variables.cli.fail( cmd, "usage", "Bad container name " & arguments.name, arguments.asJson );
 		if ( !engineAvailable() ) return noEngine( cmd, arguments.asJson );
 		var state = stateOf( arguments.name );
 		if ( !len( state ) ) return variables.cli.fail( cmd, "precondition", arguments.name & " does not exist (bxrig containers list)", arguments.asJson );
@@ -166,7 +163,7 @@ class Containers {
 	// `containers logs NAME [--lines=N]`
 	function logs( name, lines, asJson ) {
 		var cmd = "containers logs";
-		if ( !validName( arguments.name ) ) return variables.cli.fail( cmd, "usage", "Bad container name " & arguments.name, arguments.asJson );
+		if ( !new bxrig.util.Names().valid( "engine-container", arguments.name ) ) return variables.cli.fail( cmd, "usage", "Bad container name " & arguments.name, arguments.asJson );
 		var n = len( arguments.lines ) ? arguments.lines : 200;
 		if ( !isNumeric( n ) || int( n ) != n || n < 1 || n > 10000 ) return variables.cli.fail( cmd, "usage", "--lines must be a whole number from 1 to 10000", arguments.asJson );
 		n = int( n );

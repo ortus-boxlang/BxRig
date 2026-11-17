@@ -11,7 +11,8 @@ testkit.check( "list: three rows, the garbage line is skipped", rows.len() == 3 
 testkit.check( "list: name, image, lower case state, ports, created", rows[ 1 ].name == "web" && rows[ 1 ].image == "docker.io/library/nginx:1.27" && rows[ 1 ].state == "running" && rows[ 1 ].ports.toList( "," ) == "8080" && rows[ 1 ].created == "2026-11-10 09:00:00" );
 testkit.check( "list: kinds container, database, vm", rows[ 1 ].kind == "container" && rows[ 2 ].kind == "database" && rows[ 3 ].kind == "vm" );
 testkit.check( "list: a row with no ports has an empty list", rows[ 2 ].ports.len() == 0 && rows[ 2 ].ports_text == "" );
-testkit.check( "names: engine names pass, options and spaces do not", ct.validName( "web_1.a-b" ) && !ct.validName( "-rf" ) && !ct.validName( "a b" ) && !ct.validName( "" ) && !ct.validName( "a;b" ) );
+nm = new bxrig.util.Names();
+testkit.check( "names: engine names pass, options and spaces do not", nm.valid( "engine-container", "web_1.a-b" ) && !nm.valid( "engine-container", "-rf" ) && !nm.valid( "engine-container", "a b" ) && !nm.valid( "engine-container", "" ) && !nm.valid( "engine-container", "a;b" ) );
 db = new bxrig.Db( new bxrig.util.Cli( "test" ) );
 testkit.check( "db state: Up is running, Paused wins, Created, anything else exited", db.stateFromStatus( "Up 2 hours" ) == "running" && db.stateFromStatus( "Up 2 hours (Paused)" ) == "paused" && db.stateFromStatus( "Created" ) == "created" && db.stateFromStatus( "Exited (0) 3 days ago" ) == "exited" && db.stateFromStatus( "" ) == "exited" );
 
