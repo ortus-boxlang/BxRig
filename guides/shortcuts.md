@@ -66,6 +66,12 @@ Your changes live in `~/.config/bxrig/shortcuts.json` and apply to both styles. 
 | `Super+Ctrl+L` | Lock |
 | `Super+Q` | Close window |
 | `Super+H` / `Super+Shift+H` | Minimize / show minimized |
+| `Super+M` | Maximize or restore the window (the bar stays) |
+| `Super+Alt+Left` / `Right` | Snap the window to the left / right half of the screen |
+| `Super+Shift+J` | Next layout on this workspace: dwindle, master, columns, scrolling, monocle |
+| `Super+Minus` / `Super+Equal` | Narrower / wider: the split (dwindle), the main column (master, columns), or the column through 1/3, 1/2, 2/3 and full (scrolling) |
+| `Super+Ctrl+Left` / `Right` | Previous / next workspace |
+| `Super+Ctrl+Shift+Left` / `Right` | Take the window to the previous / next workspace |
 | `Super+Alt+C` | Noctalia control center panel |
 | `Super+Ctrl+Comma` | Noctalia settings |
 | `Super+Grave` | Pull-down AI shell |

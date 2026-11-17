@@ -26,6 +26,11 @@ Two styles: **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys for 
 | r43 | Float or tile | `Super+T` | `Super+Alt+T` | `Super+T` is New tab in Mac mode |
 | r52 | Quake console | `Super+Shift+Grave` | `Super+Shift+Grave` | Built in the second round (`window quake`); sending a window there is `Super+Ctrl+Grave` |
 | r53 | Minimize | `Super+H` | `Super+H` | Replaces `Super+M`; restore is `Super+Shift+H` (assumed) |
+| w1 | Maximize | `Super+M` | `Super+M` | 2026-11-16: `Super+M` is free again since minimize moved to `Super+H` |
+| w2 | Snap to the left / right half | `Super+Alt+Left` / `Right` | same | 2026-11-16, `window snap left\|right` |
+| w3 | Next layout on the workspace | `Super+Shift+J` | same | 2026-11-16, HyprKwin's key on Plasma |
+| w4 | Narrower / wider column | `Super+Minus` / `Super+Equal` | same | 2026-11-16, HyprKwin's keys on Plasma (`Meta+-` / `Meta+=`) |
+| w5 | Previous / next workspace; take the window along | `Super+Ctrl+Left` / `Right`; with Shift | same | 2026-11-16 |
 
 ## Not touched by the owner: the page proposal applies
 
