@@ -1,12 +1,18 @@
 // `bxrig power ...`: laptop and power (Omarchy's power profile, lid and battery handling; CachyOS itself ships no laptop power tooling).
-//   power status [--json]                          battery, profile, lid action, services
+//   power status [--json]                          battery (charge, state, time left, watts, health, cycles, charge limit), profile, lid actions, services
 //   power profile [performance|balanced|saver]     show or set (power-profiles-daemon, `powerprofilesctl`)
-//   power lid suspend|lock|ignore [--yes]          what closing the lid does (a logind drop-in; needs sudo, so it asks for --yes)
+//   power lid [battery|ac] suspend|hibernate|lock|ignore [--yes]
+//                                                  what closing the lid does: on battery, on AC power, or (no scope) both. A logind drop-in; needs sudo, so it asks for --yes
+//   power hibernate [--yes]                        save memory to disk and power off. Exit 4 unless swap, resume and the kernel are ready (the same checks as doctor)
+//   power charge-limit [PERCENT|off|status] [--yes]  stop charging at PERCENT (40 to 100) through the kernel attribute charge_control_end_threshold, kept across
+//                                                  reboots by a small systemd unit; exit 4 on a laptop whose battery has no such attribute
 //   power setup [--yes] [--force]                  install and enable power-profiles-daemon and upower; on a machine without a battery it does nothing unless --force
-//   power doctor [--json]                          checks: battery, daemons, lid setting, swap for hibernation, zram
-// Battery and brightness display belong to Noctalia and Plasma (powerdevil); this adds the profile, the lid and the checks.
-// Test overrides: BXRIG_POWER_DIR (default /sys/class/power_supply), BXRIG_LOGIND_DIR (default /etc/systemd/logind.conf.d), BXRIG_MEMINFO.
-// Exit: 0 ok, 2 bad usage or a plan without --yes, 4 precondition (no battery, no tool), 6 a command failed.
+//   power doctor [--json]                          checks: battery, daemons, lid setting, swap, resume and kernel for hibernation, zram
+// Battery and brightness display belong to Noctalia and Plasma (powerdevil); this adds the profile, the lid, the limit and the checks.
+// Test overrides: BXRIG_POWER_DIR (default /sys/class/power_supply), BXRIG_LOGIND_DIR (default /etc/systemd/logind.conf.d), BXRIG_SYSTEMD_DIR (the charge limit unit),
+// BXRIG_MEMINFO, BXRIG_SWAPS (default /proc/swaps), BXRIG_CMDLINE (default /proc/cmdline), BXRIG_SYS_POWER (default /sys/power), BXRIG_LOCKDOWN.
+// Exit: 0 ok, 2 bad usage or a plan without --yes, 4 precondition (no battery, no tool, hibernation or a charge limit not available), 6 a command failed.
+// Not verified on real hardware: the charge limit (drivers round the value; some reset it after suspend), hibernation end to end (initramfs resume hook).
 class Power {
 	function init( cli, runner = "" ) {
 		variables.environ = new bxrig.util.Env();
@@ -21,17 +27,79 @@ class Power {
 	// ---- facts ----
 	function logindDir() { return variables.environ.named( "logindDir", "/etc/systemd/logind.conf.d" ); }
 	function lidFile() { return logindDir() & "/50-bxrig-lid.conf"; }
+	function powerDir() { return variables.environ.named( "powerDir", "/sys/class/power_supply" ); }
+	function unitFile() { return variables.environ.named( "systemdDir", "/etc/systemd/system" ) & "/bxrig-charge-limit.service"; }
+	function unitName() { return "bxrig-charge-limit.service"; }
 
-	// [ { name, percent, status } ] for each BAT* under the power supply directory.
+	// A number from a sysfs file: -1 when the file is missing or does not hold a number.
+	function num( path ) {
+		if ( !fileExists( arguments.path ) ) return -1;
+		var t = trim( fileRead( arguments.path ) );
+		return reFind( "^-?[0-9]+([.][0-9]+)?$", t ) ? val( t ) : -1;
+	}
+
+	function text( path ) {
+		return fileExists( arguments.path ) ? trim( fileRead( arguments.path ) ) : "";
+	}
+
+	// The kernel's charge threshold files (charge_control_end_threshold of each BAT*): [] when the laptop has none.
+	function chargeFiles() {
+		var out = [];
+		var dir = powerDir();
+		if ( !directoryExists( dir ) ) return out;
+		for ( var d in directoryList( dir, false, "name" ) ) {
+			if ( reFind( "^BAT", d ) && fileExists( dir & "/" & d & "/charge_control_end_threshold" ) ) out.append( dir & "/" & d & "/charge_control_end_threshold" );
+		}
+		return out;
+	}
+
+	// True when a charger is plugged in: a Mains or USB-C power supply that is online.
+	function onAc() {
+		var dir = powerDir();
+		if ( !directoryExists( dir ) ) return false;
+		for ( var d in directoryList( dir, false, "name" ) ) {
+			if ( reFind( "^BAT", d ) ) continue;
+			var t = text( dir & "/" & d & "/type" );
+			if ( ( t == "Mains" || left( t, 4 ) == "USB_" ) && num( dir & "/" & d & "/online" ) == 1 ) return true;
+		}
+		return false;
+	}
+
+	// [ { name, percent, status, state, watts, time_remaining_minutes, health_percent, cycles, charge_limit, charge_limit_supported } ] for each BAT* under the
+	// power supply directory. Numbers the battery does not report are -1. state is the status in one word: charging, discharging, full, not_charging, unknown.
+	// Energy files (energy_now, power_now in micro-Wh and micro-W) or charge files (charge_now, current_now in micro-Ah and micro-A) are both read.
 	function batteries() {
 		var out = [];
-		var dir = variables.environ.named( "powerDir", "/sys/class/power_supply" );
+		var dir = powerDir();
 		if ( !directoryExists( dir ) ) return out;
 		for ( var d in directoryList( dir, false, "name" ) ) {
 			if ( !reFind( "^BAT", d ) ) continue;
-			var b = { name: d, percent: -1, status: "" };
-			if ( fileExists( dir & "/" & d & "/capacity" ) ) b.percent = int( val( trim( fileRead( dir & "/" & d & "/capacity" ) ) ) );
-			if ( fileExists( dir & "/" & d & "/status" ) ) b.status = trim( fileRead( dir & "/" & d & "/status" ) );
+			var p = dir & "/" & d & "/";
+			var b = { name: d, percent: -1, status: "", state: "unknown", watts: -1, time_remaining_minutes: -1, health_percent: -1, cycles: -1, charge_limit: -1, charge_limit_supported: false };
+			if ( fileExists( p & "capacity" ) ) b.percent = int( val( trim( fileRead( p & "capacity" ) ) ) );
+			b.status = text( p & "status" );
+			var st = lCase( replace( b.status, " ", "_", "all" ) );
+			if ( arrayFind( [ "charging", "discharging", "full", "not_charging" ], st ) ) b.state = st;
+			var useEnergy = fileExists( p & "energy_now" );
+			var now = num( p & ( useEnergy ? "energy_now" : "charge_now" ) );
+			var full = num( p & ( useEnergy ? "energy_full" : "charge_full" ) );
+			var design = num( p & ( useEnergy ? "energy_full_design" : "charge_full_design" ) );
+			var rate = num( p & ( useEnergy ? "power_now" : "current_now" ) );
+			var uw = num( p & "power_now" );
+			if ( uw < 0 ) {
+				var ua = num( p & "current_now" );
+				var uv = num( p & "voltage_now" );
+				if ( ua >= 0 && uv >= 0 ) uw = ua * uv / 1000000;
+			}
+			if ( uw >= 0 ) b.watts = round( uw / 100000 ) / 10;
+			rate = abs( rate );
+			if ( rate > 0 && now >= 0 ) {
+				if ( b.state == "discharging" ) b.time_remaining_minutes = round( now / rate * 60 );
+				else if ( b.state == "charging" && full >= now ) b.time_remaining_minutes = round( ( full - now ) / rate * 60 );
+			}
+			if ( full > 0 && design > 0 ) b.health_percent = round( full * 100 / design );
+			b.cycles = num( p & "cycle_count" );
+			if ( fileExists( p & "charge_control_end_threshold" ) ) { b.charge_limit_supported = true; b.charge_limit = int( num( p & "charge_control_end_threshold" ) ); }
 			out.append( b );
 		}
 		return out;
@@ -45,13 +113,40 @@ class Power {
 		return r.exitCode == 0 ? trim( r.output ) : "";
 	}
 
-	function lidAction() {
+	function lidActions() { return [ "suspend", "hibernate", "lock", "ignore" ]; }
+
+	// The value of a key in the lid drop-in, lower case; "" when there is no file or no such line.
+	function lidValue( key ) {
+		if ( !fileExists( lidFile() ) ) return "";
+		for ( var line in listToArray( fileRead( lidFile() ), chr( 10 ) ) ) {
+			var t = trim( line );
+			if ( reFindNoCase( "^" & arguments.key & "=", t ) ) return lCase( trim( listRest( t, "=" ) ) );
+		}
+		return "";
+	}
+
+	// What closing the lid does on battery and on AC power: suspend, hibernate, lock, ignore, or "default" (no drop-in: the systemd default, suspend),
+	// "custom" (a value this command does not write). On AC the drop-in's own AC line wins; without one logind uses the battery value.
+	function lidBattery() {
 		if ( !fileExists( lidFile() ) ) return "default";
-		var t = fileRead( lidFile() );
-		if ( findNoCase( "HandleLidSwitch=lock", t ) ) return "lock";
-		if ( findNoCase( "HandleLidSwitch=ignore", t ) ) return "ignore";
-		if ( findNoCase( "HandleLidSwitch=suspend", t ) ) return "suspend";
-		return "custom";
+		var v = lidValue( "HandleLidSwitch" );
+		return !len( v ) ? "default" : ( arrayFind( lidActions(), v ) ? v : "custom" );
+	}
+
+	function lidAc() {
+		if ( !fileExists( lidFile() ) ) return "default";
+		var v = lidValue( "HandleLidSwitchExternalPower" );
+		if ( !len( v ) ) return lidBattery();
+		return arrayFind( lidActions(), v ) ? v : "custom";
+	}
+
+	// One word for both: the action when battery and AC agree, "mixed" when they differ, "default" without a drop-in, "custom" for an unknown value.
+	function lidAction() {
+		var b = lidBattery();
+		var a = lidAc();
+		if ( b == "custom" || a == "custom" ) return "custom";
+		if ( b == "default" && a == "default" ) return "default";
+		return b == a ? b : "mixed";
 	}
 
 	function active( unit ) { return variables.systemd.active( arguments.unit ); }
@@ -66,15 +161,94 @@ class Power {
 		return 0;
 	}
 
+	// [ { name, type, kb } ] of the swap areas that are not zram (/proc/swaps). Hibernation needs swap on disk: zram lives in RAM and does not survive power off.
+	// Without /proc/swaps (a test or a container) the total from meminfo stands in, as one area of type unknown.
+	function diskSwaps() {
+		var f = variables.environ.named( "swaps", "/proc/swaps" );
+		var out = [];
+		if ( !fileExists( f ) ) {
+			var total = meminfo( "SwapTotal" );
+			if ( total > 0 ) out.append( { name: "swap", type: "unknown", kb: total } );
+			return out;
+		}
+		var first = true;
+		for ( var line in listToArray( fileRead( f ), chr( 10 ) ) ) {
+			if ( first ) { first = false; continue; }
+			var w = listToArray( reReplace( trim( line ), "[ \t]+", " ", "all" ), " " );
+			if ( w.len() < 3 || reFind( "zram", w[ 1 ] ) ) continue;
+			out.append( { name: w[ 1 ], type: w[ 2 ], kb: int( val( w[ 3 ] ) ) } );
+		}
+		return out;
+	}
+
+	function diskSwapKb() {
+		var kb = 0;
+		for ( var a in diskSwaps() ) kb += a.kb;
+		return kb;
+	}
+
+	// The checks that say whether `power hibernate` can work: [ { id, ok, note } ] with the ids swap, resume, kernel.
+	//   swap    disk swap at least the size of RAM (zram does not count)
+	//   resume  the kernel command line names the swap to resume from (resume=), and resume_offset= when the swap is a file
+	//   kernel  the kernel offers the disk state (/sys/power/state) and is not locked down (secure boot lockdown blocks hibernation)
+	// Not checked (it cannot be read reliably): that the initramfs has the resume hook (mkinitcpio) or the systemd one.
+	function hibernateChecks() {
+		var checks = [];
+		var ram = meminfo( "MemTotal" );
+		var swap = diskSwapKb();
+		var swapOk = swap >= ram && ram > 0;
+		checks.append( { id: "swap", ok: swapOk, note: swapOk ? "disk swap is " & round( swap / 1048576 ) & " GB, enough for " & round( ram / 1048576 ) & " GB of RAM"
+			: "hibernation needs disk swap at least the size of RAM (RAM " & round( ram / 1048576 ) & " GB, disk swap " & round( swap / 1048576 ) & " GB; zram does not count)" } );
+		var cmd = "";
+		var cf = variables.environ.named( "cmdline", "/proc/cmdline" );
+		if ( fileExists( cf ) ) cmd = fileRead( cf );
+		var hasResume = reFind( "(^|[ ])resume=", cmd ) > 0;
+		var needOffset = false;
+		for ( var a in diskSwaps() ) if ( a.type == "file" ) needOffset = true;
+		var offsetOk = !needOffset || reFind( "(^|[ ])resume_offset=", cmd ) > 0;
+		var rnote = "the kernel command line has resume=";
+		if ( !hasResume ) rnote = "the kernel command line has no resume=SWAP (the boot entry must name the swap partition or file)";
+		else if ( !offsetOk ) rnote = "the swap is a file, so the kernel command line also needs resume_offset=";
+		checks.append( { id: "resume", ok: hasResume && offsetOk, note: rnote } );
+		var sp = variables.environ.named( "sysPower", "/sys/power" );
+		var states = fileExists( sp & "/state" ) ? fileRead( sp & "/state" ) : "";
+		var lf = variables.environ.named( "lockdown", "/sys/kernel/security/lockdown" );
+		var locked = fileExists( lf ) && reFind( "\[(integrity|confidentiality)\]", fileRead( lf ) ) > 0;
+		var disk = reFind( "(^|[ ])disk([ ]|$)", trim( states ) ) > 0;
+		var knote = "the kernel can hibernate (state disk)";
+		if ( !disk ) knote = "the kernel does not offer the disk state (/sys/power/state: " & ( len( trim( states ) ) ? trim( states ) : "unreadable" ) & ")";
+		else if ( locked ) knote = "kernel lockdown (secure boot) blocks hibernation";
+		checks.append( { id: "kernel", ok: disk && !locked, note: knote } );
+		return checks;
+	}
+
 	// ---- commands ----
+	function minutesText( m ) {
+		if ( arguments.m < 0 ) return "";
+		return arguments.m >= 60 ? int( arguments.m / 60 ) & " h " & ( arguments.m mod 60 ) & " min" : arguments.m & " min";
+	}
+
 	function statusCmd( asJson ) {
 		var bats = batteries();
-		var data = { battery: bats, profile: currentProfile(), lid: lidAction(), power_profiles_daemon: active( "power-profiles-daemon.service" ), upower: active( "upower.service" ) };
+		var limitOn = chargeFiles().len() > 0;
+		var data = { battery: bats, on_ac: onAc(), profile: currentProfile(), lid: lidAction(), lid_battery: lidBattery(), lid_ac: lidAc(), charge_limit_supported: limitOn,
+			power_profiles_daemon: active( "power-profiles-daemon.service" ), upower: active( "upower.service" ) };
 		var lines = [];
-		if ( bats.len() ) for ( var b in bats ) lines.append( "battery " & b.name & ": " & b.percent & "% " & lCase( b.status ) );
+		if ( bats.len() ) for ( var b in bats ) {
+			var l = "battery " & b.name & ": " & b.percent & "% " & lCase( b.status );
+			if ( b.time_remaining_minutes >= 0 ) l &= ", " & minutesText( b.time_remaining_minutes ) & ( b.state == "charging" ? " to full" : " left" );
+			if ( b.watts >= 0 ) l &= ", " & b.watts & " W";
+			lines.append( l );
+			var more = [];
+			if ( b.health_percent >= 0 ) more.append( "health " & b.health_percent & "%" );
+			if ( b.cycles >= 0 ) more.append( b.cycles & " cycles" );
+			if ( b.charge_limit_supported ) more.append( "charge limit " & b.charge_limit & "%" );
+			if ( more.len() ) lines.append( "  " & more.toList( ", " ) );
+		}
 		else lines.append( "battery: none (a desktop)" );
+		if ( bats.len() ) lines.append( "power: " & ( data.on_ac ? "AC connected" : "on battery" ) );
 		lines.append( "profile: " & ( len( data.profile ) ? data.profile : "unknown (power-profiles-daemon not available)" ) );
-		lines.append( "lid: " & data.lid );
+		lines.append( "lid: " & data.lid & ( data.lid == "mixed" ? " (on battery " & data.lid_battery & ", on AC " & data.lid_ac & ")" : "" ) );
 		lines.append( "services: power-profiles-daemon " & ( data.power_profiles_daemon ? "on" : "off" ) & ", upower " & ( data.upower ? "on" : "off" ) );
 		return variables.out.say( "ok", data, arguments.asJson, lines );
 	}
@@ -92,27 +266,123 @@ class Power {
 		return variables.out.say( "ok", { profile: want }, arguments.asJson, [ "profile: " & want ] );
 	}
 
-	// The logind drop-in for a lid action.
-	function lidConf( action ) {
-		var a = arguments.action;
-		return "## Written by `bxrig power lid " & a & "`. Remove this file to go back to the systemd defaults." & chr( 10 )
+	// The logind drop-in for the lid actions on battery and on AC power. Docked (an external monitor with the dock) always ignores the lid.
+	function lidConf( battery, ac ) {
+		return "## Written by `bxrig power lid`. Remove this file to go back to the systemd defaults." & chr( 10 )
 		& "[Login]" & chr( 10 )
-		& "HandleLidSwitch=" & a & chr( 10 ) & "HandleLidSwitchExternalPower=" & a & chr( 10 ) & "HandleLidSwitchDocked=ignore" & chr( 10 );
+		& "HandleLidSwitch=" & arguments.battery & chr( 10 ) & "HandleLidSwitchExternalPower=" & arguments.ac & chr( 10 ) & "HandleLidSwitchDocked=ignore" & chr( 10 );
 	}
 
+	// power lid ACTION (both), power lid battery ACTION, power lid ac ACTION. The side that is not named keeps its current value (the systemd default, suspend,
+	// when there is none), and both lines are always written so the AC line does not silently follow the battery one.
 	function lidCmd( args, yes, dry, asJson ) {
-		var want = arguments.args.len() == 1 ? arguments.args[ 1 ] : "";
-		if ( !arrayFind( [ "suspend", "lock", "ignore" ], want ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "power lid" ), arguments.asJson );
+		var scope = "both";
+		var want = "";
+		if ( arguments.args.len() == 1 ) want = arguments.args[ 1 ];
+		else if ( arguments.args.len() == 2 && arrayFind( [ "battery", "ac" ], arguments.args[ 1 ] ) ) { scope = arguments.args[ 1 ]; want = arguments.args[ 2 ]; }
+		if ( !arrayFind( lidActions(), want ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "power lid" ), arguments.asJson );
+		var curB = arrayFind( lidActions(), lidBattery() ) ? lidBattery() : "suspend";
+		var curA = arrayFind( lidActions(), lidAc() ) ? lidAc() : "suspend";
+		var nb = scope == "ac" ? curB : want;
+		var na = scope == "battery" ? curA : want;
 		var tmp = new bxrig.util.SystemFile().tempPath( "lid" );
 		var cmds = [ new bxrig.util.SystemFile().installArgv( tmp, lidFile() ) ];
-		var plan = [ "  write " & lidFile(), "  sudo install ...", "  note: logind reads it on the next login or reboot (it is not restarted here, that would end your session)" ];
-		var data = { action: want, file: lidFile(), commands: cmds.map( function( c ) { return c.toList( " " ); } ) };
-		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "closing the lid will " & want, data, arguments.asJson, arguments.dry, plan );
-		fileWrite( tmp, lidConf( want ) );
+		var title = scope == "both" ? "closing the lid will " & want : "closing the lid " & ( scope == "ac" ? "on AC power" : "on battery" ) & " will " & want;
+		var plan = [ "  write " & lidFile() & ": on battery " & nb & ", on AC power " & na, "  sudo install ...", "  note: logind reads it on the next login or reboot (it is not restarted here, that would end your session)" ];
+		if ( want == "hibernate" ) {
+			var bad = hibernateChecks().filter( function( c ) { return !c.ok; } );
+			if ( bad.len() ) plan.append( "  warning: hibernation is not ready (" & bad[ 1 ].note & "); see bxrig power hibernate --dry-run" );
+		}
+		var data = { action: want, scope: scope, battery: nb, ac: na, file: lidFile(), commands: cmds.map( function( c ) { return c.toList( " " ); } ) };
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( title, data, arguments.asJson, arguments.dry, plan );
+		fileWrite( tmp, lidConf( nb, na ) );
 		var r = variables.proc.exec( cmds[ 1 ], 30 );
 		try { fileDelete( tmp ); } catch ( any e ) {}
 		if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
-		return variables.out.say( "ok", data, arguments.asJson, [ "lid: " & want, "written: " & lidFile(), "Applies from the next login or reboot." ] );
+		return variables.out.say( "ok", data, arguments.asJson, [ "lid: on battery " & nb & ", on AC power " & na, "written: " & lidFile(), "Applies from the next login or reboot." ] );
+	}
+
+	// power hibernate: the checks first (exit 4 when not ready, with the reasons), then a plan (exit 2) until --yes, then systemctl hibernate (queued with
+	// --no-block: the command would otherwise wait until the machine wakes up again).
+	function hibernateCmd( yes, dry, asJson ) {
+		var checks = hibernateChecks();
+		var bad = checks.filter( function( c ) { return !c.ok; } );
+		if ( bad.len() ) {
+			var lines = [ "error: hibernation is not ready" ];
+			for ( var c in checks ) lines.append( ( c.ok ? "  ok    " : "  not ready  " ) & c.id & ": " & c.note );
+			lines.append( "Fix the items marked not ready (bxrig power doctor repeats this), then try again. Suspend works without them: bxrig system suspend." );
+			return variables.out.say( "precondition", { error: "hibernation is not ready: " & bad[ 1 ].note, ready: false, checks: checks }, arguments.asJson, lines );
+		}
+		var argv = variables.systemd.argv( "hibernate", [], false, false, [ "--no-block" ] );
+		var data = { ready: true, checks: checks, command: argv.toList( " " ) };
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "hibernate: save the session to disk and power off", data, arguments.asJson, arguments.dry, [ "  " & argv.toList( " " ), "  note: open programs and unsaved work are saved to swap and come back when you power on" ] );
+		var r = variables.proc.exec( argv, 30 );
+		if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+		return variables.out.say( "ok", data, arguments.asJson, [ "hibernating" ] );
+	}
+
+	// The charge limit systemd unit: runs at boot and after every suspend or hibernate (some firmware resets the threshold on resume).
+	function chargeUnit( percent ) {
+		var targets = "suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target";
+		return new bxrig.util.SystemdUnit().render( [
+				{ name: "Unit", lines: [ "Description=Stop charging the battery at " & arguments.percent & " percent", "After=" & targets ] },
+				{ name: "Service", lines: [ "Type=oneshot", "ExecStart=/bin/sh -c 'for f in /sys/class/power_supply/BAT*/charge_control_end_threshold; do [ -w ""$$f"" ] && echo " & arguments.percent & " > ""$$f""; done; exit 0'" ] },
+				{ name: "Install", lines: [ "WantedBy=multi-user.target " & targets ] }
+			], "Written by `bxrig power charge-limit " & arguments.percent & "`. Remove with `bxrig power charge-limit off`." );
+	}
+
+	// The percent a charge limit unit was written with (0 when there is none).
+	function persistedLimit() {
+		if ( !fileExists( unitFile() ) ) return 0;
+		var m = reFind( "echo ([0-9]+) >", fileRead( unitFile() ), 1, true );
+		return m.pos[ 1 ] > 0 ? int( val( mid( fileRead( unitFile() ), m.pos[ 2 ], m.len[ 2 ] ) ) ) : 0;
+	}
+
+	function chargeLimitCmd( args, yes, dry, asJson ) {
+		if ( arguments.args.len() > 1 ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "power charge-limit" ), arguments.asJson );
+		var v = arguments.args.len() ? arguments.args[ 1 ] : "status";
+		var files = chargeFiles();
+		var bats = batteries().filter( function( b ) { return b.charge_limit_supported; } );
+		var cur = bats.len() ? bats[ 1 ].charge_limit : -1;
+		if ( v == "status" ) {
+			var data = { supported: files.len() > 0, limit: cur, persisted: persistedLimit() > 0, persisted_percent: persistedLimit(), unit: unitFile() };
+			var lines = files.len() ? [ "charge limit: " & cur & "%" & ( data.persisted ? " (kept across reboots by " & unitName() & ")" : " (not kept across reboots: bxrig power charge-limit PERCENT --yes)" ) ]
+				: [ "charge limit: not available (this battery has no charge_control_end_threshold)" ];
+			return variables.out.say( "ok", data, arguments.asJson, lines );
+		}
+		var want = 0;
+		if ( v == "off" ) want = 100;
+		else if ( reFind( "^[0-9]+$", v ) ) want = int( val( v ) );
+		if ( want < 40 || want > 100 ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "power charge-limit" ), arguments.asJson );
+		if ( !files.len() ) return variables.out.fail( "precondition", "this laptop has no charge limit: no battery under " & powerDir() & " has charge_control_end_threshold (the kernel driver does not offer it)", arguments.asJson );
+		var sysf = new bxrig.util.SystemFile();
+		var cmds = [];
+		var tmp = sysf.tempPath( "charge" );
+		if ( want < 100 ) {
+			cmds.append( sysf.installArgv( tmp, unitFile() ) );
+			cmds.append( variables.systemd.reloadArgv( false, true ) );
+			cmds.append( variables.systemd.enableArgv( unitName(), false, true ) );
+			// enable --now runs the unit, which writes the value; a laptop that is already on the unit takes the new value the same way
+			cmds.append( [ "sudo", "systemctl", "restart", unitName() ] );
+		} else {
+			if ( fileExists( unitFile() ) ) cmds.append( variables.systemd.disableArgv( unitName(), false, true ) );
+			for ( var f in files ) cmds.append( [ "sudo", "sh", "-c", 'echo "$1" > "$2"', "_", want, f ] );
+			if ( fileExists( unitFile() ) ) { cmds.append( [ "sudo", "rm", "-f", unitFile() ] ); cmds.append( variables.systemd.reloadArgv( false, true ) ); }
+		}
+		var d = { percent: want, files: files, unit: unitFile(), persisted: want < 100 };
+		var title = want < 100 ? "stop charging at " & want & " percent and keep it across reboots" : "charge to 100 percent again and remove the limit";
+		var shown = want < 100 ? [ "write " & unitFile() & " (runs at boot and after suspend)", "the kernel attribute: " & files.toList( ", " ) ] : [ "the kernel attribute: " & files.toList( ", " ) ];
+		if ( !arguments.yes || arguments.dry ) {
+			d.commands = cmds.map( function( c ) { return c.toList( " " ); } );
+			var plan = shown.map( function( l ) { return "  " & l; } );
+			for ( var c in cmds ) plan.append( "  " & c.toList( " " ) );
+			plan.append( "  note: drivers round the value to what the hardware supports; read it back with bxrig power charge-limit status" );
+			return variables.out.plan( title, d, arguments.asJson, arguments.dry, plan );
+		}
+		if ( want < 100 ) fileWrite( tmp, chargeUnit( want ) );
+		var code = new bxrig.util.Mutation( variables.out, variables.proc ).run( title, cmds, true, false, arguments.asJson, d, shown, 60 );
+		sysf.cleanup( tmp );
+		return code;
 	}
 
 	function setupCmd( yes, dry, force, asJson ) {
@@ -135,13 +405,18 @@ class Power {
 		if ( bats.len() ) {
 			add( "power-profiles-daemon", variables.proc.has( "powerprofilesctl" ) && active( "power-profiles-daemon.service" ), "power profiles (bxrig power setup installs and enables it)" );
 			add( "upower", active( "upower.service" ), "battery information for the desktop (bxrig power setup)" );
-			add( "lid", lidAction() != "custom", "closing the lid: " & lidAction() & " (bxrig power lid suspend|lock|ignore)" );
+			add( "lid", lidAction() != "custom", "closing the lid: " & lidAction() & " (bxrig power lid [battery|ac] suspend|hibernate|lock|ignore)" );
 		}
 		var ram = meminfo( "MemTotal" );
-		var swap = meminfo( "SwapTotal" );
 		var zramOn = variables.proc.exec( [ "sh", "-c", "ls /dev/zram* >/dev/null 2>&1" ], 10 ).exitCode == 0;
 		add( "zram", true, zramOn ? "zram swap is on (CachyOS default)" : "no zram swap" );
-		if ( bats.len() ) add( "hibernation", swap >= ram && ram > 0, swap >= ram && ram > 0 ? "disk swap is " & round( swap / 1048576 ) & " GB, enough for " & round( ram / 1048576 ) & " GB of RAM" : "hibernation needs disk swap at least the size of RAM (RAM " & round( ram / 1048576 ) & " GB, swap " & round( swap / 1048576 ) & " GB); suspend works without it" );
+		if ( bats.len() ) {
+			var hc = hibernateChecks();
+			add( "hibernation", hc[ 1 ].ok, hc[ 1 ].ok ? hc[ 1 ].note : hc[ 1 ].note & "; suspend works without it" );
+			add( "resume", hc[ 2 ].ok, hc[ 2 ].note );
+			add( "hibernate-kernel", hc[ 3 ].ok, hc[ 3 ].note );
+			add( "charge-limit", true, chargeFiles().len() ? "the battery supports a charge limit (bxrig power charge-limit 80 --yes)" : "this battery has no charge limit (no charge_control_end_threshold)" );
+		}
 		var bad = checks.filter( function( c ) { return !c.ok; } );
 		var lines = checks.map( function( c ) { return ( c.ok ? "ok    " : "warn  " ) & c.id & ": " & c.note; } );
 		return variables.out.say( "ok", { checks: checks, problems: bad.len() }, arguments.asJson, lines );
@@ -154,6 +429,8 @@ class Power {
 		if ( verb == "" || verb == "status" ) return statusCmd( arguments.asJson );
 		if ( verb == "profile" ) return profileCmd( rest, arguments.dry, arguments.asJson );
 		if ( verb == "lid" ) return lidCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
+		if ( verb == "hibernate" && !rest.len() ) return hibernateCmd( arguments.yes, arguments.dry, arguments.asJson );
+		if ( verb == "charge-limit" ) return chargeLimitCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
 		if ( verb == "setup" ) return setupCmd( arguments.yes, arguments.dry, arguments.force, arguments.asJson );
 		if ( verb == "doctor" ) return doctorCmd( arguments.asJson );
 		return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "power" ), arguments.asJson );

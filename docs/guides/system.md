@@ -27,14 +27,21 @@ On Hyprland the settings are one generated file, `~/.config/bxrig/theme/monitors
 CachyOS does not ship laptop power tools, so BxRig adds them.
 
 ```bash
-bxrig power status
+bxrig power status                    # charge, state, time left, watts, health, cycles, profile, lid actions
 bxrig power setup --yes               # power-profiles-daemon and upower; nothing happens on a desktop
 bxrig power profile saver             # performance, balanced, saver
-bxrig power lid lock --yes            # suspend, lock or ignore when the lid closes
-bxrig power doctor                    # daemons, the lid, zram, swap for hibernation
+bxrig power lid lock --yes            # suspend, hibernate, lock or ignore when the lid closes (battery and AC)
+bxrig power lid battery hibernate --yes   # only on battery
+bxrig power lid ac lock --yes             # only on AC power
+bxrig power hibernate --yes           # save to disk and power off (exit 4 until swap and resume are ready)
+bxrig power charge-limit 80 --yes     # stop charging at 80 percent (laptops whose battery supports it)
+bxrig power charge-limit off --yes    # back to a full charge
+bxrig power doctor                    # daemons, the lid, zram, swap, resume and the kernel for hibernation, the charge limit
 ```
 
-The lid setting is a logind drop-in and applies from the next login. Hibernation is not configured for you; `doctor` tells you whether your swap is big enough.
+The lid setting is a logind drop-in and applies from the next login. Hibernation is not configured for you: `power hibernate` and `doctor` tell you what is missing (disk swap at least the size of RAM, zram does not count; `resume=` on the kernel command line, with `resume_offset=` for a swap file; a kernel without secure boot lockdown). The charge limit uses the kernel attribute `charge_control_end_threshold`, kept across reboots and suspends by a small systemd unit; many laptops (ThinkPad, ASUS, Framework and others) have it, some do not, and then the command exits 4. The charge limit and hibernation are not verified on real hardware yet.
+
+The bar's battery widget opens a Power panel with these settings (see Quick settings and Power in the appearance guide).
 
 ## Time zone and travel
 
