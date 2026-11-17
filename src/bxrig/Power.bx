@@ -363,7 +363,7 @@ class Power {
 			cmds.append( variables.systemd.reloadArgv( false, true ) );
 			cmds.append( variables.systemd.enableArgv( unitName(), false, true ) );
 			// enable --now runs the unit, which writes the value; a laptop that is already on the unit takes the new value the same way
-			cmds.append( [ "sudo", "systemctl", "restart", unitName() ] );
+			cmds.append( variables.systemd.argv( "restart", [ unitName() ], false, true ) );
 		} else {
 			if ( fileExists( unitFile() ) ) cmds.append( variables.systemd.disableArgv( unitName(), false, true ) );
 			for ( var f in files ) cmds.append( [ "sudo", "sh", "-c", 'echo "$1" > "$2"', "_", want, f ] );

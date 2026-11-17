@@ -1,0 +1,37 @@
+# BxRig Power: the battery and power panel. A panel only, no bar widget: the built-in battery widget opens it on a left click
+# (`[widget.battery.actions] left = "panel-toggle bxrig/power:panel"`, written by `bxrig appearance bar layout` on a laptop); a right click
+# keeps opening the control center Power tab. Battery, power profile, lid actions and charge limit are one panel.
+# Shows: charge, state, time remaining, watts, health, cycles; the power profile (saver, balanced, performance); what closing the lid does on
+# battery and on AC; Suspend and Hibernate (each asks first); the charge limit slider only when the battery supports it.
+# Data: `bxrig power status --json` on open and every 15 s while open (every 3 s for a minute after a change made in a terminal).
+# Actions: `power profile`, `power lid battery|ac ACTION --yes` and `power charge-limit N --yes` (these need sudo, so they run in a terminal where
+# the password is asked), `system suspend`, `power hibernate --yes`. Open it from a keybind with:
+#   noctalia msg panel-toggle bxrig/power:panel
+
+id = "bxrig/power"
+name = "Power (BxRig)"
+version = "1.0.0"
+plugin_api = 43
+author = "bxrig"
+license = "MIT"
+dependencies = ["bxrig"]
+tags = ["power", "battery", "bxrig"]
+icon = "battery-charging-2"
+description = "Battery, power profile, lid actions, hibernate and charge limit in one panel, driven by bxrig."
+
+[[setting]]
+key = "command"
+type = "string"
+label_key = "settings.command.label"
+description_key = "settings.command.description"
+default = "bxrig"
+
+[[panel]]
+id = "panel"
+entry = "panel.luau"
+width = 380
+height = "content"
+max_height = 760
+placement = "attached"
+position = "auto"
+open_near_click = true

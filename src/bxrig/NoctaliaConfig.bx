@@ -76,8 +76,9 @@ class NoctaliaConfig {
 
 	// The three bar sections of a layout, as widget names. Control center is always last and quick settings right before it.
 	// Only widgets that exist are listed. Planned (they join the layouts when they are built, see the layout v3 mock-up): bxrig-system
-	// (updates, backups), bxrig-dev (databases, containers, VMs) and bxrig-vpn and a power panel for the battery. Quick settings is the
-	// bxrig-quick plugin (switches and pickers, the theme switcher as its second page).
+	// (updates, backups) and bxrig-vpn. Quick settings is the
+	// bxrig-quick plugin (switches and pickers, the theme switcher as its second page). The battery is the built-in widget; its left click opens
+	// the bxrig/power panel (a plugin panel without a bar widget), see barLines.
 	function zones( layout, opts = {} ) {
 		var o = barOptions( "", arguments.opts );
 		var start = [ "bxrig-menu" ];
@@ -175,16 +176,22 @@ class NoctaliaConfig {
 			'type = "bxrig/dev:bar"',
 			'',
 			'[plugins]',
-			'enabled = ["bxrig/clock", "bxrig/agents", "bxrig/quick", "bxrig/dev"]',
+			'enabled = ["bxrig/clock", "bxrig/agents", "bxrig/quick", "bxrig/dev", "bxrig/power"]',
 			''
 		];
 		if ( o.battery ) {
-			out.append( '# Battery (written only on a laptop): the charge as a percentage next to the icon.' );
+			out.append( '# Battery (written only on a laptop): the charge as a percentage next to the icon. Battery and power are one panel: a left click opens' );
+			out.append( '# the BxRig power panel (bxrig/power, no bar widget of its own), a right click the control center Power tab. The separate power_profile' );
+			out.append( '# widget is not on the bar.' );
 			out.append( '[widget.battery]' );
 			out.append( 'type = "battery"' );
 			out.append( 'display_mode = "glyph"' );
 			out.append( 'show_label = ' & ( o.percent ? "true" : "false" ) );
 			out.append( 'label_content = "percent"' );
+			out.append( '' );
+			out.append( '[widget.battery.actions]' );
+			out.append( 'left = "panel-toggle bxrig/power:panel"' );
+			out.append( 'right = "panel-toggle control-center power"' );
 			out.append( '' );
 		}
 		if ( o.dock ) {

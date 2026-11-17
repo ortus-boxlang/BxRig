@@ -51,7 +51,7 @@ function textOf( rel ) { return fileRead( root & "/" & rel ); }
 // The helper module is shared by every plugin and must stay identical.
 agentsHelper = textOf( "agents/bxrig.luau" );
 
-for ( p in [ "quick" ] ) {
+for ( p in [ "quick", "power" ] ) {
 	dir = root & "/" & p;
 	testkit.check( p & ": the folder exists", directoryExists( dir ) );
 	if ( !directoryExists( dir ) ) continue;
@@ -103,5 +103,21 @@ testkit.check( "quick panel: the night light button opens the control center Hom
 tp = textOf( "quick/themes.luau" );
 testkit.check( "quick themes page: Enter runs `theme set NAME --yes`, the list comes from `theme list --json`", find( '"theme", "set", name, "--yes"', tp ) > 0 && find( '"theme", "list", "--json"', tp ) > 0 );
 testkit.check( "quick bar widget is the sliders glyph in a palette role and opens bxrig/quick:panel", find( "adjustments-horizontal", textOf( "quick/bar.luau" ) ) > 0 && find( 'color = "tertiary"', textOf( "quick/bar.luau" ) ) > 0 && find( 'togglePanel("bxrig/quick:panel")', textOf( "quick/bar.luau" ) ) > 0 );
+
+// ---- power ----
+pm = textOf( "power/plugin.toml" );
+testkit.check( "power: a panel only (no bar widget), attached and near the click", find( "[[panel]]", pm ) > 0 && find( "[[widget]]", pm ) == 0 && find( 'placement = "attached"', pm ) > 0 && find( "open_near_click = true", pm ) > 0 && find( 'id = "panel"', pm ) > 0 );
+pp = textOf( "power/panel.luau" );
+for ( c in [ '"power", "status", "--json"', '"power", "profile", p.id', '"power", "lid", "battery", opt.id, "--yes"', '"power", "lid", "ac", opt.id, "--yes"', '"system", "suspend"', '"power", "hibernate", "--yes"', '"power", "hibernate", "--dry-run", "--json"', '"power", "charge-limit"' ] ) {
+	testkit.check( "power panel runs " & c, find( c, pp ) > 0 );
+}
+testkit.check( "power panel: refreshes every 15 s while open", find( "REFRESH_MS = 15000", pp ) > 0 && find( "setWantsSecondTicks(true)", pp ) > 0 && find( "function update()", pp ) > 0 );
+testkit.check( "power panel: Suspend and Hibernate ask first, the charge limit slider is shown only when supported", find( 'confirm = "suspend"', pp ) > 0 && find( 'confirm = "hibernate"', pp ) > 0 && find( "charge_limit_supported == true", pp ) > 0 && find( "ui.slider", pp ) > 0 );
+testkit.check( "power panel: the sudo commands run in a terminal, 'Open Power page' opens the control center Power tab", find( "runInTerminal", pp ) > 0 && find( '"panel-toggle", "control-center", "power"', pp ) > 0 && find( "Open Power page", pp ) > 0 );
+// the JSON the panel reads: power status in a fake sysfs is checked in power-test.sh; here the keys it uses must be the ones the command writes
+ps = fileRead( expandPath( "../src/bxrig/Power.bx" ) );
+for ( k in [ "time_remaining_minutes", "health_percent", "cycles", "charge_limit_supported", "charge_limit", "on_ac", "lid_battery", "lid_ac", "state", "watts" ] ) {
+	testkit.check( "power panel and Power.bx agree on the key " & k, find( k, pp ) > 0 && find( k, ps ) > 0 );
+}
 
 testkit.done( "all passed" );

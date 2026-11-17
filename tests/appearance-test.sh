@@ -133,6 +133,7 @@ nopower "$binary" appearance bar layout status --json | jq -e '.data.layout == "
 withpower "$binary" appearance bar layout dense --json | jq -e '.ok' >/dev/null || fail 'layout dense'
 [[ "$(tomlget bar.main.center)" == "bxrig-clock weather media" ]] && tomlget bar.main.end | grep -q 'brightness battery notifications bxrig-quick control-center' || fail 'dense bar on a laptop'
 [[ "$(tomlget widget.battery.show_label)" == True && "$(tomlget widget.battery.label_content)" == percent ]] || fail 'the laptop battery shows the percentage'
+[[ "$(tomlget widget.battery.actions.left)" == "panel-toggle bxrig/power:panel" && "$(tomlget widget.battery.actions.right)" == "panel-toggle control-center power" ]] || fail 'the laptop battery opens the power panel (right click: the control center Power tab)'
 nopower "$binary" appearance bar layout standard >/dev/null; ! grep -q '^\[widget.battery\]' "$cfgtoml" || fail 'a desktop has no battery widget'
 # the theme and wallpaper of the file survive a bar change
 sed -i 's/^mode = "dark"/mode = "light"/' "$cfgtoml"
