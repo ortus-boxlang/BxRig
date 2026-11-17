@@ -194,7 +194,7 @@ class Shortcuts {
 			row( "noctalia-settings", G.note, "Noctalia settings window", "Super+Ctrl+Comma", "Super+Ctrl+Comma", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "settings-toggle")' ),
 			row( "notify-latest", G.note, "Notifications: act on the newest (open it or press its button)", "Super+Alt+Comma", "Super+Alt+Comma", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "notification-invoke-latest")' ),
 			row( "notify-all", G.note, "Notifications: all of them, to read and act on", "Super+Shift+Comma", "Super+Shift+Comma", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle control-center notifications")' ),
-			row( "world-clock", G.note, "World clock", "Super+Alt+W", "Super+Alt+W", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle bxrig/world-clock:panel")' ),
+			row( "world-clock", G.note, "World clock", "Super+Alt+W", "Super+Alt+W", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle bxrig/clock:panel")' ),
 			row( "agents-panel", G.note, "Coding agents: launch one, see its limits", "Super+Alt+A", "Super+Alt+A", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle bxrig/agents:panel")' ),
 			row( "theme-switcher", G.note, "Theme switcher (search, preview, Enter applies)", "Super+Ctrl+Shift+Space", "Super+Ctrl+Shift+Space", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle bxrig/themes:panel")' ),
 			// windows

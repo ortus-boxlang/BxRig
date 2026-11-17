@@ -1,9 +1,10 @@
 --!nonstrict
--- BxRig World Clock panel: "It's HH:MM here in <city>", then one card per zone
+-- BxRig Clock panel: "It's HH:MM here in <city>", then one card per zone
 -- with its date, big time, abbreviation + offset from local, and a day bar
 -- whose sun/moon marker shows where in its day that zone is.
 --
--- Data: `bxrig time world --json`, fetched on open and every 30 s while open.
+-- Data: `bxrig time world --json`, fetched on open and every 30 s while open. The Calendar button opens the Noctalia calendar
+-- (`noctalia msg panel-toggle control-center calendar`, the same route as right click on the bar clock).
 -- Colors are palette roles only, so the panel follows the active theme.
 
 local bxrig = require("./bxrig.luau")
@@ -159,6 +160,14 @@ local function render()
 		end
 	end
 
+	table.insert(sections, ui.button({
+		text = "Open calendar",
+		glyph = "calendar",
+		variant = "secondary",
+		contentAlign = "center",
+		onClick = "onCalendar",
+	}))
+
 	panel.render(ui.column({ flexGrow = 1, gap = 10, padding = 10 }, sections))
 end
 
@@ -182,6 +191,11 @@ end
 
 function onRefresh()
 	fetch()
+end
+
+function onCalendar()
+	panel.close()
+	noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "control-center", "calendar" })
 end
 
 function onCloseClicked()

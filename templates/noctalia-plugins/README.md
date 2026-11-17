@@ -4,7 +4,7 @@ Three Noctalia v5 plugins (author id `bxrig`). Each folder is one plugin.
 
 | Folder | Plugin id | Entries | Data source |
 |---|---|---|---|
-| `world-clock/` | `bxrig/world-clock` | bar widget `bar`, panel `panel` | `bxrig time world --json`, every 30 s while open |
+| `clock/` | `bxrig/clock` | bar widget `bar` (the time as text), panel `panel` | text: `noctalia.formatTime` with the `format` setting; panel: `bxrig time world --json`, every 30 s while open |
 | `agents/` | `bxrig/agents` | bar widget `bar`, panel `panel` | `bxrig ai panel --json`, every 60 s while open; launch runs `bxrig ai launch <id>` |
 | `themes/` | `bxrig/themes` | bar widget `bar`, panel `panel` | `bxrig theme list --json` on open; Enter runs `bxrig theme set <name> --yes` |
 
@@ -16,11 +16,11 @@ Noctalia finds hand-placed plugins in `~/.local/share/noctalia/plugins/<folder>/
 
 ```sh
 mkdir -p ~/.local/share/noctalia/plugins
-for p in world-clock agents themes; do
+for p in clock agents themes; do
   rm -rf ~/.local/share/noctalia/plugins/$p
   cp -r templates/noctalia-plugins/$p ~/.local/share/noctalia/plugins/$p
 done
-noctalia msg plugins enable bxrig/world-clock
+noctalia msg plugins enable bxrig/clock
 noctalia msg plugins enable bxrig/agents
 noctalia msg plugins enable bxrig/themes
 noctalia msg plugins list | grep bxrig     # each shows "enabled"
@@ -30,7 +30,7 @@ Enabling adds the id to `enabled = [...]` under `[plugins]` in Noctalia's state-
 
 ```toml
 [plugins]
-enabled = ["bxrig/world-clock", "bxrig/agents", "bxrig/themes"]
+enabled = ["bxrig/clock", "bxrig/agents", "bxrig/themes"]
 ```
 
 To disable a plugin and keep its files: `noctalia msg plugins disable bxrig/<name>`.
@@ -40,7 +40,7 @@ Noctalia hot-reloads edited `.luau` files. If you replace a whole plugin folder 
 ## Open the panels (for keybinds)
 
 ```sh
-noctalia msg panel-toggle bxrig/world-clock:panel
+noctalia msg panel-toggle bxrig/clock:panel
 noctalia msg panel-toggle bxrig/agents:panel
 noctalia msg panel-toggle bxrig/themes:panel
 ```
@@ -48,12 +48,12 @@ noctalia msg panel-toggle bxrig/themes:panel
 Example Hyprland binds:
 
 ```
-bind = SUPER, W, exec, noctalia msg panel-toggle bxrig/world-clock:panel
+bind = SUPER, W, exec, noctalia msg panel-toggle bxrig/clock:panel
 bind = SUPER, A, exec, noctalia msg panel-toggle bxrig/agents:panel
 bind = SUPER CTRL, T, exec, noctalia msg panel-toggle bxrig/themes:panel
 ```
 
-Opened from a key, the world-clock and agents panels are attached panels and appear near the bar. The themes panel floats in the center of the screen and takes the keyboard:
+Opened from a key, the clock and agents panels are attached panels and appear near the bar. The themes panel floats in the center of the screen and takes the keyboard:
 
 - Typing filters the list.
 - Up, Down, Page Up and Page Down move the selection.
@@ -65,8 +65,8 @@ Opened from a key, the world-clock and agents panels are attached panels and app
 A plugin widget is referenced as `<author>/<plugin>:<entry>`. Define a widget instance, then list it in a bar section:
 
 ```toml
-[widget.bxrig-world-clock]
-type = "bxrig/world-clock:bar"     # globe -> world clock panel
+[widget.bxrig-clock]
+type = "bxrig/clock:bar"     # the time as text: click opens the panel, right click the calendar
 
 [widget.bxrig-agents]
 type = "bxrig/agents:bar"          # robot -> agents panel
@@ -75,17 +75,29 @@ type = "bxrig/agents:bar"          # robot -> agents panel
 type = "bxrig/themes:bar"          # palette -> theme switcher
 
 [bar.main]
-end = ["bxrig-world-clock", "bxrig-agents", "bxrig-themes", "tray", "network", "bluetooth", "volume", "battery", "notifications", "control-center"]
+center = ["bxrig-clock", "media"]
+end = ["bxrig-agents", "tray", "network", "bluetooth", "volume", "battery", "notifications", "bxrig-themes", "control-center"]
 ```
+
+`bxrig appearance bar layout minimal|standard|dense` writes the whole bar (these widgets, the built-in ones, the dock) into config.toml for you; the three layouts are in `docs/guides/appearance.md`. Planned BxRig widgets that are not built yet and therefore not on any bar: `bxrig-system` (updates, backups), `bxrig-dev` (databases, containers, VMs), `bxrig-vpn`, a power panel for the battery, and a real quick-settings popover (the theme switcher stands in for it).
 
 `noctalia config validate` checks the config without loading any plugins. It therefore warns `unrecognized widget type "bxrig/…:bar"` and `no loaded plugin with this id`, but it still reports the config as valid. The running shell resolves the widget types once the plugins are enabled.
 
 ## Settings
 
-Each plugin has one plugin-level setting, `command`, which defaults to `bxrig`. It is the bxrig executable: a name on Noctalia's PATH, an absolute path, or a `~/` path. The shell may be started without `~/.local/bin` on its PATH. In that case, BxRig should pin the path:
+The clock has a second plugin-level setting, `format`: the text of the bar clock in Noctalia date format tokens (https://docs.noctalia.dev/noctalia/configuration/date-format-tokens/), default `%b %-d - %H:%M` ("Nov 5 - 04:00"). `bxrig time format FORMAT` writes it:
 
 ```toml
-[plugin_settings."bxrig/world-clock"]
+[plugin_settings."bxrig/clock"]
+format = "%a %-I:%M %p"
+```
+
+The bar text is redrawn on the minute (every second when the format shows seconds). The id was `bxrig/world-clock` before the clock and the world clock became one widget; this is the first version, so there is nothing to migrate.
+
+Each plugin has a plugin-level setting `command`, which defaults to `bxrig`. It is the bxrig executable: a name on Noctalia's PATH, an absolute path, or a `~/` path. The shell may be started without `~/.local/bin` on its PATH. In that case, BxRig should pin the path:
+
+```toml
+[plugin_settings."bxrig/clock"]
 command = "~/.local/bin/bxrig"
 
 [plugin_settings."bxrig/agents"]

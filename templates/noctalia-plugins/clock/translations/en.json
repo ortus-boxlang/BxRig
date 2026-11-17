@@ -3,7 +3,11 @@
 		"command": {
 			"description": "The bxrig executable (name on PATH, absolute path, or ~/ path)",
 			"label": "bxrig command"
+		},
+		"format": {
+			"description": "The clock text, in Noctalia date format tokens (bxrig time format sets it). Default: %b %-d - %H:%M",
+			"label": "Clock format"
 		}
 	},
-	"title": "World Clock"
+	"title": "Clock"
 }
