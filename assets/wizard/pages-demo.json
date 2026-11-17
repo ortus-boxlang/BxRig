@@ -234,7 +234,8 @@
 							"label": "Auto",
 							"description": "Follows sunrise and sunset."
 						}
-					]
+					],
+					"help": "The color theme you pick later brings its own dark or light unless you choose Auto here."
 				},
 				{
 					"type": "confirm",
@@ -508,7 +509,7 @@
 					"id": "theme_name",
 					"label": "Color theme",
 					"default": "bxrig",
-					"help": "Change it any time: bxrig theme set NAME, or the Themes page of the Control Center. Dark or light on the Look page is overridden by the theme unless you chose Auto.",
+					"help": "Change it any time: bxrig theme set NAME, or the Themes page of the Control Center.",
 					"options": [
 						{
 							"value": "bxrig",

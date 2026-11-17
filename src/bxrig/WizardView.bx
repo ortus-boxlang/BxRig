@@ -245,7 +245,7 @@ class WizardView {
 		if ( row.kind == "preview" ) return 1 + variables.look.gridHeight( 2 );
 		if ( row.kind == "opt" && ( pg.questions[ row.q ].preview ?: "" ) == "bar" ) {
 			var key = pg.questions[ row.q ].options[ row.i ].value;
-			return 1 + variables.bl.height( key, width - 5 ) + 1 + 1;
+			return 1 + variables.bl.height( key, width - 5 ) + variables.kit.wrap( variables.bl.layout( key ).desc, width - 5 ).len() + 1;
 		}
 		return 1;
 	}
@@ -315,7 +315,8 @@ class WizardView {
 					var lay = variables.bl.layout( opt.value );
 					if ( len( lay.tag ) ) variables.kit.put( ix + 5 + len( opt.label ) + 2, ry, lay.tag, variables.OVERLAY, bg );
 					var sh = variables.look.strip( ix + 5, ry + 1, iw - 5, opt.value, selected );
-					for ( var dl in variables.kit.wrap( lay.desc, iw - 5 ) ) variables.kit.put( ix + 5, ry + 1 + sh, dl, selected ? variables.SUB : variables.OVERLAY, variables.MANTLE );
+					var dn = 0;
+					for ( var dl in variables.kit.wrap( lay.desc, iw - 5 ) ) { variables.kit.put( ix + 5, ry + 1 + sh + dn, dl, selected ? variables.SUB : variables.OVERLAY, variables.MANTLE ); dn++; }
 				} else if ( kind == "theme" ) {
 					if ( opt.value == "bxrig" ) variables.kit.put( ix + 5 + len( opt.label ) + 2, ry, "default", variables.OVERLAY, bg );
 					var tcol = colorsOf( opt.value );
