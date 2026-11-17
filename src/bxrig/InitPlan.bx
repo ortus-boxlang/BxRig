@@ -240,7 +240,7 @@ class InitPlan {
 		for ( var id in pick( a, "remote_desktop", [] ) ) if ( !arrayFind( apps, id ) ) apps.append( id );
 		for ( var id in pick( a, "desktop_utilities", [] ) ) if ( !arrayFind( apps, id ) ) apps.append( id );
 		if ( engine == "docker" ) apps.append( "docker" );
-		var vpnIds = { tailscale: "tailscale", wireguard: "wireguard", openvpn: "openvpn", mullvad: "mullvad", proton: "proton-vpn", nordvpn: "nordvpn" };
+		var vpnIds = { tailscale: "tailscale", wireguard: "wireguard", openvpn: "openvpn", mullvad: "mullvad", proton: "proton-vpn", nordvpn: "nordvpn", nordlayer: "nordlayer" };
 		var vpn = pick( a, "vpn" );
 		if ( structKeyExists( vpnIds, vpn ) ) apps.append( vpnIds[ vpn ] );
 		var pm = pick( a, "password_manager" );

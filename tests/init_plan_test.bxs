@@ -181,6 +181,7 @@ p = ip.plan( { desktop_utilities: [ "cliphist", "wf-recorder", "playerctl" ] } )
 testkit.check( "desktop utilities are installed in the one apps step", cmd( p, "apps" ) == "bxrig install cliphist wf-recorder playerctl" );
 p = ip.plan( { vpn: "nordvpn", remote_desktop: [ "remmina", "rustdesk" ] } );
 testkit.check( "NordVPN is installed, then set up (optional step); remote desktop apps join the install", cmd( p, "apps" ) == "bxrig install remmina rustdesk nordvpn" && cmd( p, "vpn-nordvpn" ) == "bxrig vpn nordvpn setup" && ( p.steps[ 2 ].optional ?: false ) );
+testkit.check( "NordLayer is installed and needs no extra step", cmd( ip.plan( { vpn: "nordlayer" } ), "apps" ) == "bxrig install nordlayer" && ip.plan( { vpn: "nordlayer" } ).steps.len() == 1 );
 testkit.check( "cloud storage installs rclone and fuse3, and nothing without the answer", cmd( ip.plan( { cloud_storage: true } ), "apps" ) == "bxrig install rclone fuse3" && ip.plan( { cloud_storage: false } ).steps.len() == 0 );
 p = ip.plan( { desktops: "plasma", plasma_layout: "master" } );
 plStep = p.steps.filter( function( x ) { return x.id == "plasma-layout"; } )[ 1 ];
