@@ -106,10 +106,10 @@ class SystemUpdates {
 		if ( !repo.ok ) return { ok: false, error: repo.error };
 		var packages = [];
 		for ( var p in repo.rows ) packages.append( { name: p.name, old: p.old, new: p.new, repo: "repo" } );
-		var helper = variables.aur.available() ? variables.aur.helper() : "";
+		var helper = variables.aur.updateHelper();
 		var aurError = "";
 		if ( len( helper ) ) {
-			var a = variables.aur.pendingUpdates();
+			var a = variables.aur.pendingUpdates( helper );
 			if ( a.ok ) { for ( var q in a.rows ) packages.append( { name: q.name, old: q.old, new: q.new, repo: "aur" } ); } else aurError = a.error;
 		}
 		var pending = pendingReasons( packages );

@@ -1,4 +1,4 @@
-// The AUR through its helper (yay or paru) and its web API. Repository packages are Pacman.bx. Argv arrays only.
+// The AUR through its helper (yay; paru too for updates) and its web API. Repository packages are Pacman.bx. Argv arrays only.
 class Aur {
 	function init( proc = "" ) {
 		variables.proc = isSimpleValue( arguments.proc ) ? new bxrig.util.Proc( arguments.proc ) : arguments.proc;
@@ -6,19 +6,19 @@ class Aur {
 		return this;
 	}
 
-	// The helpers that build AUR packages, in the order they are preferred.
-	function helpers() { return [ "yay", "paru" ]; }
+	// The helper program that installs AUR packages.
+	function helper() { return "yay"; }
 
-	// The helper program that builds AUR packages: the first of helpers() that is installed (yay when none is).
-	function helper() {
-		for ( var h in helpers() ) if ( variables.proc.has( h ) ) return h;
-		return "yay";
-	}
+	// True when that helper is installed.
+	function available() { return variables.proc.has( helper() ); }
 
-	// True when a helper (yay or paru) is installed.
-	function available() {
-		for ( var h in helpers() ) if ( variables.proc.has( h ) ) return true;
-		return false;
+	// For updates only, paru is accepted too: the helpers that can list and upgrade AUR packages (`-Qua`, `-Sua`), in the order they are preferred.
+	function updateHelpers() { return [ "yay", "paru" ]; }
+
+	// The first of updateHelpers() that is installed, or "" when there is none.
+	function updateHelper() {
+		for ( var h in updateHelpers() ) if ( variables.proc.has( h ) ) return h;
+		return "";
 	}
 
 	// yay -S --needed --noconfirm PKG...
@@ -28,13 +28,13 @@ class Aur {
 		return argv;
 	}
 
-	// yay -Sua --noconfirm (upgrade the AUR packages)
-	function upgradeArgv() { return [ helper(), "-Sua", "--noconfirm" ]; }
+	// yay -Sua --noconfirm (upgrade the AUR packages); program is the helper to use (updateHelper()), yay when not given.
+	function upgradeArgv( program = "" ) { return [ len( arguments.program ) ? arguments.program : helper(), "-Sua", "--noconfirm" ]; }
 
-	// The AUR packages that have a newer version (`yay -Qua`, same for paru): { ok, rows, error }. Like pacman -Qu it exits 1 and prints
+	// The AUR packages that have a newer version (`yay -Qua`, same for paru; program says which): { ok, rows, error }. Like pacman -Qu it exits 1 and prints
 	// nothing when there are none, which is not an error. Rows: [ { name, old, new } ].
-	function pendingUpdates() {
-		var r = variables.proc.exec( [ helper(), "-Qua" ], 120 );
+	function pendingUpdates( program = "" ) {
+		var r = variables.proc.exec( [ len( arguments.program ) ? arguments.program : helper(), "-Qua" ], 120 );
 		var rows = new bxrig.util.Pacman( variables.proc ).parseUpgrades( r.output );
 		if ( r.exitCode == 0 || rows.len() || !len( trim( r.output ) ) ) return { ok: true, rows: rows, error: "" };
 		return { ok: false, rows: [], error: trim( variables.proc.why( r ) ) };

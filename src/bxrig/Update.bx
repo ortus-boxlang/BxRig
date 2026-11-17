@@ -173,6 +173,14 @@ class Update {
 		return variables.out.say( "ok", { enabled: true }, arguments.asJson, [ "Update notifications are on: a daily check, shown as a desktop notification." ] );
 	}
 
+	// The flags of `system update`: the scope (repo, aur or all, the default) from --repo, --aur or --all; two of them together are a usage error (2).
+	function systemUpdateCmd( opts, asJson ) {
+		var scopes = [];
+		for ( var sc in [ "repo", "aur", "all" ] ) if ( structKeyExists( arguments.opts, sc ) ) scopes.append( sc );
+		if ( scopes.len() > 1 ) return variables.out.say( "usage", { error: "give only one of --repo, --aur and --all" }, arguments.asJson, [ "error: give only one of --repo, --aur and --all", new bxrig.CommandSpec().usage( "system update" ) ] );
+		return systemUpdate( structKeyExists( arguments.opts, "yes" ), arguments.asJson, scopes.len() ? scopes[ 1 ] : "all", structKeyExists( arguments.opts, "dry-run" ) );
+	}
+
 	// `system update [--repo|--aur|--all] [--yes] [--dry-run]`: a snapshot first (snapper or timeshift when present), then the repository
 	// packages (`sudo pacman -Syu`), the AUR packages (yay or paru `-Sua`), or both (the default). scope is repo, aur or all.
 	// Text mode names each step as it starts, so a terminal shows the snapshot and the progress. Exit 2 plan, 4 no AUR helper for --aur, 6 a step failed.
@@ -180,11 +188,12 @@ class Update {
 		var snap = variables.proc.has( "snapper" ) ? [ "sudo", "snapper", "create", "--description", "before bxrig system update" ] : ( variables.proc.has( "timeshift" ) ? [ "sudo", "timeshift", "--create", "--comments", "before bxrig system update" ] : [] );
 		var wantRepo = compare( arguments.scope, "aur" ) != 0;
 		var wantAur = compare( arguments.scope, "repo" ) != 0;
-		if ( !wantRepo && !variables.aur.available() ) return variables.out.say( "precondition", { error: "no AUR helper installed (yay or paru)" }, arguments.asJson, [ "error: no AUR helper installed (yay or paru), so there is nothing to update from the AUR" ] );
+		var helper = variables.aur.updateHelper();
+		if ( !wantRepo && !len( helper ) ) return variables.out.say( "precondition", { error: "no AUR helper installed (yay or paru)" }, arguments.asJson, [ "error: no AUR helper installed (yay or paru), so there is nothing to update from the AUR" ] );
 		var steps = [];
 		if ( snap.len() ) steps.append( snap );
 		if ( wantRepo ) steps.append( variables.pacman.upgradeArgv() );
-		if ( wantAur && variables.aur.available() ) steps.append( variables.aur.upgradeArgv() );
+		if ( wantAur && len( helper ) ) steps.append( variables.aur.upgradeArgv( helper ) );
 		var data = { scope: arguments.scope, steps: steps.map( function( s ) { return s.toList( " " ); } ), snapshot: snap.len() > 0 };
 		if ( !arguments.yes || arguments.dry ) {
 			var shown = data.steps.map( function( st ) { return "  " & st; } );

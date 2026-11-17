@@ -43,11 +43,11 @@ fake.repo = "linux-cachyos 6.17.8-1 -> 6.17.9-1" & chr( 10 ) & "mesa 25.2.5-1 ->
 fake.aur = "paru-bin 2.1.0-1 -> 2.1.1-1" & chr( 10 );
 fake.log = "[2026-11-14T10:00:00+0000] [PACMAN] starting full system upgrade" & chr( 10 ) & "[2026-11-15T21:42:10+0100] [PACMAN] starting full system upgrade" & chr( 10 );
 // (the whole report, with the restart check and the log, runs in tests/system-updates-test.sh: those read the process environment)
-testkit.check( "the helper is yay when it is there", new bxrig.util.Aur( proc ).helper() == "yay" );
+testkit.check( "the update helper is yay when it is there", new bxrig.util.Aur( proc ).updateHelper() == "yay" );
 fake.has.yay = false; fake.has.paru = true;
-testkit.check( "paru is used when there is no yay", new bxrig.util.Aur( proc ).helper() == "paru" && new bxrig.util.Aur( proc ).available() );
+testkit.check( "paru is used when there is no yay", new bxrig.util.Aur( proc ).updateHelper() == "paru" && new bxrig.util.Aur( proc ).upgradeArgv( "paru" ).toList( " " ) == "paru -Sua --noconfirm" );
 fake.has.paru = false;
-testkit.check( "no helper: unavailable", !new bxrig.util.Aur( proc ).available() );
+testkit.check( "no helper: none, and the install helper is still yay", new bxrig.util.Aur( proc ).updateHelper() == "" && new bxrig.util.Aur( proc ).helper() == "yay" && new bxrig.util.Aur( proc ).upgradeArgv().toList( " " ) == "yay -Sua --noconfirm" );
 fake.has.yay = true;
 pu = pm.pendingUpdates();
 testkit.check( "pendingUpdates lists the repo rows", pu.ok && pu.rows.len() == 2 );

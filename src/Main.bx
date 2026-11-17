@@ -295,12 +295,7 @@ class {
 				break;
 			case "system":
 				if ( p.len() == 2 && p[2] == "updates" ) CLIExit( new bxrig.SystemUpdates( cli ).run( asJson ) );
-				if ( p.len() == 2 && p[2] == "update" ) {
-					sysScopes = [];
-					for ( sysSc in [ "repo", "aur", "all" ] ) if ( structKeyExists( args.options, sysSc ) ) sysScopes.append( sysSc );
-					if ( sysScopes.len() > 1 ) { println( "error: give only one of --repo, --aur and --all" ); println( new bxrig.CommandSpec().usage( "system update" ) ); CLIExit( xit.usage() ); }
-					CLIExit( new bxrig.Update( cli ).systemUpdate( structKeyExists( args.options, "yes" ), asJson, sysScopes.len() ? sysScopes[ 1 ] : "all", structKeyExists( args.options, "dry-run" ) ) );
-				}
+				if ( p.len() == 2 && p[2] == "update" ) CLIExit( new bxrig.Update( cli ).systemUpdateCmd( args.options, asJson ) );
 				if ( p.len() == 2 && arrayFind( [ "lock", "suspend", "logout", "reboot", "shutdown" ], p[2] ) ) CLIExit( new bxrig.SystemActions( cli ).run( p[2], structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
 				println( new bxrig.CommandSpec().usage( "system" ) ); CLIExit( xit.usage() ); break;
 				case "emoji": CLIExit( new bxrig.MacExtras( cli ).emoji( asJson ) ); break;
