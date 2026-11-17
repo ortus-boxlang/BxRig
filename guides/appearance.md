@@ -85,3 +85,37 @@ bxrig ascii fonts                                  # every font, in its own name
 - **`--gradient`:** a preset (`brand`, `theme`, `sunset`, `ocean`, `fire`, `forest`, `candy`, `rainbow`) or your own two or more colours separated by commas. `--direction` runs it `horizontal` (the default), `vertical` or `diagonal`.
 - **When it colours:** without `--color` or `--gradient` you get the brand gradient in a terminal and plain text in a pipe or file. `--color` and `--gradient` colour even in a pipe. `--plain` and the `NO_COLOR` variable always give plain text.
 - `--json` returns the lines, the font and the size.
+
+### Pictures as text
+
+`bxrig ascii image` draws a PNG, JPEG, GIF, WebP or SVG in the terminal. BxRig reads it with the [bx-image](https://github.com/ortus-boxlang/bx-image) module, which is built into the binary, so there is nothing to install.
+
+```bash
+bxrig ascii image ~/Pictures/logo.png              # 48 columns, half blocks in full colour
+bxrig ascii image logo.svg --width=80              # SVGs are drawn at the size you ask for, so they stay sharp
+bxrig ascii image photo.jpg --style=ascii          # characters from a brightness ramp, in the picture's colours
+```
+
+- **`--style`:** `blocks` (the default) uses half blocks, two pixels per row in 24-bit colour. `ascii` uses one character per cell (` .:-=+*#%@`), coloured like the picture.
+- **`--width`:** 4 to 300 columns; the height follows the picture's shape. Transparent pixels stay blank.
+- Colour follows the same rules as text: on in a terminal, off in a pipe, with `--plain` or with `NO_COLOR`. `--json` returns the lines without colour.
+
+## About this rig
+
+`bxrig about` shows the BxRig laptop, with BX in DOS Rebel on its screen, beside three panels drawn by [fastfetch](https://github.com/fastfetch-cli/fastfetch):
+
+- **rig:** host, CPU, GPU, memory, disk and display
+- **stack:** BoxLang and MatchBox, Java, Node and pnpm, Git and gh, your editor
+- **look:** OS, desktop, theme, shell and terminal
+
+Under the laptop: *BXRIG powered by BoxLang* and www.boxlang.io. Open it from the BxRig menu (**About**), from the **BxRig About** launcher, or in any terminal:
+
+```bash
+bxrig about            # in your terminal
+bxrig about --plain    # no colour
+bxrig about --json     # version, theme and links as data
+```
+
+- **It follows your theme.** `bxrig theme set` redraws the laptop in the theme's colours (`~/.config/bxrig/theme/fastfetch-logo.ans`), and the panel labels use your terminal colours.
+- **Plain `fastfetch` works too.** `bxrig setup shell` installs fastfetch and writes `~/.config/fastfetch/config.jsonc` once. After that it is yours to change; `bxrig about` keeps using its own copy in `~/.config/bxrig/fastfetch.jsonc`.
+- Without fastfetch, `bxrig about` shows the laptop, the version and a hint to install it.
