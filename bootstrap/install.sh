@@ -396,7 +396,11 @@ if [[ "$mode" == --install-binary ]]; then
 	copy_wallpapers() {
 		local src="$root/assets/wallpapers" dest="${XDG_DATA_HOME:-$HOME/.local/share}/bxrig/wallpapers"
 		compgen -G "$src/*.jpg" >/dev/null || return 0
-		mkdir -p "$dest" && cp -f "$src"/*.jpg "$dest"/ && echo "Theme wallpapers ready in $dest"
+		mkdir -p "$dest" || return 1
+		# only the missing or changed ones, so running the installer again leaves the folder untouched
+		local f
+		for f in "$src"/*.jpg; do cmp -s "$f" "$dest/${f##*/}" || cp -f "$f" "$dest/" || return 1; done
+		echo "Theme wallpapers ready in $dest"
 	}
 	installed="$BIN_DIR/bxrig"
 	check_binary() {  # PATH -> prints its version line; fails unless it identifies itself as BxRig

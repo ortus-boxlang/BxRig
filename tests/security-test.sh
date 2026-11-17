@@ -16,6 +16,14 @@ printf '#!/usr/bin/env bash\necho "systemctl $*" >> "$LOG"\n[[ "$1" == is-active
 printf '#!/usr/bin/env bash\necho "visudo $*" >> "$LOG"\n! grep -q BROKEN "$2"\n' > "$tmp/bin/visudo"
 printf '#!/usr/bin/env bash\necho "fprintd-enroll $*" >> "$LOG"\n' > "$tmp/fprintd-enroll.real"
 printf '#!/usr/bin/env bash\necho "pamu2fcfg $*" >> "$LOG"\necho "mykey" \n' > "$tmp/pamu2fcfg.real"
+# install: logged, then the real one without -o/-g (the fake sudo does not make the test root, and a CI runner is not root)
+cat > "$tmp/bin/install" <<'FAKE'
+#!/usr/bin/env bash
+echo "install $*" >> "$LOG"
+args=(); skip=0
+for a in "$@"; do if (( skip )); then skip=0; continue; fi; case "$a" in -o|-g) skip=1 ;; *) args+=("$a") ;; esac; done
+exec /usr/bin/install "${args[@]}"
+FAKE
 stub_id
 chmod +x "$tmp/bin"/* "$tmp"/*.real
 run() { env HOME="$tmp/home" USER="${SUSER:-dev}" BXRIG_PAM_DIR="$tmp/pam" BXRIG_SUDOERS_DIR="$tmp/sudoers" PATH="$tmp/bin:$PATH" LOG="$LOG" ACTIVE="${ACTIVE:-3}" "$@"; }
@@ -53,7 +61,10 @@ run "$binary" security fido2 on --yes >/dev/null; grep -q '^auth sufficient pam_
 run "$binary" security fido2 off --yes >/dev/null; ! grep -q pam_u2f "$tmp/pam/sudo" || fail 'fido2 off'
 
 # ---- ssh server ----
-: > "$LOG"; run "$binary" security ssh-server on --yes >/dev/null; has 'pacman -S --needed --noconfirm openssh' && has 'systemctl enable --now sshd.service' || fail "ssh on: $(cat "$LOG")"
+# openssh is installed only when sshd is not there yet (a CI runner or a machine with openssh already has it)
+: > "$LOG"; run "$binary" security ssh-server on --yes >/dev/null; has 'systemctl enable --now sshd.service' || fail "ssh on: $(cat "$LOG")"
+if run bash -c 'command -v sshd' >/dev/null; then ! has 'pacman -S --needed --noconfirm openssh' || fail 'ssh on installs openssh although sshd is there'
+else has 'pacman -S --needed --noconfirm openssh' || fail "ssh on installs openssh: $(cat "$LOG")"; fi
 run "$binary" security ssh-server off --yes >/dev/null; has 'systemctl disable --now sshd.service' || fail 'ssh off'
 [[ "$(code "$binary" security ssh-server on)" == 2 ]] || fail 'ssh on without --yes is a plan'
 

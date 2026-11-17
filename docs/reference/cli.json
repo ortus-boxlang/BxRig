@@ -896,7 +896,7 @@
 					"name": "setup",
 					"summary": "Set up a desktop: Hyprland with Noctalia, Plasma with HyprKwin tiling, terminals, keyboards, status.",
 					"usage": [
-						"setup plasma [--keys | --undo-keys] | hyprland [--terminal=ghostty|kitty|alacritty|foot|konsole] [--layout=dwindle|master|scrolling|floating] [--workspaces=N] [--natural-scroll] [--layouts=us-intl,es] [--theme=dark|light|auto] [--wallpaper=box|grid|aurora|minimal] | terminal [--default=ghostty] [--also=a,b] | shell [--shell=zsh|fish|bash] | keyboard [--layouts=us-intl,es] | xremap [--build=hypr|kde] | undo plasma|hyprland|xremap | status [--yes] [--dry-run] [--json]",
+						"setup plasma [--keys | --undo-keys] | hyprland [--terminal=ghostty|kitty|alacritty|foot|konsole] [--layout=dwindle|master|columns|scrolling|monocle|floating] [--workspaces=N] [--natural-scroll] [--layouts=us-intl,es] [--theme=dark|light|auto] [--wallpaper=box|grid|aurora|minimal] | terminal [--default=ghostty] [--also=a,b] | shell [--shell=zsh|fish|bash] | keyboard [--layouts=us-intl,es] | xremap [--build=hypr|kde] | undo plasma|hyprland|xremap | status [--yes] [--dry-run] [--json]",
 						"setup boot [status] | setup undo boot [--yes] [--dry-run] [--json]"
 					],
 					"examples": [
@@ -1198,8 +1198,9 @@
 						"appearance windows corners theme|rounded|sharp",
 						"appearance windows opacity opaque|glassy",
 						"appearance windows one-window-ratio on|off",
+						"appearance windows snap on|off",
 						"appearance animations on|off",
-						"appearance layout dwindle|scrolling|floating",
+						"appearance layout dwindle|master|columns|scrolling|monocle|floating",
 						"appearance font list",
 						"appearance font ID",
 						"appearance font install ID [--yes]",
@@ -1211,6 +1212,7 @@
 					"examples": [
 						"bxrig appearance bar position bottom",
 						"bxrig appearance windows gaps off",
+						"bxrig appearance layout columns",
 						"bxrig appearance font install cascadia --yes",
 						"bxrig appearance background random"
 					],
@@ -2399,20 +2401,22 @@
 				},
 				{
 					"name": "window",
-					"summary": "Minimize and restore windows, and the quake console.",
+					"summary": "Minimize, restore and snap windows, and the quake console.",
 					"usage": [
 						"window minimize|restore|quake [--json]",
-						"window quake send [--json]"
+						"window quake send [--json]",
+						"window snap left|right [--json]"
 					],
 					"examples": [
 						"bxrig window minimize",
 						"bxrig window restore",
 						"bxrig window quake",
-						"bxrig window quake send"
+						"bxrig window quake send",
+						"bxrig window snap left"
 					],
 					"mutates": false,
 					"flags": [],
-					"note": "quake shows or hides the special workspace qconsole (the default terminal starts there the first time); quake send moves the focused window onto it. Hyprland only."
+					"note": "quake shows or hides the special workspace qconsole (the default terminal starts there the first time); quake send moves the focused window onto it. snap left|right floats the focused window onto that half of its monitor. Hyprland only."
 				},
 				{
 					"name": "overview",

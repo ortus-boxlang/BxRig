@@ -19,7 +19,8 @@ bxrig appearance windows gaps off         # no gaps and no borders
 bxrig appearance windows corners sharp    # theme, rounded, sharp
 bxrig appearance windows opacity glassy   # opaque, glassy
 bxrig appearance animations off
-bxrig appearance layout scrolling         # dwindle, scrolling, floating
+bxrig appearance layout columns           # dwindle, master, columns, scrolling, monocle, floating
+bxrig appearance windows snap off         # floating windows stop snapping to edges (on by default)
 bxrig appearance font list
 bxrig appearance font install cascadia --yes
 bxrig appearance font cascadia            # Noctalia and the terminals follow

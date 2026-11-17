@@ -32,9 +32,9 @@ names2 = d.entries( [ tmp & "/a" ], true ).map( function( x ) { return x.name; }
 testkit.check( "entries: launchers: true includes BxRig's launchers", find( "BxRig Apps", names2 ) > 0 );
 names3 = d.entries( [ tmp & "/a" ], false, true ).map( function( x ) { return x.name; } ).sort( "text" ).toList( "," );
 testkit.check( "entries: needExec drops an entry without Exec", !find( "NoExec", names3 ) && find( "Foo", names3 ) > 0 );
-dd = new bxrig.util.DesktopEntry( new bxrig.util.Env( { HOME: "/h", BXRIG_APPS_DIRS: "" } ) ).dirs();
+dd = new bxrig.util.DesktopEntry( new bxrig.util.Env( { HOME: "/h", BXRIG_APPS_DIRS: "", XDG_DATA_HOME: "" } ) ).dirs();
 testkit.check( "dirs: system, local, user and Flatpak", dd.len() == 5 && dd[ 3 ] == "/h/.local/share/applications" && find( "flatpak", dd[ 4 ] ) > 0 );
-testkit.check( "dirs(false) leaves Flatpak out", new bxrig.util.DesktopEntry( new bxrig.util.Env( { HOME: "/h" } ) ).dirs( false ).len() == 3 );
+testkit.check( "dirs(false) leaves Flatpak out", new bxrig.util.DesktopEntry( new bxrig.util.Env( { HOME: "/h", XDG_DATA_HOME: "" } ) ).dirs( false ).len() == 3 );
 testkit.check( "dirs: BXRIG_APPS_DIRS and the older BXRIG_DESKTOP_DIRS replace the list", new bxrig.util.DesktopEntry( new bxrig.util.Env( { HOME: "/h", BXRIG_APPS_DIRS: "/x:/y" } ) ).dirs().len() == 2 && new bxrig.util.DesktopEntry( new bxrig.util.Env( { HOME: "/h", BXRIG_DESKTOP_DIRS: "/z" } ) ).dirs()[ 1 ] == "/z" );
 testkit.check( "render: header, then the lines in order", d.render( [ "Type=Application", "Name=X" ] ) == "[Desktop Entry]" & nl & "Type=Application" & nl & "Name=X" & nl );
 directoryDelete( tmp, true );

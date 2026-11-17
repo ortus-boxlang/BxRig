@@ -1,0 +1,38 @@
+// The Hyprland window layouts BxRig offers, in one place: the wizard (`setup hyprland --layout`), `appearance layout`, the menu and the
+// Super+Shift+J cycle all read this list. Names are Hyprland's layouts (wiki: configuring/layouts) plus two of BxRig's own:
+//   columns   the master layout with the master in the middle (orientation center) and a third of the width: three even columns
+//   floating  dwindle underneath, with new windows floating
+class HyprLayout {
+	// Every choice, in menu order.
+	function names() { return [ "dwindle", "master", "columns", "scrolling", "monocle", "floating" ]; }
+
+	// The tiled layouts the Super+Shift+J key cycles through on a workspace.
+	function cycle() { return [ "dwindle", "master", "columns", "scrolling", "monocle" ]; }
+
+	function valid( name ) { return arrayFind( names(), arguments.name ) > 0; }
+
+	// The Hyprland layout name behind a choice (general.layout).
+	function base( name ) {
+		if ( arguments.name == "columns" ) return "master";
+		if ( arguments.name == "floating" ) return "dwindle";
+		return arguments.name;
+	}
+
+	// The master settings a choice needs, as Lua table fields ("" when none).
+	function masterFields( name ) {
+		return arguments.name == "columns" ? 'orientation = "center", mfact = 0.34' : "";
+	}
+
+	// A short description per choice, for the menu and messages.
+	function label( name ) {
+		var l = {
+			dwindle: "Tiling: windows split the screen",
+			master: "Master: one big window, the rest stacked",
+			columns: "Columns: three even columns, the main one in the middle",
+			scrolling: "Scrolling: columns on a strip you scroll",
+			monocle: "Monocle: one window at a time, full size",
+			floating: "Floating: overlapping windows"
+		};
+		return l[ arguments.name ] ?: arguments.name;
+	}
+}

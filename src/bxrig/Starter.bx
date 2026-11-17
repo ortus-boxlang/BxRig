@@ -25,15 +25,16 @@ class Starter {
 		return out;
 	}
 
-	// The starter hyprland.lua with the chosen terminal and layout. dwindle, master and scrolling set general.layout;
-	// floating keeps dwindle underneath (one keypress to tile) and floats every new window with a window rule.
+	// The starter hyprland.lua with the chosen terminal and layout (HyprLayout): the tiled ones set general.layout, columns also centres
+	// the master; floating keeps dwindle underneath (one keypress to tile) and floats every new window with a window rule.
 	function hyprlandText() {
 		var o = variables.opts;
 		var so = new bxrig.StarterOptions();
 		var t = new bxrig.TemplateData().text( "hyprland.lua" );
 		t = replace( t, 'local terminal    = "kitty"', 'local terminal    = "' & o.terminal & '"' );
-		var base = o.layout == "floating" ? "dwindle" : o.layout;
-		t = replace( t, 'layout           = "dwindle",', 'layout           = "' & base & '",' );
+		var hl = new bxrig.HyprLayout();
+		t = replace( t, 'layout           = "dwindle",', 'layout           = "' & hl.base( o.layout ) & '",' );
+		if ( len( hl.masterFields( o.layout ) ) ) t = replace( t, 'hl.config({ master    = { new_status = "master" } })', 'hl.config({ master    = { new_status = "master", ' & hl.masterFields( o.layout ) & ' } })' );
 		var rule = o.layout == "floating"
 		? '-- Floating by default (layout: floating). Delete this rule, or press Super+T on a window (Super+Alt+T with the Mac style), to tile.' & chr( 10 ) & 'hl.window_rule({ name = "bxrig-floating", match = { class = ".*" }, float = true })'
 		: '-- (Windows tile. To float every new window by default, add: hl.window_rule({ name = "floating", match = { class = ".*" }, float = true }))';

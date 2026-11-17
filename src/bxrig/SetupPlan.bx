@@ -114,8 +114,8 @@ class SetupPlan {
 	// The Bluetooth service the bar's Bluetooth panel and `bxrig bluetooth status` need: bluez ships it, it is not enabled by itself.
 	function bluetoothUnit() { return "bluetooth.service"; }
 
-	// The default window layouts `setup hyprland --layout` offers: Hyprland's tiling layouts, scrolling (a carousel of columns), and floating.
-	function layouts() { return [ "dwindle", "master", "scrolling", "floating" ]; }
+	// The default window layouts `setup hyprland --layout` offers (HyprLayout).
+	function layouts() { return new bxrig.HyprLayout().names(); }
 
 	// Preconditions for `setup hyprland`. Returns { errors, warnings }.
 	function hyprlandPreflight( facts ) {

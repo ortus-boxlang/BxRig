@@ -131,6 +131,7 @@ run env BXRIG_IPV6_DIR="$tmp/none" "$binary" vm create linux v6 --yes >/dev/null
 { run env BXRIG_IPV6_DIR="$tmp/none" "$binary" vm doctor --json || true; } | jq -e '.data.checks | map(select(.check == "IPv6") | .ok) == [false]' >/dev/null || fail 'doctor notes missing IPv6'
 run "$binary" vm remove v6 --yes >/dev/null
 
-# no engine
-[[ "$(set +e; env -i HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg2" BXRIG_DATA_HOME="$tmp/data2" PATH="/usr/bin:/bin" BXRIG_VM_SKIP_KVM_CHECK=1 BXRIG_DRI_DIR="$tmp/dri" "$binary" vm create linux x1 --yes >/dev/null 2>&1; echo $?)" == 4 ]] || fail 'no container engine exits 4'
+# no engine: an empty PATH, so a real podman or docker on the machine (GitHub runners have /usr/bin/podman) can never be reached
+mkdir -p "$tmp/nobin"
+[[ "$(set +e; env -i HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg2" BXRIG_DATA_HOME="$tmp/data2" PATH="$tmp/nobin" BXRIG_VM_SKIP_KVM_CHECK=1 BXRIG_DRI_DIR="$tmp/dri" "$binary" vm create linux x1 --yes >/dev/null 2>&1; echo $?)" == 4 ]] || fail 'no container engine exits 4'
 echo "vm-test: ok"

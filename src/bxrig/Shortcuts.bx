@@ -202,8 +202,14 @@ class Shortcuts {
 			row( "fullscreen", G.win, "Full screen", "Super+F", "Super+Ctrl+F", "hypr-bind", 'hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" })' ),
 			row( "float", G.win, "Float or tile the window", "Super+T", "Super+Alt+T", "hypr-bind", 'hl.dsp.window.float({ action = "toggle" })' ),
 			row( "toggle-split", G.win, "Toggle split", "Super+J", "Super+J", "hypr-bind", 'hl.dsp.layout("togglesplit")' ),
-			bx( "minimize", G.win, "Minimize the window", "Super+H", "Super+H", "window minimize" ),
-			bx( "unminimize", G.win, "Show the minimized windows", "Super+Shift+H", "Super+Shift+H", "window restore" ),
+			row( "maximize", G.win, "Maximize or restore the window (the bar stays)", "Super+M", "Super+M", "hypr-bind", 'hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" })' ),
+			row( "minimize", G.win, "Minimize the window", "Super+H", "Super+H", "hypr-bind", 'hl.dsp.window.move({ workspace = "special:minimized", follow = false })', "window minimize" ),
+			row( "unminimize", G.win, "Show the minimized windows", "Super+Shift+H", "Super+Shift+H", "hypr-bind", 'hl.dsp.workspace.toggle_special("minimized")', "window restore" ),
+			row( "layout-next", G.win, "Next layout on this workspace (dwindle, master, columns, scrolling, monocle)", "Super+Shift+J", "Super+Shift+J", "hypr-bind", "bxrigNextLayout" ),
+			row( "column-narrower", G.win, "Make the window's column narrower (scrolling: 1/3, 1/2, 2/3, full)", "Super+Minus", "Super+Minus", "hypr-bind", 'function() bxrigResize("-") end' ),
+			row( "column-wider", G.win, "Make the window's column wider (scrolling: 1/3, 1/2, 2/3, full)", "Super+Equal", "Super+Equal", "hypr-bind", 'function() bxrigResize("+") end' ),
+			bx( "snap-left", G.win, "Snap the window to the left half", "Super+Alt+Left", "Super+Alt+Left", "window snap left" ),
+			bx( "snap-right", G.win, "Snap the window to the right half", "Super+Alt+Right", "Super+Alt+Right", "window snap right" ),
 			bx( "quake-toggle", G.win, "Quake console (show or hide)", "Super+Shift+Grave", "Super+Shift+Grave", "window quake" ),
 			bx( "quake-send", G.win, "Send the window to the quake console", "Super+Ctrl+Grave", "Super+Ctrl+Grave", "window quake send" ),
 			bx( "force-quit", G.win, "Force quit a window", "Super+Alt+Escape", "Super+Alt+Escape", "forcequit" ),
@@ -229,6 +235,11 @@ class Shortcuts {
 		for ( var d in [ "Left", "Right", "Up", "Down" ] ) {
 			rows.append( row( "focus-" & lcase( d ), G.win, "Focus the window to the " & lcase( d ), "Super+" & d, "Super+" & d, "hypr-bind", 'hl.dsp.focus({ direction = "' & lcase( d ) & '" })' ) );
 			rows.append( row( "move-" & lcase( d ), G.win, "Move the window " & lcase( d ), "Super+Shift+" & d, "Super+Shift+" & d, "hypr-bind", 'hl.dsp.window.move({ direction = "' & lcase( d ) & '" })' ) );
+		}
+		// the workspace before or after this one (r: on this monitor, empty ones included); with Shift the window goes along
+		for ( var wd in [ { k: "Left", n: "previous", s: "-1" }, { k: "Right", n: "next", s: "+1" } ] ) {
+			rows.append( row( "ws-" & wd.n, G.ws, "Go to the " & wd.n & " workspace", "Super+Ctrl+" & wd.k, "Super+Ctrl+" & wd.k, "hypr-bind", 'hl.dsp.focus({ workspace = "r' & wd.s & '" })' ) );
+			rows.append( row( "ws-move-" & wd.n, G.ws, "Take the window to the " & wd.n & " workspace", "Super+Ctrl+Shift+" & wd.k, "Super+Ctrl+Shift+" & wd.k, "hypr-bind", 'hl.dsp.window.move({ workspace = "r' & wd.s & '" })' ) );
 		}
 		// workspaces 1 to 10: Super+1..0 switches, Super+Shift+1..0 sends the window there
 		for ( var i = 1; i <= 10; i++ ) {
@@ -367,6 +378,49 @@ class Shortcuts {
 			'local browser = programs.browser or "brave"',
 			'local fileManager = programs.fileManager or "dolphin"',
 			'',
+			'-- Window layouts per workspace (bxrig HyprLayout). Super+Shift+J cycles them with workspace rules (wiki: code-snippets,',
+			'-- "Cycle layout for current workspace"); columns is the master layout centred at a third of the width.',
+			'local bxrigLayouts = { ' & layoutListLua() & ' }',
+			'local bxrigChosen = {}',
+			'local function bxrigWorkspace()',
+			'  return hl.get_active_special_workspace() or hl.get_active_workspace()',
+			'end',
+			'function bxrigNextLayout()',
+			'  local ws = bxrigWorkspace()',
+			'  if not ws then return end',
+			'  local key = tostring(ws.name)',
+			'  local current = bxrigChosen[key] or ws.tiled_layout',
+			'  local nextName = bxrigLayouts[1]',
+			'  for i = 1, #bxrigLayouts do',
+			'    if bxrigLayouts[i] == current then nextName = bxrigLayouts[(i % #bxrigLayouts) + 1] break end',
+			'  end',
+			'  local sel = ws.special and key or ("name:" .. key)',
+			'  if nextName == "columns" then',
+			'    hl.workspace_rule({ workspace = sel, layout = "master", layout_opts = { orientation = "center" } })',
+			'    hl.dispatch(hl.dsp.layout("mfact exact 0.34"))',
+			'  elseif nextName == "master" then',
+			'    hl.workspace_rule({ workspace = sel, layout = "master", layout_opts = { orientation = "left" } })',
+			'    hl.dispatch(hl.dsp.layout("mfact exact 0.55"))',
+			'  else',
+			'    hl.workspace_rule({ workspace = sel, layout = nextName })',
+			'  end',
+			'  bxrigChosen[key] = nextName',
+			'  hl.dispatch(hl.dsp.exec_cmd("notify-send -t 1500 -a BxRig Layout " .. nextName))',
+			'end',
+			'-- Super+Minus and Super+Equal: the split (dwindle), the master width (master, columns) or the column width (scrolling)',
+			'function bxrigResize(sign)',
+			'  local ws = bxrigWorkspace()',
+			'  if not ws then return end',
+			'  local l = ws.tiled_layout',
+			'  if l == "scrolling" then hl.dispatch(hl.dsp.layout("colresize " .. sign .. "conf"))',
+			'  elseif l == "master" then hl.dispatch(hl.dsp.layout("mfact " .. sign .. "0.05"))',
+			'  elseif l == "dwindle" then hl.dispatch(hl.dsp.layout("splitratio " .. sign .. "0.1"))',
+			'  end',
+			'end',
+			'',
+			'-- Floating windows snap to the screen edges and to each other (`bxrig appearance windows snap off` turns it off)',
+			'hl.config({ general = { snap = { enabled = true, respect_gaps = true } } })',
+			'',
 			'-- Noctalia starts with the session',
 			'hl.on("hyprland.start", function()',
 			'  hl.exec_cmd("noctalia")',
@@ -398,6 +452,13 @@ class Shortcuts {
 		out.append( 'hl.window_rule({ match = { class = "dev.noctalia.Noctalia" }, float = true, size = { 1080, 920 } })' );
 		out.append( 'hl.layer_rule({ name = "noctalia", match = { namespace = "^noctalia-(bar-.+|notification|dock|panel|attached-panel|osd|window-switcher)$" }, no_anim = true, ignore_alpha = 0.5, blur = true, blur_popups = true })' );
 		return out.toList( chr( 10 ) ) & chr( 10 );
+	}
+
+	// The cycle of layouts as Lua strings: "dwindle", "master", ...
+	function layoutListLua() {
+		var q = [];
+		for ( var n in new bxrig.HyprLayout().cycle() ) q.append( '"' & n & '"' );
+		return q.toList( ", " );
 	}
 
 	// The one line hyprland.lua needs to load the module above.

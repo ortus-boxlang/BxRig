@@ -82,4 +82,8 @@ run "$binary" backup config list --json | jq -e '.data.snapshots[0].reason == "b
 [[ "$(code "$binary" backup config prune --keep=2)" == 2 ]] || fail 'prune without --yes is a plan'
 run "$binary" backup config prune --keep=2 --yes >/dev/null; [[ "$(run "$binary" backup config list --json | jq '.data.snapshots | length')" == 2 ]] || fail 'prune keeps the newest N'
 ls "$tmp/data/backups/config" | grep -c json | grep -qx 2 || fail 'prune removed the files too'
+# several snapshots in the same second, with keep = 2 from the prune above: the newest stays first and is kept (ids end -002, -003 ... past
+# the highest one of that second, even when a prune removed the plain one)
+for r in q1 q2 q3 q4; do run "$binary" backup config now --reason=$r >/dev/null; done
+run "$binary" backup config list --json | jq -e '[.data.snapshots[0:2][].reason] == ["q4","q3"]' >/dev/null || fail "same-second snapshots keep their order: $(run "$binary" backup config list --json | jq -c '[.data.snapshots[0:4][] | {id, reason}]')"
 echo "backup-config-test: ok"
