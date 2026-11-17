@@ -74,8 +74,8 @@ class LookPage {
 		if ( r.id == "battery" ) { var b = l.battery_percent == "on" ? "off" : "on"; return { action: "cli", title: "Battery percentage " & b, args: [ "appearance", "battery-percent", b ] }; }
 		if ( r.id == "clock" ) {
 			return { action: "ask", title: "Clock format", prompt: "Format for the bar clock (now " & l.clock_format & "). Type default to go back to the default.", make: function( value ) {
-				return { action: "cli", title: "Clock format " & value, args: [ "time", "format", value ] };
-			} };
+					return { action: "cli", title: "Clock format " & value, args: [ "time", "format", value ] };
+				} };
 		}
 		if ( r.id == "toggle" ) return { action: "goto", page: "shortcuts" };
 		if ( r.id == "theme" ) return { action: "goto", page: "themes" };

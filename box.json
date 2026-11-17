@@ -36,6 +36,17 @@
 			"version": "v0.41.0",
 			"installer": "https://raw.githubusercontent.com/nvm-sh/nvm/v0.41.0/install.sh",
 			"node": "lts/*"
-		}
+		},
+		"modules": [
+			{
+				"slug": "bx-image",
+				"version": "1.15.0",
+				"url": "https://downloads.ortussolutions.com/ortussolutions/boxlang-modules/bx-image/1.15.0/bx-image-1.15.0.zip",
+				"sha256": "e871cbb1cafd5ae1b92bec6b8d24cff74f2b212672a936ef24d1e6bb42b121d9",
+				"repo": "https://github.com/ortus-boxlang/bx-image",
+				"tag": "v1.15.0",
+				"note": "Embedded in bxrig for `bxrig ascii image` (the MatchBox native backend: image + resvg). scripts/get-modules.sh unpacks it; when its prebuilt plugin cannot load on the build machine (the 1.15.0 Linux artifact needs glibc 2.43), the plugin is rebuilt from the tag with cargo."
+			}
+		]
 	}
 }

@@ -8,6 +8,7 @@
 //   Noctalia palette  ~/.config/noctalia/palettes/BxRigTheme.json, then `noctalia msg color-scheme-set custom BxRigTheme` and `theme-mode-set` (+ `wallpaper-set`)
 //   terminals         ~/.config/bxrig/theme/{ghostty,kitty.conf,alacritty.toml,foot.ini}, included from the terminal starter configs
 //   btop              ~/.config/btop/themes/bxrig.theme
+//   About logo        ~/.config/bxrig/theme/fastfetch-logo.ans (the laptop of `bxrig about` in the theme's colours)
 //   Hyprland accent   ~/.config/bxrig/theme/hypr.lua (read by the managed bxrig.lua), then `hyprctl reload`
 //   Neovim            ~/.local/state/bxrig/current/theme/neovim.lua (nvim's lua/plugins/theme.lua links to it)
 //   Plasma            `plasma-apply-colorscheme BreezeDark|BreezeLight`
@@ -125,6 +126,7 @@ class Theme {
 			{ name: "theme-alacritty", target: d & "/alacritty.toml", mode: "644", content: variables.tc.alacritty( arguments.c ) },
 			{ name: "theme-foot", target: d & "/foot.ini", mode: "644", content: variables.tc.foot( arguments.c ) },
 			{ name: "theme-btop", target: cfg() & "/btop/themes/bxrig.theme", mode: "644", content: variables.tc.btop( arguments.c ) },
+			{ name: "theme-fastfetch-logo", target: d & "/fastfetch-logo.ans", mode: "644", content: aboutLogo( arguments.c ) },
 			{ name: "theme-hypr", target: d & "/hypr.lua", mode: "644", content: hyprAccent( arguments.c ) },
 			{ name: "theme-tmux", target: d & "/tmux.conf", mode: "644", content: variables.tc.tmux( arguments.c ) },
 			{ name: "theme-fzf", target: d & "/fzf.sh", mode: "644", content: variables.tc.fzf( arguments.c ) },
@@ -144,6 +146,12 @@ class Theme {
 		out.append( { name: "theme-btop-config", target: cfg() & "/btop/btop.conf", mode: "644", content: btopConfig( cfg() & "/btop/btop.conf" ) } );
 		if ( len( arguments.neovimText ) ) out.append( { name: "theme-neovim", target: variables.config.stateDir() & "/current/theme/neovim.lua", mode: "644", content: arguments.neovimText } );
 		return out;
+	}
+
+	// The `bxrig about` laptop logo in the theme's colours.
+	function aboutLogo( c ) {
+		var logo = new bxrig.AboutLogo();
+		return logo.text( logo.palette( arguments.c ) );
 	}
 
 	// btop.conf with color_theme = "bxrig" and theme_background on: your file with those two lines set (or added), or a stub when you have none.

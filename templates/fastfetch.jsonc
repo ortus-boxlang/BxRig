@@ -1,0 +1,50 @@
+// BxRig About: the laptop logo (drawn and recoloured by `bxrig theme set`) beside three panels: rig, stack and look.
+// Written by `bxrig setup shell`: ~/.config/bxrig/fastfetch.jsonc is managed (used by `bxrig about`); ~/.config/fastfetch/config.jsonc
+// is a copy written once for plain `fastfetch`, yours to change. Key colours are terminal colour names, so they follow the theme too.
+{
+	"$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+	"logo": {
+		"type": "file-raw",
+		"source": "{{logo}}",
+		"width": 40,
+		"height": 18,
+		"padding": { "top": 1, "left": 2, "right": 4 }
+	},
+	"display": {
+		"separator": " ",
+		"disableLinewrap": true
+	},
+	"modules": [
+		{ "type": "custom", "format": "\u001b[36m╭─ rig \u001b[90m──────────────────────────────────────\u001b[0m" },
+		{ "type": "host", "key": "│ ■ host     ", "keyColor": "cyan" },
+		{ "type": "cpu", "key": "│ ■ cpu      ", "keyColor": "cyan" },
+		{ "type": "gpu", "key": "│ ■ gpu      ", "keyColor": "cyan", "format": "{name}" },
+		{ "type": "memory", "key": "│ ■ memory   ", "keyColor": "cyan" },
+		{ "type": "disk", "key": "│ ■ disk     ", "keyColor": "cyan", "folders": "/" },
+		{ "type": "display", "key": "│ ■ display  ", "keyColor": "cyan" },
+		{ "type": "custom", "format": "\u001b[36m╰─\u001b[0m" },
+		{ "type": "custom", "format": "\u001b[32m╭─ stack \u001b[90m────────────────────────────────────\u001b[0m" },
+		{ "type": "command", "key": "│ › boxlang  ", "keyColor": "green",
+			"text": "b=$(command -v boxlang >/dev/null 2>&1 && boxlang --version 2>/dev/null | grep -oE '[0-9]+\\.[0-9]+\\.[0-9]+' | head -1); m=$(command -v matchbox >/dev/null 2>&1 && matchbox --version 2>/dev/null | head -1 | awk '{print $3}'); printf '%s' \"${b:-not installed}\"; [ -n \"$m\" ] && printf '   matchbox %s' \"$m\"; echo" },
+		{ "type": "command", "key": "│ › java     ", "keyColor": "green",
+			"text": "if command -v java >/dev/null 2>&1; then java -version 2>&1 | head -1 | sed -E 's/.*version \"([^\"]+)\".*/\\1/'; else echo not installed; fi" },
+		{ "type": "command", "key": "│ › node     ", "keyColor": "green",
+			"text": "if command -v node >/dev/null 2>&1; then v=$(node -v); p=$(command -v pnpm >/dev/null 2>&1 && pnpm -v 2>/dev/null); echo \"${v#v}${p:+   pnpm $p}\"; else echo not installed; fi" },
+		{ "type": "command", "key": "│ › git      ", "keyColor": "green",
+			"text": "if command -v git >/dev/null 2>&1; then v=$(git --version | awk '{print $3}'); g=$(command -v gh >/dev/null 2>&1 && gh --version 2>/dev/null | head -1 | awk '{print $3}'); echo \"$v${g:+   gh $g}\"; else echo not installed; fi" },
+		{ "type": "command", "key": "│ › editor   ", "keyColor": "green", "text": "echo \"${VISUAL:-${EDITOR:-nvim}}\"" },
+		{ "type": "custom", "format": "\u001b[32m╰─\u001b[0m" },
+		{ "type": "custom", "format": "\u001b[34m╭─ look \u001b[90m─────────────────────────────────────\u001b[0m" },
+		{ "type": "os", "key": "│ • os       ", "keyColor": "blue" },
+		{ "type": "wm", "key": "│ • desktop  ", "keyColor": "blue" },
+		{ "type": "command", "key": "│ • theme    ", "keyColor": "blue",
+			"text": "t=$(sed -n 's/.*\"name\"[^\"]*\"\\([^\"]*\\)\".*/\\1/p' \"${XDG_CONFIG_HOME:-$HOME/.config}/bxrig/theme.json\" 2>/dev/null | head -1); echo \"${t:-none}\"" },
+		{ "type": "shell", "key": "│ • shell    ", "keyColor": "blue" },
+		{ "type": "terminal", "key": "│ • terminal ", "keyColor": "blue" },
+		{ "type": "custom", "format": "\u001b[34m╰─\u001b[0m" },
+		"break",
+		{ "type": "custom", "format": "\u001b[31m● \u001b[33m● \u001b[32m● \u001b[36m● \u001b[34m● \u001b[35m● \u001b[37m● \u001b[90m●\u001b[0m" },
+		{ "type": "command", "key": " ", "format": "{#90}{result}{#}",
+			"text": "echo \"Your dev rig. Beautiful by default.   $(uptime -p 2>/dev/null)\"" }
+	]
+}

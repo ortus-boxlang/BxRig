@@ -413,7 +413,7 @@ class MenuTree {
 					link( "CachyOS wiki", "https://wiki.cachyos.org/" ),
 					link( "LazyVim keymaps", "https://www.lazyvim.org/keymaps" )
 				] ),
-			run( "About", [ "status" ] ),
+			run( "About", [ "about" ] ),
 			sub( "System", [
 					spawn( "Lock", [ "system", "lock" ] ),
 					spawn( "Suspend", [ "system", "suspend" ] ),

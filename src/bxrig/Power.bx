@@ -198,7 +198,7 @@ class Power {
 		var swap = diskSwapKb();
 		var swapOk = swap >= ram && ram > 0;
 		checks.append( { id: "swap", ok: swapOk, note: swapOk ? "disk swap is " & round( swap / 1048576 ) & " GB, enough for " & round( ram / 1048576 ) & " GB of RAM"
-			: "hibernation needs disk swap at least the size of RAM (RAM " & round( ram / 1048576 ) & " GB, disk swap " & round( swap / 1048576 ) & " GB; zram does not count)" } );
+				: "hibernation needs disk swap at least the size of RAM (RAM " & round( ram / 1048576 ) & " GB, disk swap " & round( swap / 1048576 ) & " GB; zram does not count)" } );
 		var cmd = "";
 		var cf = variables.environ.named( "cmdline", "/proc/cmdline" );
 		if ( fileExists( cf ) ) cmd = fileRead( cf );
@@ -347,7 +347,7 @@ class Power {
 		if ( v == "status" ) {
 			var data = { supported: files.len() > 0, limit: cur, persisted: persistedLimit() > 0, persisted_percent: persistedLimit(), unit: unitFile() };
 			var lines = files.len() ? [ "charge limit: " & cur & "%" & ( data.persisted ? " (kept across reboots by " & unitName() & ")" : " (not kept across reboots: bxrig power charge-limit PERCENT --yes)" ) ]
-				: [ "charge limit: not available (this battery has no charge_control_end_threshold)" ];
+			: [ "charge limit: not available (this battery has no charge_control_end_threshold)" ];
 			return variables.out.say( "ok", data, arguments.asJson, lines );
 		}
 		var want = 0;

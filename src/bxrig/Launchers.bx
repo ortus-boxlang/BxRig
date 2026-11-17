@@ -1,5 +1,5 @@
 // `bxrig launchers`: one application-menu entry per Control Center page (opt-in), each opening that page solo in your terminal,
-// grouped in a "BxRig" submenu: Setup Wizard, Runner menu and Control Center at the top, then Apps and Dashboard, then the folders
+// grouped in a "BxRig" submenu: Setup Wizard, Runner menu, Control Center and About at the top, then Apps and Dashboard, then the folders
 // Develop, System and Look, each with its own icon (a .directory file per folder plus one menu merge file with nested <Menu>;
 // flat launchers like rofi ignore the folders).
 //   on [--yes] [--dry-run]    writes ~/.local/share/applications/bxrig-tui-PAGE.desktop for every page ("BxRig Databases", Icon=bxrig,
@@ -48,13 +48,14 @@ class Launchers {
 		return "X-BxRig";
 	}
 
-	// Everything that gets an entry: the wizard, the runner menu and the Control Center first, then one per page.
+	// Everything that gets an entry: the wizard, the runner menu, the Control Center and About first, then one per page.
 	// { id, title, comment, argv (after the terminal, or the whole command when term is false), term, icon, category, file }
 	function items() {
 		var out = [
 			{ id: "wizard", title: "Setup Wizard", comment: "BxRig Setup Wizard: change any answer again, review, then apply (bxrig init)", argv: [ "init" ], term: true, icon: "system-run", category: "X-BxRig", file: extraFile( "wizard" ) },
 			{ id: "runner", title: "Runner Menu", comment: "The BxRig menu on your launcher", argv: [ "menu" ], term: false, icon: "system-search", category: "X-BxRig", file: extraFile( "runner" ) },
-			{ id: "controlcenter", title: "Control Center", comment: "BxRig Control Center, every page", argv: [ "tui" ], term: true, icon: "bxrig", category: "X-BxRig", file: extraFile( "controlcenter" ) }
+			{ id: "controlcenter", title: "Control Center", comment: "BxRig Control Center, every page", argv: [ "tui" ], term: true, icon: "bxrig", category: "X-BxRig", file: extraFile( "controlcenter" ) },
+			{ id: "about", title: "About", comment: "About this rig: BxRig, the hardware, your dev stack and the look", argv: [ "about", "--wait" ], term: true, icon: "help-about", category: "X-BxRig", file: extraFile( "about" ) }
 		];
 		for ( var p in new bxrig.ControlCenterPages().list() ) {
 			out.append( { id: p.id, title: p.title, comment: "BxRig " & p.title & " in a terminal", argv: [ "tui", p.id ], term: true, icon: "bxrig", category: categoryFor( p.id ), file: fileFor( p.id ) } );

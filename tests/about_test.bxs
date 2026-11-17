@@ -1,0 +1,60 @@
+// AboutLogo (the laptop, BX on its screen, the caption) and About's fastfetch config.
+// Run from src/: (cd src && matchbox ../tests/about_test.bxs)
+testkit = new lib.Check( "about" );
+logo = new bxrig.AboutLogo();
+esc = chr( 27 );
+
+// ---- the drawing ----
+testkit.check( "40 x 29 pixels, the lid 24 rows", logo.width() == 40 && logo.height() == 29 && logo.lidHeight() == 24 );
+holes = 0;
+for ( y = 0; y < logo.lidHeight(); y++ ) {
+	// every lid row has its frame on both sides (only the four rounded corners are empty)
+	corner = y == 0 || y == logo.lidHeight() - 1;
+	if ( logo.pixel( corner ? 4 : 3, y ) != "F" || logo.pixel( corner ? 35 : 36, y ) != "F" ) holes++;
+}
+for ( x = 4; x <= 35; x++ ) if ( logo.pixel( x, 0 ) != "F" || logo.pixel( x, 1 ) != "F" || logo.pixel( x, 22 ) != "F" || logo.pixel( x, 23 ) != "F" ) holes++;
+for ( y = 24; y < 29; y++ ) for ( x = 2; x <= 37; x++ ) if ( logo.pixel( x, y ) == "" ) holes++;
+testkit.check( "the frame and the base have no holes", holes == 0 );
+testkit.check( "inside the frame is screen, outside is nothing", logo.pixel( 20, 10 ) == "S" && logo.pixel( 0, 5 ) == "" && logo.pixel( 39, 26 ) == "F" && logo.pixel( 20, 25 ) == "N" );
+
+pal = logo.brand();
+cells = logo.cells( pal );
+testkit.check( "15 rows of 40 cells", cells.len() == 15 && cells.every( function( r ) { return r.len() == 40; } ) );
+s = logo.screen();
+screenRow = "";
+for ( c in cells[ s.y0 + 1 ] ) screenRow &= c.ch;
+testkit.check( "the screen's first row is blank, BX starts below it", !len( trim( mid( screenRow, s.x0 + 1, s.x1 - s.x0 + 1 ) ) ) );
+bxRows = 0;
+for ( r = s.y0 + 1; r <= s.y1 + 1; r++ ) { t = ""; for ( c in cells[ r ] ) t &= c.ch; if ( find( "███", t ) ) bxRows++; }
+testkit.check( "BX in DOS Rebel is on the screen", bxRows >= 6 );
+testkit.check( "the screen cells have the screen colour", cells[ s.y0 + 1 ][ s.x0 + 1 ].bg == pal.screen );
+
+// ---- colour ----
+lines = logo.lines( pal );
+testkit.check( "18 lines: the laptop, a blank line, the caption and the site", lines.len() == 18 && find( "powered by", lines[ 17 ] ) && find( "www.boxlang.io", lines[ 18 ] ) );
+testkit.check( "24-bit colour and a reset at the end of each laptop line", find( esc & "[38;2;", lines[ 1 ] ) && right( lines[ 1 ], 4 ) == esc & "[0m" );
+testkit.check( "text() is the lines with a final newline", logo.text( pal ) == lines.toList( chr( 10 ) ) & chr( 10 ) );
+plain = logo.plainLines();
+testkit.check( "plain lines have no escapes and keep the shape", !find( esc, plain.toList( "" ) ) && left( plain[ 1 ], 4 ) == "   ▄" && find( "BXRIG powered by BoxLang", plain[ 17 ] ) );
+
+// ---- palettes ----
+testkit.check( "no theme gives the brand palette", logo.palette( {} ).screen == logo.brand().screen );
+tc = new bxrig.ThemeColors();
+bx = tc.parse( fileRead( expandPath( "resources/themes/bxrig/colors.toml" ) ) ).colors;
+bp = logo.palette( bx );
+testkit.check( "the bxrig theme runs from its accent to bright cyan (the brand green to cyan)", bp.frame[ 1 ] == "##00ff78" && bp.frame[ 3 ] == "##00dbff" && bp.screen == bx.darker_background );
+light = tc.parse( fileRead( expandPath( "resources/themes/catppuccin-latte/colors.toml" ) ) ).colors;
+lp = logo.palette( light );
+testkit.check( "a light theme gets a light screen", tc.toRgb( lp.screen )[ 1 ] > 150 );
+
+// ---- the fastfetch config ----
+about = new bxrig.About();
+text = about.configText( "/home/u/.config" );
+testkit.check( "the config points at the theme's logo file", find( '"source": "/home/u/.config/bxrig/theme/fastfetch-logo.ans"', text ) && !find( "{{logo}}", text ) );
+testkit.check( "three panels: rig, stack, look", find( "╭─ rig", text ) && find( "╭─ stack", text ) && find( "╭─ look", text ) );
+testkit.check( "the dev stack lists BoxLang, Java, Node, Git and the editor", find( "boxlang", text ) && find( "java", text ) && find( "node", text ) && find( "git", text ) && find( "editor", text ) );
+entries = about.shellEntries( "/home/u/.config" );
+testkit.check( "setup writes the managed config and a starter written once", entries.len() == 2 && !entries[ 1 ].once && entries[ 2 ].once && entries[ 2 ].target == "/home/u/.config/fastfetch/config.jsonc" );
+testkit.check( "the shell setup includes fastfetch", arrayFind( new bxrig.ShellConfig().packages( "zsh" ), "fastfetch" ) > 0 );
+testkit.check( "terminal art keeps its spaces in the config service", new bxrig.util.Indent().tabs( "        x" & chr( 10 ) & "    y", "/a/logo.ans" ) == "        x" & chr( 10 ) & "    y" );
+testkit.done( "about tests passed" );
