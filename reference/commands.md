@@ -45,7 +45,7 @@ Settings that only touch your own config (a theme, the bar, the font) act at onc
 
 ## All commands
 
-**Start here**: [`init`](#bxrig-init), [`refresh`](#bxrig-refresh), [`reinstall`](#bxrig-reinstall), [`wizard`](#bxrig-wizard), [`status`](#bxrig-status), [`doctor`](#bxrig-doctor), [`update`](#bxrig-update), [`ascii`](#bxrig-ascii), [`about`](#bxrig-about), [`version`](#bxrig-version), [`menu`](#bxrig-menu), [`apps`](#bxrig-apps), [`help`](#bxrig-help)
+**Start here**: [`init`](#bxrig-init), [`refresh`](#bxrig-refresh), [`reinstall`](#bxrig-reinstall), [`wizard`](#bxrig-wizard), [`status`](#bxrig-status), [`doctor`](#bxrig-doctor), [`update`](#bxrig-update), [`ascii`](#bxrig-ascii), [`about`](#bxrig-about), [`banner`](#bxrig-banner), [`version`](#bxrig-version), [`menu`](#bxrig-menu), [`apps`](#bxrig-apps), [`help`](#bxrig-help)
 
 **Install and remove**: [`install`](#bxrig-install), [`remove`](#bxrig-remove), [`pkg`](#bxrig-pkg), [`catalog`](#bxrig-catalog), [`plan`](#bxrig-plan), [`install-plan`](#bxrig-install-plan), [`optional-plan`](#bxrig-optional-plan), [`profile-plan`](#bxrig-profile-plan), [`profile-install-plan`](#bxrig-profile-install-plan), [`profile-install`](#bxrig-profile-install), [`optional-install`](#bxrig-optional-install), [`profile-list`](#bxrig-profile-list), [`optional-list`](#bxrig-optional-list), [`desktop-list`](#bxrig-desktop-list), [`tui-list`](#bxrig-tui-list), [`web-list`](#bxrig-web-list), [`package-status`](#bxrig-package-status), [`package-source`](#bxrig-package-source), [`dev-plan`](#bxrig-dev-plan), [`prerequisites`](#bxrig-prerequisites), [`apps-doctor`](#bxrig-apps-doctor), [`web`](#bxrig-web), [`toolchain`](#bxrig-toolchain)
 
@@ -209,6 +209,22 @@ bxrig about --json
 ```
 
 > Runs fastfetch with ~/.config/bxrig/fastfetch.jsonc; the logo (~/.config/bxrig/theme/fastfetch-logo.ans) follows the theme and is rewritten by `bxrig theme set`. A missing logo or config is written first. Without fastfetch the logo, version and tagline are shown. --wait asks for Enter before returning (the launcher's About window uses it).
+
+### `bxrig banner` {#bxrig-banner}
+
+The BXRIG wordmark in block letters, painted in the colors of the current theme (the retro greeting).
+
+```text
+bxrig banner [--plain] [--json]
+```
+
+```bash
+bxrig banner
+bxrig banner --plain
+bxrig banner --json
+```
+
+> Five rows, painted top to bottom with the theme's accent, magenta and cyan. A pipe, --plain and NO_COLOR give plain text; --json gives the lines and the three colors.
 
 ### `bxrig version` {#bxrig-version}
 

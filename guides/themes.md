@@ -1,12 +1,12 @@
 ---
 title: Themes
 order: 3
-summary: Twenty color themes, each with its own wallpaper, that follow you into the shell, terminals, btop, window borders and Neovim.
+summary: Twenty-one color themes, each with its own wallpaper, that follow you into the shell, terminals, btop, window borders and Neovim.
 ---
 
 # Themes
 
-BxRig ships 20 color themes in the Omarchy theme format, each with its own wallpaper: ten of ours (five dark, five light) and ten taken from Omarchy.
+BxRig ships 21 color themes in the Omarchy theme format, each with its own wallpaper: eleven of ours (six dark, five light, among them the neon 80s `bxrig-retro`) and ten taken from Omarchy.
 
 ![The BxRig theme: its wallpaper, the bar and a themed terminal](../assets/screenshots/themes/bxrig.webp)
 
@@ -17,6 +17,8 @@ bxrig theme next                  # or random
 bxrig theme mode auto             # theme, dark, light or auto
 bxrig theme status
 ```
+
+The Themes page of the Control Center (`bxrig tui themes`) is the selector: every theme with a color swatch, a filter (type to search, `d` for dark and `l` for light), a preview of the highlighted one (palette roles, a sample terminal and its wallpaper), `r` to preview it live (the whole Control Center is recoloured, nothing is applied; `r` again stops), and `Enter` for the plan and `y` to apply.
 
 Setting a theme acts at once. `--dry-run` shows what would be written without changing anything.
 
@@ -35,6 +37,10 @@ Setting a theme acts at once. `--dry-run` shows what would be written without ch
 | tmux, fzf | `theme/tmux.conf` and `theme/fzf.sh`, with a one-line hint to source them |
 | rofi, fuzzel, wofi | a rofi theme (and a `config.rasi` stub when you have none), `fuzzel.ini`, wofi `style.css` |
 | Wallpaper | a BxRig theme brings one of our wallpapers; use `--keep-wallpaper` to skip it |
+
+A theme can name a font with a `font = "ID"` line in its `colors.toml` (an id of `bxrig appearance font list`; Omarchy ignores the line). `bxrig-retro` names `sharetech`, Share Tech Mono Nerd (Arch package `ttf-sharetech-mono-nerd`): once it is installed (`bxrig appearance font install sharetech --yes`) `theme set` makes it the shell and terminal font, and until then the plan says so. Other themes leave your font alone.
+
+`bxrig banner` prints the BXRIG wordmark in the colors of the current theme (`--json` gives the lines); the retro theme uses it as a terminal greeting.
 
 VS Code is opt-in: `bxrig theme vscode` shows a plan, `--yes` merges the colors into `workbench.colorCustomizations` of Code, Code - OSS, VSCodium or Cursor (a backup is kept; a settings file with comments is left alone). Not themed: the Starship prompt, browsers and icons. Your own config files are never edited. Terminal configs you wrote yourself need one include line, which `bxrig theme set` prints.
 
