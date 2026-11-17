@@ -405,6 +405,9 @@ class InitPlan {
 		if ( pick( a, "update_notifications", false ) ) out.steps.append( { id: "update-notifications", title: "check for updates daily and notify", argv: [ "bxrig", "update", "notifications", "on" ], optional: true } );
 		// night shift, trackpad gestures and the AirPlay receiver (optional: a failure is skipped)
 		if ( pick( a, "night_shift", false ) ) out.steps.append( { id: "night-shift", title: "turn on night shift (sunset and sunrise from your time zone)", argv: [ "bxrig", "nightshift", "on" ], optional: true } );
+		// Apple Magic and Logitech helpers (solaar, upower, libinput-gestures): `input offer` does nothing when `detect` finds no device; no answer means none
+		var inputChoice = pick( a, "input_devices", "none" );
+		if ( arrayFind( [ "detect", "apple", "logitech", "both" ], inputChoice ) ) out.steps.append( { id: "input-devices", title: "install helpers for " & ( inputChoice == "detect" ? "the Apple and Logitech devices found (Solaar, upower, trackpad gestures)" : inputChoice == "both" ? "Apple and Logitech devices" : inputChoice & " devices" ), argv: [ "bxrig", "input", "offer", "--for=" & inputChoice ], optional: true } );
 		if ( wantsHypr && pick( a, "gestures", false ) ) out.steps.append( { id: "gestures", title: "set up three-finger trackpad gestures", argv: [ "bxrig", "input", "gestures" ], optional: true } );
 		if ( pick( a, "airplay", false ) ) out.steps.append( { id: "airplay", title: "start the AirPlay receiver", argv: [ "bxrig", "airplay", "on" ], optional: true } );
 		// the Plasma panel layout (optional: it is applied now when Plasma is running, else at your next Plasma login) and the desktop count

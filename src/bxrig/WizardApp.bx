@@ -28,11 +28,18 @@ class WizardApp {
 		return this;
 	}
 
-	// Whether a question (or a page) is shown: no `when`, or the answer to when.id is one of when.in, equals when.equals, or (a list answer) contains when.has.
+	// Whether a question (or a page) is shown: no `when`, or the answer to when.id is one of when.in, equals when.equals, or (a list answer) contains when.has; `when.any` is a list of such conditions (one is enough) and a question with `hidden: true` is never shown.
 	// Hidden questions have no rows, are left out of the review and out of finalAnswers().
 	function isVisible( q ) {
+		// `hidden: true` holds a value the wizard never asks for (what the system detected) that other questions' `when` can read
+		if ( structKeyExists( arguments.q, "hidden" ) && arguments.q.hidden ) return false;
 		if ( !structKeyExists( arguments.q, "when" ) ) return true;
 		var w = arguments.q.when;
+		// `any`: a list of conditions, shown when one of them holds
+		if ( structKeyExists( w, "any" ) ) {
+			for ( var c in w.any ) if ( isVisible( { when: c } ) ) return true;
+			return false;
+		}
 		var current = answerString( w.id );
 		if ( structKeyExists( w, "nonempty" ) ) return answerList( w.id ).len() > 0;
 		if ( structKeyExists( w, "has" ) ) return arrayFind( answerList( w.id ), w.has ) > 0;

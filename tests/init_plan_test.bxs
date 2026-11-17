@@ -48,6 +48,9 @@ testkit.check( "Noctalia needs no package of its own", cmd( p, "apps" ) == "bxri
 p = ip.plan( { ssh_key: true, natural_scroll: false, layouts: [] } );
 testkit.check( "ssh_key is now a step (optional: ssh-keygen asks for a passphrase), no longer pending", p.pending.len() == 0 && cmd( p, "ssh-key" ) == "bxrig ssh key" && ( p.steps[ 1 ].optional ?: false ) );
 testkit.check( "power_setup is a step that skips itself without a battery", cmd( ip.plan( { power_setup: true } ), "power-setup" ) == "bxrig power setup" && find( "power-setup", ids( ip.plan( {} ) ) ) == 0 );
+testkit.check( "input_devices: each choice but none is one optional `input offer` step, no answer adds nothing", cmd( ip.plan( { input_devices: "detect" } ), "input-devices" ) == "bxrig input offer --for=detect" && cmd( ip.plan( { input_devices: "logitech" } ), "input-devices" ) == "bxrig input offer --for=logitech" && cmd( ip.plan( { input_devices: "both" } ), "input-devices" ) == "bxrig input offer --for=both" && find( "input-devices", ids( ip.plan( { input_devices: "none" } ) ) ) == 0 && find( "input-devices", ids( ip.plan( {} ) ) ) == 0 && ( ip.plan( { input_devices: "apple" } ).steps[ 1 ].optional ?: false ) );
+p = ip.plan( { desktops: "hyprland", input_devices: "apple", gestures: true } );
+testkit.check( "the input helpers install before the gestures step needs them", find( "input-devices,gestures", ids( p ) ) > 0 );
 testkit.check( "the SSH key takes the git email as its comment", cmd( ip.plan( { ssh_key: true, git_email: "ada@example.com" } ), "ssh-key" ) == "bxrig ssh key --email=ada@example.com" && find( "ssh-key", ids( ip.plan( { ssh_key: false } ) ) ) == 0 );
 p = ip.plan( { desktops: "plasma", layouts: [ "us-intl", "es" ] } );
 testkit.check( "Plasma gets its keyboard layouts through setup keyboard (not pending)", cmd( p, "plasma-keyboard" ) == "bxrig setup keyboard --layouts=us-intl,es" && p.pending.len() == 0 );

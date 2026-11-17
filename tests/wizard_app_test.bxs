@@ -111,6 +111,11 @@ function withPages() {
 	return spec;
 }
 a = new bxrig.WizardApp( withPages() );
+inp = mk( { mac_keys: false, input_detected: "none" } );
+qi = {}; for ( pg in inp.spec().pages ) for ( q in pg.questions ) if ( q.id == "input_devices" ) qi = q;
+hq = {}; for ( pg in inp.spec().pages ) for ( q in pg.questions ) if ( q.id == "input_detected" ) hq = q;
+testkit.check( "the input question needs a device found or the Mac keys on (`when.any`)", !inp.isVisible( qi ) && mk( { mac_keys: false, input_detected: "logitech" } ).isVisible( qi ) && mk( { mac_keys: true, input_detected: "none" } ).isVisible( qi ) && mk( { mac_keys: false, input_detected: "both" } ).isVisible( qi ) );
+testkit.check( "a `hidden` question is never shown and never answered by the user", !inp.isVisible( hq ) && !mk( { input_detected: "both" } ).finalAnswers().keyExists( "input_detected" ) && mk( { mac_keys: true } ).finalAnswers().input_devices == "detect" );
 testkit.check( "a page with `when` is hidden until its answer matches", !a.pageVisible( 2 ) && a.visiblePages().len() == a.pageCount() - 1 && a.stepCount() == a.pageCount() );
 testkit.check( "answers on a hidden page are not in the result", !a.finalAnswers().keyExists( "extra_pick" ) );
 a.onKey( "Enter" ); a.gotoPage( 1 ); a.nextPage();

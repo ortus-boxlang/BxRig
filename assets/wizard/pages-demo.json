@@ -714,6 +714,82 @@
 					]
 				},
 				{
+					"type": "choice",
+					"id": "input_detected",
+					"label": "Input devices found",
+					"default": "none",
+					"hidden": true,
+					"help": "Filled in from the system: which of Apple Magic and Logitech devices are paired or plugged in. Never asked.",
+					"options": [
+						{
+							"value": "none",
+							"label": "None found"
+						},
+						{
+							"value": "apple",
+							"label": "Apple"
+						},
+						{
+							"value": "logitech",
+							"label": "Logitech"
+						},
+						{
+							"value": "both",
+							"label": "Both"
+						}
+					]
+				},
+				{
+					"type": "choice",
+					"id": "input_devices",
+					"label": "Input devices (Apple Magic, Logitech)",
+					"default": "detect",
+					"help": "Magic Mouse and Magic Trackpad work through the kernel. This installs the helpers around them: Solaar for Logitech (the Linux Logi Options+), libratbag and Piper for gaming mice, upower for batteries, trackpad swipes on Hyprland. Undo: bxrig input undo.",
+					"when": {
+						"any": [
+							{
+								"id": "input_detected",
+								"in": [
+									"apple",
+									"logitech",
+									"both"
+								]
+							},
+							{
+								"id": "mac_keys",
+								"equals": "true"
+							}
+						]
+					},
+					"options": [
+						{
+							"value": "detect",
+							"label": "Detect and offer helpers (recommended)",
+							"description": "Sets up helpers only for the Apple and Logitech devices found now; nothing when none is found."
+						},
+						{
+							"value": "none",
+							"label": "None",
+							"description": "No input helpers."
+						},
+						{
+							"value": "apple",
+							"label": "Apple Magic Mouse or Trackpad",
+							"description": "Battery (upower) and, on Hyprland, trackpad swipes (libinput-gestures)."
+						},
+						{
+							"value": "logitech",
+							"label": "Logitech mouse or keyboard",
+							"description": "Solaar: buttons, DPI, scroll and battery."
+						},
+						{
+							"value": "both",
+							"label": "Apple and Logitech",
+							"description": "Both sets of helpers."
+						}
+					]
+				},
+				{
 					"type": "confirm",
 					"id": "night_shift",
 					"label": "Night shift (warmer screen at sunset)",

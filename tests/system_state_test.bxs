@@ -9,7 +9,7 @@ testkit.check( "multi: installed AI agent is selected", isArray( found.answers.a
 testkit.check( "installed map lists ollama", structKeyExists( found.installed, "ai_local" ) && arrayFind( found.installed.ai_local, "ollama" ) > 0 );
 testkit.check( "appInstalled true/false", sys.appInstalled( "git" ) && !sys.appInstalled( "timeshift" ) );
 fr = sys.startingAnswers( { a: 1 }, found.answers, "fresh" );
-testkit.check( "startingAnswers fresh keeps only power_setup", structCount( fr ) <= 1 && !structKeyExists( fr, "a" ) );
+testkit.check( "startingAnswers fresh keeps only what the machine is (power_setup, input_detected)", structCount( fr ) <= 2 && !structKeyExists( fr, "a" ) && ( structCount( fr ) == 0 || structKeyExists( fr, "power_setup" ) || structKeyExists( fr, "input_detected" ) ) );
 testkit.check( "startingAnswers rerun is saved only", structCount( sys.startingAnswers( { a: 1 }, found.answers, "rerun" ) ) == 1 );
 m = sys.startingAnswers( { ai_agents: [ "codex-cli" ], keep: "x" }, found.answers, "tune" );
 testkit.check( "startingAnswers tune joins lists and keeps saved keys", arrayFind( m.ai_agents, "codex-cli" ) > 0 && arrayFind( m.ai_agents, "claude-code" ) > 0 && m.keep == "x" );

@@ -119,4 +119,12 @@ run "$binary" init --print-answers | jq -e '.desktops == "hyprland" and .shell =
 mkdir -p "$tmp/ps/BAT0" "$tmp/ps/none"
 BXRIG_POWER_DIR="$tmp/ps" run "$binary" init --print-answers --from-system | jq -e '.power_setup == true' >/dev/null || fail 'power_setup is yes on a laptop'
 BXRIG_POWER_DIR="$tmp/ps/none" run "$binary" init --print-answers --from-system | jq -e '.power_setup == false' >/dev/null || fail 'power_setup is no on a desktop'
+# the Input page: which Apple Magic and Logitech devices are found (a fake sysfs; no device, no answer worth acting on)
+mkdir -p "$tmp/in/hid/0005:05AC:0265.0001" "$tmp/in/hid/0003:046D:C52B.0002" "$tmp/in/empty" "$tmp/in/inp"
+printf 'HID_ID=0005:000005AC:00000265\nHID_NAME=Magic Mouse 2\n' > "$tmp/in/hid/0005:05AC:0265.0001/uevent"
+printf 'HID_ID=0003:0000046D:0000C52B\nHID_NAME=Logitech USB Receiver\n' > "$tmp/in/hid/0003:046D:C52B.0002/uevent"
+BXRIG_SYS_HID="$tmp/in/hid" BXRIG_SYS_INPUT="$tmp/in/inp" run "$binary" init --print-answers --from-system | jq -e '.input_detected == "both"' >/dev/null || fail 'input_detected is both with a Magic Mouse and a Logitech receiver'
+rm -r "$tmp/in/hid/0003:046D:C52B.0002"
+BXRIG_SYS_HID="$tmp/in/hid" BXRIG_SYS_INPUT="$tmp/in/inp" run "$binary" init --print-answers --from-system | jq -e '.input_detected == "apple"' >/dev/null || fail 'input_detected is apple'
+BXRIG_SYS_HID="$tmp/in/empty" BXRIG_SYS_INPUT="$tmp/in/inp" run "$binary" init --print-answers --from-system | jq -e '.input_detected == "none"' >/dev/null || fail 'input_detected is none without devices'
 echo "init tests passed"

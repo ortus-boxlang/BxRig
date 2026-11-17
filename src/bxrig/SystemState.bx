@@ -105,10 +105,20 @@ class SystemState {
 		return new bxrig.util.Battery().present();
 	}
 
+	// "apple", "logitech", "both" or "none": the input devices found (bxrig.InputDevices). BXRIG_SYS_HID and friends replace sysfs in tests.
+	function inputDetected() {
+		var devs = new bxrig.InputDevices().scan();
+		var apple = devs.filter( function( d ) { return compare( d.vendor, "apple" ) == 0; } ).len() > 0;
+		var logi = devs.filter( function( d ) { return compare( d.vendor, "logitech" ) == 0; } ).len() > 0;
+		return apple && logi ? "both" : ( apple ? "apple" : ( logi ? "logitech" : "none" ) );
+	}
+
 	function scan( spec ) {
 		var out = { answers: {}, installed: {} };
 		// the laptop power question is a yes on a laptop and a no (ignored) on a desktop
 		for ( var pg0 in arguments.spec.pages ) for ( var q0 in pg0.questions ) if ( q0.id == "power_setup" ) out.answers.power_setup = hasBattery();
+		// the Input page's hidden answer: which Apple Magic and Logitech devices are paired or plugged in (sysfs, no root)
+		for ( var pg1 in arguments.spec.pages ) for ( var q1 in pg1.questions ) if ( q1.id == "input_detected" ) out.answers.input_detected = inputDetected();
 		for ( var pg in arguments.spec.pages ) for ( var q in pg.questions ) {
 			if ( !arrayFind( [ "choice", "multi" ], q.type ) ) continue;
 			var r = question( q );
@@ -122,7 +132,12 @@ class SystemState {
 	// The wizard's starting answers for a mode: tune (saved answers merged with what the system has), rerun (saved only) or fresh (none).
 	// Lists are joined (nothing you saved is dropped, nothing installed is missed); a single choice follows the system when it says something.
 	function startingAnswers( saved, detected, mode ) {
-		if ( arguments.mode == "fresh" ) return structKeyExists( arguments.detected, "power_setup" ) ? { power_setup: arguments.detected.power_setup } : {};
+		if ( arguments.mode == "fresh" ) {
+			var fresh = {};
+			// what the machine is, not what the user chose: the laptop answer and the input devices found
+			for ( var fk in [ "power_setup", "input_detected" ] ) if ( structKeyExists( arguments.detected, fk ) ) fresh[ fk ] = arguments.detected[ fk ];
+			return fresh;
+		}
 		if ( arguments.mode == "rerun" ) return arguments.saved;
 		var out = {};
 		for ( var k in structKeyArray( arguments.saved ) ) out[ k ] = arguments.saved[ k ];
