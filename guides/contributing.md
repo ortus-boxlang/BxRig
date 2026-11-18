@@ -60,22 +60,33 @@ The shared helpers are in `src/bxrig/util/`: `Cli`, `Out`, `Exit`, `Mutation`, `
 
 ## Local setup
 
-BxRig needs a MatchBox that has the fixes from the MatchBox `bxrig` branch. One script sets it up:
+BxRig is always built with the MatchBox you choose, and only a MatchBox with the terminal UI (the `bif-tui` feature) can compile it. The stable and snapshot builds do not have it yet, because the MatchBox `bxrig` branch is ahead of `develop`; for now use the branch build. One script sets it up:
 
 ```bash
 scripts/setup-local.sh                      # asks which MatchBox to use
-scripts/setup-local.sh --matchbox edge      # or pick one without the question
+bash scripts/setup-local.sh --matchbox branch --matchbox-branch bxrig   # or choose without the question
 ```
+
+Without `--matchbox` it asks:
+
+```text
+Which MatchBox should BxRig use?
+  1) stable    the released MatchBox from mvm
+  2) snapshot  the snapshot MatchBox from mvm
+  3) branch    build a branch of a MatchBox repository (needs git and Rust)
+```
+
+Choice 3 asks for the repository (default `ortus-boxlang/matchbox`) and the branch, tag or full commit id (default `bxrig`). With no terminal and no option it builds the `bxrig` branch and prints that choice.
 
 | Choice | What it does | Needs |
 |---|---|---|
-| `stable` | Installs the released MatchBox with `mvm install latest`. It cannot build BxRig until the `bxrig` fixes ship. | `mvm` |
-| `edge` | Downloads the `bxrig` branch build CI publishes (`scripts/get-matchbox.sh`) into `.cache/matchbox/`. | `curl`, `jq` |
-| `source` | Clones `../matchbox` on branch `bxrig`, or reuses it, and builds it with `cargo build --features bif-tui`. A clean `bxrig` checkout is pulled first; any other branch or local changes are built as they are. | `git`, Rust |
+| `stable` | `mvm install latest`, `mvm use latest`. | `mvm` |
+| `snapshot` | `mvm install snapshot`, `mvm use snapshot`. | `mvm` |
+| `branch` | Shallow clone of the repo and ref into `.cache/matchbox-src/<repo>-<ref>` (for example `ortus-boxlang-matchbox-bxrig`), refreshed with a shallow fetch when it exists, built with `cargo build --features bif-tui` (debug; `--release` for an optimized build). | `git`, Rust |
 
-The script saves the choice in `.cache/dev.env` (gitignored), builds `dist/bxrig` and runs a smoke test. `--no-build` only saves the choice. Run it again to switch. `scripts/dev-build.sh` and `tests/run-all.sh` read `.cache/dev.env`; a `MATCHBOX=/path/to/matchbox` variable overrides it.
+After the choice the script probes the MatchBox. If it cannot compile BxRig (stable and snapshot today) it stops with `This MatchBox (...) cannot compile BxRig ... Use the branch build: bash scripts/setup-local.sh --matchbox branch --matchbox-branch bxrig`, records nothing and never switches to another MatchBox by itself. Otherwise it saves the choice in `.cache/dev.env` (gitignored), builds `dist/bxrig` with `scripts/dev-build.sh` and runs a smoke test. `--no-build` only probes and saves the choice. Run it again to switch. `scripts/dev-build.sh` and `tests/run-all.sh` read `.cache/dev.env`; a `MATCHBOX=/path/to/matchbox` variable overrides it (use it for your own `../matchbox` checkout: build it with `cargo build --features bif-tui`, then `MATCHBOX=../matchbox/target/debug/matchbox scripts/dev-build.sh`).
 
-Use `source` when you also work on MatchBox: change `../matchbox`, rebuild it with `cargo build --features bif-tui`, then rebuild BxRig.
+`--matchbox edge` and `--matchbox source` were removed: use `--matchbox branch` (it builds the `bxrig` branch from source instead of downloading the published build).
 
 ### Testing with another MatchBox branch
 
@@ -89,20 +100,17 @@ scripts/setup-local.sh --matchbox-branch 0123456789abcdef0123456789abcdef0123456
 BXRIG_MATCHBOX_BRANCH=develop scripts/setup-local.sh                      # the same, from the environment
 ```
 
-- `--matchbox-branch REF` takes anything `git clone --branch` accepts (branch or tag); a full commit id is fetched by itself. `--matchbox-repo REPO` is `owner/name` on GitHub or a full `https://` URL and defaults to `toolchain.matchbox.repo` in `box.json`. `BXRIG_MATCHBOX_BRANCH` and `BXRIG_MATCHBOX_REPO` do the same; the flags win. Values may contain only letters, digits and `. _ / @ + -` (a repo URL also `:` after `https`), may not start with a dash and are passed to git as arguments, never through a shell.
-- A branch other than the one in `box.json` (`bxrig`) or a repo other than the manifest repo means a source build. The clone lives in `.cache/matchbox-src/<repo>-<ref>` (for example `ortus-boxlang-matchbox-develop`) and is refreshed with a shallow fetch when it exists. Pass `--release` for an optimized MatchBox (the default is a debug build, as for `source`); both are built with `--features bif-tui`.
-- `--matchbox edge` is the published build of the `bxrig` branch only; combined with another branch or repo it stops with an explanation. `--matchbox source` without a branch is still `../matchbox`.
-- `.cache/dev.env` records `MATCHBOX` (the path), `MATCHBOX_REPO`, `MATCHBOX_REF` and `MATCHBOX_COMMIT`, which `scripts/dev-build.sh` and `tests/run-all.sh` use. Switch back with `scripts/setup-local.sh --matchbox edge`.
-- A branch can report another version than `box.json` (`toolchain.matchbox.version`). For a branch build that is a warning naming both versions, from `setup-local.sh` and `scripts/dev-build.sh`, and the build goes on. The published `edge` path still refuses a MatchBox with the wrong version.
-- `scripts/get-matchbox.sh DEST --ref REF --repo REPO` does the same for scripts and CI: it builds that ref from source (release, no `--locked`) and writes `DEST` and `DEST.info` (with a `repo=` line). Without those options it behaves as before.
-- At the end the script prints one summary: the MatchBox in use (repo, ref, commit, path), how to switch back (`scripts/setup-local.sh --matchbox edge`) and the command that tests the end-user installer with it:
+- `--matchbox-branch REF` (or `--matchbox-repo REPO`) alone means `--matchbox branch`. REF is anything `git clone --branch` accepts (branch or tag); a full commit id is fetched by itself. `--matchbox-repo REPO` is `owner/name` on GitHub or a full `https://` URL and defaults to `toolchain.matchbox.repo` in `box.json`. `BXRIG_MATCHBOX_BRANCH` and `BXRIG_MATCHBOX_REPO` do the same; the flags win. Values may contain only letters, digits and `. _ / @ + -` (a repo URL also `:` after `https`), may not start with a dash and are passed to git as arguments, never through a shell. Combined with `--matchbox stable` or `snapshot` they stop with exit 2.
+- `.cache/dev.env` records `MATCHBOX` (the path), `MATCHBOX_REPO`, `MATCHBOX_REF` and `MATCHBOX_COMMIT` (for stable and snapshot the repo is `mvm (stable)` or `mvm (snapshot)` and the ref `latest` or `snapshot`), which `scripts/dev-build.sh` and `tests/run-all.sh` use.
+- The MatchBox version does not matter: what counts is the probe (it runs a three line script that creates the terminal UI canvas, `createObject( "rust", "tui.TUI" )`).
+- `scripts/get-matchbox.sh DEST --ref REF --repo REPO` does the same for scripts and CI: it builds that ref from source (release, no `--locked`) and writes `DEST` and `DEST.info` (with a `repo=` line). CI still uses it (and `.github/workflows/matchbox.yml`) to publish and consume the `bxrig` builds.
+- At the end the script prints one summary: the MatchBox in use (repo, ref, commit, path), how to switch (`scripts/setup-local.sh --matchbox stable|snapshot|branch`) and the command that tests the end-user installer with it:
 
   ```bash
   BXRIG_MATCHBOX_FILE=/path/to/matchbox bash bootstrap/install.sh toolchains --yes
   ```
 
-  `bootstrap/install.sh` installs that file instead of downloading the published build (it must be an executable regular file, not a symlink, and run with `--version`); the file `cargo build` leaves in `target/debug/matchbox` (or `target/release/matchbox`) is such a file. The installer then insists that the MatchBox reports the version in `box.json`: a branch that reports another version is installed and then refused with `MatchBox X not active after install`, so test the installer only with a branch build that reports the manifest version (the summary says so when it differs).
-- Asked without any option, the script offers a fourth choice, `any GitHub branch`, and asks for the repo and the branch.
+  `bootstrap/install.sh` installs that file under `~/.local/share/bxrig/matchbox/bin` instead of asking mvm (it must be an executable regular file, not a symlink, and run with `--version`); the file `cargo build` leaves in `target/debug/matchbox` (or `target/release/matchbox`) is such a file.
 
 ## Running the tests
 
