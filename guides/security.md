@@ -8,6 +8,7 @@ summary: What the installer and updater verify, and where secrets live.
 
 - **Releases are signed.** CI signs each channel's `version-latest.properties` and `install.sh` with an Ed25519 key. The public key is built into the program and into the published installer. The installer and `bxrig update` verify the signature and the SHA-256 of every file they download; any mismatch stops before anything changes.
 - **The first `curl | bash`** trusts the script it downloads (TLS and the bucket). For a stricter first install, download `install.sh` and `install.sh.sig` and check the signature yourself with `keys/release.pub`.
+- **A GitHub source is not a release.** `install.sh --source github:OWNER/REPO@REF` (for testing a branch) skips the signed release: there is no signature and no checksum from the BxRig downloads, so it warns and needs `--yes` or the typed word `unsigned`. Use it only for sources you trust. `GITHUB_TOKEN` or `GH_TOKEN` (private repositories) goes to GitHub as a header from a curl config on standard input, never on a command line, in the log or on screen.
 - **Nothing runs without a plan.** Commands that change the system print a plan and need `--yes`.
 - **Your files are yours.** BxRig keeps a config you changed and only rewrites files it wrote; every write is atomic, backed up and journaled.
 - **Secrets** live in the desktop keyring (or a private file fallback), are typed hidden, and never appear in answers files, logs or shell history.
