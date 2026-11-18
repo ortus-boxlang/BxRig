@@ -90,6 +90,21 @@ bxrig hotcorners off --yes
 
 Actions: `none`, `overview`, `notifications`, `desktop`, `lock`, `launcher`, `agents`, `themes`. Plasma has no corner action for notifications, agents and themes; those corners do nothing there and the command says so.
 
+## Screensaver
+
+After 2.5 minutes idle, BXRIG art in your theme's colours fills every monitor; after 5 minutes the screen locks. Any key or mouse move closes it. Six effects take turns, a minute each: a gradient sweeping across BXRIG, the BxRig laptop with a glint, BoxLang code rain, a drifting clock, a starfield and your own logo.
+
+```bash
+bxrig screensaver preview              # try it in this terminal (preview clock for one effect)
+bxrig screensaver                      # the settings and the effects
+bxrig screensaver set screensaver=300 lock=600 --yes
+bxrig screensaver set effects=clock,stars --yes
+bxrig screensaver logo text ACME --yes # or: logo image ~/Pictures/logo.png, logo reset
+bxrig screensaver off --yes            # no screensaver; the lock stays
+```
+
+Noctalia runs it as an idle behavior, so a video or **Stay awake** holds it off. It is also in the menu (*System > Screensaver*) and on the Control Center's Look page.
+
 ## Boot splash
 
 `bxrig setup boot --yes` puts the BxRig splash on the boot screen (Plymouth): the laptop fades in over a soft glow while the dots pulse, and an encrypted disk asks for its password on the same screen. It shows the plan first, keeps a backup of `/etc/mkinitcpio.conf`, and tells you where to add `splash` for your boot loader. `bxrig setup undo boot --yes` puts the previous theme back.

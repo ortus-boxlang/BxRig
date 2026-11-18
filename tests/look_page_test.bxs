@@ -13,8 +13,8 @@ testkit.check( "registry: Look sits before Themes, which stays its own page", fi
 testkit.check( "the page builds, for the real run and for --demo", new bxrig.PageFactory().make( "look", true, {} ).id() == "look" && new bxrig.PageFactory().make( "themes", false, {} ).id() == "themes" );
 
 s = page.state();
-testkit.check( "rows: layout, battery, clock, bar toggle, theme, app grid, dock", s.items.map( function( r ) { return r.id; } ).toList( "," ) == "layout,battery,clock,toggle,theme,appgrid,dock" );
-testkit.check( "rows: no theme list on the page (the theme is a link to the Themes page)", s.items.filter( function( r ) { return r.id == "theme"; } )[ 1 ].kind == "link" && s.items.filter( function( r ) { return r.kind == "choice"; } ).len() == 2 );
+testkit.check( "rows: layout, battery, clock, bar toggle, theme, app grid, dock, screensaver, its timing", s.items.map( function( r ) { return r.id; } ).toList( "," ) == "layout,battery,clock,toggle,theme,appgrid,dock,screensaver,screensaver-time" );
+testkit.check( "rows: no theme list on the page (the theme is a link to the Themes page)", s.items.filter( function( r ) { return r.id == "theme"; } )[ 1 ].kind == "link" && s.items.filter( function( r ) { return r.kind == "choice"; } ).len() == 3 );
 
 t = shot();
 testkit.check( "screen: the title, the preview of the bar and the dock, the three groups", find( "Look", t ) > 0 && find( "Preview", t ) > 0 && find( "Nov 5 - 04:00", t ) > 0 && find( "▦", t ) > 0 && find( "Bar", t ) > 0 && find( "Colors", t ) > 0 && find( "Apps", t ) > 0 );
@@ -48,8 +48,8 @@ testkit.check( "Right on the app grid switches style (and + does the same)", it.
 app.onKey( "Down" );
 it = app.onKey( " " );
 testkit.check( "Space on the dock turns it off", it.args.toList( " " ) == "appearance dock off" );
-app.onKey( "Down" );
-testkit.check( "the cursor stops on the last row", app.page().state().cursor == 7 );
+app.onKey( "Down" ); app.onKey( "Down" ); app.onKey( "Down" );
+testkit.check( "the cursor stops on the last row", app.page().state().cursor == 9 );
 
 // clicks
 view.paint( app, 10, 120, 40 );
@@ -71,11 +71,21 @@ fake = { selfData: function( args, timeout = 30 ) {
 		if ( key == "appearance appgrid status" ) return { appgrid: "terminal" };
 		if ( key == "appearance battery-percent status" ) return { battery_percent: "on", battery_found: false };
 		if ( key == "time format" ) return { format: "%H:%M", sample: "04:00" };
+		if ( key == "screensaver status" ) return { enabled: false, screensaver: 300, lock: 600 };
 		if ( key == "keys show" ) return { shortcuts: [ { id: "x", keys: "a" }, { id: "bar-toggle", keys: "Super+Alt+B" } ] };
 		return {};
 	} };
 got = new bxrig.LookData( false, fake ).load();
 testkit.check( "data: the layout, dock, grid, battery, clock and toggle key come from the status commands", got.layout == "dense" && got.dock == false && got.appgrid == "terminal" && got.battery_percent == "on" && got.battery_found == false && got.clock_format == "%H:%M" && got.clock_sample == "04:00" && got.bar_toggle_keys == "Super+Alt+B" );
+
+testkit.check( "data: the screensaver comes from its status command", got.screensaver == false && got.screensaver_seconds == 300 && got.lock_seconds == 600 );
+sp = new bxrig.LookPage( true );
+while ( sp.state().cursor < 8 ) sp.onKey( "Down" );
+testkit.check( "Screen: the screensaver row switches it off", sp.onKey( "Enter" ).args.toList( " " ) == "screensaver off" );
+sp.onKey( "Down" );
+testkit.check( "Screen: the timing steps from 2.5 / 5 min to 5 / 10 min", sp.onKey( "+" ).args.toList( " " ) == "screensaver set screensaver=300 lock=600" );
+testkit.check( "Screen: and back around to 15 / 30 min", sp.onKey( "-" ).args.toList( " " ) == "screensaver set screensaver=900 lock=1800" );
+testkit.check( "Screen: the timing reads in minutes", sp.state().items[ 9 ].value == "2.5 min, lock 5 min" );
 
 // the colours of the Control Center follow the active theme
 view2 = new bxrig.ControlCenterView( tui );

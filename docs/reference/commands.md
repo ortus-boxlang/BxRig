@@ -51,7 +51,7 @@ Settings that only touch your own config (a theme, the bar, the font) act at onc
 
 **Desktop setup**: [`setup`](#bxrig-setup), [`session`](#bxrig-session), [`tiling`](#bxrig-tiling), [`plasma`](#bxrig-plasma), [`keys`](#bxrig-keys), [`runner`](#bxrig-runner), [`default`](#bxrig-default), [`layout`](#bxrig-layout), [`assets`](#bxrig-assets), [`launchers`](#bxrig-launchers), [`config`](#bxrig-config)
 
-**Look and feel**: [`theme`](#bxrig-theme), [`appearance`](#bxrig-appearance), [`hotcorners`](#bxrig-hotcorners), [`display`](#bxrig-display), [`power`](#bxrig-power), [`time`](#bxrig-time), [`toggle`](#bxrig-toggle), [`nightshift`](#bxrig-nightshift), [`notify`](#bxrig-notify)
+**Look and feel**: [`theme`](#bxrig-theme), [`appearance`](#bxrig-appearance), [`screensaver`](#bxrig-screensaver), [`hotcorners`](#bxrig-hotcorners), [`display`](#bxrig-display), [`power`](#bxrig-power), [`time`](#bxrig-time), [`toggle`](#bxrig-toggle), [`nightshift`](#bxrig-nightshift), [`notify`](#bxrig-notify)
 
 **System and security**: [`system`](#bxrig-system), [`security`](#bxrig-security), [`dns`](#bxrig-dns), [`kernel`](#bxrig-kernel), [`ssh`](#bxrig-ssh), [`secrets`](#bxrig-secrets), [`vpn`](#bxrig-vpn), [`cloud`](#bxrig-cloud), [`settings`](#bxrig-settings), [`dotfiles`](#bxrig-dotfiles), [`nas`](#bxrig-nas), [`backup`](#bxrig-backup), [`timemachine`](#bxrig-timemachine), [`java`](#bxrig-java), [`sdk`](#bxrig-sdk), [`mail`](#bxrig-mail), [`tui`](#bxrig-tui), [`bxtimemachine`](#bxrig-bxtimemachine)
 
@@ -785,6 +785,33 @@ bxrig appearance icons papirus --yes
 ```
 
 > Settings act at once (no --yes); --dry-run shows the commands. What you choose is remembered, and `appearance apply` pushes it again. `bar layout`, `dock on|off|toggle`, `appgrid` and `battery-percent` rewrite ~/.config/noctalia/config.toml (backup kept; a file with changes of your own needs --yes). The `terminal` app grid style is only stored for now: nothing draws it yet. `icons` is the exception to "act at once": it installs papirus-icon-theme and writes the BxRig icon theme and settings files, so it prints a plan (exit 2) until --yes; `bxrig` (the default after setup) is the BxRig icons over Papirus-Dark, `papirus` is Papirus-Dark alone.
+
+### `bxrig screensaver` {#bxrig-screensaver}
+
+The screensaver: terminal art in the theme's colours on every monitor after a while idle, then the lock.
+
+```text
+bxrig screensaver [status] [--json]
+bxrig screensaver on|off [--yes]
+bxrig screensaver set screensaver=SECONDS lock=SECONDS effects=NAME,NAME [--yes]
+bxrig screensaver logo text TEXT|image PATH|reset [--yes]
+bxrig screensaver effects [--json]
+bxrig screensaver start [--effect=NAME]
+bxrig screensaver stop
+bxrig screensaver preview [EFFECT]
+bxrig screensaver run [--effect=NAME]
+```
+
+Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
+
+```bash
+bxrig screensaver preview clock
+bxrig screensaver set screensaver=300 lock=600 --yes
+bxrig screensaver logo text ACME --yes
+bxrig screensaver off --yes
+```
+
+> Effects: sweep, laptop, rain, clock, stars, logo; they take turns, a minute each. Defaults: the screensaver after 150 s idle, the lock after 300 s (0 for never), both counted from the start of idle. Noctalia runs them as idle behaviors (bxrig screensaver start, with stop as the resume command), so any input closes it and idle inhibitors hold both off. start opens a full-screen terminal per monitor on Hyprland; preview runs it in this terminal. Any key, click, scroll or mouse move closes it. Settings: ~/.config/bxrig/screensaver.json.
 
 ### `bxrig hotcorners` {#bxrig-hotcorners}
 

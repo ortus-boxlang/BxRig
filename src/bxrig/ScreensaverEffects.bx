@@ -1,0 +1,272 @@
+// The screensaver's effects: each paints one frame on the canvas through a TuiKit, from the frame number alone, so a frame can be drawn
+// again (and tested with tui.render_to_string) without any state. Everything follows the theme: the kit's palette and the About logo's.
+//   fx = new bxrig.ScreensaverEffects()
+//   fx.names()                      sweep laptop rain clock stars logo
+//   fx.paint( kit, name, frame )    frame: { tick, width, height, now, logo: { type, text, path }, pixels: [], colors: {} }
+//     tick    the frame number (about 15 a second)
+//     now     the time the clock shows
+//     logo    ScreensaverConfig's logo; pixels is the image logo read once as rows of [ r, g, b, a ] (empty for a text logo)
+//     colors  the theme's parsed colors.toml (Palette.colorsOf), for the laptop; {} gives the brand colours
+// Burn-in: every effect moves, and the still ones (the laptop, the BXRIG sweep) drift a few cells over time.
+class ScreensaverEffects {
+	function init() {
+		variables.figlet = new bxrig.Figlet();
+		variables.art = {};
+		variables.laptop = {};
+		return this;
+	}
+
+	function names() { return [ "sweep", "laptop", "rain", "clock", "stars", "logo" ]; }
+	function known( name ) { return arrayFind( names(), arguments.name ) > 0; }
+	function describe() {
+		return {
+			sweep: "BXRIG in DOS Rebel with a gradient sweeping across it",
+			laptop: "the BxRig laptop, a light glinting across BX on its screen",
+			rain: "BoxLang code raining down the screen",
+			clock: "the time in DOS Rebel, drifting around the screen",
+			stars: "flying through a starfield",
+			logo: "your logo (text or a picture), drifting around the screen"
+		};
+	}
+
+	function paint( kit, name, frame ) {
+		var f = arguments.frame;
+		arguments.kit.fillRect( 0, 0, f.width, f.height, arguments.kit.color( "CRUST" ) );
+		switch ( arguments.name ) {
+			case "sweep": sweep( arguments.kit, f ); break;
+			case "laptop": laptop( arguments.kit, f ); break;
+			case "rain": rain( arguments.kit, f ); break;
+			case "clock": clock( arguments.kit, f ); break;
+			case "stars": stars( arguments.kit, f ); break;
+			case "logo": logo( arguments.kit, f ); break;
+		}
+	}
+
+	// ---- helpers ----
+	// A number from 0 to 1 for a seed, the same every time (so frames can be drawn again).
+	function rnd( seed ) {
+		var v = sin( arguments.seed * 12.9898 + 78.233 ) * 43758.5453;
+		return v - floor( v );
+	}
+	// A position that goes from 0 to range and back as t grows: what makes things bounce off the edges.
+	function bounce( t, range ) {
+		if ( arguments.range <= 0 ) return 0;
+		var p = arguments.t % ( 2 * arguments.range );
+		return int( p <= arguments.range ? p : 2 * arguments.range - p );
+	}
+	// The text in DOS Rebel, cached.
+	function figletArt( text ) {
+		if ( !structKeyExists( variables.art, arguments.text ) ) variables.art[ arguments.text ] = variables.figlet.render( arguments.text, "dos-rebel" );
+		return variables.art[ arguments.text ];
+	}
+	function artWidth( art ) { return variables.figlet.width( arguments.art ); }
+
+	// Draws figlet art at x, y with the colour of each column from colourAt( i ) (i from 0). Runs of up to four solid characters are drawn as
+	// one gradient; the font's shade characters (its shadow) are dimmed toward the background.
+	function drawArt( kit, x, y, art, colourAt ) {
+		var bg = arguments.kit.color( "CRUST" );
+		var tui = arguments.kit.tui();
+		for ( var j = 1; j <= arguments.art.len(); j++ ) {
+			var line = arguments.art[ j ];
+			var n = len( line );
+			var i = 1;
+			while ( i <= n ) {
+				var ch = mid( line, i, 1 );
+				if ( ch == " " ) { i++; continue; }
+				var shade = ch == "░";
+				var run = ch;
+				var k = i + 1;
+				while ( k <= n && len( run ) < 4 ) {
+					var nx = mid( line, k, 1 );
+					if ( nx == " " || ( nx == "░" ) != shade ) break;
+					run &= nx;
+					k++;
+				}
+				var c1 = arguments.colourAt( i - 1 );
+				var c2 = arguments.colourAt( i - 1 + len( run ) - 1 );
+				if ( shade ) { c1 = arguments.kit.mix( c1, bg, 0.55 ); c2 = arguments.kit.mix( c2, bg, 0.55 ); }
+				tui.gradient( arguments.x + i - 1, arguments.y + j - 1, run, arguments.kit.c( c1 ), arguments.kit.c( c2 ), {} );
+				i = k;
+			}
+		}
+	}
+
+	// Text centred under something drawn at x, w cells wide (kept on the screen).
+	function under( kit, f, x, w, y, text, colour, bold = false ) {
+		if ( arguments.y < 0 || arguments.y >= arguments.f.height ) return;
+		var t = arguments.kit.trunc( arguments.text, arguments.f.width );
+		var tx = min( max( 0, arguments.x + int( ( arguments.w - len( t ) ) / 2 ) ), max( 0, arguments.f.width - len( t ) ) );
+		arguments.kit.put( tx, arguments.y, t, arguments.colour, "", arguments.bold );
+	}
+
+	// A slow drift of a few cells, so nothing stays on the same pixels for long.
+	function drift( tick, cells ) { return { x: bounce( arguments.tick / 40, arguments.cells ), y: bounce( arguments.tick / 90, max( 1, int( arguments.cells / 2 ) ) ) }; }
+
+	// ---- sweep: BXRIG with a gradient sweeping across it ----
+	function sweep( kit, f ) {
+		var art = figletArt( "BXRIG" );
+		var aw = artWidth( art );
+		var d = drift( arguments.f.tick, 4 );
+		var x = int( ( arguments.f.width - aw ) / 2 ) - 2 + d.x;
+		var y = int( ( arguments.f.height - art.len() - 2 ) / 2 ) - 1 + d.y;
+		var phase = ( arguments.f.tick % 90 ) / 90;
+		var k = arguments.kit;
+		drawArt( k, x, y, art, function( i ) {
+				var pos = i / max( 1, aw - 1 );
+				// a triangle wave so the gradient loops without a seam, and a white band riding on it
+				var t = ( pos - phase + 1 ) % 1;
+				var tri = 1 - abs( t * 2 - 1 );
+				var band = max( 0, 1 - abs( t - 0.5 ) * 8 );
+				return k.mix( k.brand( tri ), "##ffffff", band * 0.5 );
+			} );
+		under( k, arguments.f, x, aw, y + art.len() + 1, new bxrig.Brand().tagline(), k.color( "OVERLAY" ) );
+	}
+
+	// ---- laptop: the About laptop, a glint crossing its screen ----
+	function laptopCells( colors ) {
+		var key = structIsEmpty( arguments.colors ) ? "brand" : ( arguments.colors.accent ?: "" ) & ( arguments.colors.background ?: "" );
+		if ( !structKeyExists( variables.laptop, key ) ) {
+			var al = new bxrig.AboutLogo();
+			variables.laptop[ key ] = al.cells( al.palette( arguments.colors ) );
+		}
+		return variables.laptop[ key ];
+	}
+
+	function laptop( kit, f ) {
+		var k = arguments.kit;
+		var rows = laptopCells( arguments.f.colors ?: {} );
+		var lw = rows[ 1 ].len();
+		var d = drift( arguments.f.tick, 6 );
+		var x0 = int( ( arguments.f.width - lw ) / 2 ) - 3 + d.x;
+		var y0 = int( ( arguments.f.height - rows.len() - 3 ) / 2 ) - 1 + d.y;
+		// the glint: a diagonal band that crosses every 7 seconds or so, then rests
+		var cycle = arguments.f.tick % 100;
+		var centre = cycle / 60 * ( lw + rows.len() * 2 + 16 ) - 8;
+		for ( var r = 1; r <= rows.len(); r++ ) {
+			var row = rows[ r ];
+			// the colours of this row with the glint on them
+			var fgs = [];
+			for ( var c = 1; c <= lw; c++ ) {
+				var lift = cycle < 60 ? max( 0, 1 - abs( ( c + r * 2 ) - centre ) / 4 ) * 0.65 : 0;
+				fgs.append( len( row[ c ].fg ) && lift > 0 ? k.mix( row[ c ].fg, "##ffffff", lift ) : row[ c ].fg );
+			}
+			// a run of cells that look the same is drawn as one string
+			var c = 1;
+			while ( c <= lw ) {
+				var text = row[ c ].ch;
+				var n = c + 1;
+				while ( n <= lw && fgs[ n ] == fgs[ c ] && row[ n ].bg == row[ c ].bg ) { text &= row[ n ].ch; n++; }
+				if ( len( trim( text ) ) || len( row[ c ].bg ) ) k.put( x0 + c - 1, y0 + r - 1, text, len( fgs[ c ] ) ? fgs[ c ] : k.color( "TEXT" ), row[ c ].bg );
+				c = n;
+			}
+		}
+		var capY = y0 + rows.len() + 1;
+		under( k, arguments.f, x0, lw, capY, "BXRIG powered by BoxLang", k.color( "TEXT" ), true );
+		under( k, arguments.f, x0, lw, capY + 1, "www.boxlang.io", k.mix( k.color( "GREEN" ), k.color( "CYAN" ), 0.5 ) );
+	}
+
+	// ---- rain: BoxLang code falling in columns ----
+	function rainText() { return "class Rig { function init() { return this; } } println( 'Hello BoxLang' ); var dev = { rig: true }; bxrig.theme.set(); arrayMap( r => r * 2 ); matchbox native "; }
+
+	function rain( kit, f ) {
+		var k = arguments.kit;
+		var text = rainText();
+		var tl = len( text );
+		var h = arguments.f.height;
+		var cols = int( arguments.f.width / 2 );
+		var head = k.mix( k.color( "CYAN" ), "##ffffff", 0.6 );
+		var base = k.color( "CRUST" );
+		for ( var ci = 0; ci < cols; ci++ ) {
+			var speed = 0.25 + rnd( ci + 1 ) * 0.75;
+			var length = 5 + int( rnd( ci + 101 ) * 14 );
+			var period = h + length + int( rnd( ci + 211 ) * h );
+			var pos = int( arguments.f.tick * speed + rnd( ci + 307 ) * period ) % period;
+			var tint = k.brand( rnd( ci + 401 ) );
+			var x = ci * 2;
+			for ( var j = 0; j < length; j++ ) {
+				var y = pos - j;
+				if ( y < 0 || y >= h ) continue;
+				var ch = mid( text, ( ( y + ci * 13 ) % tl ) + 1, 1 );
+				if ( ch == " " ) ch = "·";
+				if ( j == 0 ) k.put( x, y, ch, head, "", true );
+				else k.put( x, y, ch, k.mix( base, tint, 1 - j / length ) );
+			}
+		}
+	}
+
+	// ---- clock: the time in DOS Rebel, drifting ----
+	function clock( kit, f ) {
+		var k = arguments.kit;
+		var art = figletArt( timeFormat( arguments.f.now, "HH:mm" ) );
+		var aw = artWidth( art );
+		var x = bounce( arguments.f.tick * 0.35, max( 0, arguments.f.width - aw ) );
+		var y = bounce( arguments.f.tick * 0.15, max( 0, arguments.f.height - art.len() - 2 ) );
+		var phase = ( arguments.f.tick % 120 ) / 120;
+		drawArt( k, x, y, art, function( i ) {
+				var t = ( i / max( 1, aw - 1 ) + phase ) % 1;
+				return k.brand( 1 - abs( t * 2 - 1 ) );
+			} );
+		var date = dateTimeFormat( arguments.f.now, "EEEE, MMMM d" );
+		var dx = x + max( 0, int( ( aw - len( date ) ) / 2 ) );
+		if ( y + art.len() + 1 < arguments.f.height ) k.put( dx, y + art.len() + 1, date, k.color( "OVERLAY" ) );
+	}
+
+	// ---- stars: flying through a starfield ----
+	function starCount( f ) { return min( 220, max( 40, int( arguments.f.width * arguments.f.height / 28 ) ) ); }
+
+	function stars( kit, f ) {
+		var k = arguments.kit;
+		var cx = arguments.f.width / 2;
+		var cy = arguments.f.height / 2;
+		var base = k.color( "CRUST" );
+		for ( var i = 1; i <= starCount( arguments.f ); i++ ) {
+			var sx = rnd( i ) * 2 - 1;
+			var sy = rnd( i + 1000 ) * 2 - 1;
+			var speed = 0.004 + rnd( i + 2000 ) * 0.006;
+			var z = 1 - ( ( arguments.f.tick * speed + rnd( i + 3000 ) ) % 1 );
+			if ( z < 0.04 ) continue;
+			var px = int( cx + sx / z * cx * 0.35 );
+			var py = int( cy + sy / z * cy * 0.35 );
+			if ( px < 0 || py < 0 || px >= arguments.f.width || py >= arguments.f.height ) continue;
+			var near = 1 - z;
+			var ch = near > 0.85 ? "✦" : ( near > 0.6 ? "*" : ( near > 0.3 ? "•" : "·" ) );
+			var colour = rnd( i + 4000 ) > 0.8 ? k.brand( rnd( i + 5000 ) ) : k.color( "TEXT" );
+			k.put( px, py, ch, k.mix( base, colour, 0.25 + near * 0.75 ), "", near > 0.6 );
+		}
+	}
+
+	// ---- logo: your text or picture, drifting ----
+	function logo( kit, f ) {
+		var k = arguments.kit;
+		var l = arguments.f.logo ?: { type: "text", text: "BXRIG" };
+		var px = arguments.f.pixels ?: [];
+		if ( l.type == "image" && px.len() ) {
+			// two picture rows per text row, in half blocks
+			var pw = px[ 1 ].len();
+			var ph = int( ( px.len() + 1 ) / 2 );
+			var x0 = bounce( arguments.f.tick * 0.25, max( 0, arguments.f.width - pw ) );
+			var y0 = bounce( arguments.f.tick * 0.12, max( 0, arguments.f.height - ph ) );
+			var base = k.color( "CRUST" );
+			for ( var r = 1; r <= px.len(); r += 2 ) {
+				for ( var c = 1; c <= pw; c++ ) {
+					var top = px[ r ][ c ];
+					var bot = r + 1 <= px.len() ? px[ r + 1 ][ c ] : [ 0, 0, 0, 0 ];
+					if ( top[ 4 ] < 64 && bot[ 4 ] < 64 ) continue;
+					var tc = top[ 4 ] < 64 ? base : k.mix( base, k.toHex( top[ 1 ], top[ 2 ], top[ 3 ] ), top[ 4 ] / 255 );
+					var bc = bot[ 4 ] < 64 ? base : k.mix( base, k.toHex( bot[ 1 ], bot[ 2 ], bot[ 3 ] ), bot[ 4 ] / 255 );
+					k.put( x0 + c - 1, y0 + int( ( r - 1 ) / 2 ), "▀", tc, bc );
+				}
+			}
+			return;
+		}
+		var art = figletArt( len( l.text ?: "" ) ? l.text : "BXRIG" );
+		var aw = artWidth( art );
+		var x = bounce( arguments.f.tick * 0.3, max( 0, arguments.f.width - aw ) );
+		var y = bounce( arguments.f.tick * 0.13, max( 0, arguments.f.height - art.len() ) );
+		var phase = ( arguments.f.tick % 150 ) / 150;
+		drawArt( k, x, y, art, function( i ) {
+				var t = ( i / max( 1, aw - 1 ) + phase ) % 1;
+				return k.brand( 1 - abs( t * 2 - 1 ) );
+			} );
+	}
+}

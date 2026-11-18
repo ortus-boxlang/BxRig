@@ -112,7 +112,7 @@ class SetupPlan {
 	// and conflicts with `cachyos-desktop-settings` and could remove it from a KDE install.
 	function hyprlandPackages( terminal = "ghostty" ) {
 		var t = new bxrig.TerminalConfig().find( arguments.terminal );
-		return [ "hyprland", "noctalia", "uwsm", "hyprlock", "hypridle", "xdg-desktop-portal-hyprland", "hyprpolkitagent",
+		return [ "hyprland", "noctalia", "uwsm", "hyprlock", "xdg-desktop-portal-hyprland", "hyprpolkitagent",
 			"qt6ct", "nwg-look", "hyprpicker", "grim", "slurp", "wl-clipboard", "brightnessctl", structKeyExists( t, "pkg" ) ? t.pkg : "ghostty",
 			"adw-gtk-theme", "papirus-icon-theme", "noto-fonts", "noto-fonts-emoji", "bluez", "bluez-utils" ];
 	}

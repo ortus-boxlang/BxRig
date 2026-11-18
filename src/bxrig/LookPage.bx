@@ -2,6 +2,7 @@
 //   Bar     top bar layout (Minimal, Standard, Dense), battery percentage, clock format, the key that hides the bar
 //   Colors  the color theme (Enter opens the Themes page, the bigger selector)
 //   Apps    app grid style (Launchpad or Terminal-style) and the dock
+//   Screen  the screensaver on or off, and when it starts and the screen locks
 // Up and Down pick a setting, + and Right (or Space, or Enter) change it to the next value and - to the previous one (a text setting asks, a link opens its page). A change is a
 // bxrig command like any other in the Control Center: the plan (the command with --dry-run) first, then a y runs it. Values come from LookData.
 //   id() title() icon() load() state() keys() paint( kit, x, y, w, h, tick, phase ) onKey( key ) act( hit ) onScroll( dir ) usesLeft()
@@ -39,7 +40,9 @@ class LookPage {
 			{ group: "Bar", id: "toggle", label: "Bar toggle shortcut", kind: "link", value: l.bar_toggle_keys, hint: "hides or shows the bar", desc: "This key runs bxrig appearance bar toggle. Enter opens the Shortcuts page to change it.", cmd: "bxrig appearance bar toggle" },
 			{ group: "Colors", id: "theme", label: "Color theme", kind: "link", value: theme, hint: "Enter opens the Themes page", desc: "Colors the shell, terminals, borders, lock screen and wallpaper. Choosing a theme has its own page, with a preview of each.", cmd: "bxrig theme set " & l.theme },
 			{ group: "Apps", id: "appgrid", label: "App grid style", kind: "choice", value: l.appgrid == "terminal" ? "Terminal-style grid" : "Launchpad grid", hint: "Launchpad or Terminal-style", desc: "The grid of every installed app, opened from the first button of the dock. Same apps and search, a different look.", cmd: "bxrig appearance appgrid " & l.appgrid },
-			{ group: "Apps", id: "dock", label: "Dock", kind: "toggle", value: l.dock ? "on" : "off", hint: "bottom of the screen", desc: "A dock of your apps. When it is on, the grid button is its first button and leaves the bar.", cmd: "bxrig appearance dock " & ( l.dock ? "on" : "off" ) }
+			{ group: "Apps", id: "dock", label: "Dock", kind: "toggle", value: l.dock ? "on" : "off", hint: "bottom of the screen", desc: "A dock of your apps. When it is on, the grid button is its first button and leaves the bar.", cmd: "bxrig appearance dock " & ( l.dock ? "on" : "off" ) },
+			{ group: "Screen", id: "screensaver", label: "Screensaver", kind: "toggle", value: l.screensaver ? "on" : "off", hint: "terminal art on every monitor", desc: "After a while idle, BXRIG art in the theme's colours on every monitor; any key or mouse move closes it. bxrig screensaver preview shows it.", cmd: "bxrig screensaver " & ( l.screensaver ? "on" : "off" ) },
+			{ group: "Screen", id: "screensaver-time", label: "Screensaver, then lock", kind: "choice", value: timingLabel( l.screensaver_seconds, l.lock_seconds ), hint: "after this long idle", desc: "When the screensaver starts and when the screen locks, both counted from the start of idle.", cmd: "bxrig screensaver set screensaver=" & l.screensaver_seconds & " lock=" & l.lock_seconds }
 		];
 	}
 
@@ -77,10 +80,23 @@ class LookPage {
 					return { action: "cli", title: "Clock format " & value, args: [ "time", "format", value ] };
 				} };
 		}
+		if ( r.id == "screensaver" ) { var s2 = l.screensaver ? "off" : "on"; return { action: "cli", title: "Screensaver " & s2, args: [ "screensaver", s2 ] }; }
+		if ( r.id == "screensaver-time" ) {
+			var ts = timings();
+			var at = 0;
+			for ( var ti = 1; ti <= ts.len(); ti++ ) if ( ts[ ti ][ 1 ] == l.screensaver_seconds && ts[ ti ][ 2 ] == l.lock_seconds ) at = ti;
+			var nt = at == 0 ? ( arguments.d > 0 ? 1 : ts.len() ) : ( ( at - 1 + arguments.d + ts.len() ) mod ts.len() ) + 1;
+			return { action: "cli", title: "Screensaver, then lock: " & timingLabel( ts[ nt ][ 1 ], ts[ nt ][ 2 ] ), args: [ "screensaver", "set", "screensaver=" & ts[ nt ][ 1 ], "lock=" & ts[ nt ][ 2 ] ] };
+		}
 		if ( r.id == "toggle" ) return { action: "goto", page: "shortcuts" };
 		if ( r.id == "theme" ) return { action: "goto", page: "themes" };
 		return {};
 	}
+
+	// The screensaver timings the page steps through: [ screensaver, lock ] seconds.
+	function timings() { return [ [ 150, 300 ], [ 300, 600 ], [ 600, 1200 ], [ 900, 1800 ] ]; }
+	function minutes( n ) { return arguments.n == 0 ? "never" : ( arguments.n / 60 ) & " min"; }
+	function timingLabel( screensaver, lock ) { return minutes( arguments.screensaver ) & ", lock " & minutes( arguments.lock ); }
 
 	function onKey( key ) {
 		var what = keyMap().match( arguments.key );
@@ -117,7 +133,7 @@ class LookPage {
 		if ( len( ico ) ) k.put( arguments.x + 1, arguments.y, ico, C( "GREEN" ), C( "BASE" ) );
 		var tx = arguments.x + 1 + ( len( ico ) ? 2 : 0 );
 		k.put( tx, arguments.y, "Look", C( "TEXT" ), C( "BASE" ), true );
-		k.put( tx + 6, arguments.y, k.trunc( "Layout, theme, app grid and dock. A change shows its plan first.", arguments.w - 12 ), C( "OVERLAY" ), C( "BASE" ) );
+		k.put( tx + 6, arguments.y, k.trunc( "Layout, theme, app grid, dock and screensaver. A change shows its plan first.", arguments.w - 12 ), C( "OVERLAY" ), C( "BASE" ) );
 		var px = arguments.x + 1;
 		var pw = arguments.w - 2;
 		var cy = arguments.y + 2;
@@ -134,7 +150,7 @@ class LookPage {
 			cy += ph;
 		}
 		var rws = rows();
-		var groups = [ "Bar", "Colors", "Apps" ];
+		var groups = [ "Bar", "Colors", "Apps", "Screen" ];
 		var idx = 0;
 		var labelW = 22;
 		for ( var g in groups ) {

@@ -1,0 +1,302 @@
+// `bxrig screensaver ...`: BxRig's own screensaver, terminal art in the theme's colours on every monitor after a while idle, then the lock.
+//   screensaver [status] [--json]                 the settings, whether it is running, and the effects
+//   screensaver on|off [--yes]                    start it on idle or not (the lock keeps its own timeout)
+//   screensaver set KEY=VALUE... [--yes]          screensaver=SECONDS lock=SECONDS (0 for never) effects=NAME,NAME
+//   screensaver logo text TEXT|image PATH|reset [--yes]   what the logo effect draws (DOS Rebel text, or a picture)
+//   screensaver effects [--json]                  the effects and which take turns
+//   screensaver start [--effect=NAME]             now, on every monitor (Hyprland): a full-screen terminal per monitor
+//   screensaver stop                              closes them (Noctalia runs this when you come back)
+//   screensaver preview [EFFECT]                  in this terminal
+//   screensaver run [--effect=NAME]               the screensaver itself, in this terminal (what each window runs)
+// Any key, click, scroll or mouse move closes it. The effects take turns, a minute each, from a random first one.
+// Settings: ScreensaverConfig (~/.config/bxrig/screensaver.json); a change is applied to a running Noctalia (`noctalia msg config-set`), and
+// a new Noctalia starter config carries it. Exit: 0 ok, 2 bad usage or a change without --yes, 4 precondition (no Hyprland or no terminal).
+class Screensaver {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( variables.cli, "screensaver" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.conf = new bxrig.ScreensaverConfig();
+		variables.fx = new bxrig.ScreensaverEffects();
+		return this;
+	}
+
+	function windowClass() { return "bxrig-screensaver"; }
+	function frameMs() { return 66; }
+	function turnSeconds() { return 60; }
+	// Events in the first half second are ignored: the key or click that started it.
+	function armTicks() { return 8; }
+
+	// ---- status ----
+	function statusData() {
+		var c = variables.conf.read();
+		return {
+			enabled: c.enabled, screensaver: c.screensaver, lock: c.lock, effects: c.effects, logo: c.logo,
+			running: windows().len(), file: variables.conf.file(), saved: fileExists( variables.conf.file() ), noctalia: variables.proc.has( "noctalia" )
+		};
+	}
+
+	function seconds( n ) {
+		if ( arguments.n == 0 ) return "never";
+		if ( arguments.n % 60 == 0 ) return ( arguments.n / 60 ) & " min";
+		return arguments.n & "s";
+	}
+
+	function logoText( logo ) { return arguments.logo.type == "image" ? "picture " & arguments.logo.path : "text " & arguments.logo.text; }
+
+	function statusCmd( asJson ) {
+		var d = statusData();
+		var lines = [
+			"screensaver  " & ( d.enabled ? "on" : "off" ) & ", after " & seconds( d.screensaver ) & " idle" & ( d.running ? "  (running on " & d.running & " screen" & ( d.running == 1 ? "" : "s" ) & ")" : "" ),
+			"lock         after " & seconds( d.lock ) & " idle",
+			"effects      " & d.effects.toList( ", " ),
+			"logo         " & logoText( d.logo )
+		];
+		if ( !d.noctalia ) lines.append( "note: Noctalia is not installed; start it with `bxrig screensaver start` or from the menu" );
+		return variables.out.say( "ok", d, arguments.asJson, lines );
+	}
+
+	function effectsCmd( asJson ) {
+		var c = variables.conf.read();
+		var list = [];
+		var lines = [];
+		var desc = variables.fx.describe();
+		for ( var n in variables.fx.names() ) {
+			var on = arrayFind( c.effects, n ) > 0;
+			list.append( { name: n, on: on, description: desc[ n ] } );
+			lines.append( ( on ? "* " : "  " ) & left( n & repeatString( " ", 8 ), 8 ) & desc[ n ] );
+		}
+		lines.append( "(* takes a turn; change with bxrig screensaver set effects=NAME,NAME --yes)" );
+		return variables.out.say( "ok", { effects: list }, arguments.asJson, lines );
+	}
+
+	// ---- changes ----
+	function change( c, yes, dry, asJson, title ) {
+		var data = { enabled: arguments.c.enabled, screensaver: arguments.c.screensaver, lock: arguments.c.lock, effects: arguments.c.effects, logo: arguments.c.logo, file: variables.conf.file() };
+		if ( arguments.dry || !arguments.yes ) return new bxrig.util.Mutation( variables.out ).show( arguments.title, data, arguments.asJson, arguments.dry );
+		variables.conf.write( arguments.c );
+		data.noctalia = applyNoctalia( arguments.c );
+		var lines = [ arguments.title, "Noctalia: " & data.noctalia ];
+		if ( data.noctalia == "not running" ) lines.append( "note: Noctalia did not answer; it reads the change the next time `bxrig setup` writes its config, or run this again in your Hyprland session" );
+		return variables.out.say( "ok", data, arguments.asJson, lines );
+	}
+
+	// "applied", "not running" or "skipped" (no Noctalia).
+	function applyNoctalia( c ) {
+		if ( !variables.proc.has( "noctalia" ) ) return "skipped";
+		var bad = 0;
+		for ( var s in variables.conf.noctaliaSettings( arguments.c ) ) if ( variables.proc.exec( [ "noctalia", "msg", "config-set", s[ 1 ], s[ 2 ] ], 15 ).exitCode != 0 ) bad++;
+		return bad ? "not running" : "applied";
+	}
+
+	function onOff( on, yes, dry, asJson ) {
+		var c = variables.conf.read();
+		c.enabled = arguments.on;
+		return change( c, arguments.yes, arguments.dry, arguments.asJson, "screensaver " & ( arguments.on ? "on, after " & seconds( c.screensaver ) & " idle" : "off (the lock stays at " & seconds( c.lock ) & ")" ) );
+	}
+
+	function setCmd( pairs, yes, dry, asJson ) {
+		if ( !arguments.pairs.len() ) return variables.out.usage( new bxrig.CommandSpec().usage( "screensaver" ), arguments.asJson );
+		var c = variables.conf.read();
+		var said = [];
+		for ( var p in arguments.pairs ) {
+			var k = lCase( listFirst( p, "=" ) );
+			var v = listRest( p, "=" );
+			if ( !find( "=", p ) || !arrayFind( [ "screensaver", "lock", "effects" ], k ) ) return variables.out.usage( "Unknown setting in " & p & " (use screensaver=SECONDS, lock=SECONDS or effects=NAME,NAME)", arguments.asJson );
+			if ( k == "effects" ) {
+				var wanted = listToArray( lCase( v ), "," );
+				for ( var w in wanted ) if ( !variables.fx.known( trim( w ) ) ) return variables.out.usage( "Unknown effect " & w & " (use " & variables.fx.names().toList( ", " ) & ")", arguments.asJson );
+				var fx = variables.conf.cleanEffects( wanted.map( function( x ) { return trim( x ); } ) );
+				if ( !fx.len() ) return variables.out.usage( "Name at least one effect (" & variables.fx.names().toList( ", " ) & ")", arguments.asJson );
+				c.effects = fx;
+			} else {
+				if ( !variables.conf.validSeconds( v ) ) return variables.out.usage( k & " is a whole number of seconds from 0 to " & variables.conf.maxSeconds() & ": " & v, arguments.asJson );
+				c[ k ] = int( v );
+			}
+			said.append( k & "=" & ( k == "effects" ? c.effects.toList( "," ) : c[ k ] ) );
+		}
+		var problem = variables.conf.timingProblem( c.screensaver, c.lock );
+		if ( len( problem ) ) return variables.out.usage( problem, arguments.asJson );
+		return change( c, arguments.yes, arguments.dry, arguments.asJson, "screensaver " & said.toList( " " ) );
+	}
+
+	function logoCmd( words, yes, dry, asJson ) {
+		var c = variables.conf.read();
+		var kind = arguments.words.len() ? lCase( arguments.words[ 1 ] ) : "";
+		var value = "";
+		for ( var i = 2; i <= arguments.words.len(); i++ ) value = listAppend( value, arguments.words[ i ], " " );
+		if ( kind == "reset" && arguments.words.len() == 1 ) {
+			c.logo = variables.conf.defaults().logo;
+		} else if ( kind == "text" && len( value ) ) {
+			if ( !variables.conf.validLogoText( value ) ) return variables.out.usage( "The logo text is 1 to " & variables.conf.maxLogoText() & " letters, digits, spaces or . _ ! : -", arguments.asJson );
+			c.logo = { type: "text", text: value, path: "" };
+		} else if ( kind == "image" && arguments.words.len() == 2 ) {
+			var path = arguments.words[ 2 ];
+			if ( left( path, 1 ) != "/" ) path = expandPath( path );
+			if ( !variables.conf.validImagePath( path ) ) return variables.out.usage( "The picture is a " & variables.conf.imageTypes().toList( ", " ) & " file: " & arguments.words[ 2 ], arguments.asJson );
+			if ( !fileExists( path ) ) return variables.out.precondition( "No such picture: " & path, arguments.asJson );
+			c.logo = { type: "image", text: "", path: path };
+		} else {
+			return variables.out.usage( new bxrig.CommandSpec().usage( "screensaver" ), arguments.asJson );
+		}
+		return change( c, arguments.yes, arguments.dry, arguments.asJson, "screensaver logo: " & logoText( c.logo ) );
+	}
+
+	// ---- windows (Hyprland) ----
+	// The screensaver windows open now: [ { address, pid, monitor } ].
+	function windows() {
+		var out = [];
+		if ( !variables.proc.has( "hyprctl" ) ) return out;
+		var r = variables.proc.exec( [ "hyprctl", "clients", "-j" ], 10 );
+		if ( r.exitCode != 0 ) return out;
+		try {
+			for ( var w in jsonDeserialize( r.output ) ) if ( ( w.class ?: "" ) == windowClass() ) out.append( { address: w.address ?: "", pid: w.pid ?: 0, monitor: w.monitor ?: "" } );
+		} catch ( any e ) {}
+		return out;
+	}
+
+	function monitors() {
+		var out = [];
+		var r = variables.proc.exec( [ "hyprctl", "monitors", "-j" ], 10 );
+		if ( r.exitCode != 0 ) return out;
+		try { for ( var m in jsonDeserialize( r.output ) ) if ( len( m.name ?: "" ) ) out.append( m.name ); } catch ( any e ) {}
+		return out;
+	}
+
+	// A terminal that can give its window our class: { cmd, classArgs, execFlag }, {} for none.
+	function terminal() {
+		var tc = new bxrig.TerminalConfig( true );
+		var pref = new bxrig.Ai( variables.cli, variables.proc.runner() ).terminal();
+		var order = [];
+		if ( !structIsEmpty( pref ) ) order.append( pref.id );
+		for ( var id in tc.ids() ) if ( !arrayFind( order, id ) ) order.append( id );
+		for ( var id in order ) {
+			var t = tc.find( id );
+			if ( len( tc.classArgs( id, windowClass() ) ) && variables.proc.has( t.cmd ) ) return { id: id, cmd: t.cmd, classArgs: tc.classArgs( id, windowClass() ), execFlag: arrayFind( [ "ghostty", "alacritty" ], id ) ? [ "-e" ] : [] };
+		}
+		return {};
+	}
+
+	function shellQuote( s ) { return "'" & replace( arguments.s, "'", "'\''", "all" ) & "'"; }
+
+	// The command line of one screensaver window: the terminal with our class, running `bxrig screensaver run`.
+	function windowCommand( term, effect = "" ) {
+		var argv = [ arguments.term.cmd ];
+		for ( var a in arguments.term.classArgs ) argv.append( a );
+		for ( var a in arguments.term.execFlag ) argv.append( a );
+		argv.append( variables.proc.selfPath() );
+		argv.append( "screensaver" );
+		argv.append( "run" );
+		if ( len( arguments.effect ) ) argv.append( "--effect=" & arguments.effect );
+		return argv.map( function( a ) { return shellQuote( a ); } ).toList( " " );
+	}
+
+	function startCmd( effect, asJson ) {
+		if ( len( arguments.effect ) && !variables.fx.known( arguments.effect ) ) return variables.out.usage( "Unknown effect " & arguments.effect & " (use " & variables.fx.names().toList( ", " ) & ")", arguments.asJson );
+		if ( !variables.proc.has( "hyprctl" ) ) return variables.out.precondition( "The screensaver opens on Hyprland (hyprctl not found); try it here with bxrig screensaver preview", arguments.asJson );
+		var open = windows();
+		if ( open.len() ) return variables.out.say( "ok", { started: 0, running: open.len() }, arguments.asJson, [ "the screensaver is already running" ] );
+		var term = terminal();
+		if ( structIsEmpty( term ) ) return variables.out.precondition( "No terminal that can name its window is installed (ghostty, kitty, alacritty or foot)", arguments.asJson );
+		var mons = monitors();
+		if ( !mons.len() ) return variables.out.failed( "hyprctl listed no monitors", arguments.asJson );
+		var line = windowCommand( term, arguments.effect );
+		var started = 0;
+		var steps = [];
+		for ( var m in mons ) {
+			// the legacy exec with a rule first, then the Lua form (a Hyprland 0.55+ Lua session reads `hyprctl dispatch ARG` as Lua)
+			var legacy = [ "hyprctl", "dispatch", "exec", "[monitor " & m & "] " & line ];
+			var r = variables.proc.exec( legacy, 10 );
+			steps.append( legacy );
+			if ( r.exitCode != 0 || findNoCase( "error", r.output ) ) {
+				var lua = [ "hyprctl", "dispatch", 'hl.dsp.exec_cmd("' & replace( line, '"', '\"', "all" ) & '", { monitor = "' & m & '" })' ];
+				r = variables.proc.exec( lua, 10 );
+				steps.append( lua );
+			}
+			if ( r.exitCode == 0 ) started++;
+		}
+		if ( !started ) return variables.out.failed( "hyprctl could not start the screensaver windows", arguments.asJson );
+		return variables.out.say( "ok", { started: started, monitors: mons, terminal: term.id, steps: steps }, arguments.asJson, [ "screensaver on " & started & " screen" & ( started == 1 ? "" : "s" ) ] );
+	}
+
+	function stopCmd( asJson ) {
+		var open = windows();
+		var closed = 0;
+		for ( var w in open ) if ( w.pid > 0 && variables.proc.exec( [ "kill", "" & w.pid ], 10 ).exitCode == 0 ) closed++;
+		return variables.out.say( "ok", { closed: closed }, arguments.asJson, closed ? [ "screensaver closed" ] : [] );
+	}
+
+	// ---- the screensaver itself ----
+	// The frame for tick (what ScreensaverEffects paints), with the logo picture read once.
+	function frameFor( tick, width, height, c, pixels, colors ) {
+		return { tick: arguments.tick, width: arguments.width, height: arguments.height, now: now(), logo: arguments.c.logo, pixels: arguments.pixels, colors: arguments.colors };
+	}
+
+	// The effect shown at tick: a fixed one, or the list taking turns (a minute each) from the first.
+	function effectAt( tick, list, first, fixed = "" ) {
+		if ( len( arguments.fixed ) ) return arguments.fixed;
+		var turn = int( arguments.tick * frameMs() / 1000 / turnSeconds() );
+		return arguments.list[ ( ( arguments.first - 1 + turn ) % arguments.list.len() ) + 1 ];
+	}
+
+	// True when an event closes the screensaver: any key, click, scroll or mouse move once it is armed.
+	function closes( ev, tick ) {
+		if ( arguments.tick < armTicks() ) return false;
+		return arrayFind( [ "key", "click", "scroll", "move" ], arguments.ev.type ?: "" ) > 0;
+	}
+
+	// The image logo as pixel rows ( [] for a text logo or a picture that cannot be read), at most `cols` wide.
+	function logoPixels( logo, cols ) {
+		if ( arguments.logo.type != "image" || !fileExists( arguments.logo.path ) ) return [];
+		try { return imageGetPixels( imageRead( arguments.logo.path, max( 8, min( 80, arguments.cols ) ) ), "rgba" ); } catch ( any e ) { return []; }
+	}
+
+	function runLoop( effect, asJson ) {
+		if ( len( arguments.effect ) && !variables.fx.known( arguments.effect ) ) return variables.out.usage( "Unknown effect " & arguments.effect & " (use " & variables.fx.names().toList( ", " ) & ")", arguments.asJson );
+		if ( !CLIIsTerminal() ) return variables.out.precondition( "The screensaver draws in a terminal", arguments.asJson );
+		var c = variables.conf.read();
+		var pal = new bxrig.Palette();
+		var colors = pal.colorsOf( pal.activeName() );
+		var tui = createObject( "rust", "tui.TUI" );
+		var kit = new bxrig.TuiKit( tui ).setPalette( pal.active() );
+		var first = int( rand() * c.effects.len() ) + 1;
+		tui.init();
+		try {
+			// mouse motion closes it too (a MatchBox with set_mouse_motion; an older one closes on keys, clicks and scrolls)
+			try { tui.set_mouse_motion( true ); } catch ( any e ) {}
+			var size = tui.size();
+			var pixels = logoPixels( c.logo, size.width - 4 );
+			var tick = 0;
+			while ( true ) {
+				size = tui.size();
+				tui.begin_frame();
+				kit.setFade( min( 1, ( tick + 1 ) / 10 ) );
+				variables.fx.paint( kit, effectAt( tick, c.effects, first, arguments.effect ), frameFor( tick, size.width, size.height, c, pixels, colors ) );
+				tui.end_frame();
+				var ev = tui.poll_event( frameMs() );
+				if ( !isNull( ev ) && closes( ev, tick ) ) break;
+				tick++;
+			}
+		} finally {
+			tui.shutdown();
+		}
+		return 0;
+	}
+
+	function run( words, opts = {}, dry = false, yes = false, asJson = false ) {
+		var verb = arguments.words.len() ? lCase( arguments.words[ 1 ] ) : "";
+		var rest = [];
+		for ( var i = 2; i <= arguments.words.len(); i++ ) rest.append( arguments.words[ i ] );
+		var effect = lCase( arguments.opts.effect ?: "" );
+		if ( ( verb == "" || verb == "status" ) && !rest.len() ) return statusCmd( arguments.asJson );
+		if ( verb == "effects" && !rest.len() ) return effectsCmd( arguments.asJson );
+		if ( ( verb == "on" || verb == "off" ) && !rest.len() ) return onOff( verb == "on", arguments.yes, arguments.dry, arguments.asJson );
+		if ( verb == "set" ) return setCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
+		if ( verb == "logo" ) return logoCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
+		if ( verb == "start" && !rest.len() ) return startCmd( effect, arguments.asJson );
+		if ( verb == "stop" && !rest.len() ) return stopCmd( arguments.asJson );
+		if ( verb == "preview" && rest.len() <= 1 ) return runLoop( rest.len() ? lCase( rest[ 1 ] ) : effect, arguments.asJson );
+		if ( verb == "run" && !rest.len() ) return runLoop( effect, arguments.asJson );
+		return variables.out.usage( new bxrig.CommandSpec().usage( "screensaver" ), arguments.asJson );
+	}
+}
