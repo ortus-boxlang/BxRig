@@ -6,7 +6,7 @@ summary: One menu for everything BxRig does, on your launcher, with search.
 
 # The control center
 
-`bxrig menu` (bound to `Super+Space`) opens a menu on your launcher (Rofi, Walker, Wofi, Fuzzel or Vicinae: `bxrig runner set NAME`). It follows Omarchy's layout and adds a Develop section for what is ours.
+`bxrig menu` (bound to `Super+Space`) opens a menu on your launcher (Rofi, Walker, Wofi, Fuzzel or Vicinae: `bxrig runner set NAME`). Sections cover apps, install and remove, appearance, setup, update and system, plus a Develop section.
 
 | Section | What is in it |
 |---|---|

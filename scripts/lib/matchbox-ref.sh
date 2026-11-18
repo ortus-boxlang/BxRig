@@ -54,12 +54,25 @@ mb_git_checkout() {
 	git -C "$dir" fetch --quiet --depth 1 origin "$ref" && git -C "$dir" checkout --quiet --force --detach FETCH_HEAD
 }
 
-# mb_version_warn BINARY WANT: a warning (never an error) when BINARY's --version does not mention WANT, the version in box.json.
-# Returns 1 when it warned.
-mb_version_warn() {
-	local out
-	out="$("$1" --version 2>&1 | head -n 1)" || true
-	[[ -z "${2:-}" || "$out" == *"$2"* ]] && return 0
-	echo "warning: this MatchBox reports '${out:-nothing}' but box.json toolchain.matchbox.version is $2; continuing (a branch build can differ, but bootstrap/install.sh insists on $2)" >&2
+# mb_builds_bxrig BINARY: can this MatchBox compile BxRig? BxRig draws its terminal UI with the canvas classes that only a build with the
+# bif-tui feature registers (`createObject( "rust", "tui.TUI" )`). The probe runs a four line script that creates one and draws a frame; a
+# MatchBox without the feature stops with "Native class 'tui.TUI' not found" and exits 1. Stable and snapshot builds do not have the feature
+# yet. (bootstrap/install.sh has the same probe: it ships alone in the install bundle and cannot source this file.)
+mb_builds_bxrig() {
+	local mb="$1" dir out rc=0
+	dir="$(mktemp -d)" || return 1
+	printf '%s\n' 'tui = createObject( "rust", "tui.TUI" );' 'tui.begin_frame();' 'tui.render_to_string( 2, 1 );' 'println( "bxrig-tui-ok" );' > "$dir/probe.bxs"
+	if command -v timeout >/dev/null 2>&1; then out="$(cd "$dir" && timeout 60 "$mb" probe.bxs </dev/null 2>/dev/null)" || rc=1
+	else out="$(cd "$dir" && "$mb" probe.bxs </dev/null 2>/dev/null)" || rc=1; fi
+	rm -rf "$dir"
+	(( rc == 0 )) && [[ "$out" == *bxrig-tui-ok* ]]
+}
+# mb_require_bxrig_capable BINARY: returns 0, or prints why this MatchBox cannot compile BxRig and returns 1. Never switches to another MatchBox.
+mb_require_bxrig_capable() {
+	mb_builds_bxrig "$1" && return 0
+	{
+		printf 'This MatchBox (%s) cannot compile BxRig: it has no terminal UI support (the bif-tui feature), which the stable and snapshot builds lack until the BxRig changes ship.\n' "$("$1" --version 2>&1 | head -n 1)"
+		echo "  Use the branch build: bash scripts/setup-local.sh --matchbox branch --matchbox-branch bxrig"
+	} >&2
 	return 1
 }

@@ -30,19 +30,34 @@ Unattended, with saved answers:
 curl -fsSL https://downloads.ortussolutions.com/ortussolutions/bxrig/install.sh | bash -s -- --yes --answers answers.json
 ```
 
-Add `--channel beta` for the bleeding-edge snapshots. Update later with `bxrig update apply --yes`.
+Add `--channel beta` (or `--source beta`) for the bleeding-edge snapshots. Update later with `bxrig update apply --yes`.
+
+Testing a branch (unsigned, for developers: it builds whatever that branch holds; it needs `--yes` or the typed word `unsigned`):
+
+```bash
+curl -fsSL https://downloads.ortussolutions.com/ortussolutions/bxrig/install.sh | bash -s -- --source github:ortus-boxlang/BxRig@development --yes
+```
+
+The installer installs MatchBox with `mvm`: the stable release by default, the snapshot build with `--snapshot`, or a branch built here with `--matchbox-branch REF` (the prebuilt BxRig only needs MatchBox as a toolchain; compiling BxRig needs the `bxrig` branch for now):
+
+```bash
+curl -fsSL https://downloads.ortussolutions.com/ortussolutions/bxrig/install.sh | bash -s -- --snapshot
+curl -fsSL https://downloads.ortussolutions.com/ortussolutions/bxrig/install.sh | bash -s -- --matchbox-branch bxrig
+```
+
+Details: [getting started](docs/getting-started.md).
 
 ## What you get
 
 | Area | What |
 |---|---|
 | Toolchains | Java 21, bvm, mvm, BoxLang, MatchBox, Rust. Optional: PHP, Python, Go, JavaScript runtimes |
-| Desktop | Hyprland and Noctalia, KDE Plasma with HyprKwin tiling, one shortcut table in two styles (Traditional, Omarchy-like keys, or Mac, Cmd-style keys with the Alt and Win swap on a PC keyboard), xremap for the Cmd remaps, key cheat sheet |
+| Desktop | Hyprland and Noctalia, KDE Plasma with HyprKwin tiling, one shortcut table in two styles (Traditional, classic Super-key tiling keys, or Mac, Cmd-style keys with the Alt and Win swap on a PC keyboard), xremap for the Cmd remaps, key cheat sheet |
 | Control center | `bxrig menu` (`Super+Space`): every command as one searchable menu on your launcher (Rofi, Walker, Wofi, Fuzzel, Vicinae), with Shortcuts and Hardware sections; `bxrig menu open ROUTE` opens one section |
 | Appearance and hardware | Bar, dock, windows, fonts, backgrounds, monitors, laptop power, time zone and DNS, each one command (`appearance`, `display`, `power`, `time`, `dns`) |
 | Backups | BxRig setup snapshots, system snapshots (snapper), encrypted file backups (restic) to a NAS, a disk or the cloud, and **BxTimeMachine**, one screen for all of them (`bxrig timemachine`) |
 | NAS | Synology or any SMB or NFS share: discover, mount, automatic mounts, mirror (`bxrig nas`) |
-| Themes | 15 color themes in the Omarchy format (10 from Omarchy, 5 of ours); follows into terminals, btop, window borders and Neovim |
+| Themes | 15 color themes in the `colors.toml` format (10 community themes, 5 of ours); follows into terminals, btop, window borders and Neovim |
 | Shell and editor | zsh, fish or bash with Starship (shows the BoxLang version), Ghostty and other terminals, Neovim with LazyVim and BoxLang syntax |
 | Apps | A curated catalog of about 290 apps by category, chosen in the wizard |
 | Databases | PostgreSQL, MySQL, Redis, MongoDB, vector databases and more as local containers (`bxrig db`) |
@@ -85,7 +100,8 @@ The full list (96 commands) is in the [command reference](https://bxcachy.boxlan
 ## Development
 
 ```bash
-scripts/setup-local.sh                       # one time: asks stable, edge, source or any MatchBox branch, builds, smoke test (--matchbox-branch REF tests a branch)
+scripts/setup-local.sh                       # one time: asks stable, snapshot or a MatchBox branch, builds dist/bxrig, smoke test
+bash scripts/setup-local.sh --matchbox branch --matchbox-branch bxrig   # no question; any other branch or fork works the same
 scripts/dev-build.sh                         # rebuilds dist/bxrig with that MatchBox
 tests/run-all.sh                             # every test by discovery: *-test.sh with the binary, *_test.bxs with matchbox
 bash tests/theme-test.sh dist/bxrig        # script tests, one per area (fake tools, no root needed)

@@ -12,7 +12,7 @@ The legacy archive has 44 executables and 20 test files (`artifacts/legacy/origi
 
 1. Installer, provisioning, first run, menus and profiles: `bootstrap/install.sh`, `init` (the wizard), `menu`, `profile-*`, `install`.
 2. App catalog, package manager, developer tools and extras: `catalog`, `install`, `pkg`, `apps`, `java`, `sdk`, `boxlang`, `toolchain`.
-3. Desktop, themes, icons, keyboard shortcuts and Omarchy-style tools: `setup`, `keys`, `theme`, `appearance`, `display`, `runner`, `layout`, `assets`.
+3. Desktop, themes, icons, keyboard shortcuts and desktop tools: `setup`, `keys`, `theme`, `appearance`, `display`, `runner`, `layout`, `assets`.
 4. AI, databases, VMs, Podman and networking: `ai`, `secrets`, `db`, `vm`, `containers`, `dns`, `vpn`.
 5. Cloud storage and backups: `cloud`, `backup`, `nas`, `timemachine`.
 6. Quick Look, dictation and system integration: `quicklook`, `dolphin`, `dictation`, `system`, `security`, `power`, `time`.

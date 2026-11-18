@@ -1,0 +1,123 @@
+// `bxrig doctor` (alias `prerequisites`): one status line per tool BxRig relies on, read-only.
+//   ok   git 2.50.1
+//   miss jq (install: sudo pacman -S jq)
+//   ok   matchbox 0.14.0 (compiles BxRig)
+// Two groups: the workstation tools (git, curl, unzip, jq, Java 21, mvm, bvm, BoxLang) and the native build tools (Rust, Cargo, MatchBox).
+// A missing tool, a Java that is not 21, or a MatchBox that cannot compile BxRig (stable and snapshot builds have no terminal UI yet)
+// is `miss` with the command that fixes it (owner decision: the toolchain must be able to build BxRig).
+// Exit 0 when every tool is there, 4 when one is missing. `--json`: data { ok, tools: [ { id, group, name, ok, version, detail, fix } ] }.
+// The Proc runner can be injected for tests, like the other commands.
+class Doctor {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		return this;
+	}
+
+	// The first x.y or x.y.z in a text, or "".
+	function firstVersion( text ) {
+		var m = reFind( "[0-9]+\.[0-9]+(\.[0-9]+)?", arguments.text & "", 1, true );
+		return m.pos[ 1 ] > 0 ? mid( arguments.text, m.pos[ 1 ], m.len[ 1 ] ) : "";
+	}
+
+	function row( id, group, ok, version, detail, fix ) {
+		return { id: arguments.id, group: arguments.group, ok: arguments.ok, version: arguments.version, detail: arguments.detail, fix: arguments.fix };
+	}
+
+	// A tool run as `NAME --version` (or another argument): its first version number.
+	function versionOf( name, arg = "--version" ) {
+		var r = variables.proc.exec( [ arguments.name, arguments.arg ], 30 );
+		return firstVersion( r.output );
+	}
+
+	// A tool that must exist on the PATH. `pkg` is the pacman package that provides it.
+	function tool( id, group, pkg, arg = "--version" ) {
+		if ( !variables.proc.has( arguments.id ) ) return row( arguments.id, arguments.group, false, "", "", "sudo pacman -S " & arguments.pkg );
+		return row( arguments.id, arguments.group, true, versionOf( arguments.id, arguments.arg ), "", "" );
+	}
+
+	// A tool the toolchain stage of the installer provides.
+	function viaInstaller( id, group ) {
+		if ( !variables.proc.has( arguments.id ) ) return row( arguments.id, arguments.group, false, "", "", "install.sh toolchains --yes" );
+		return row( arguments.id, arguments.group, true, versionOf( arguments.id ), "", "" );
+	}
+
+	function java( group ) {
+		var fix = "sudo pacman -S jdk21-openjdk";
+		if ( !variables.proc.has( "java" ) ) return row( "java", arguments.group, false, "", "", fix );
+		// `java -version` prints to the error stream
+		var r = variables.proc.exec( [ "java", "-version" ], 30 );
+		var v = firstVersion( reReplace( r.output & chr( 10 ) & ( structKeyExists( r, "error" ) ? r.error : "" ), '^[^"]*"', "" ) );
+		if ( listFirst( v, "." ) != 21 ) return row( "java", arguments.group, false, v, "found " & ( len( v ) ? v : "an unknown version" ) & ", need 21", fix );
+		return row( "java", arguments.group, true, v, "", "" );
+	}
+
+	// BoxLang: BVM's `current` symlink names the active version (running `boxlang --version` would start the whole runtime and rewrite its logs).
+	function boxlang( group ) {
+		if ( !variables.proc.has( "boxlang" ) ) return row( "boxlang", arguments.group, false, "", "", "install.sh toolchains --yes" );
+		var link = variables.proc.exec( [ "readlink", new bxrig.util.Env().home() & "/.bvm/current" ], 10 );
+		var v = link.exitCode == 0 ? firstVersion( listLast( trim( link.output ), "/" ) ) : "";
+		if ( !len( v ) ) v = versionOf( "boxlang" );
+		return row( "boxlang", arguments.group, true, v, "", "" );
+	}
+
+	// Can this MatchBox compile BxRig? Only a build with the terminal UI registers `tui.TUI`: a three line script creates one and draws a frame.
+	function compilesBxrig() {
+		var dir = getTempDirectory() & "bxrig-doctor-" & createUUID();
+		try {
+			directoryCreate( dir );
+			var probe = dir & "/probe.bxs";
+			fileWrite( probe, 'tui = createObject( "rust", "tui.TUI" );' & chr( 10 ) & 'tui.begin_frame();' & chr( 10 ) & 'tui.render_to_string( 2, 1 );' & chr( 10 ) & 'println( "bxrig-tui-ok" );' & chr( 10 ) );
+			var r = variables.proc.exec( [ "matchbox", probe ], 60 );
+			return r.exitCode == 0 && find( "bxrig-tui-ok", r.output ) > 0;
+		} catch ( any e ) {
+			return false;
+		} finally {
+			try { directoryDelete( dir, true ); } catch ( any e2 ) {}
+		}
+	}
+
+	function matchbox( group ) {
+		var fix = "install.sh toolchains --yes";
+		if ( !variables.proc.has( "matchbox" ) ) return row( "matchbox", arguments.group, false, "", "", fix );
+		var v = versionOf( "matchbox" );
+		var can = compilesBxrig();
+		var r = can
+		? row( "matchbox", arguments.group, true, v, "compiles BxRig", "" )
+		: row( "matchbox", arguments.group, false, v, "cannot compile BxRig", "install.sh toolchains --yes --matchbox-branch bxrig" );
+		r.compiles_bxrig = can;
+		return r;
+	}
+
+	function run( asJson ) {
+		var ws = "workstation"; var nb = "native";
+		var rows = [
+			tool( "git", ws, "git" ), tool( "curl", ws, "curl" ), tool( "unzip", ws, "unzip", "-v" ), tool( "jq", ws, "jq" ),
+			java( ws ), viaInstaller( "mvm", ws ), viaInstaller( "bvm", ws ), boxlang( ws ),
+			matchbox( nb )
+		];
+		for ( var t in [ "rustc", "cargo" ] ) {
+			var r = tool( t, nb, "rustup" );
+			if ( !r.ok ) r.fix = "sudo pacman -S rustup && rustup default stable";
+			rows.append( r );
+		}
+		var missing = rows.filter( function( r ) { return !r.ok; } );
+		var lines = [ "Workstation prerequisites: git, curl, unzip, jq, Java 21, MVM, BVM, BoxLang" ];
+		var shown = "workstation";
+		for ( var r in rows ) {
+			if ( r.group != shown ) { shown = r.group; lines.append( "Native build prerequisites: MatchBox, Rust and Cargo" ); }
+			lines.append( line( r ) );
+		}
+		var code = missing.len() ? "precondition" : "ok";
+		return variables.cli.say( "doctor", code, { ok: !missing.len(), tools: rows }, arguments.asJson, lines );
+	}
+
+	// "ok   git 2.50.1", "miss jq (install: sudo pacman -S jq)", "ok   matchbox 0.14.0 (compiles BxRig)".
+	function line( r ) {
+		var text = ( r.ok ? "ok   " : "miss " ) & r.id & ( len( r.version ) ? " " & r.version : "" );
+		var notes = [];
+		if ( len( r.detail ) ) notes.append( r.detail );
+		if ( !r.ok && len( r.fix ) ) notes.append( "install: " & r.fix );
+		return text & ( notes.len() ? " (" & notes.toList( "; " ) & ")" : "" );
+	}
+}

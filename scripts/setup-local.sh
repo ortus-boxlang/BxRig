@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 # Sets up a local BxRig development environment: picks a MatchBox, records it in .cache/dev.env
 # (read by scripts/dev-build.sh and tests/run-all.sh), builds dist/bxrig and runs a smoke test.
-#   scripts/setup-local.sh [--matchbox stable|edge|source] [--matchbox-branch REF] [--matchbox-repo REPO] [--release] [--no-build]
-#     stable  the released MatchBox, installed with mvm (cannot build BxRig until the bxrig fixes ship)
-#     edge    the build of the MatchBox `bxrig` branch that CI publishes (scripts/get-matchbox.sh)
-#     source  clone or reuse ../matchbox (branch bxrig) and build it with cargo
-#   --matchbox-branch REF   test any branch, tag or commit (full 40 character id) of the MatchBox repo: a shallow clone in
-#                           .cache/matchbox-src/<repo>-<ref> (../matchbox is not touched) built with cargo (debug)
+#   scripts/setup-local.sh [--matchbox stable|snapshot|branch] [--matchbox-branch REF] [--matchbox-repo REPO] [--release] [--no-build]
+#     stable    the released MatchBox, installed with mvm (`mvm install latest`, `mvm use latest`)
+#     snapshot  the snapshot MatchBox from mvm (`mvm install snapshot`, `mvm use snapshot`)
+#     branch    a branch of a MatchBox repository, shallow clone in .cache/matchbox-src/<repo>-<ref> built with cargo
+#               (default: ortus-boxlang/matchbox, branch bxrig; debug build, --release for an optimized one)
+#   --matchbox-branch REF   the branch, tag or commit (full 40 character id); implies --matchbox branch
 #   --matchbox-repo REPO    a fork: https://host/owner/name or owner/name on GitHub (default: box.json toolchain.matchbox.repo)
-#   --release               build MatchBox in release mode (source builds)
-#   BXRIG_MATCHBOX_BRANCH and BXRIG_MATCHBOX_REPO set the two options (the flags win). A branch other than box.json's
-#   (bxrig) or another repo means a source build; `edge` is only published for the bxrig branch and refuses them.
-#   .cache/dev.env records the MatchBox path, repo, ref and commit. Switch back: scripts/setup-local.sh --matchbox edge
-# Without --matchbox it asks (1 stable, 2 edge, 3 source, 4 any GitHub branch).
+#   --release               build the branch MatchBox in release mode
+#   BXRIG_MATCHBOX_BRANCH and BXRIG_MATCHBOX_REPO set the two options (the flags win).
+# Without --matchbox it asks (1 stable, 2 snapshot, 3 branch); with no terminal it builds the branch bxrig and says so.
+# BxRig is always built with the MatchBox chosen. Only a MatchBox with the terminal UI (bif-tui) can compile it: stable and snapshot
+# cannot until the bxrig changes ship, and then the script stops with that message (it never switches to another MatchBox).
+# .cache/dev.env records the MatchBox path, repo, ref and commit. Switch: scripts/setup-local.sh --matchbox branch --matchbox-branch bxrig
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 . "$root/scripts/lib/matchbox-ref.sh"
@@ -47,64 +48,61 @@ check_repo() { mb_valid_repo "$1" || { printf 'invalid MatchBox repo (%s): %q\n 
 (( ! branch_set )) || check_ref "$branch" "$branch_from"
 (( ! repo_set )) || check_repo "$repo_in" "$repo_from"
 
-# What box.json pins: the repo and branch that CI publishes a build of
+# the default repo and branch for `--matchbox branch`: what box.json names
 manifest_repo="$(jq -r '.toolchain.matchbox.repo // empty' "$root/box.json" 2>/dev/null || true)"
 [[ -n "$manifest_repo" ]] || manifest_repo=https://github.com/ortus-boxlang/matchbox
 manifest_ref="$(jq -r '.toolchain.matchbox.ref // empty' "$root/box.json" 2>/dev/null || true)"
 [[ -n "$manifest_ref" ]] || manifest_ref=bxrig
-manifest_version="$(jq -r '.toolchain.matchbox.version // empty' "$root/box.json" 2>/dev/null || true)"
 
-# dedicated=1: build the repo and ref asked for from a clone of its own under .cache/matchbox-src
-dedicated=0; want_repo="$manifest_repo"; want_ref="$manifest_ref"
-resolve_wanted() {
-	want_repo="$manifest_repo"; want_ref="$manifest_ref"
-	(( ! repo_set )) || want_repo="$(mb_repo_url "$repo_in")"
-	(( ! branch_set )) || want_ref="$branch"
-	if [[ "$want_ref" != "$manifest_ref" || "$(mb_repo_key "$want_repo")" != "$(mb_repo_key "$manifest_repo")" ]]; then dedicated=1; fi
-}
-resolve_wanted
-if (( dedicated )); then
-	case "$choice" in
-		"") choice=source ;;
-		source) ;;
-		edge) die "--matchbox edge is the published build of branch $manifest_ref of $manifest_repo; only builds of that branch are published, so it cannot be combined with a MatchBox branch or repo that differs ($want_ref of $want_repo). Use --matchbox source (or leave --matchbox out) to build it from source." ;;
-		*) die "--matchbox $choice cannot be combined with a MatchBox branch or repo other than $manifest_ref of $manifest_repo ($want_ref of $want_repo); that is built from source (--matchbox source)" ;;
-	esac
+case "$choice" in
+	""|stable|snapshot|branch) ;;
+	edge|source) die "--matchbox $choice was removed: use --matchbox branch (it builds the $manifest_ref branch of $manifest_repo; add --matchbox-branch REF or --matchbox-repo REPO for another). To use your own checkout, build it and run: MATCHBOX=/path/to/matchbox scripts/dev-build.sh" ;;
+	*) die "unknown MatchBox choice: $choice (stable, snapshot or branch)" ;;
+esac
+if [[ "$choice" == stable || "$choice" == snapshot ]] && (( branch_set || repo_set )); then
+	die "--matchbox $choice cannot be combined with --matchbox-branch or --matchbox-repo (a branch is built from source: --matchbox branch)"
 fi
+# a branch or repo given without --matchbox means the branch choice
+if [[ -z "$choice" ]] && (( branch_set || repo_set )); then choice=branch; fi
 
 if [[ -z "$choice" ]]; then
-	[[ -t 0 ]] || { echo "No terminal to ask on: pass --matchbox stable|edge|source (or --matchbox-branch REF)" >&2; exit 2; }
-	echo "Which MatchBox should BxRig use?"
-	echo "  1) stable  released MatchBox via mvm (cannot build BxRig until the bxrig fixes ship)"
-	echo "  2) edge    the bxrig branch build CI publishes (fast download)"
-	echo "  3) source  clone or reuse ../matchbox and build the bxrig branch (needs Rust)"
-	echo "  4) any GitHub branch  shallow clone of a repo and branch you name, built with cargo (needs Rust)"
-	while [[ -z "$choice" ]]; do
-		read -rp "Choose 1, 2, 3 or 4: " a
-		case "$a" in 1|stable) choice=stable ;; 2|edge) choice=edge ;; 3|source) choice=source ;; 4|branch) choice=source; dedicated=1 ;; esac
-	done
-	if (( dedicated && ! repo_set )); then
-		while true; do
-			read -rp "Repository (owner/name or https URL) [$manifest_repo]: " a
-			[[ -n "$a" ]] || a="$manifest_repo"
-			mb_valid_repo "$a" && break; echo "Not a valid repository: use https://host/owner/name or owner/name"
+	if [[ -t 0 ]]; then
+		echo "Which MatchBox should BxRig use?"
+		echo "  1) stable    the released MatchBox from mvm (cannot compile BxRig until the bxrig changes ship)"
+		echo "  2) snapshot  the snapshot MatchBox from mvm (cannot compile BxRig until the bxrig changes ship)"
+		echo "  3) branch    build a branch of a MatchBox repository (default $manifest_ref of ortus-boxlang/matchbox; needs git and Rust)"
+		while [[ -z "$choice" ]]; do
+			read -rp "Choose 1, 2 or 3: " a || die "No answer; nothing was changed"
+			case "$a" in 1|stable) choice=stable ;; 2|snapshot) choice=snapshot ;; 3|branch) choice=branch ;; esac
 		done
-		repo_in="$a"; repo_set=1
+		if [[ "$choice" == branch ]]; then
+			if (( ! repo_set )); then
+				while true; do
+					read -rp "Repository (owner/name or https URL) [ortus-boxlang/matchbox]: " a || die "No answer; nothing was changed"
+					[[ -n "$a" ]] || a="${manifest_repo#https://github.com/}"
+					mb_valid_repo "$a" && break; echo "Not a valid repository: use https://host/owner/name or owner/name"
+				done
+				repo_in="$a"; repo_set=1
+			fi
+			if (( ! branch_set )); then
+				while true; do
+					read -rp "Branch, tag or full commit id [$manifest_ref]: " a || die "No answer; nothing was changed"
+					[[ -n "$a" ]] || a="$manifest_ref"
+					mb_valid_ref "$a" && break; echo "Not a valid ref: letters, digits and . _ / @ + - only, no leading dash"
+				done
+				branch="$a"; branch_set=1
+			fi
+		fi
+	else
+		choice=branch
+		echo "No terminal to ask on: using the branch build (--matchbox branch, $manifest_ref of $manifest_repo). Pass --matchbox stable|snapshot|branch to choose."
 	fi
-	if (( dedicated && ! branch_set )); then
-		while true; do
-			read -rp "Branch, tag or full commit id: " a
-			mb_valid_ref "$a" && break; echo "Not a valid ref: letters, digits and . _ / @ + - only, no leading dash"
-		done
-		branch="$a"; branch_set=1
-	fi
-	(( ! dedicated )) || resolve_wanted
 fi
 
 mkdir -p "$root/.cache"
 s_repo=""; s_ref=""; s_commit=""
 case "$choice" in
-	stable)
+	stable|snapshot)
 		need curl
 		if ! command -v mvm >/dev/null; then
 			installer="$(jq -r .toolchain.mvm.installer "$root/box.json" 2>/dev/null || true)"
@@ -114,43 +112,26 @@ case "$choice" in
 			echo "then open a new shell and run this script again."
 			exit 4
 		fi
-		mvm install latest
-		mvm use latest
-		mb="$(command -v matchbox || true)"
+		what=latest
+		if [[ "$choice" == snapshot ]]; then what=snapshot; fi
+		mvm install "$what"
+		mvm use "$what"
+		mb="${MVM_HOME:-$HOME/.mvm}/bin/matchbox"
+		[[ -x "$mb" ]] || mb="$(command -v matchbox || true)"
 		[[ -n "$mb" ]] || mb="$(find "${MVM_HOME:-$HOME/.mvm}" -type f -name matchbox -perm -u+x 2>/dev/null | head -n1)"
 		[[ -n "$mb" ]] || { echo "mvm installed MatchBox but it is not on PATH; open a new shell and run this again" >&2; exit 4; }
-		echo "Note: the released MatchBox lacks the bxrig branch fixes, so building BxRig may fail."
-		s_repo="released (mvm)"; s_ref="latest"
+		s_repo="mvm ($choice)"; s_ref="$what"
+		s_commit="$("$mb" --version 2>&1 | sed -n 's/^commit: *//p' | head -n1 || true)"
 		;;
-	edge)
-		need curl jq sha256sum
-		mb="$root/.cache/matchbox/matchbox"
-		"$root/scripts/get-matchbox.sh" "$mb"
-		s_repo="$manifest_repo"; s_ref="$manifest_ref"
-		[[ ! -f "$mb.info" ]] || s_commit="$(. "$mb.info" && echo "${commit:-}")"
-		;;
-	source)
+	branch)
 		need git cargo
-		if (( dedicated )); then
-			src="$root/.cache/matchbox-src/$(mb_repo_slug "$want_repo")-$(mb_ref_slug "$want_ref")"
-			echo "Getting $want_repo $want_ref into $src"
-			mb_git_checkout "$want_repo" "$want_ref" "$src" || { echo "Could not get $want_ref of $want_repo (is the repo and the branch, tag or full commit id right?)" >&2; exit 4; }
-			s_repo="$want_repo"; s_ref="$want_ref"
-		else
-			src="$(cd "$root/.." && pwd)/matchbox"
-			if [[ ! -d "$src/.git" ]]; then
-				[[ ! -e "$src" ]] || { echo "$src exists but is not a git clone" >&2; exit 4; }
-				git clone --branch bxrig "$manifest_repo" "$src"
-			else
-				cur="$(git -C "$src" rev-parse --abbrev-ref HEAD)"
-				if [[ "$cur" == bxrig && -z "$(git -C "$src" status --porcelain)" ]]; then
-					git -C "$src" pull --ff-only origin bxrig
-				else
-					echo "Using $src as it is (branch $cur, local changes left alone)"
-				fi
-			fi
-			s_repo="$manifest_repo"; s_ref="$(git -C "$src" rev-parse --abbrev-ref HEAD)"
-		fi
+		want_repo="$manifest_repo"; want_ref="$manifest_ref"
+		(( ! repo_set )) || want_repo="$(mb_repo_url "$repo_in")"
+		(( ! branch_set )) || want_ref="$branch"
+		src="$root/.cache/matchbox-src/$(mb_repo_slug "$want_repo")-$(mb_ref_slug "$want_ref")"
+		echo "Getting $want_repo $want_ref into $src"
+		mb_git_checkout "$want_repo" "$want_ref" "$src" || { echo "Could not get $want_ref of $want_repo (is the repo and the branch, tag or full commit id right?)" >&2; exit 4; }
+		s_repo="$want_repo"; s_ref="$want_ref"
 		s_commit="$(git -C "$src" rev-parse --short HEAD)"
 		if (( release )); then
 			(cd "$src" && cargo build --release --features bif-tui)
@@ -160,26 +141,20 @@ case "$choice" in
 			mb="$src/target/debug/matchbox"
 		fi
 		;;
-	*) echo "unknown MatchBox choice: $choice (stable, edge or source)" >&2; exit 2 ;;
 esac
 
 [[ -x "$mb" ]] || { echo "No MatchBox at $mb" >&2; exit 4; }
-if (( dedicated )); then
-	printf '# written by scripts/setup-local.sh (source-branch)\nMATCHBOX=%q\nMATCHBOX_REPO=%q\nMATCHBOX_REF=%q\nMATCHBOX_COMMIT=%q\n' "$mb" "$s_repo" "$s_ref" "$s_commit" > "$envfile"
-else
-	printf '# written by scripts/setup-local.sh (%s)\nMATCHBOX=%q\n' "$choice" "$mb" > "$envfile"
-fi
-echo "MatchBox: $("$mb" --version 2>&1 | head -n1) ($mb), saved in .cache/dev.env"
-# a branch can report another version than box.json: a warning, the build goes on
-(( ! dedicated )) || mb_version_warn "$mb" "$manifest_version" || true
+echo "MatchBox: $("$mb" --version 2>&1 | head -n1) ($mb)"
+# BxRig is always built with this MatchBox: if it cannot compile it, stop here (nothing is recorded, nothing switches silently)
+mb_require_bxrig_capable "$mb" || exit 1
+printf '# written by scripts/setup-local.sh (%s)\nMATCHBOX=%q\nMATCHBOX_REPO=%q\nMATCHBOX_REF=%q\nMATCHBOX_COMMIT=%q\n' "$choice" "$mb" "$s_repo" "$s_ref" "$s_commit" > "$envfile"
+echo "Saved in .cache/dev.env"
 
 summary() {
 	echo
 	printf 'MatchBox in use: repo %s, ref %s, commit %s, path %s\n' "${s_repo:-unknown}" "${s_ref:-unknown}" "${s_commit:-unknown}" "$mb"
-	echo "Switch back:     scripts/setup-local.sh --matchbox edge"
+	echo "Switch:          scripts/setup-local.sh --matchbox stable|snapshot|branch   (for example: --matchbox branch --matchbox-branch bxrig)"
 	printf 'Test the end-user installer with it:\n  BXRIG_MATCHBOX_FILE=%q bash bootstrap/install.sh toolchains --yes\n' "$mb"
-	have="$("$mb" --version 2>&1 | head -n1)" || true
-	[[ -z "$manifest_version" || "$have" == *"$manifest_version"* ]] || echo "  (the installer insists on MatchBox $manifest_version; this one reports '$have', so it will refuse it)"
 }
 (( build )) || { summary; exit 0; }
 MATCHBOX="$mb" "$root/scripts/dev-build.sh"
