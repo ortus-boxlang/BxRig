@@ -7,16 +7,20 @@
 #          --base-url URL (default https://downloads.ortussolutions.com/ortussolutions/bxrig; BXRIG_BASE_URL), -h|--help.
 #          --source stable|beta|github:OWNER/REPO@REF (BXRIG_SOURCE; the github source is for testing a branch: UNSIGNED, needs --yes
 #          or the typed word "unsigned"; github:@REF and github:REF mean the default repository ortus-boxlang/BxRig),
-#          --matchbox-branch REF (BXRIG_MATCHBOX_BRANCH) and --matchbox-from-source (see bootstrap/install.sh).
+#          MatchBox: stable by default (the prebuilt bxrig only needs it as the toolchain); --snapshot (BXRIG_MATCHBOX_CHANNEL=snapshot) installs the
+#          snapshot build; --matchbox-branch REF [--matchbox-repo OWNER/NAME] (BXRIG_MATCHBOX_BRANCH, BXRIG_MATCHBOX_REPO) builds that branch with cargo
+#          (see bootstrap/install.sh). A github source compiles bxrig, so it builds the manifest's MatchBox branch (bxrig) unless you name another.
 # It downloads the channel's bxrig binary and bootstrap bundle, verifies the Ed25519 signature of the release information and the SHA-256 of both files, runs the install stages (packages, toolchains,
 # binary, core apps) and then the wizard. Everything is logged to ~/.cache/bxrig/install.log. Needs CachyOS or Arch, a normal user, sudo.
 set -Eeuo pipefail
 
 BASE="${BXRIG_BASE_URL:-https://downloads.ortussolutions.com/ortussolutions/bxrig}"
 CHANNEL="${BXRIG_CHANNEL:-stable}"
-YES=no; ANSWERS=""; WIZARD=yes; DRY=no
+YES=no; ANSWERS=""; WIZARD=yes; DRY=no; MB_REPO_FLAG=no; MB_SNAPSHOT_FLAG=no; MB_BRANCH_FLAG=no
 TOKEN=""; SOURCE="${BXRIG_SOURCE:-}"; CHANNEL_SET=no; SRC_KIND=channel; GH_OWNER=""; GH_REPO=""; GH_REF=""; GH_SHA=""; TREE=""
-MB_BRANCH_ARG="${BXRIG_MATCHBOX_BRANCH:-}"; MB_FROM_SOURCE=no; MBARGS=()
+MB_BRANCH_ARG="${BXRIG_MATCHBOX_BRANCH:-}"; MB_REPO_ARG="${BXRIG_MATCHBOX_REPO:-}"; MB_FROM_SOURCE=no; MB_SNAPSHOT=no
+[[ "${BXRIG_MATCHBOX_CHANNEL:-}" != snapshot ]] || MB_SNAPSHOT=yes
+MBARGS=()
 GH_DEFAULT_REPO="ortus-boxlang/BxRig"
 # Test hooks: where the github source talks to (never set these in real use; the token is sent to these hosts).
 GH_API="${BXRIG_GITHUB_API:-https://api.github.com}"; GH_CODELOAD="${BXRIG_GITHUB_CODELOAD:-https://codeload.github.com}"; GH_GIT="${BXRIG_GITHUB_GIT:-https://github.com}"
@@ -27,7 +31,7 @@ PUBKEY_B64="${BXRIG_PUBKEY_B64:-@@PUBKEY_B64@@}"
 C_RESET="" C_BOLD="" C_DIM="" C_OK="" C_WARN="" C_ERR="" C_ACC=""
 RICH=no; INSTALL_LOG=""; TMP=""; PID=""
 
-usage() { sed -n '2,13p' "$0" 2>/dev/null | sed 's/^# \{0,1\}//' || true; }
+usage() { sed -n '2,16p' "$0" 2>/dev/null | sed 's/^# \{0,1\}//' || true; }
 
 parse_args() {
 	while [[ $# -gt 0 ]]; do
@@ -39,9 +43,12 @@ parse_args() {
 			--channel=*) CHANNEL="${1#*=}"; CHANNEL_SET=yes ;;
 			--source) [[ $# -ge 2 ]] || die "--source needs stable, beta or github:OWNER/REPO@REF"; SOURCE="$2"; shift ;;
 			--source=*) SOURCE="${1#*=}" ;;
-			--matchbox-branch) [[ $# -ge 2 ]] || die "--matchbox-branch needs a branch name"; MB_BRANCH_ARG="$2"; shift ;;
-			--matchbox-branch=*) MB_BRANCH_ARG="${1#*=}" ;;
+			--matchbox-branch) [[ $# -ge 2 ]] || die "--matchbox-branch needs a branch name"; MB_BRANCH_ARG="$2"; MB_BRANCH_FLAG=yes; shift ;;
+			--matchbox-branch=*) MB_BRANCH_ARG="${1#*=}"; MB_BRANCH_FLAG=yes ;;
+			--matchbox-repo) [[ $# -ge 2 ]] || die "--matchbox-repo needs OWNER/NAME"; MB_REPO_ARG="$2"; MB_REPO_FLAG=yes; shift ;;
+			--matchbox-repo=*) MB_REPO_ARG="${1#*=}"; MB_REPO_FLAG=yes ;;
 			--matchbox-from-source) MB_FROM_SOURCE=yes ;;
+			--snapshot) MB_SNAPSHOT=yes; MB_SNAPSHOT_FLAG=yes ;;
 			--base-url) [[ $# -ge 2 ]] || die "--base-url needs a URL"; BASE="$2"; shift ;;
 			--base-url=*) BASE="${1#*=}" ;;
 			--no-wizard) WIZARD=no ;;
@@ -54,17 +61,28 @@ parse_args() {
 	[[ "$CHANNEL" == stable || "$CHANNEL" == beta ]] || die "the channel must be stable or beta"
 	[[ -z "$ANSWERS" || -f "$ANSWERS" ]] || die "answers file not found: $ANSWERS"
 	parse_source
-	if [[ -n "$MB_BRANCH_ARG" ]]; then
-		valid_ref "$MB_BRANCH_ARG" || die "bad MatchBox branch '$(printable "$MB_BRANCH_ARG")' (letters, digits and . _ / @ + - only; no leading dash, no ..)"
-		MBARGS+=(--matchbox-branch "$MB_BRANCH_ARG")
+	# the MatchBox options go to install.sh as they are; it validates them again, this stops a bad one before anything is downloaded
+	# flags beat the environment: a flag for one MatchBox drops the other one that only the environment asked for
+	if [[ $MB_SNAPSHOT_FLAG == yes && ( $MB_BRANCH_FLAG == yes || $MB_FROM_SOURCE == yes ) ]]; then die "--snapshot and --matchbox-branch cannot be combined: pick one MatchBox"; fi
+	if [[ $MB_SNAPSHOT_FLAG == yes && $MB_BRANCH_FLAG == no ]]; then MB_BRANCH_ARG=""; fi
+	if [[ $MB_SNAPSHOT_FLAG == no && ( $MB_BRANCH_FLAG == yes || $MB_FROM_SOURCE == yes ) ]]; then MB_SNAPSHOT=no; fi
+	if [[ $MB_SNAPSHOT == yes && -n "$MB_BRANCH_ARG" ]]; then die "BXRIG_MATCHBOX_CHANNEL=snapshot and BXRIG_MATCHBOX_BRANCH cannot be combined: pick one MatchBox"; fi
+	if [[ $MB_BRANCH_FLAG == yes && -z "$MB_BRANCH_ARG" ]] || { [[ -n "$MB_BRANCH_ARG" ]] && ! valid_ref "$MB_BRANCH_ARG"; }; then
+		die "bad MatchBox branch '$(printable "$MB_BRANCH_ARG")' (letters, digits and . _ / @ + - only; no leading dash, no ..)"
 	fi
-	[[ $MB_FROM_SOURCE == no ]] || MBARGS+=(--matchbox-from-source)
+	[[ -z "$MB_REPO_ARG" ]] || valid_repo "$MB_REPO_ARG" || die "bad MatchBox repository '$(printable "$MB_REPO_ARG")' (OWNER/NAME: letters, digits and . _ - only)"
+	[[ $MB_REPO_FLAG == no || -n "$MB_BRANCH_ARG" || $MB_FROM_SOURCE == yes ]] || die "--matchbox-repo needs --matchbox-branch REF"
+	if [[ $MB_SNAPSHOT == yes ]]; then MBARGS+=(--snapshot)
+	elif [[ -n "$MB_BRANCH_ARG" ]]; then MBARGS+=(--matchbox-branch "$MB_BRANCH_ARG"); [[ -z "$MB_REPO_ARG" ]] || MBARGS+=(--matchbox-repo "$MB_REPO_ARG")
+	elif [[ $MB_FROM_SOURCE == yes ]]; then MBARGS+=(--matchbox-from-source)
+	fi
 }
 
 printable() { printf '%s' "${1//[^[:print:]]/?}"; }
 # A git ref (branch, tag or commit) as it may appear in a URL path or a git argument: [A-Za-z0-9._/@+-], no leading dash, no "..", no
 # leading or trailing slash. Owner and repository names are stricter: [A-Za-z0-9._-]+, never only dots.
 valid_ref() { [[ "$1" =~ ^[A-Za-z0-9._/@+-]+$ && "$1" != -* && "$1" != *..* && "$1" != /* && "$1" != */ ]]; }
+valid_repo() { [[ "$1" =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$ && "$1" != -* && "$1" != *..* && "$1" != */-* ]]; }   # OWNER/NAME of the MatchBox repository
 valid_name() { [[ "$1" =~ ^[A-Za-z0-9._-]+$ && ! "$1" =~ ^\.+$ && "$1" != -* ]]; }
 # --source SPEC: stable (today's behaviour), beta (= --channel beta), github:OWNER/REPO@REF | github:@REF | github:REF.
 parse_source() {
@@ -292,6 +310,8 @@ record_source() {  # the log and a small file next to the MatchBox home; bxrig u
 	return 0
 }
 github_main() {
+	# this source is compiled, and only a MatchBox with the terminal UI can: build the manifest's branch (bxrig) unless the user chose a MatchBox
+	(( ${#MBARGS[@]} )) || MBARGS+=(--matchbox-from-source)
 	TOKEN="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
 	[[ -z "$TOKEN" || "$TOKEN" =~ ^[A-Za-z0-9_.-]+$ ]] || die "the GitHub token has characters a token never has (it is not printed); check GITHUB_TOKEN or GH_TOKEN"
 	note "source: github:$GH_OWNER/$GH_REPO@$GH_REF (unsigned)${TOKEN:+, with a GitHub token}"
@@ -312,7 +332,6 @@ github_main() {
 	section "Downloading"
 	fetch_tree
 	record_source log
-	[[ -z "$MB_BRANCH_ARG" ]] || export BXRIG_MATCHBOX_BRANCH="$MB_BRANCH_ARG"
 	local inst="$TREE/bootstrap/install.sh"
 	section "Installing"
 	ask_sudo
@@ -367,7 +386,6 @@ main() {
 	section "Installing"
 	ask_sudo
 	run_live "packages (pacman)" bash "$inst" packages --yes
-	[[ -z "$MB_BRANCH_ARG" ]] || export BXRIG_MATCHBOX_BRANCH="$MB_BRANCH_ARG"   # the binary stage reads the branch from the environment
 	run_task "toolchains (Java, bvm, mvm, BoxLang, MatchBox, Rust)" bash "$inst" toolchains --yes ${MBARGS[@]+"${MBARGS[@]}"}
 	run_task "the bxrig program" bash "$inst" binary --yes --binary "$TMP/bxrig" --force
 	run_live "the core apps" bash "$inst" core --yes

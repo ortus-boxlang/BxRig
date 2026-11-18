@@ -47,7 +47,7 @@ finish() {  # FILE SOURCE COMMIT
 	chmod 755 "$1"
 	local out; out="$("$1" --version 2>&1 | head -n 1)" || true
 	if (( override )); then
-		[[ "$out" == *"$want"* ]] || echo "warning: the MatchBox built from $ref of $repo reports '${out:-nothing}', box.json wants $want; continuing (bootstrap/install.sh insists on $want)" >&2
+		[[ "$out" == *"$want"* ]] || echo "warning: the MatchBox built from $ref of $repo reports '${out:-nothing}', box.json wants $want; continuing (the CI jobs compare the version with box.json)" >&2
 		want="${out:-unknown}"
 	else
 		[[ "$out" == *"$want"* ]] || { echo "The MatchBox found reports '${out:-nothing}', box.json wants $want" >&2; return 1; }

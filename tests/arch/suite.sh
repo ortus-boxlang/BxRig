@@ -43,6 +43,8 @@ snaplist() {
 }
 skip() { printf 'SKIP\t%s\t%s\n' "$1" "$2" | tee -a "$OUT/results.tsv"; }
 
+# BxRig needs a MatchBox with the terminal UI: BXRIG_MATCHBOX_FILE (a build given by tests/arch/run.sh), else the bxrig branch built here
+export MBOPT=""; [[ -n "${BXRIG_MATCHBOX_FILE:-}" ]] || MBOPT="--matchbox-branch bxrig"
 export PATH="$HOME/.local/share/bxrig/matchbox/bin:$HOME/.mvm/bin:$HOME/.cargo/bin:$PATH"
 
 # --- Existing mocked suites, now on real Arch ---
@@ -70,11 +72,11 @@ step bootstrap-yay-present 0 bash -c 'command -v yay'
 step bootstrap-rust-active 0 bash -c 'rustc --version'
 step rust-default             0 rustup default stable
 if [[ $NET == 1 ]]; then
-	step bootstrap-toolchains       0 bash -c 'bash bootstrap/install.sh toolchains --yes </dev/null'
-	step_grep bootstrap-toolchains-rerun 0 'Nothing to do' bash -c 'bash bootstrap/install.sh toolchains --yes </dev/null'
+	step bootstrap-toolchains       0 bash -c 'bash bootstrap/install.sh toolchains --yes $MBOPT </dev/null'
+	step_grep bootstrap-toolchains-rerun 0 'Nothing to do' bash -c 'bash bootstrap/install.sh toolchains --yes $MBOPT </dev/null'
 	# BoxLang follows the latest stable release: the installed version must equal what Ortus publishes as latest.
 	step bootstrap-boxlang-is-latest   0 bash -c 'want=$(curl -fsS -m 10 https://downloads.ortussolutions.com/ortussolutions/boxlang/version-latest.properties | sed -n "s/^version=\([0-9][0-9.]*\).*/\1/p" | head -1); [ -n "$want" ] && bash bootstrap/install.sh check | grep -F "boxlang: $want (want latest = $want)"'
-	step_grep bootstrap-pins-matchbox  0 "matchbox: $(jq -r .toolchain.matchbox.version box.json)" bash bootstrap/install.sh check
+	step_grep bootstrap-matchbox-compiles-bxrig  0 "(compiles BxRig: yes)" bash bootstrap/install.sh check
 	# nvm and Node are no longer part of the required install (they are the optional JavaScript toolchain)
 	step bootstrap-nvm-not-required 0 bash -c "! bash bootstrap/install.sh check | grep -E '^(nvm|node):'"
 	# B5: build the real binary with MatchBox and install it for the user.
@@ -86,7 +88,7 @@ if [[ $NET == 1 ]]; then
 	# B7: the whole path on this clean machine is finished, and running it all again changes nothing.
 	step_grep bootstrap-fullpath-ready 0 'summary: ready' env PATH="$HOME/.local/bin:$PATH" bash bootstrap/install.sh check
 	snaplist > "$OUT/snap-before.txt"
-	step bootstrap-fullpath-rerun 0 bash -c 'bash bootstrap/install.sh packages --yes </dev/null && bash bootstrap/install.sh toolchains --yes </dev/null && bash bootstrap/install.sh binary --yes </dev/null'
+	step bootstrap-fullpath-rerun 0 bash -c 'bash bootstrap/install.sh packages --yes </dev/null && bash bootstrap/install.sh toolchains --yes $MBOPT </dev/null && bash bootstrap/install.sh binary --yes </dev/null'
 	snaplist > "$OUT/snap-after.txt"
 	step bootstrap-fullpath-no-changes 0 bash -c "if diff -u '$OUT/snap-before.txt' '$OUT/snap-after.txt' > '$OUT/snap.diff'; then exit 0; else echo 'the second run changed these:'; grep -E '^[-+][^-+]' '$OUT/snap.diff' | head -40; exit 1; fi"
 else
@@ -96,7 +98,7 @@ fi
 # --- Native build ---
 BIN=""
 if [[ $NET == 1 ]]; then
-	step native-compile 0 bash -c 'matchbox --version | grep -F "$(jq -r .toolchain.matchbox.version box.json)" && matchbox --target native --output bxrig-built src/Main.bx'
+	step native-compile 0 bash -c 'matchbox --version && matchbox --target native --output bxrig-built src/Main.bx'
 	BIN="$(find . -maxdepth 1 -type f -executable -name bxrig-built -print -quit)"
 else
 	skip native-compile "GitHub unreachable (MatchBox cannot install); native and real-pacman CLI steps skipped"

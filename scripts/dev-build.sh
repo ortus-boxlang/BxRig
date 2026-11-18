@@ -7,9 +7,9 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 [[ -z "${MATCHBOX:-}" && -f "$root/.cache/dev.env" ]] && source "$root/.cache/dev.env"
 mb="${MATCHBOX:-}"
 [[ -n "$mb" && -x "$mb" ]] || { echo "No MatchBox set up (run scripts/setup-local.sh, or set MATCHBOX)" >&2; exit 4; }
-# a MatchBox from another branch can report another version than box.json: warn, build anyway
+# a MatchBox without the terminal UI (stable, snapshot) cannot compile bxrig: stop with the reason, never build with another one
 . "$root/scripts/lib/matchbox-ref.sh"
-mb_version_warn "$mb" "$(jq -r '.toolchain.matchbox.version // empty' "$root/box.json" 2>/dev/null || true)" || true
+mb_require_bxrig_capable "$mb" || exit 1
 mkdir -p "$root/dist"
 "$root/bootstrap/gen-assets.sh" >/dev/null
 "$root/bootstrap/gen-version.sh" >/dev/null

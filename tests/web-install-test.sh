@@ -100,7 +100,7 @@ mktree() {  # DIR PREFIX: a BxRig-looking repository archived the way codeload d
 	mkdir -p "$1/r/bootstrap" "$1/r/src"; echo '{}' > "$1/r/box.json"; echo 'x' > "$1/r/src/Main.bx"
 	cat > "$1/r/bootstrap/install.sh" <<'INS'
 #!/usr/bin/env bash
-echo "stage $* mb=${BXRIG_MATCHBOX_BRANCH:-}" >> "$LOG"
+echo "stage $*" >> "$LOG"
 [[ "$1" == --dry-run ]] && echo "TREE-PLAN: matchbox build 0.14.0-425a294"
 if [[ "$1" == binary ]]; then mkdir -p "$BXRIG_BIN_DIR"; printf '#!/usr/bin/env bash\necho "bxrig $*" >> "$LOG"\n' > "$BXRIG_BIN_DIR/bxrig"; chmod +x "$BXRIG_BIN_DIR/bxrig"; fi
 INS
@@ -129,6 +129,10 @@ done
 [[ "$(gcode --yes --source github:acme/proj@feat/x --channel beta)" == 1 ]] || fail '--channel with a github source is refused'
 [[ "$(gcode --yes --source stable --channel beta)" == 1 ]] || fail 'conflicting --source and --channel'
 [[ "$(gcode --yes --matchbox-branch '-x')" == 1 && "$(gcode --yes --matchbox-branch 'a b')" == 1 && "$(gcode --yes --matchbox-branch '$(id)')" == 1 ]] || fail 'a bad --matchbox-branch is refused'
+[[ "$(gcode --yes --matchbox-branch '')" == 1 ]] || fail 'an empty --matchbox-branch is refused'
+[[ "$(gcode --yes --matchbox-branch ok --matchbox-repo '-a/b')" == 1 && "$(gcode --yes --matchbox-branch ok --matchbox-repo 'a b/c')" == 1 && "$(gcode --yes --matchbox-branch ok --matchbox-repo 'a')" == 1 && "$(gcode --yes --matchbox-branch ok --matchbox-repo '$(id)/x')" == 1 && "$(gcode --yes --matchbox-branch ok --matchbox-repo 'a/b/c')" == 1 ]] || fail 'a bad --matchbox-repo is refused'
+[[ "$(gcode --yes --matchbox-repo a/b)" == 1 ]] || fail '--matchbox-repo without a branch is refused'
+[[ "$(gcode --yes --snapshot --matchbox-branch x)" == 1 && "$(gcode --yes --snapshot --matchbox-from-source)" == 1 ]] || fail '--snapshot with a branch is refused'
 [[ ! -s "$LOG" ]] || fail 'a stage ran after a bad option'; ! grep -q 'codeload\|gh-' "$tmp/curl.argv" || fail 'something was downloaded after a bad option'
 # the github source is never silent: no --yes and no terminal, or a wrong word, stops before the download (exit 2)
 : > "$tmp/curl.argv"; out="$(grun bash "$script" --source github:acme/proj@feat/x 2>&1)" && fail 'an unsigned source without consent installed'
@@ -140,7 +144,7 @@ echo yes > "$tmp/tty-yes"; [[ "$(TTYF="$tmp/tty-yes" gcode --source github:acme/
 # the typed word, with a token: the install runs the TREE'S stages, builds the binary from it (no --binary), logs the source
 echo unsigned > "$tmp/tty-ok"; : > "$LOG"; : > "$tmp/curl.argv"; : > "$tmp/curl.stdin"; rm -f "$tmp/binhome/bxrig" "$tmp/home/.local/share/bxrig/install-source"
 out="$(TTYF="$tmp/tty-ok" GHT=ghp_SECRETtoken123 grun bash "$script" --source github:acme/proj@feat/x 2>&1)" || fail "typed word: $out"
-[[ "$(grep '^stage' "$LOG" | cut -d' ' -f2- | tr '\n' '|')" == 'packages --yes mb=|toolchains --yes mb=|binary --yes --force mb=|core --yes mb=|' ]] || fail "tree stages: $(cat "$LOG")"
+[[ "$(grep '^stage' "$LOG" | cut -d' ' -f2- | tr '\n' '|')" == 'packages --yes|toolchains --yes --matchbox-from-source|binary --yes --force|core --yes|' ]] || fail "tree stages: $(cat "$LOG")"
 grep -q '^bxrig init' "$LOG" || fail 'the wizard runs from the freshly built binary'
 grep -q '^source: github:acme/proj@feat/x' "$tmp/home/.cache/bxrig/install.log" && grep -q "^commit: $SHA1" "$tmp/home/.cache/bxrig/install.log" && grep -q 'signed: no' "$tmp/home/.cache/bxrig/install.log" || fail 'the log records the source and the commit'
 grep -q "commit=$SHA1" "$tmp/home/.local/share/bxrig/install-source" || fail 'the install-source file'
@@ -157,18 +161,32 @@ for f in "$tmp/curl.argv" "$tmp/home/.cache/bxrig/install.log" "$tmp/home/.local
 : > "$LOG"; rm -f "$tmp/binhome/bxrig"
 out="$(grun bash "$script" --dry-run --source github:acme/proj@feat/x 2>&1)" || fail "dry run: $out"
 [[ "$out" == *'UNSIGNED'* && "$out" == *"commit: $SHA1"* && "$out" == *'TREE-PLAN: matchbox build 0.14.0-425a294'* && "$out" == *'stages: packages, toolchains'* ]] || fail "dry-run plan: $out"
-[[ "$(grep '^stage' "$LOG")" == 'stage --dry-run mb=' ]] || fail "a dry run ran stages: $(cat "$LOG")"; [[ ! -e "$tmp/binhome/bxrig" ]] || fail 'a dry run installed'
+[[ "$(grep '^stage' "$LOG")" == 'stage --dry-run --matchbox-from-source' ]] || fail "a dry run ran stages: $(cat "$LOG")"; [[ ! -e "$tmp/binhome/bxrig" ]] || fail 'a dry run installed'
 # no git answer: the API resolves the commit; a commit ref needs no lookup
 : > "$tmp/git.log"; out="$(GIT_SHA= grun bash "$script" --dry-run --source github:acme/proj@feat/x 2>&1)"; [[ "$out" == *"commit feature"* || "$out" == *"commit $SHA1"* ]] || fail "API commit: $out"
 grep -q 'gh-api/repos/acme/proj/commits/feat/x' "$tmp/curl.argv" || fail 'the API was asked for the commit'
 # shorthands use the default repository
 : > "$tmp/curl.argv"; grun bash "$script" --dry-run --source github:@dev >/dev/null 2>&1; grep -q 'gh-codeload/ortus-boxlang/BxRig/tar.gz/dev' "$tmp/curl.argv" || fail 'github:@REF'
 : > "$tmp/curl.argv"; grun bash "$script" --dry-run --source github:dev >/dev/null 2>&1; grep -q 'gh-codeload/ortus-boxlang/BxRig/tar.gz/dev' "$tmp/curl.argv" || fail 'github:REF'
-# MatchBox options pass through to the stages, for both sources
-: > "$LOG"; rm -f "$tmp/binhome/bxrig"; gcode --yes --no-wizard --source github:acme/proj@feat/x --matchbox-branch feature/x --matchbox-from-source >/dev/null
-grep -q '^stage toolchains --yes --matchbox-branch feature/x --matchbox-from-source mb=feature/x' "$LOG" && grep -q '^stage binary --yes --force mb=feature/x' "$LOG" || fail "github matchbox options: $(cat "$LOG")"
-: > "$LOG"; rm -f "$tmp/binhome/bxrig"; run --yes --no-wizard --matchbox-branch feature/x >/dev/null 2>&1
-grep -q '^stage toolchains --yes --matchbox-branch feature/x' "$LOG" || fail "stable matchbox options: $(cat "$LOG")"
+# MatchBox options pass through to the stages, for both sources. The github source compiles bxrig, so it builds the manifest's MatchBox
+# branch (--matchbox-from-source = bxrig) unless the user chose another MatchBox; the binary stage then stops if that MatchBox cannot compile it.
+stages() { grep '^stage' "$LOG" | cut -d' ' -f2- | tr '\n' '|'; }
+gstages() { : > "$LOG"; rm -f "$tmp/binhome/bxrig"; gcode --yes --no-wizard --source github:acme/proj@feat/x "$@" >/dev/null; stages; }
+sstages() { : > "$LOG"; rm -f "$tmp/binhome/bxrig"; run --yes --no-wizard "$@" >/dev/null 2>&1; stages; }
+[[ "$(gstages --matchbox-branch feature/x)" == 'packages --yes|toolchains --yes --matchbox-branch feature/x|binary --yes --force|core --yes|' ]] || fail "github with a branch: $(cat "$LOG")"
+[[ "$(gstages --matchbox-branch feature/x --matchbox-repo someone/fork)" == 'packages --yes|toolchains --yes --matchbox-branch feature/x --matchbox-repo someone/fork|binary --yes --force|core --yes|' ]] || fail "github with a branch and repo: $(cat "$LOG")"
+[[ "$(gstages --snapshot)" == 'packages --yes|toolchains --yes --snapshot|binary --yes --force|core --yes|' ]] || fail "github with --snapshot is not silently switched to a branch build: $(cat "$LOG")"
+[[ "$(gstages --matchbox-from-source)" == 'packages --yes|toolchains --yes --matchbox-from-source|binary --yes --force|core --yes|' ]] || fail "github with --matchbox-from-source: $(cat "$LOG")"
+# the stable path: the prebuilt bxrig only needs the MatchBox toolchain, so the default asks for nothing special
+[[ "$(sstages)" == 'packages --yes|toolchains --yes|binary --yes --binary '*' --force|core --yes|' ]] || fail "stable default stages: $(cat "$LOG")"
+[[ "$(sstages --snapshot)" == *'|toolchains --yes --snapshot|'* ]] || fail "stable with --snapshot: $(cat "$LOG")"
+[[ "$(sstages --matchbox-branch feature/x --matchbox-repo someone/fork)" == *'|toolchains --yes --matchbox-branch feature/x --matchbox-repo someone/fork|'* ]] || fail "stable with a branch and repo: $(cat "$LOG")"
+[[ "$(sstages --matchbox-from-source)" == *'|toolchains --yes --matchbox-from-source|'* ]] || fail "stable with --matchbox-from-source: $(cat "$LOG")"
+# the environment variables mean the same
+: > "$LOG"; rm -f "$tmp/binhome/bxrig"; env BXRIG_MATCHBOX_CHANNEL=snapshot HOME="$tmp/home" BXRIG_BIN_DIR="$tmp/binhome" BXRIG_BASE_URL=http://fake BXRIG_INSTALL_ALLOW_ROOT=1 PATH="$tmp/bin:$PATH" LOG="$LOG" NO_COLOR=1 bash "$script" --yes --no-wizard >/dev/null 2>&1
+[[ "$(stages)" == *'|toolchains --yes --snapshot|'* ]] || fail "BXRIG_MATCHBOX_CHANNEL=snapshot: $(cat "$LOG")"
+: > "$LOG"; rm -f "$tmp/binhome/bxrig"; env BXRIG_MATCHBOX_BRANCH=dev BXRIG_MATCHBOX_REPO=acme/mb HOME="$tmp/home" BXRIG_BIN_DIR="$tmp/binhome" BXRIG_BASE_URL=http://fake BXRIG_INSTALL_ALLOW_ROOT=1 PATH="$tmp/bin:$PATH" LOG="$LOG" NO_COLOR=1 bash "$script" --yes --no-wizard >/dev/null 2>&1
+[[ "$(stages)" == *'|toolchains --yes --matchbox-branch dev --matchbox-repo acme/mb|'* ]] || fail "BXRIG_MATCHBOX_BRANCH and BXRIG_MATCHBOX_REPO: $(cat "$LOG")"
 # a tarball with paths that leave the folder, or that is no BxRig tree, is refused
 printf 'not a tarball' > "$tmp/srv/gh-codeload/acme/proj/tar.gz/feat/x"; : > "$LOG"
 [[ "$(gcode --yes --source github:acme/proj@feat/x)" == 1 ]] || fail 'a bad archive is refused'

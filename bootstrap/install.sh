@@ -3,28 +3,32 @@ set -euo pipefail
 
 # Tool versions, installer URLs and the Java package live in box.json at the repository root (loaded below).
 # BoxLang follows the latest stable release (owner decision 2026-11-09); BXRIG_BOXLANG_VERSION=x.y.z pins it.
-# MatchBox stays pinned in box.json: it compiles bxrig itself, so the tested version matters.
-# MatchBox is the build of the head of the box.json toolchain.matchbox.ref branch (see "MatchBox: the head of the bxrig branch" below).
+# MatchBox comes from mvm: the stable release by default (`mvm install latest`), the snapshot build with --snapshot
+# (BXRIG_MATCHBOX_CHANNEL=snapshot), or a branch built here with cargo (--matchbox-branch REF, see "MatchBox" below). Neither stable nor
+# snapshot contains the BxRig changes yet, so they cannot compile bxrig: the binary stage probes the MatchBox it would use (mb_builds_bxrig).
 # BXRIG_MVM_VERSION=x.y.z asks the MVM installer for a specific release.
 MIN_FREE_GB=5
 BOXLANG_LATEST_URL="https://downloads.ortussolutions.com/ortussolutions/boxlang/version-latest.properties"
 
 usage() {
 	cat >&2 <<'USAGE'
-Usage: install.sh [--yes] [--dry-run] [--matchbox-branch REF] [--matchbox-from-source]
+Usage: install.sh [--yes] [--dry-run] [--snapshot | --matchbox-branch REF [--matchbox-repo OWNER/NAME]]
                                           install everything: packages, toolchains, the bxrig binary, the core apps
        install.sh check                   read-only report of what is installed
        install.sh packages|toolchains|binary|core --yes [--binary PATH --force]   re-run one stage
-                                          (toolchains also takes --matchbox-branch REF and --matchbox-from-source)
+                                          (toolchains also takes --snapshot, --matchbox-branch REF and --matchbox-repo OWNER/NAME)
+       MatchBox: stable by default; --snapshot = the mvm snapshot build; --matchbox-branch REF = built from that branch (default repo
+       ortus-boxlang/matchbox). --matchbox-from-source is the same as --matchbox-branch bxrig.
        install.sh wizard                  the setup wizard (bxrig init); the full install ends with it at a terminal
 USAGE
 	exit 2
 }
 # Public words: no word = the whole install. Stage words re-run one stage. Internally the stages keep their old mode names.
-mode=full; yes=0; dry=0; force=0; binary_arg=""; mb_branch_arg=""; mb_branch_set=0; mb_source=0
+mode=full; yes=0; dry=0; force=0; binary_arg=""; mb_branch_arg=""; mb_branch_set=0; mb_source=0; mb_snapshot=0; mb_repo_arg=""; mb_repo_set=0
 # The MatchBox branch to install (default: the manifest's toolchain.matchbox.ref). Only [A-Za-z0-9._/@+-], no leading dash, no "..", no
 # leading or trailing slash: it ends up in a git argument and in an API path, never in a shell string.
 valid_ref() { [[ "$1" =~ ^[A-Za-z0-9._/@+-]+$ && "$1" != -* && "$1" != *..* && "$1" != /* && "$1" != */ ]]; }
+valid_repo() { [[ "$1" =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$ && "$1" != -* && "$1" != *..* && "$1" != */-* ]]; }   # OWNER/NAME on GitHub
 case "${1:-}" in
 	check) mode=--check; shift ;;
 	packages) mode=--install; shift ;;
@@ -41,7 +45,9 @@ case "$mode" in
 				--yes) yes=1 ;;
 				--dry-run) [[ "$mode" == full ]] || usage; dry=1 ;;
 				--matchbox-branch) [[ $# -ge 2 ]] || usage; mb_branch_arg="$2"; mb_branch_set=1; shift ;;
+				--matchbox-repo) [[ $# -ge 2 ]] || usage; mb_repo_arg="$2"; mb_repo_set=1; shift ;;
 				--matchbox-from-source) mb_source=1 ;;
+				--snapshot) mb_snapshot=1 ;;
 				*) usage ;;
 			esac
 			shift
@@ -61,10 +67,25 @@ case "$mode" in
 		[[ $yes -eq 1 ]] || usage ;;
 esac
 
-MB_BRANCH_REQ="${mb_branch_arg:-${BXRIG_MATCHBOX_BRANCH:-}}"
-if { (( mb_branch_set )) || [[ -n "$MB_BRANCH_REQ" ]]; } && ! valid_ref "$MB_BRANCH_REQ"; then
-	echo "Invalid MatchBox branch: '$MB_BRANCH_REQ' (letters, digits and . _ / @ + - only; no leading dash, no ..)" >&2
-	exit 2
+# ---- which MatchBox: stable (the default), snapshot (--snapshot), or a branch built here (--matchbox-branch REF) ----
+# Flags beat the environment (BXRIG_MATCHBOX_CHANNEL=snapshot, BXRIG_MATCHBOX_BRANCH, BXRIG_MATCHBOX_REPO). --matchbox-from-source is the
+# old spelling of "the manifest's branch" and means --matchbox-branch bxrig when no branch is given.
+bad_option() { echo "$1" >&2; exit 2; }
+env_channel="${BXRIG_MATCHBOX_CHANNEL:-}"
+[[ -z "$env_channel" || "$env_channel" == stable || "$env_channel" == snapshot ]] || bad_option "Invalid BXRIG_MATCHBOX_CHANNEL: '$env_channel' (stable or snapshot; a branch is --matchbox-branch REF)"
+MB_BRANCH_REQ="${mb_branch_arg:-}"; (( mb_branch_set )) || MB_BRANCH_REQ="${BXRIG_MATCHBOX_BRANCH:-}"
+MB_REPO_REQ="${mb_repo_arg:-}"; (( mb_repo_set )) || MB_REPO_REQ="${BXRIG_MATCHBOX_REPO:-}"
+(( ! mb_snapshot || ( ! mb_branch_set && ! mb_source ) )) || bad_option "--snapshot and --matchbox-branch cannot be combined: pick one MatchBox"
+if (( mb_snapshot )); then MB_CHANNEL=snapshot
+elif (( mb_branch_set || mb_source )) || [[ -n "$MB_BRANCH_REQ" ]]; then MB_CHANNEL=branch
+else MB_CHANNEL="${env_channel:-stable}"; fi
+[[ "$env_channel" != snapshot || -z "${BXRIG_MATCHBOX_BRANCH:-}" || $mb_snapshot -eq 1 || $mb_branch_set -eq 1 || $mb_source -eq 1 ]] || bad_option "BXRIG_MATCHBOX_CHANNEL=snapshot and a MatchBox branch cannot be combined: pick one MatchBox"
+if (( mb_branch_set )) || { [[ "$MB_CHANNEL" == branch ]] && [[ -n "$MB_BRANCH_REQ" ]]; }; then
+	valid_ref "$MB_BRANCH_REQ" || bad_option "Invalid MatchBox branch: '$MB_BRANCH_REQ' (letters, digits and . _ / @ + - only; no leading dash, no ..)"
+fi
+if (( mb_repo_set )) && [[ "$MB_CHANNEL" != branch ]]; then bad_option "--matchbox-repo needs --matchbox-branch REF"; fi
+if [[ "$MB_CHANNEL" == branch ]] && { (( mb_repo_set )) || [[ -n "$MB_REPO_REQ" ]]; }; then
+	valid_repo "$MB_REPO_REQ" || bad_option "Invalid MatchBox repository: '$MB_REPO_REQ' (OWNER/NAME: letters, digits and . _ - only)"
 fi
 command -v pacman >/dev/null 2>&1 || {
 	echo "BxRig requires Arch Linux/CachyOS (pacman)" >&2
@@ -76,6 +97,8 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd || true)"
 # ---- box.json: the single place that names tool versions (needs jq, so --install installs jq first) ----
 MANIFEST="${BXRIG_MANIFEST:-$root/box.json}"
 manifest_error=""
+# A MatchBox built from a branch (or given as BXRIG_MATCHBOX_FILE) lives here, with build.info; mvm manages the others.
+MATCHBOX_HOME="${BXRIG_HOME:-$HOME/.local/share/bxrig}/matchbox"
 load_manifest() {
 	manifest_error=""
 	command -v jq >/dev/null 2>&1 || { manifest_error="jq is required to read box.json"; return 1; }
@@ -83,23 +106,16 @@ load_manifest() {
 	jq -e . "$MANIFEST" >/dev/null 2>&1 || { manifest_error="box.json is not valid JSON: $MANIFEST"; return 1; }
 	local key
 	for key in .toolchain.java.version .toolchain.java.package .toolchain.boxlang.version .toolchain.bvm.installer \
-						 .toolchain.mvm.installer .toolchain.matchbox.version .toolchain.rust.channel; do
+						 .toolchain.mvm.installer .toolchain.rust.channel; do
 		jq -e "$key" "$MANIFEST" >/dev/null 2>&1 || { manifest_error="box.json is missing ${key#.}"; return 1; }
 	done
 	JAVA_MAJOR="$(jq -r .toolchain.java.version "$MANIFEST")"
 	JAVA_PKG="$(jq -r .toolchain.java.package "$MANIFEST")"
-	MATCHBOX_VERSION="$(jq -r .toolchain.matchbox.version "$MANIFEST")"
-	# With "downloads" set, MatchBox is not installed by mvm: it is the build of the MatchBox `bxrig` branch
-	# that CI publishes to S3 (see .github/workflows/matchbox.yml), checked against its sha256 and kept in
-	# $MATCHBOX_HOME so it never replaces the `matchbox` that mvm manages.
-	MATCHBOX_DOWNLOADS="$(jq -r '.toolchain.matchbox.downloads // empty' "$MANIFEST")"
-	MATCHBOX_HOME="${BXRIG_HOME:-$HOME/.local/share/bxrig}/matchbox"
-	# The branch whose head is installed: box.json toolchain.matchbox.ref, or --matchbox-branch / BXRIG_MATCHBOX_BRANCH. Another
-	# branch has no published builds, so it needs --matchbox-from-source (clone, cargo build).
-	MATCHBOX_REPO="$(jq -r '.toolchain.matchbox.repo // empty' "$MANIFEST")"
-	MATCHBOX_REF="$(jq -r '.toolchain.matchbox.ref // empty' "$MANIFEST")"
+	# The MatchBox repository and branch for --matchbox-branch (and its alias --matchbox-from-source): box.json toolchain.matchbox
+	MATCHBOX_REPO="$(jq -r '.toolchain.matchbox.repo // empty' "$MANIFEST")"; MATCHBOX_REPO="${MATCHBOX_REPO:-https://github.com/ortus-boxlang/matchbox}"
+	MATCHBOX_REF="$(jq -r '.toolchain.matchbox.ref // empty' "$MANIFEST")"; MATCHBOX_REF="${MATCHBOX_REF:-bxrig}"
 	MB_BRANCH="${MB_BRANCH_REQ:-$MATCHBOX_REF}"
-	MB_CUSTOM=0; [[ -z "$MB_BRANCH_REQ" || "$MB_BRANCH_REQ" == "$MATCHBOX_REF" ]] || MB_CUSTOM=1
+	MB_REPO_URL="$MATCHBOX_REPO"; [[ -z "$MB_REPO_REQ" ]] || MB_REPO_URL="https://github.com/$MB_REPO_REQ"
 	BVM_URL="$(jq -r .toolchain.bvm.installer "$MANIFEST")"
 	MVM_URL="$(jq -r .toolchain.mvm.installer "$MANIFEST")"
 	RUST_CHANNEL="$(jq -r .toolchain.rust.channel "$MANIFEST")"
@@ -119,7 +135,7 @@ BIN_DIR="${BXRIG_BIN_DIR:-$HOME/.local/bin}"
 BVM_HOME="${BVM_HOME:-$HOME/.bvm}"
 MVM_HOME="${MVM_HOME:-$HOME/.mvm}"
 probe_path="$BVM_HOME/bin:$BVM_HOME/current/bin:$MVM_HOME/bin:$HOME/.cargo/bin:$BIN_DIR:$PATH"
-[[ -z "${MATCHBOX_DOWNLOADS:-}" ]] || probe_path="${MATCHBOX_HOME}/bin:$probe_path"
+probe_path="$MATCHBOX_HOME/bin:$probe_path"   # a MatchBox built here wins over the one mvm manages
 
 tool_path() { PATH="$probe_path" command -v "$1" 2>/dev/null; }
 first_version() { grep -m1 -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' || true; }
@@ -145,142 +161,88 @@ step_retry() {
 	done
 	echo "Failed after 3 attempts: $what (if GitHub reports HTTP 403, wait a while and rerun; this is a rate limit)" >&2; exit 1
 }
-# ---- MatchBox: the head of the bxrig branch (box.json toolchain.matchbox.ref) ----
-# version-latest.properties and the evergreen files can be served stale (for about a day, and one build behind the branch is enough for
-# bx-image to fail with "Missing required capability: matchbox.types.v1"), so the build is the one the branch head names:
-# <downloads>/<version>-<head7>/ (immutable), where head7 comes from `git ls-remote REPO refs/heads/REF` (or the GitHub API without git).
-# When that folder is not published yet the install STOPS (exit 1) and says how to go on; it never falls back to the older build.
-# Only when the head cannot be read at all (no network to GitHub) the build named in version-latest.properties is used, with a warning.
-# BXRIG_MATCHBOX_FILE=PATH installs a local build instead. --matchbox-from-source clones the branch and builds it with cargo (Rust comes
-# from the packages stage, which runs before this one). A branch other than the manifest's has no published builds.
-MB_LOOKUP=0; MB_HEAD=""; MB_HS=""; MB_STATE=""; MB_BASE=""
-mb_marker() { sed -n "s/^$1=//p" "$MATCHBOX_HOME/build.info" 2>/dev/null | head -n 1 || true; }   # version, branch, commit, source of the installed build
-# The GitHub API answer for a branch head; needs no login. 0 head in MB_HEAD, 1 cannot be read, 2 rate limited, 3 no such branch.
-mb_head_api() {
-	local slug tmpb http
-	slug="$(sed -nE 's#^https://github\.com/([A-Za-z0-9._-]+/[A-Za-z0-9._-]+)$#\1#p' <<<"${MATCHBOX_REPO%.git}")"
-	[[ -n "$slug" ]] && command -v curl >/dev/null 2>&1 && command -v jq >/dev/null 2>&1 || return 1
-	tmpb="$(mktemp)"
-	http="$(curl -sS -m 20 -o "$tmpb" -w '%{http_code}' -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/$slug/git/ref/heads/$MB_BRANCH" 2>/dev/null)" || http=000
-	case "$http" in
-		200) MB_HEAD="$(jq -r '.object.sha // empty' "$tmpb" 2>/dev/null | cut -c1-7)"; rm -f "$tmpb"; [[ "$MB_HEAD" =~ ^[0-9a-f]{7}$ ]] || { MB_HEAD=""; return 1; } ;;
-		404) rm -f "$tmpb"; return 3 ;;
-		403|429) rm -f "$tmpb"; return 2 ;;
-		*) rm -f "$tmpb"; return 1 ;;
+# ---- MatchBox ----
+# stable (default): `mvm install latest` + `mvm use latest`. --snapshot: `mvm install snapshot` + `mvm use snapshot` (mvm skips an unchanged
+# build). --matchbox-branch REF: a shallow clone of the branch built here with `cargo build --release --features bif-tui` and installed under
+# $MATCHBOX_HOME/bin (build.info records repo, branch, commit); that directory is first on the installer's PATH, so the branch build is the one
+# the binary stage uses and it never replaces the `matchbox` that mvm manages. BXRIG_MATCHBOX_FILE=PATH installs a local build there instead.
+mb_marker() { sed -n "s/^$1=//p" "$MATCHBOX_HOME/build.info" 2>/dev/null | head -n 1 || true; }   # repo, branch, commit, source of the installed build
+mb_local_build() { [[ -x "$MATCHBOX_HOME/bin/matchbox" ]]; }
+# Can MatchBox $1 compile BxRig? BxRig draws its terminal UI with the canvas classes that only a build with the bif-tui feature registers
+# (`createObject( "rust", "tui.TUI" )`). The probe runs a three line script that creates one and draws a frame; a MatchBox without the
+# feature stops with "Native class 'tui.TUI' not found" and exits 1. Stable and snapshot builds do not have it yet (the bxrig branch is ahead of develop).
+mb_builds_bxrig() {
+	local mb="$1" dir out rc=0
+	dir="$(mktemp -d)" || return 1
+	printf '%s\n' 'tui = createObject( "rust", "tui.TUI" );' 'tui.begin_frame();' 'tui.render_to_string( 2, 1 );' 'println( "bxrig-tui-ok" );' > "$dir/probe.bxs"
+	if command -v timeout >/dev/null 2>&1; then out="$(cd "$dir" && timeout 60 "$mb" probe.bxs </dev/null 2>/dev/null)" || rc=1
+	else out="$(cd "$dir" && "$mb" probe.bxs </dev/null 2>/dev/null)" || rc=1; fi
+	rm -rf "$dir"
+	(( rc == 0 )) && [[ "$out" == *bxrig-tui-ok* ]]
+}
+mb_cannot_compile_message() {  # the active MatchBox version
+	echo "This MatchBox (${1:-unknown version}) cannot compile BxRig: it has no terminal UI support (the bif-tui feature), which the stable and snapshot builds lack until the BxRig changes ship." >&2
+	echo "  Use the branch build: install.sh toolchains --yes --matchbox-branch $MATCHBOX_REF, then run this again (or pass --binary PATH with a bxrig you built)." >&2
+}
+# The commit REF points at in REPO, 40 characters, empty when it cannot be read (no network, a commit id instead of a branch or tag).
+mb_remote_head() {
+	[[ "${BXRIG_SKIP_NETWORK:-0}" != 1 ]] && command -v git >/dev/null 2>&1 || return 0
+	GIT_TERMINAL_PROMPT=0 git ls-remote "$MB_REPO_URL" "refs/heads/$MB_BRANCH" "refs/tags/$MB_BRANCH" 2>/dev/null | awk '{print $1; exit}' | grep -E '^[0-9a-f]{40}$' || true
+}
+# Whether the toolchains stage has to (re)install MatchBox. Stable: only when none is installed (re-running does not move it; use mvm update).
+# Snapshot: always asked of mvm, which skips an unchanged build. Branch: no build here, another repo or branch, or the branch head moved.
+mb_need() {
+	if [[ -n "${BXRIG_MATCHBOX_FILE:-}" ]]; then mb_local_build && cmp -s "$BXRIG_MATCHBOX_FILE" "$MATCHBOX_HOME/bin/matchbox" && return 1; return 0; fi
+	case "$MB_CHANNEL" in
+		stable) tool_path matchbox >/dev/null && return 1; return 0 ;;
+		snapshot) return 0 ;;
+		branch)
+			mb_local_build || return 0
+			[[ "$(mb_marker repo)" == "$MB_REPO_URL" && "$(mb_marker branch)" == "$MB_BRANCH" ]] || return 0
+			local head; head="$(mb_remote_head)"
+			[[ -n "$head" && "$head" == "$(mb_marker commit)" ]] || return 0
+			return 1 ;;
 	esac
 }
-# Sets MB_HEAD (7 characters) and MB_HS: ok, nobranch, ratelimit, unreadable, skipped (no lookup in this mode or BXRIG_SKIP_NETWORK=1).
-matchbox_head_resolve() {
-	MB_HEAD=""; MB_HS=skipped
-	(( MB_LOOKUP )) && [[ "${BXRIG_SKIP_NETWORK:-0}" != 1 && -n "$MATCHBOX_REPO" && -n "$MB_BRANCH" ]] || return 0
-	local out rc
-	if command -v git >/dev/null 2>&1 && out="$(git ls-remote "$MATCHBOX_REPO" "refs/heads/$MB_BRANCH" 2>/dev/null)"; then
-		MB_HEAD="$(awk '{print substr($1, 1, 7); exit}' <<<"$out")"
-		if [[ -n "$MB_HEAD" ]]; then MB_HS=ok; else MB_HS=nobranch; fi
-		return 0
-	fi
-	if mb_head_api; then MB_HS=ok; else
-		rc=$?
-		case "$rc" in 2) MB_HS=ratelimit ;; 3) MB_HS=nobranch ;; *) MB_HS=unreadable ;; esac
-	fi
-}
-# MB_STATE: file, published (MB_BASE is its folder), unpublished, custom (a branch without builds), nobranch, ratelimit,
-# unreadable (use the version-latest.properties build, warn), skipped.
-matchbox_resolve() {
-	MB_STATE=""; MB_BASE=""
-	if [[ -n "${BXRIG_MATCHBOX_FILE:-}" ]]; then MB_STATE=file; return 0; fi
-	matchbox_head_resolve
-	case "$MB_HS" in
-		skipped) MB_STATE=skipped ;;
-		nobranch|ratelimit|unreadable) MB_STATE="$MB_HS" ;;
-		ok)
-			if (( MB_CUSTOM )); then MB_STATE=custom
-			elif curl -fsSL -m 30 -o /dev/null "$MATCHBOX_DOWNLOADS/$MATCHBOX_VERSION-$MB_HEAD/version.properties" 2>/dev/null; then
-				MB_STATE=published; MB_BASE="$MATCHBOX_DOWNLOADS/$MATCHBOX_VERSION-$MB_HEAD"
-			else MB_STATE=unpublished; fi ;;
-	esac
-}
-matchbox_stop() {  # the reason; every stop leaves the system as it was
-	echo "$*" >&2
-	exit 1
-}
-matchbox_stop_state() {
-	case "$MB_STATE" in
-		unpublished) matchbox_stop "MatchBox build $MATCHBOX_VERSION-$MB_HEAD (the head of the $MB_BRANCH branch) is not published yet; nothing was installed.
-  Try again in a few minutes while CI publishes it ($MATCHBOX_DOWNLOADS/$MATCHBOX_VERSION-$MB_HEAD/),
-  or install a MatchBox you built yourself: BXRIG_MATCHBOX_FILE=PATH install.sh toolchains --yes,
-  or build the branch here: install.sh toolchains --yes --matchbox-from-source." ;;
-		custom) matchbox_stop "The MatchBox branch $MB_BRANCH has no published builds (only $MATCHBOX_REF has); nothing was installed.
-  Build it here: add --matchbox-from-source (clones $MATCHBOX_REPO and runs cargo build --release --features bif-tui),
-  or install a MatchBox you built yourself: BXRIG_MATCHBOX_FILE=PATH." ;;
-		nobranch) matchbox_stop "The MatchBox branch $MB_BRANCH does not exist in $MATCHBOX_REPO; nothing was installed." ;;
-		ratelimit) matchbox_stop "GitHub is rate limiting this address, so the head of the MatchBox branch $MB_BRANCH could not be read; nothing was installed.
-  Try again in a while, or install a MatchBox you built yourself: BXRIG_MATCHBOX_FILE=PATH." ;;
-	esac
-}
-# The older published build, only when the head is unreadable: version-latest.properties names an immutable folder.
-matchbox_legacy_base() {
-	local props v c
-	props="$(curl -fsSL -m 30 "$MATCHBOX_DOWNLOADS/version-latest.properties" 2>/dev/null)" || { echo "$MATCHBOX_DOWNLOADS"; return; }
-	v="$(sed -n 's/^version=//p' <<<"$props" | head -n1)"; c="$(sed -n 's/^commit=//p' <<<"$props" | head -n1)"
-	if [[ -n "$v" && -n "$c" ]]; then echo "$MATCHBOX_DOWNLOADS/$v-$c"; else echo "$MATCHBOX_DOWNLOADS"; fi
-}
-# Clone BRANCH shallow and build it into DEST (a file); prints the short commit in MB_BUILT_COMMIT.
+# Clone BRANCH shallow and build it into DEST (a file); the full commit goes to MB_BUILT_COMMIT.
 MB_BUILT_COMMIT=""
 matchbox_build_source() {
 	local dest="$1" work="$2"
-	[[ -n "$MATCHBOX_REPO" && -n "$MB_BRANCH" ]] || { echo "box.json has no toolchain.matchbox.repo and ref to build from" >&2; exit 1; }
 	command -v git >/dev/null 2>&1 || { echo "git is required to build MatchBox from source" >&2; exit 1; }
 	PATH="$probe_path" command -v cargo >/dev/null 2>&1 || { echo "cargo is required to build MatchBox from source (run install.sh packages --yes first: it sets up Rust)" >&2; exit 1; }
-	echo "Building MatchBox from source: branch $MB_BRANCH of $MATCHBOX_REPO (cargo build --release --features bif-tui)"
-	step_run "clone $MATCHBOX_REPO branch $MB_BRANCH" git clone --quiet --depth 1 --branch "$MB_BRANCH" "$MATCHBOX_REPO" "$work/mbsrc"
-	MB_BUILT_COMMIT="$(git -C "$work/mbsrc" rev-parse --short=7 HEAD)"
+	echo "Building MatchBox from source: branch $MB_BRANCH of $MB_REPO_URL (cargo build --release --features bif-tui)"
+	step_run "clone $MB_REPO_URL branch $MB_BRANCH" env GIT_TERMINAL_PROMPT=0 git clone --quiet --depth 1 --branch "$MB_BRANCH" "$MB_REPO_URL" "$work/mbsrc"
+	MB_BUILT_COMMIT="$(git -C "$work/mbsrc" rev-parse HEAD)"
 	( cd "$work/mbsrc" && PATH="$probe_path" cargo build --release --features bif-tui ) || { echo "The MatchBox build failed; nothing was installed" >&2; exit 1; }
 	[[ -x "$work/mbsrc/target/release/matchbox" ]] || { echo "The MatchBox build produced no executable; nothing was installed" >&2; exit 1; }
 	cp "$work/mbsrc/target/release/matchbox" "$dest"
 }
-# Whether the toolchains stage has to install MatchBox: the version differs, another branch is wanted, or the head moved since the
-# installed build (the marker $MATCHBOX_HOME/build.info; a build without a marker counts as stale once the head can be read).
-mb_need() {
-	local have; have="$(tool_version matchbox)"
-	[[ -n "$have" ]] || return 0
-	(( MB_CUSTOM )) || [[ "$have" == "$MATCHBOX_VERSION" ]] || return 0
-	[[ -n "$MATCHBOX_DOWNLOADS" && -z "${BXRIG_MATCHBOX_FILE:-}" ]] || return 1
-	(( ! MB_CUSTOM )) || [[ "$(mb_marker branch)" == "$MB_BRANCH" ]] || return 0
-	matchbox_head_resolve
-	[[ "$MB_HS" != ok || "$(mb_marker commit)" == "$MB_HEAD" ]] || return 0
-	return 1
-}
-# MatchBox from the build of the branch head: download, verify the sha256, replace atomically.
-install_matchbox_download() {
-	local arch=linux-x86_64 tmp expected actual dl source commit="" file_src="${BXRIG_MATCHBOX_FILE:-}"
+# A MatchBox of our own (built from a branch, or BXRIG_MATCHBOX_FILE), run once before it replaces anything, installed atomically.
+install_matchbox_local() {
+	local tmp source commit="" file_src="${BXRIG_MATCHBOX_FILE:-}"
 	tmp="$(mktemp -d)"
 	if [[ -n "$file_src" ]]; then
 		[[ -f "$file_src" && -x "$file_src" && ! -L "$file_src" ]] || { echo "BXRIG_MATCHBOX_FILE must be an executable regular file: $file_src" >&2; rm -rf "$tmp"; exit 1; }
 		cp "$file_src" "$tmp/matchbox"; source=file
-	elif (( mb_source )); then
-		matchbox_build_source "$tmp/matchbox" "$tmp"; source="built from $MB_BRANCH"; commit="$MB_BUILT_COMMIT"
 	else
-		matchbox_resolve
-		matchbox_stop_state
-		case "$MB_STATE" in
-			published) dl="$MB_BASE"; source=published; commit="$MB_HEAD" ;;
-			*) echo "Warning: the head of the MatchBox branch $MB_BRANCH could not be read (no network to GitHub?); using the build named in version-latest.properties, which can be older than the branch head." >&2
-				dl="$(matchbox_legacy_base)"; source="published (head unreadable)" ;;
-		esac
-		step_retry "download MatchBox" curl -fsSL -m 300 -o "$tmp/matchbox" "$dl/matchbox-$arch"
-		step_retry "download the MatchBox checksum" curl -fsSL -m 30 -o "$tmp/matchbox.sha256" "$dl/matchbox-$arch.sha256"
-		expected="$(awk '{print $1; exit}' "$tmp/matchbox.sha256")"
-		actual="$(sha256sum "$tmp/matchbox" | awk '{print $1}')"
-		[[ -n "$expected" && "$expected" == "$actual" ]] || { echo "MatchBox checksum mismatch (expected ${expected:-none}, got $actual); nothing was installed" >&2; rm -rf "$tmp"; exit 1; }
+		matchbox_build_source "$tmp/matchbox" "$tmp"; source=branch; commit="$MB_BUILT_COMMIT"
 	fi
 	chmod 755 "$tmp/matchbox"
-	# run it once before it replaces anything
 	"$tmp/matchbox" --version >/dev/null 2>&1 || { echo "The MatchBox build does not run; nothing was installed" >&2; rm -rf "$tmp"; exit 1; }
 	mkdir -p "$MATCHBOX_HOME/bin"
 	mv -f "$tmp/matchbox" "$MATCHBOX_HOME/bin/.matchbox.new" && mv -f "$MATCHBOX_HOME/bin/.matchbox.new" "$MATCHBOX_HOME/bin/matchbox"
-	printf 'version=%s\nbranch=%s\ncommit=%s\nsource=%s\n' "$MATCHBOX_VERSION" "$MB_BRANCH" "$commit" "$source" > "$MATCHBOX_HOME/build.info"
+	printf 'repo=%s\nbranch=%s\ncommit=%s\nsource=%s\n' "$MB_REPO_URL" "$MB_BRANCH" "$commit" "$source" > "$MATCHBOX_HOME/build.info"
 	rm -rf "$tmp"
+}
+# mvm installs stable or snapshot; the local build of an earlier branch install must not shadow it.
+install_matchbox_mvm() {
+	local what="$1"
+	step_retry "mvm install $what" mvm install "$what"; step_run "mvm use $what" mvm use "$what"
+	if mb_local_build; then
+		rm -f "$MATCHBOX_HOME/bin/matchbox" "$MATCHBOX_HOME/build.info"
+		echo "Removed the MatchBox built from a branch earlier ($MATCHBOX_HOME): the $what MatchBox from mvm is the one in use now."
+	fi
+	tool_path matchbox >/dev/null || { echo "mvm installed MatchBox ($what) but no matchbox was found on the PATH ($MVM_HOME/bin)" >&2; exit 1; }
 }
 # BoxLang's active version, read from BVM's `current` symlink. Running `boxlang --version` starts the whole
 # runtime, which rewrites its logs under ~/.boxlang on every call, so routine probes avoid it. Falls back to
@@ -316,7 +278,8 @@ inspect() {
   java_major="${java_ver%%.*}"
   have_yay=0; tool_path yay >/dev/null && have_yay=1
   mvm_ver="$(tool_version mvm)"; have_mvm=0; tool_path mvm >/dev/null && have_mvm=1
-  mb_ver="$(tool_version matchbox)"
+  mb_ver="$(tool_version matchbox)"; mb_cc=no
+  if mb_path="$(tool_path matchbox)" && mb_builds_bxrig "$mb_path"; then mb_cc=yes; fi
   have_bvm=0; tool_path bvm >/dev/null && have_bvm=1; bvm_ver="$(tool_version bvm)"
   bl_ver="$(bl_version)"; bl_want="$(boxlang_want)"
   rust_ver="$(tool_version rustc)"; have_rustup=0; tool_path rustup >/dev/null && have_rustup=1
@@ -336,20 +299,16 @@ build_steps() {
   if (( ! have_mvm )); then
     steps+=("mvm|download and run $MVM_URL|external script, shown and run")
   fi
-  if [[ -n "$MATCHBOX_DOWNLOADS" ]] && mb_need; then
-    if (( mb_source )); then
-      steps+=("matchbox|git clone --depth 1 --branch $MB_BRANCH $MATCHBOX_REPO, then cargo build --release --features bif-tui|MatchBox built from the $MB_BRANCH branch$( (( MB_CUSTOM )) && echo ", its version may differ from the $MATCHBOX_VERSION in box.json" ), installed under $MATCHBOX_HOME")
-    elif (( MB_CUSTOM )); then
-      steps+=("matchbox|STOP: the $MB_BRANCH branch has no published builds|add --matchbox-from-source to build it here (the install stops at this step otherwise)")
-    elif [[ "$MB_HS" == ok && "$MB_STATE" == unpublished ]]; then
-      steps+=("matchbox|STOP: $MATCHBOX_DOWNLOADS/$MATCHBOX_VERSION-$MB_HEAD/ is not published yet|the install stops at this step; try again in a few minutes, or BXRIG_MATCHBOX_FILE=PATH, or --matchbox-from-source")
-    elif [[ -n "$MB_BASE" ]]; then
-      steps+=("matchbox|download $MB_BASE/matchbox-linux-x86_64 and check its sha256|MatchBox $MATCHBOX_VERSION, the head ($MB_HEAD) of the $MB_BRANCH branch, installed under $MATCHBOX_HOME")
+  if mb_need; then
+    if [[ -n "${BXRIG_MATCHBOX_FILE:-}" ]]; then
+      steps+=("matchbox|copy BXRIG_MATCHBOX_FILE=$BXRIG_MATCHBOX_FILE to $MATCHBOX_HOME/bin/matchbox|a MatchBox you built yourself")
     else
-      steps+=("matchbox|download $MATCHBOX_DOWNLOADS/matchbox-linux-x86_64 and check its sha256|MatchBox $MATCHBOX_VERSION from the ${MB_BRANCH:-bxrig} branch (the build of the branch head is looked up when the step runs), installed under $MATCHBOX_HOME")
+      case "$MB_CHANNEL" in
+        stable) steps+=("matchbox|mvm install latest && mvm use latest|the stable MatchBox from mvm (it cannot compile BxRig itself; the prebuilt bxrig does not need it)") ;;
+        snapshot) steps+=("matchbox|mvm install snapshot && mvm use snapshot|the snapshot MatchBox from mvm (mvm skips a build that has not changed; it cannot compile BxRig itself)") ;;
+        branch) steps+=("matchbox|git clone --depth 1 --branch $MB_BRANCH $MB_REPO_URL, then cargo build --release --features bif-tui|MatchBox built from the $MB_BRANCH branch, installed under $MATCHBOX_HOME (it can compile BxRig)") ;;
+      esac
     fi
-  elif [[ -z "$MATCHBOX_DOWNLOADS" && "$mb_ver" != "$MATCHBOX_VERSION" ]]; then
-    steps+=("matchbox|mvm install $MATCHBOX_VERSION && mvm use $MATCHBOX_VERSION|pinned MatchBox compiler")
   fi
   if (( ! have_bvm )); then
     steps+=("bvm|download and run $BVM_URL|external script, shown and run; it may add BVM to your shell startup files")
@@ -386,7 +345,8 @@ report_check() {
   echo "== tools =="
   printf 'java: %s (want %s)\n' "${java_ver:-missing}" "$JAVA_MAJOR"
   printf 'mvm: %s\n' "$([[ $have_mvm == 1 ]] && echo "${mvm_ver:-installed}" || echo missing)"
-  printf 'matchbox: %s (want %s)\n' "${mb_ver:-missing}" "$MATCHBOX_VERSION"
+  if [[ -z "$mb_ver" ]]; then echo 'matchbox: missing'
+  else printf 'matchbox: %s (compiles BxRig: %s)\n' "$mb_ver" "$mb_cc"; fi
   printf 'bvm: %s\n' "$([[ $have_bvm == 1 ]] && echo "${bvm_ver:-installed}" || echo missing)"
   if [[ "$BOXLANG_VERSION" != latest ]]; then bl_desc="$BOXLANG_VERSION (pinned)"
   elif [[ -n "$bl_want" ]]; then bl_desc="latest = $bl_want"
@@ -399,22 +359,13 @@ report_check() {
   if (( ${#steps[@]} )); then printf 'summary: %d step(s) needed, run install.sh --dry-run\n' "${#steps[@]}"; else echo "summary: ready"; fi
 }
 
-# One line about the MatchBox that would be installed (full install only; needs the lookup done by matchbox_resolve).
+# One line about the MatchBox the plan would install.
 report_matchbox() {
-  [[ -n "$MATCHBOX_DOWNLOADS" ]] || return 0
-  local what
-  case "$MB_STATE" in
-    file) what="the local build BXRIG_MATCHBOX_FILE=$BXRIG_MATCHBOX_FILE" ;;
-    published) what="build $MATCHBOX_VERSION-$MB_HEAD, published ($MB_BASE/)" ;;
-    unpublished) what="build $MATCHBOX_VERSION-$MB_HEAD is NOT published yet: the install would stop at the matchbox step" ;;
-    custom) what="a branch without published builds: the install would stop unless --matchbox-from-source is given" ;;
-    nobranch) what="the branch does not exist in $MATCHBOX_REPO: the install would stop" ;;
-    ratelimit) what="the head could not be read (GitHub rate limit): the install would stop" ;;
-    unreadable) what="the head could not be read; the build named in version-latest.properties would be used (with a warning)" ;;
-    *) what="the head of the branch is looked up when the step runs" ;;
+  case "$MB_CHANNEL" in
+    stable) echo "MatchBox: stable, installed with mvm (it cannot compile BxRig; pass --matchbox-branch $MATCHBOX_REF to compile it here)" ;;
+    snapshot) echo "MatchBox: snapshot, installed with mvm (it cannot compile BxRig; pass --matchbox-branch $MATCHBOX_REF to compile it here)" ;;
+    branch) printf 'MatchBox: branch %s of %s, built here with cargo (cargo build --release --features bif-tui)\n' "$MB_BRANCH" "$MB_REPO_URL" ;;
   esac
-  (( ! mb_source )) || what="built from source (cargo build --release --features bif-tui), head ${MB_HEAD:-unknown}"
-  printf 'MatchBox: branch %s%s, %s\n' "$MB_BRANCH" "$( (( MB_CUSTOM )) && echo " (not the manifest's $MATCHBOX_REF)" )" "$what"
 }
 report_plan() {
 	echo "Read-only plan. Nothing below has been run."
@@ -445,8 +396,6 @@ if [[ "$mode" == full ]]; then
 	# The whole install: show the plan, ask once (a terminal) or need --yes, then run every stage in order.
 	# BXRIG_ALL_SCRIPT replaces the script the stages are delegated to (tests only).
 	[[ "$(id -u)" != 0 ]] || { echo "Run as a regular user; sudo is used only for pacman steps" >&2; exit 1; }
-	MB_LOOKUP=1
-	if [[ -n "$MATCHBOX_DOWNLOADS" ]]; then matchbox_resolve; fi
 	inspect; build_steps
 	report_matchbox
 	report_plan
@@ -461,8 +410,11 @@ if [[ "$mode" == full ]]; then
 		fi
 	fi
 	all_self="${BXRIG_ALL_SCRIPT:-${BASH_SOURCE[0]}}"
-	mb_args=(); (( ! mb_source )) || mb_args+=(--matchbox-from-source)
-	if [[ -n "$MB_BRANCH_REQ" ]]; then mb_args+=(--matchbox-branch "$MB_BRANCH_REQ"); export BXRIG_MATCHBOX_BRANCH="$MB_BRANCH_REQ"; fi   # the binary stage reads the env
+	mb_args=()
+	case "$MB_CHANNEL" in
+		snapshot) mb_args+=(--snapshot) ;;
+		branch) mb_args+=(--matchbox-branch "$MB_BRANCH"); [[ -z "$MB_REPO_REQ" ]] || mb_args+=(--matchbox-repo "$MB_REPO_REQ") ;;
+	esac
 	echo "== 1/4 packages, yay and Rust =="; bash "$all_self" packages --yes || exit $?
 	echo "== 2/4 Java 21 check, mvm, MatchBox, bvm and BoxLang =="; bash "$all_self" toolchains --yes ${mb_args[@]+"${mb_args[@]}"} || exit $?
 	echo "== 3/4 the bxrig binary =="; bash "$all_self" binary --yes || exit $?
@@ -519,25 +471,20 @@ if [[ "$mode" == --install-toolchains ]]; then
 		run_external mvm "$MVM_URL" ${BXRIG_MVM_VERSION:+MVM_VERSION="$BXRIG_MVM_VERSION"}; done_any=1
 		tool_path mvm >/dev/null || { echo "MVM installation failed: mvm not found afterwards" >&2; exit 1; }
 	fi
-	MB_LOOKUP=1
-	if [[ -z "$MATCHBOX_DOWNLOADS" ]] && { [[ -n "$MB_BRANCH_REQ" ]] || (( mb_source )); }; then
-		echo "--matchbox-branch and --matchbox-from-source need box.json toolchain.matchbox.downloads and repo (this manifest installs MatchBox with mvm)" >&2; exit 1
-	fi
 	if mb_need; then
-		if [[ -n "$MATCHBOX_DOWNLOADS" ]]; then
-			install_matchbox_download; done_any=1
-		else
-			step_retry "mvm install $MATCHBOX_VERSION" mvm install "$MATCHBOX_VERSION"; step_run "mvm use $MATCHBOX_VERSION" mvm use "$MATCHBOX_VERSION"; done_any=1
-		fi
+		if [[ -n "${BXRIG_MATCHBOX_FILE:-}" || "$MB_CHANNEL" == branch ]]; then install_matchbox_local; else install_matchbox_mvm "$([[ $MB_CHANNEL == snapshot ]] && echo snapshot || echo latest)"; fi
+		done_any=1
 		mb_now="$(tool_version matchbox)"
-		if (( MB_CUSTOM )); then
-			[[ -n "$mb_now" ]] || { echo "MatchBox is not active after install" >&2; exit 1; }
-			[[ "$mb_now" == "$MATCHBOX_VERSION" ]] || echo "Warning: MatchBox $mb_now from the $MB_BRANCH branch is installed; box.json pins $MATCHBOX_VERSION, so the bxrig build may behave differently from the tested one." >&2
-			echo "MatchBox $mb_now (branch $MB_BRANCH) installed and verified."
-		else
-			[[ "$mb_now" == "$MATCHBOX_VERSION" ]] || { echo "MatchBox $MATCHBOX_VERSION not active after install" >&2; exit 1; }
-			echo "MatchBox $MATCHBOX_VERSION installed and verified."
-		fi
+		[[ -n "$mb_now" ]] || { echo "MatchBox is not active after install" >&2; exit 1; }
+		mb_kind="$MB_CHANNEL"; [[ -z "${BXRIG_MATCHBOX_FILE:-}" ]] || mb_kind=file
+		case "$mb_kind" in
+			file) echo "MatchBox $mb_now (the local build $BXRIG_MATCHBOX_FILE) installed and verified: $MATCHBOX_HOME/bin/matchbox" ;;
+			branch) echo "MatchBox $mb_now (branch $MB_BRANCH of $MB_REPO_URL) installed and verified: $MATCHBOX_HOME/bin/matchbox"
+				echo "Note: BxRig's installer finds it by absolute path; add $MATCHBOX_HOME/bin to your PATH if you want it to be your matchbox." ;;
+			*) echo "MatchBox $mb_now ($MB_CHANNEL) installed and verified." ;;
+		esac
+		if mb_path="$(tool_path matchbox)" && mb_builds_bxrig "$mb_path"; then echo "This MatchBox can compile BxRig."
+		else echo "Note: this MatchBox cannot compile BxRig (no terminal UI support yet). That is fine for the prebuilt bxrig; to compile it here use --matchbox-branch $MATCHBOX_REF."; fi
 	fi
 	if (( ! have_bvm )); then
 		run_external bvm "$BVM_URL"; done_any=1
@@ -554,7 +501,7 @@ if [[ "$mode" == --install-toolchains ]]; then
 	elif [[ -z "$bl_target" ]]; then
 		echo "BoxLang $bl_now is installed; could not look up the latest version, so it was left as is."
 	fi
-	if (( ! done_any )); then echo "Nothing to do: MVM, MatchBox $MATCHBOX_VERSION, BVM, BoxLang ${bl_now:-?} are already installed."; fi
+	if (( ! done_any )); then echo "Nothing to do: MVM, MatchBox ${mb_now:-$(tool_version matchbox)}, BVM, BoxLang ${bl_now:-?} are already installed."; fi
 	echo "Rust and the bxrig binary are handled by later steps."
 	exit 0
 fi
@@ -594,11 +541,10 @@ if [[ "$mode" == --install-binary ]]; then
       echo "Nothing to do: $installed is already $want (use --force to rebuild)."; copy_wallpapers; exit 0
     fi
     mb_have="$(tool_version matchbox)"
-    # a MatchBox from another branch (--matchbox-branch, kept in BXRIG_MATCHBOX_BRANCH by the full install) can report another version
-    if (( MB_CUSTOM )) && [[ -n "$mb_have" ]]; then MATCHBOX_VERSION="$mb_have"; fi
-    [[ "$mb_have" == "$MATCHBOX_VERSION" ]] || { echo "MatchBox $MATCHBOX_VERSION is required (found: ${mb_have:-none}). Run install.sh toolchains --yes first." >&2; exit 1; }
+    [[ -n "$mb_have" ]] || { echo "MatchBox is required to compile BxRig (found: none). Run install.sh toolchains --yes --matchbox-branch $MATCHBOX_REF first." >&2; exit 1; }
+    mb_builds_bxrig "$(tool_path matchbox)" || { mb_cannot_compile_message "$mb_have"; exit 1; }
     cp -rL "$root/src" "$work/src"; chmod -R u+rwX,go+rX "$work/src"   # -L: src/resources links to the data folders
-    echo "Building bxrig with MatchBox $MATCHBOX_VERSION"
+    echo "Building bxrig with MatchBox $mb_have"
     # the BoxLang modules bxrig embeds (box.json toolchain.modules); --module must come before the program
     mods=()
     if [[ -x "$root/scripts/get-modules.sh" && "${BXRIG_SKIP_NETWORK:-0}" != 1 ]]; then   # offline: built without them
