@@ -4,7 +4,8 @@ binary="${1:-./bxrig}"
 test -x "$binary"
 want="$(sed -n 's/^[[:space:]]*"version":[[:space:]]*"\([^"]*\)".*/\1/p' "$(dirname "$0")/../box.json" | head -1)"
 "$binary" version | grep -F "BxRig $want"
-"$binary" doctor | grep -F 'Java 21'
+# doctor exits 4 while a tool is missing (a CI runner has no mvm or bvm): only the report is checked here, doctor-test.sh checks the exit code
+{ "$binary" doctor || [[ $? == 4 ]]; } | grep -F 'Java 21'
 has() { grep -Fq -- "$1"; }
 usage_exit2() { local out rc=0; out="$("$@" 2>&1)" || rc=$?; [[ "$rc" -eq 2 ]] || { echo "FAIL: $* exited $rc, wanted 2" >&2; exit 1; }; grep -Fq 'Usage:' <<<"$out" || { echo "FAIL: $*: no usage text" >&2; exit 1; }; }
 expect_error() { local needle="$1"; shift; local out rc=0; out="$("$@" 2>&1)" || rc=$?; [[ "$rc" -eq 2 ]] || { echo "FAIL: $* exited $rc, wanted 2" >&2; exit 1; }; grep -Fq -- "$needle" <<<"$out" || { echo "FAIL: $*: missing '$needle'" >&2; exit 1; }; }
