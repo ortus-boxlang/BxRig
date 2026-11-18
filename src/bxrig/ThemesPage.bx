@@ -90,9 +90,9 @@ class ThemesPage {
 		var m = new bxrig.KeyMap();
 		if ( variables.mode != "list" ) return m.bind( "Enter", "Enter", "keep", "keep" ).bind( "Esc", "Escape", "clear", "clear" );
 		return m.bind( "↑↓", [ "Up", "k" ], "move", "up" ).bind( "", [ "Down", "j" ], "", "down" ).bind( "", "PageUp", "", "pageUp" ).bind( "", "PageDown", "", "pageDown" ).bind( "", "Home", "", "home" ).bind( "", "End", "", "end" )
-			.bind( "Enter", "Enter", "plan", "apply" ).bind( "r", "r", variables.live ? "stop preview" : "live preview", "live" ).bind( "/", "/", "search", "type" )
-			.bind( "d", "d", "dark", "dark" ).bind( "l", "l", "light", "light" ).bind( "a", "a", "all", "all" ).bind( "f", "f", "font", "font" )
-			.bind( "m", "m", "auto mode", "auto" ).bind( "v", "v", "VS Code", "vscode" );
+		.bind( "Enter", "Enter", "plan", "apply" ).bind( "r", "r", variables.live ? "stop preview" : "live preview", "live" ).bind( "/", "/", "search", "type" )
+		.bind( "d", "d", "dark", "dark" ).bind( "l", "l", "light", "light" ).bind( "a", "a", "all", "all" ).bind( "f", "f", "font", "font" )
+		.bind( "m", "m", "auto mode", "auto" ).bind( "v", "v", "VS Code", "vscode" );
 	}
 
 	function keys() { return keyMap().hints(); }
