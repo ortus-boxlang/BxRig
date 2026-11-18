@@ -173,7 +173,15 @@ echo "MatchBox: $("$mb" --version 2>&1 | head -n1) ($mb), saved in .cache/dev.en
 # a branch can report another version than box.json: a warning, the build goes on
 (( ! dedicated )) || mb_version_warn "$mb" "$manifest_version" || true
 
-(( build )) || exit 0
+summary() {
+	echo
+	printf 'MatchBox in use: repo %s, ref %s, commit %s, path %s\n' "${s_repo:-unknown}" "${s_ref:-unknown}" "${s_commit:-unknown}" "$mb"
+	echo "Switch back:     scripts/setup-local.sh --matchbox edge"
+	printf 'Test the end-user installer with it:\n  BXRIG_MATCHBOX_FILE=%q bash bootstrap/install.sh toolchains --yes\n' "$mb"
+	have="$("$mb" --version 2>&1 | head -n1)" || true
+	[[ -z "$manifest_version" || "$have" == *"$manifest_version"* ]] || echo "  (the installer insists on MatchBox $manifest_version; this one reports '$have', so it will refuse it)"
+}
+(( build )) || { summary; exit 0; }
 MATCHBOX="$mb" "$root/scripts/dev-build.sh"
 "$root/dist/bxrig" version
 (cd "$root/src" && "$mb" ../tests/init_plan_test.bxs >/dev/null) && echo "smoke test passed"
@@ -182,3 +190,4 @@ echo "Ready. Next:"
 echo "  scripts/dev-build.sh            rebuild dist/bxrig"
 echo "  tests/run-all.sh                run every test"
 echo "  tests/run-all.sh dist/bxrig X   run the tests whose name contains X"
+summary

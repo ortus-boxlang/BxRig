@@ -95,6 +95,13 @@ BXRIG_MATCHBOX_BRANCH=develop scripts/setup-local.sh                      # the 
 - `.cache/dev.env` records `MATCHBOX` (the path), `MATCHBOX_REPO`, `MATCHBOX_REF` and `MATCHBOX_COMMIT`, which `scripts/dev-build.sh` and `tests/run-all.sh` use. Switch back with `scripts/setup-local.sh --matchbox edge`.
 - A branch can report another version than `box.json` (`toolchain.matchbox.version`). For a branch build that is a warning naming both versions, from `setup-local.sh` and `scripts/dev-build.sh`, and the build goes on. The published `edge` path still refuses a MatchBox with the wrong version.
 - `scripts/get-matchbox.sh DEST --ref REF --repo REPO` does the same for scripts and CI: it builds that ref from source (release, no `--locked`) and writes `DEST` and `DEST.info` (with a `repo=` line). Without those options it behaves as before.
+- At the end the script prints one summary: the MatchBox in use (repo, ref, commit, path), how to switch back (`scripts/setup-local.sh --matchbox edge`) and the command that tests the end-user installer with it:
+
+  ```bash
+  BXRIG_MATCHBOX_FILE=/path/to/matchbox bash bootstrap/install.sh toolchains --yes
+  ```
+
+  `bootstrap/install.sh` installs that file instead of downloading the published build (it must be an executable regular file, not a symlink, and run with `--version`); the file `cargo build` leaves in `target/debug/matchbox` (or `target/release/matchbox`) is such a file. The installer then insists that the MatchBox reports the version in `box.json`: a branch that reports another version is installed and then refused with `MatchBox X not active after install`, so test the installer only with a branch build that reports the manifest version (the summary says so when it differs).
 - Asked without any option, the script offers a fourth choice, `any GitHub branch`, and asks for the repo and the branch.
 
 ## Running the tests

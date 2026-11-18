@@ -312,6 +312,27 @@ has "$w/out" "warning:" "dev-build warns"; has "$w/out" "0.99.0" "dev-build name
 extra_env=(HOME="$tmp/home" MATCHBOX="$w/mb" MB_REPORTS="$manifest_version"); run dev-build.sh; extra_env=(HOME="$tmp/home")
 lacks "$w/out" "warning:" "dev-build is quiet when the version matches"
 
+# ---- step 3: the summary at the end: which MatchBox, how to switch back, how to test the installer with it ----
+fresh; run setup-local.sh --matchbox-branch develop --no-build
+d="$(mbdir ortus-boxlang-matchbox-develop)"
+has "$w/out" "MatchBox in use: repo $manifest_repo, ref develop, commit abc1234, path $d/target/debug/matchbox" "summary names repo, ref, commit and path"
+has "$w/out" "Switch back:     scripts/setup-local.sh --matchbox edge" "summary says how to switch back"
+has "$w/out" "BXRIG_MATCHBOX_FILE=$d/target/debug/matchbox bash bootstrap/install.sh toolchains --yes" "summary gives the installer command"
+lacks "$w/out" "will refuse it" "no installer note when the version matches"
+mb_path="$d/target/debug/matchbox"
+[[ -f "$mb_path" && -x "$mb_path" && ! -L "$mb_path" ]] || fail "the built MatchBox must be an executable regular file (what install.sh requires of BXRIG_MATCHBOX_FILE)"
+"$mb_path" --version >/dev/null || fail "the built MatchBox must run"
+fresh; extra_env=(HOME="$tmp/home" FAKE_MB_VERSION=0.99.0); run setup-local.sh --matchbox-branch develop --no-build; extra_env=(HOME="$tmp/home")
+has "$w/out" "will refuse it" "the summary says the installer refuses another version"
+fresh; run setup-local.sh --matchbox source --no-build
+has "$w/out" "MatchBox in use: repo $manifest_repo, ref bxrig, commit abc1234, path $w/matchbox/target/debug/matchbox" "summary for plain source"
+fresh; published "$manifest_version"
+extra_env=(HOME="$tmp/home" FAKE_PUBLISHED="$w/published"); run setup-local.sh --matchbox edge --no-build; extra_env=(HOME="$tmp/home")
+has "$w/out" "MatchBox in use: repo $manifest_repo, ref bxrig, commit " "summary for edge"
+has "$w/out" "BXRIG_MATCHBOX_FILE=$r/.cache/matchbox/matchbox bash bootstrap/install.sh" "installer command for edge"
+fresh; run setup-local.sh --matchbox-repo someone/fork --matchbox-branch topic --no-build
+has "$w/out" "MatchBox in use: repo https://github.com/someone/fork, ref topic" "summary for a fork"
+
 export FAKE_LOG=/dev/null
 
 echo "setup-local tests passed"
