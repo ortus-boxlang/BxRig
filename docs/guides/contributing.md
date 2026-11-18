@@ -93,6 +93,8 @@ BXRIG_MATCHBOX_BRANCH=develop scripts/setup-local.sh                      # the 
 - A branch other than the one in `box.json` (`bxrig`) or a repo other than the manifest repo means a source build. The clone lives in `.cache/matchbox-src/<repo>-<ref>` (for example `ortus-boxlang-matchbox-develop`) and is refreshed with a shallow fetch when it exists. Pass `--release` for an optimized MatchBox (the default is a debug build, as for `source`); both are built with `--features bif-tui`.
 - `--matchbox edge` is the published build of the `bxrig` branch only; combined with another branch or repo it stops with an explanation. `--matchbox source` without a branch is still `../matchbox`.
 - `.cache/dev.env` records `MATCHBOX` (the path), `MATCHBOX_REPO`, `MATCHBOX_REF` and `MATCHBOX_COMMIT`, which `scripts/dev-build.sh` and `tests/run-all.sh` use. Switch back with `scripts/setup-local.sh --matchbox edge`.
+- A branch can report another version than `box.json` (`toolchain.matchbox.version`). For a branch build that is a warning naming both versions, from `setup-local.sh` and `scripts/dev-build.sh`, and the build goes on. The published `edge` path still refuses a MatchBox with the wrong version.
+- `scripts/get-matchbox.sh DEST --ref REF --repo REPO` does the same for scripts and CI: it builds that ref from source (release, no `--locked`) and writes `DEST` and `DEST.info` (with a `repo=` line). Without those options it behaves as before.
 - Asked without any option, the script offers a fourth choice, `any GitHub branch`, and asks for the repo and the branch.
 
 ## Running the tests

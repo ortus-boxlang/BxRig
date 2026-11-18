@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared by scripts/setup-local.sh and scripts/get-matchbox.sh (source it, do not run it): validates the
+# Shared by scripts/setup-local.sh, scripts/get-matchbox.sh and scripts/dev-build.sh (source it, do not run it): validates the
 # MatchBox repo and ref a person asks for, names the dedicated clone for them and fetches a shallow checkout. Values reach git
 # only as argv items, never through eval or a shell string.
 
@@ -52,4 +52,14 @@ mb_git_checkout() {
 		git -C "$dir" remote set-url origin "$url" || return
 	fi
 	git -C "$dir" fetch --quiet --depth 1 origin "$ref" && git -C "$dir" checkout --quiet --force --detach FETCH_HEAD
+}
+
+# mb_version_warn BINARY WANT: a warning (never an error) when BINARY's --version does not mention WANT, the version in box.json.
+# Returns 1 when it warned.
+mb_version_warn() {
+	local out
+	out="$("$1" --version 2>&1 | head -n 1)" || true
+	[[ -z "${2:-}" || "$out" == *"$2"* ]] && return 0
+	echo "warning: this MatchBox reports '${out:-nothing}' but box.json toolchain.matchbox.version is $2; continuing (a branch build can differ, but bootstrap/install.sh insists on $2)" >&2
+	return 1
 }

@@ -236,6 +236,82 @@ PY
 else
 	echo "skip: interactive menu (no python3)"
 fi
+# ---- step 2: the version check: a warning for a branch build, still an error on the default path ----
+fresh; extra_env=(HOME="$tmp/home" FAKE_MB_VERSION=0.99.0); run setup-local.sh --matchbox-branch develop --no-build; extra_env=(HOME="$tmp/home")
+[[ $rc == 0 ]] || fail "version mismatch must not fail: $rc: $(cat "$w/out")"
+has "$w/out" "warning:" "mismatch warns"
+has "$w/out" "0.99.0" "the warning names the MatchBox version"
+has "$w/out" "$manifest_version" "the warning names the box.json version"
+has "$r/.cache/dev.env" "MATCHBOX=" "the mismatching build is still recorded"
+fresh; run setup-local.sh --matchbox-branch develop --no-build
+lacks "$w/out" "warning:" "no warning when the version matches"
+
+# get-matchbox.sh: default behaviour first
+published() { printf '#!/usr/bin/env bash\necho "matchbox version %s"\n' "$1" > "$w/published"; chmod +x "$w/published"; }
+fresh; published "$manifest_version"
+extra_env=(HOME="$tmp/home" FAKE_PUBLISHED="$w/published"); run get-matchbox.sh "$w/out-mb"; extra_env=(HOME="$tmp/home")
+[[ $rc == 0 ]] || fail "get-matchbox default: $rc: $(cat "$w/out")"
+lacks "$log" "cargo" "the default path takes the published build"
+has "$w/out-mb.info" "version=$manifest_version" "default .info"
+lacks "$w/out-mb.info" "repo=" "the default .info has no repo line"
+fresh; run get-matchbox.sh "$w/out-mb" --from-source
+[[ $rc == 0 ]] || fail "get-matchbox --from-source: $rc: $(cat "$w/out")"
+has "$log" "git clone --quiet --depth 1 --branch bxrig $manifest_repo" "--from-source clones the manifest branch"
+has "$log" "cargo build --release --locked --features bif-tui" "--from-source keeps --locked"
+# the check is not weakened: a published build with another version is refused, and so is a source build of it
+fresh; published 0.99.0
+extra_env=(HOME="$tmp/home" FAKE_PUBLISHED="$w/published" FAKE_MB_VERSION=0.99.0); run get-matchbox.sh "$w/out-mb"; extra_env=(HOME="$tmp/home")
+[[ $rc != 0 ]] || fail "a wrong published version was accepted"; has "$w/out" "box.json wants $manifest_version" "published version mismatch is an error"
+[[ ! -e "$w/out-mb" ]] || fail "a refused MatchBox was installed"
+fresh; extra_env=(HOME="$tmp/home" FAKE_MB_VERSION=0.99.0); run get-matchbox.sh "$w/out-mb" --from-source; extra_env=(HOME="$tmp/home")
+[[ $rc != 0 ]] || fail "a wrong source build was accepted by default"
+# the same --ref/--repo as box.json is the default path
+fresh; run get-matchbox.sh "$w/out-mb" --ref bxrig --repo ortus-boxlang/matchbox --from-source
+has "$log" "cargo build --release --locked" "the manifest ref and repo keep the default path"
+
+# --ref / --repo: built from source, a version difference is a warning
+fresh; extra_env=(HOME="$tmp/home" FAKE_MB_VERSION=0.99.0); run get-matchbox.sh "$w/out-mb" --ref develop; extra_env=(HOME="$tmp/home")
+[[ $rc == 0 ]] || fail "get-matchbox --ref: $rc: $(cat "$w/out")"
+has "$log" "git clone --quiet --depth 1 --branch develop $manifest_repo" "--ref clones that ref"
+has "$log" "cargo build --release --features bif-tui" "--ref builds in release mode"
+lacks "$log" "--locked" "--ref does not insist on the lock file"
+lacks "$log" "matchbox-linux-x86_64" "--ref never downloads the published build"
+has "$w/out" "warning:" "--ref version mismatch warns"; has "$w/out" "$manifest_version" "--ref warning names box.json's version"
+[[ -x "$w/out-mb" ]] || fail "--ref left no executable"
+has "$w/out-mb.info" "ref=develop" ".info ref"; has "$w/out-mb.info" "repo=$manifest_repo" ".info repo"; has "$w/out-mb.info" "commit=abc1234" ".info commit"
+fresh; run get-matchbox.sh "$w/out-mb" --repo=someone/fork --ref=topic
+has "$log" "--branch topic https://github.com/someone/fork" "--repo shorthand and the = forms"
+lacks "$w/out" "warning:" "no warning when the version matches"
+fresh; run get-matchbox.sh "$w/out-mb" --repo someone/fork     # repo alone: the manifest branch of the fork
+has "$log" "--branch bxrig https://github.com/someone/fork" "--repo alone keeps the manifest ref"
+fresh; run get-matchbox.sh "$w/out-mb" --ref "$sha"
+has "$log" "fetch --quiet --depth 1 origin $sha" "--ref with a full commit id fetches it"
+for v in "a b" "a;b" 'a$(id)' "-x" ""; do
+	fresh; run get-matchbox.sh "$w/out-mb" --ref "$v"
+	[[ $rc == 2 ]] || fail "get-matchbox --ref '$v': $rc"; [[ ! -s "$log" ]] || fail "get-matchbox --ref '$v' ran something"
+done
+for v in "a b" "x;y/z" "-o/n" "" "name"; do
+	fresh; run get-matchbox.sh "$w/out-mb" --repo "$v"
+	[[ $rc == 2 ]] || fail "get-matchbox --repo '$v': $rc"; [[ ! -s "$log" ]] || fail "get-matchbox --repo '$v' ran something"
+done
+
+# dev-build.sh: warns about a mismatching MatchBox and builds anyway
+fresh
+printf '#!/usr/bin/env bash\n' | tee "$r/bootstrap/gen-assets.sh" "$r/bootstrap/gen-version.sh" "$r/scripts/get-modules.sh" > /dev/null
+chmod +x "$r/bootstrap/gen-assets.sh" "$r/bootstrap/gen-version.sh" "$r/scripts/get-modules.sh"
+mkdir -p "$r/src"; : > "$r/src/Main.bx"
+cat > "$w/mb" <<'MB'
+#!/usr/bin/env bash
+[[ "$1" == --version ]] && { echo "matchbox version $MB_REPORTS"; exit 0; }
+while (( $# )); do [[ "$1" == --output ]] && { echo built > "$2"; }; shift; done
+MB
+chmod +x "$w/mb"
+extra_env=(HOME="$tmp/home" MATCHBOX="$w/mb" MB_REPORTS=0.99.0); run dev-build.sh; extra_env=(HOME="$tmp/home")
+[[ $rc == 0 && -f "$r/dist/bxrig" ]] || fail "dev-build with a mismatching MatchBox: $rc: $(cat "$w/out")"
+has "$w/out" "warning:" "dev-build warns"; has "$w/out" "0.99.0" "dev-build names the version"
+extra_env=(HOME="$tmp/home" MATCHBOX="$w/mb" MB_REPORTS="$manifest_version"); run dev-build.sh; extra_env=(HOME="$tmp/home")
+lacks "$w/out" "warning:" "dev-build is quiet when the version matches"
+
 export FAKE_LOG=/dev/null
 
 echo "setup-local tests passed"

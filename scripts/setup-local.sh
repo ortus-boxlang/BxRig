@@ -170,6 +170,9 @@ else
 	printf '# written by scripts/setup-local.sh (%s)\nMATCHBOX=%q\n' "$choice" "$mb" > "$envfile"
 fi
 echo "MatchBox: $("$mb" --version 2>&1 | head -n1) ($mb), saved in .cache/dev.env"
+# a branch can report another version than box.json: a warning, the build goes on
+(( ! dedicated )) || mb_version_warn "$mb" "$manifest_version" || true
+
 (( build )) || exit 0
 MATCHBOX="$mb" "$root/scripts/dev-build.sh"
 "$root/dist/bxrig" version
