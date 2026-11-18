@@ -103,7 +103,7 @@ bxrig screensaver logo text ACME --yes # or: logo image ~/Pictures/logo.png, log
 bxrig screensaver off --yes            # no screensaver; the lock stays
 ```
 
-Noctalia runs it as an idle behavior, so a video or **Stay awake** holds it off. It is also in the menu (*System > Screensaver*) and on the Control Center's Look page.
+On Hyprland, Noctalia runs it as an idle behavior. On Plasma, a small user service (swayidle) starts it and Plasma's own lock screen follows the `lock=` setting; `bxrig setup plasma` installs swayidle. On both, a video or **Stay awake** holds it off. It is also in the menu (*System > Screensaver*) and on the Control Center's Look page.
 
 ## Boot splash
 

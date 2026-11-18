@@ -160,6 +160,7 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `theme` | `--name` | value | `mine` |
 | `appearance` | `--mode` | any |  |
 | `screensaver` | `--effect` | value |  |
+| `screensaver` | `--idle` | bool |  |
 | `time` | `--demo` | any |  |
 | `time` | `--host` | any |  |
 | `time` | `--list` | bool |  |
