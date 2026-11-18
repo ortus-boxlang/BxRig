@@ -196,12 +196,13 @@
 				},
 				{
 					"name": "doctor",
-					"summary": "Checks the machine (Arch or CachyOS, pacman, sudo, disk) and reports problems.",
+					"summary": "Checks every tool BxRig needs (git, curl, unzip, jq, Java 21, mvm, bvm, BoxLang, MatchBox, Rust, Cargo), one status line each. Exit 4 when one is missing.",
 					"usage": [
 						"doctor [--json]"
 					],
 					"examples": [
-						"bxrig doctor"
+						"bxrig doctor",
+						"bxrig doctor --json"
 					],
 					"mutates": false,
 					"flags": []
@@ -921,7 +922,7 @@
 				},
 				{
 					"name": "prerequisites",
-					"summary": "What BxRig needs on the machine before anything else.",
+					"summary": "The same check as doctor: one status line per tool BxRig needs.",
 					"usage": [
 						"prerequisites [--json]"
 					],

@@ -145,7 +145,7 @@ class Packages {
 			println( variables.cli.envelope( cmd, exit, { selection: selection, would_install: [], done: result.done, failed: result.failed, skipped: res.skipped } ) );
 			return exit;
 		}
-		if ( !result.done.len() && !result.failed.len() ) println( "Nothing to do." );
+		if ( !result.done.len() && !result.failed.len() ) println( "Nothing to install. Choose the desktop and apps with `bxrig init`." );
 		for ( var d in result.done ) println( "Installed: " & d.id & "  [" & d.source & "]" );
 		for ( var f in result.failed ) println( "Failed: " & f.id & "  [" & f.source & "]: " & f.error );
 		return exit;

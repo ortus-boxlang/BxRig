@@ -7,7 +7,12 @@ set -euo pipefail
 # (BXRIG_MATCHBOX_CHANNEL=snapshot), or a branch built here with cargo (--matchbox-branch REF, see "MatchBox" below). Neither stable nor
 # snapshot contains the BxRig changes yet, so they cannot compile bxrig: the binary stage probes the MatchBox it would use (mb_builds_bxrig).
 # BXRIG_MVM_VERSION=x.y.z asks the MVM installer for a specific release.
+# Free disk space in $HOME. A single stage needs MIN_FREE_GB; the whole install needs FULL_FREE_GB, checked up front so a machine that
+# passes stage 1 cannot run out of space in stage 2. Derived from a real Arch run (2026-11-16): the image had 6 GB free and Rust alone
+# took about 2.5 GB (4 GB left); packages about 1.3 GB (pacman reported 1334 MiB installed), the MatchBox branch build (cargo release
+# target dir) about 3 GB, Java, mvm, BoxLang and the bxrig binary about 0.5 GB: about 7.3 GB, plus 0.7 GB headroom = 8 GB.
 MIN_FREE_GB=5
+FULL_FREE_GB=8
 BOXLANG_LATEST_URL="https://downloads.ortussolutions.com/ortussolutions/boxlang/version-latest.properties"
 
 usage() {
@@ -145,21 +150,33 @@ tool_version() {  # NAME [ARG]: first x.y[.z] printed by the tool, empty if unkn
 }
 is_interactive() { [[ "${BXRIG_INTERACTIVE:-0}" == 1 || ( -t 0 && -t 1 ) ]]; }
 # Refuse early, with a reason, when the machine cannot be provisioned. Needs inspect() to have run.
-preflight_common() {
+preflight_common() {  # [NEED_GB]: free space needed, default one stage
+	local need_gb="${1:-$MIN_FREE_GB}"
 	[[ "$os_ok" == 1 ]] || { echo "Unsupported OS: $os_name (BxRig supports CachyOS and Arch Linux)" >&2; exit 1; }
 	[[ "$cpu" == x86_64 ]] || { echo "Unsupported CPU: $cpu (x86_64 only)" >&2; exit 1; }
-	(( free_gb >= MIN_FREE_GB )) || { echo "Not enough free disk space: ${free_gb} GB free in $HOME, need at least $MIN_FREE_GB GB" >&2; exit 1; }
+	(( free_gb >= need_gb )) || { echo "Not enough free disk space: ${free_gb} GB free in $HOME, need at least $need_gb GB" >&2; exit 1; }
 }
 step_run() { local what="$1"; shift; "$@" || { echo "Failed: $what" >&2; exit 1; }; }
 # Like step_run, but tries up to three times (0s, 10s, 30s apart): GitHub answers 403 to anonymous API calls
-# when a shared address is rate limited, and that is usually brief.
+# when a shared address is rate limited, and that is usually brief. The command's own output is shown (and kept to pick the hint):
+# the rate-limit hint only for real 403/429 output; anything else is most often a proxy or a TLS-inspecting firewall.
 step_retry() {
-	local what="$1" wait; shift
+	local what="$1" wait log last=""; shift
+	log="$(mktemp)"
 	for wait in ${BXRIG_RETRY_WAITS:-0 10 30}; do
 		(( wait )) && { echo "Retrying in ${wait}s: $what" >&2; sleep "$wait"; }
-		"$@" && return 0
+		set +e; "$@" 2>&1 | tee "$log"; local rc="${PIPESTATUS[0]}"; set -e
+		(( rc )) || { rm -f "$log"; return 0; }
+		last="$(cat "$log")"
 	done
-	echo "Failed after 3 attempts: $what (if GitHub reports HTTP 403, wait a while and rerun; this is a rate limit)" >&2; exit 1
+	rm -f "$log"
+	echo "Failed after 3 attempts: $what" >&2
+	if grep -qiE '(^|[^0-9])(403|429)([^0-9]|$)|rate.?limit' <<<"$last"; then
+		echo "GitHub reports a rate limit (HTTP 403/429): wait a while and rerun." >&2
+	else
+		echo "Could not reach GitHub. Behind a corporate proxy or a TLS-inspecting firewall? mvm may not trust its certificate. You can use the branch build instead: install.sh toolchains --yes --matchbox-branch bxrig" >&2
+	fi
+	exit 1
 }
 # ---- MatchBox ----
 # stable (default): `mvm install latest` + `mvm use latest`. --snapshot: `mvm install snapshot` + `mvm use snapshot` (mvm skips an unchanged
@@ -335,7 +352,7 @@ report_check() {
   printf 'cpu: %s (%s)\n' "$cpu" "$([[ $cpu == x86_64 ]] && echo supported || echo unsupported)"
   printf 'user: %s\n' "$([[ $is_root == 1 ]] && echo 'root (run as a normal user)' || echo normal)"
   printf 'sudo: %s\n' "$([[ $have_sudo == 1 ]] && echo available || echo missing)"
-  printf 'disk-free: %s GB (%s)\n' "$free_gb" "$([[ $free_gb -ge $MIN_FREE_GB ]] && echo ok || echo "need $MIN_FREE_GB")"
+  printf 'disk-free: %s GB (%s)\n' "$free_gb" "$([[ $free_gb -ge $FULL_FREE_GB ]] && echo "ok, the whole install needs $FULL_FREE_GB" || echo "need $FULL_FREE_GB for the whole install")"
   printf 'network: %s\n' "$net"
   echo "== packages =="
   for pkg in "${packages[@]}"; do
@@ -398,7 +415,12 @@ if [[ "$mode" == full ]]; then
 	[[ "$(id -u)" != 0 ]] || { echo "Run as a regular user; sudo is used only for pacman steps" >&2; exit 1; }
 	inspect; build_steps
 	report_matchbox
+	if (( free_gb >= FULL_FREE_GB )); then disk_ok=1; else disk_ok=0; fi
+	printf 'Disk: need %s GB for the whole install, %s GB free in %s (%s)\n' "$FULL_FREE_GB" "$free_gb" "$HOME" "$([[ $disk_ok == 1 ]] && echo ok || echo "not enough")"
 	report_plan
+	if (( ! dry && ! disk_ok && ${#steps[@]} )); then
+		echo "Not enough free disk space: ${free_gb} GB free in $HOME, need $FULL_FREE_GB GB for the whole install. Nothing was changed." >&2; exit 1
+	fi
 	echo "Last: bxrig profile-install core --yes installs the core apps with pacman (a re-run installs nothing that is already there)."
 	if (( dry )); then echo "Dry run: nothing was changed."; exit 0; fi
 	if (( ! yes )); then
@@ -419,11 +441,11 @@ if [[ "$mode" == full ]]; then
 	echo "== 2/4 Java 21 check, mvm, MatchBox, bvm and BoxLang =="; bash "$all_self" toolchains --yes ${mb_args[@]+"${mb_args[@]}"} || exit $?
 	echo "== 3/4 the bxrig binary =="; bash "$all_self" binary --yes || exit $?
 	echo "== 4/4 the core apps =="; bash "$all_self" core --yes || exit $?
-	echo "Everything is installed. Run: bxrig doctor"
 	if is_interactive; then
+		echo "Tools installed."
 		echo "== the setup wizard =="; bash "$all_self" wizard || exit $?
 	else
-		echo "Next: run bxrig init at a terminal to choose your desktop, shell, terminal and apps."
+		echo "Tools installed. Run \`bxrig init\` for the desktop and apps."
 	fi
 	exit 0
 fi

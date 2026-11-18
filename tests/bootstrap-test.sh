@@ -33,7 +33,7 @@ echo 'bootstrap check tests passed'
 # ---- B1/B2: read-only --check and --plan, with a fully isolated PATH and HOME ----
 sys="$tmp/sys"; bin="$tmp/bin"; home="$tmp/home"
 mkdir -p "$sys" "$bin" "$home/.local/bin"
-for t in bash env grep awk df id uname head tr cat sort dirname mktemp sed cut mkdir chmod rm wc sha256sum basename ls cp mv find cmp tail stat readlink ln jq; do
+for t in bash env grep awk df id uname head tr cat sort dirname mktemp sed cut mkdir chmod rm wc sha256sum basename ls cp mv find cmp tail stat readlink ln jq tee; do
 	p="$(command -v "$t")" && ln -sf "$p" "$sys/$t"
 done
 # Fixture repository: a copy of the script next to a box.json with known pins. Tests run this copy.
@@ -312,6 +312,10 @@ done
 mock df 'printf "Filesystem 1024-blocks Used Available Capacity Mounted\nx 100 50 1024 5%% /\n"'
 if out="$(irun bash "$repo/bootstrap/install.sh" packages --yes 2>&1)"; then echo 'FAIL: low disk accepted' >&2; exit 1; fi; need "$out" 'Not enough free disk space'
 [[ ! -s "$tmp/pacman.log" ]] || { echo 'FAIL: low disk touched the system' >&2; exit 1; }
+# A single stage with 5 GB free still passes its own check (the 8 GB need is for the whole install only).
+mock df 'printf "Filesystem 1024-blocks Used Available Capacity Mounted\nx 100 50 5242880 5%% /\n"'
+install_mocks; fresh_home
+out="$(irun bash "$repo/bootstrap/install.sh" packages --yes 2>&1)" || { echo "FAIL: a single stage with 5 GB free was refused: $out" >&2; exit 1; }
 rm -f "$bin/df"
 
 # sudo missing, pacman failing, rustup failing.
@@ -422,7 +426,7 @@ FLAKY_MVM='mkdir -p "$HOME/.mvm/bin"
 cat > "$HOME/.mvm/bin/mvm" <<"M"
 #!/usr/bin/env bash
 case "$1" in
-  install) n=$(cat "$HOME/mvm-tries" 2>/dev/null || echo 0); echo $((n+1)) > "$HOME/mvm-tries"; [[ $n -ge ${MVM_FAIL_TIMES:-2} ]] || { echo "GitHub request failed with HTTP 403" >&2; exit 1; } ;;
+  install) n=$(cat "$HOME/mvm-tries" 2>/dev/null || echo 0); echo $((n+1)) > "$HOME/mvm-tries"; [[ $n -ge ${MVM_FAIL_TIMES:-2} ]] || { echo "${MVM_ERR:-GitHub request failed with HTTP 403}" >&2; exit 1; } ;;
   use) printf "#!/usr/bin/env bash\necho \"MatchBox 0.13.2\"\n" > "$HOME/.mvm/bin/matchbox"; chmod +x "$HOME/.mvm/bin/matchbox" ;;
   --version) echo "MVM version: 2.0.1" ;;
 esac
@@ -433,11 +437,21 @@ out="$(MVM_FAKE="$FLAKY_MVM" trun env BXRIG_RETRY_WAITS="0 0 0" MVM_FAIL_TIMES=2
 need "$out" 'MatchBox 0.13.2 (stable) installed and verified.'; [[ "$(cat "$home/mvm-tries")" == 3 ]] || { echo 'FAIL: expected exactly 3 install attempts' >&2; exit 1; }
 fresh_home
 if out="$(MVM_FAKE="$FLAKY_MVM" trun env BXRIG_RETRY_WAITS="0 0 0" MVM_FAIL_TIMES=9 bash "$repo/bootstrap/install.sh" toolchains --yes </dev/null 2>&1)"; then echo 'FAIL: persistent failure treated as success' >&2; exit 1; fi
-need "$out" 'Failed after 3 attempts'; need "$out" 'HTTP 403'
+need "$out" 'Failed after 3 attempts'; need "$out" 'HTTP 403'; need "$out" 'rate limit'; refuse "$out" 'Could not reach GitHub'
+# mvm's own output is shown; a proxy or certificate failure gets the proxy hint and the branch-build alternative, not the rate-limit hint.
+fresh_home
+if out="$(MVM_FAKE="$FLAKY_MVM" trun env BXRIG_RETRY_WAITS="0 0 0" MVM_FAIL_TIMES=9 MVM_ERR='Could not contact GitHub: HTTP request failed: error sending request' bash "$repo/bootstrap/install.sh" toolchains --yes </dev/null 2>&1)"; then echo 'FAIL: proxy failure treated as success' >&2; exit 1; fi
+need "$out" 'Could not contact GitHub: HTTP request failed: error sending request'; need "$out" 'Could not reach GitHub. Behind a corporate proxy or a TLS-inspecting firewall?'
+need "$out" 'install.sh toolchains --yes --matchbox-branch bxrig'; refuse "$out" 'rate limit'
+fresh_home
+if out="$(MVM_FAKE="$FLAKY_MVM" trun env BXRIG_RETRY_WAITS="0 0 0" MVM_FAIL_TIMES=9 MVM_ERR='error: HTTP 429 Too Many Requests' bash "$repo/bootstrap/install.sh" toolchains --yes </dev/null 2>&1)"; then echo 'FAIL: 429 treated as success' >&2; exit 1; fi
+need "$out" 'rate limit'; refuse "$out" 'Could not reach GitHub'
 echo 'bootstrap retry tests passed'
 
 # ---- the whole install: every stage in order, stops at the first failing stage ----
 mkdir -p "$tmp/all/bin"
+dfmock() { printf '#!/usr/bin/env bash\nprintf "Filesystem 1024-blocks Used Available Capacity Mounted\nx 100 50 %%s 5%%%% /\n" "$((%s * 1048576))"\n' "$1" > "$tmp/all/bin/df"; chmod +x "$tmp/all/bin/df"; }
+dfmock 20
 printf '#!/usr/bin/env bash\nif [[ "$1" == -u ]]; then echo 1000; else /usr/bin/id "$@"; fi\n' > "$tmp/all/bin/id"; chmod +x "$tmp/all/bin/id"
 cat > "$tmp/all/stage.sh" <<'STAGE'
 #!/usr/bin/env bash
@@ -459,6 +473,21 @@ out="$(printf 'n\n' | env BXRIG_INTERACTIVE=1 PATH="$tmp/all/bin:$PATH" ALL_LOG=
 [[ ! -s "$tmp/all/log" ]] || { echo 'FAIL: a stage ran after answering n' >&2; exit 1; }
 printf 'y\n' | env BXRIG_INTERACTIVE=1 PATH="$tmp/all/bin:$PATH" ALL_LOG="$tmp/all/log" BXRIG_ALL_SCRIPT="$tmp/all/stage.sh" bash "$root/bootstrap/install.sh" >/dev/null 2>&1 || { echo 'FAIL: answering y did not run the install' >&2; exit 1; }
 [[ "$(paste -sd'|' "$tmp/all/log")" == 'packages --yes|toolchains --yes|binary --yes|core --yes|wizard' ]] || { echo "FAIL: stages after answering y (the wizard follows at a terminal): $(paste -sd'|' "$tmp/all/log")" >&2; exit 1; }
+[[ "$out" != *'Everything is installed'* ]] || { echo 'FAIL: the old closing line is back' >&2; exit 1; }
+# the closing line says what is true: tools only, the desktop and apps come with bxrig init
+out="$(env PATH="$tmp/all/bin:$PATH" ALL_LOG="$tmp/all/log" BXRIG_ALL_SCRIPT="$tmp/all/stage.sh" bash "$root/bootstrap/install.sh" --yes </dev/null 2>&1)"
+need "$out" 'Tools installed. Run `bxrig init` for the desktop and apps.'; refuse "$out" 'Everything is installed'
+# the whole install needs 8 GB up front: the plan says so, 6 GB fails before any stage runs, 9 GB passes, --dry-run only reports
+out="$(env PATH="$tmp/all/bin:$PATH" ALL_LOG="$tmp/all/log" BXRIG_ALL_SCRIPT="$tmp/all/stage.sh" bash "$root/bootstrap/install.sh" --dry-run 2>&1)"; need "$out" 'need 8 GB for the whole install'; need "$out" '20 GB free'
+dfmock 6; : > "$tmp/all/log"
+if out="$(env PATH="$tmp/all/bin:$PATH" ALL_LOG="$tmp/all/log" BXRIG_ALL_SCRIPT="$tmp/all/stage.sh" bash "$root/bootstrap/install.sh" --yes 2>&1 </dev/null)"; then echo 'FAIL: 6 GB free accepted for the whole install' >&2; exit 1; fi
+need "$out" 'need 8 GB for the whole install'; need "$out" 'Not enough free disk space: 6 GB free'; [[ ! -s "$tmp/all/log" ]] || { echo 'FAIL: a stage ran with too little disk' >&2; exit 1; }
+out="$(env PATH="$tmp/all/bin:$PATH" ALL_LOG="$tmp/all/log" BXRIG_ALL_SCRIPT="$tmp/all/stage.sh" bash "$root/bootstrap/install.sh" --dry-run 2>&1)" || { echo 'FAIL: --dry-run failed on low disk' >&2; exit 1; }; need "$out" 'not enough'
+dfmock 9
+env PATH="$tmp/all/bin:$PATH" ALL_LOG="$tmp/all/log" BXRIG_ALL_SCRIPT="$tmp/all/stage.sh" bash "$root/bootstrap/install.sh" --yes >/dev/null 2>&1 </dev/null || { echo 'FAIL: 9 GB free refused for the whole install' >&2; exit 1; }
+[[ "$(wc -l < "$tmp/all/log")" == 4 ]] || { echo 'FAIL: 9 GB did not run all stages' >&2; exit 1; }
+dfmock 6; need "$(env PATH="$tmp/all/bin:$PATH" bash "$root/bootstrap/install.sh" check 2>&1)" 'disk-free: 6 GB (need 8 for the whole install)'
+rm -f "$tmp/all/bin/df"
 echo 'bootstrap whole-install tests passed'
 
 # ---- nvm and Node.js are not part of the required install (they are the optional JavaScript toolchain: `bxrig toolchain node`) ----
@@ -621,7 +650,7 @@ need "$(mbinst check)" 'compiles BxRig: yes'
 # 8. the full install passes the MatchBox choice to the toolchains stage
 mkdir -p "$tmp/all2"; printf '#!/usr/bin/env bash\necho "$*" >> "$ALL_LOG"\n' > "$tmp/all2/stage.sh"
 all2() { : > "$tmp/all2/log"; mbrun env ALL_LOG="$tmp/all2/log" BXRIG_ALL_SCRIPT="$tmp/all2/stage.sh" bash "$mbrepo/bootstrap/install.sh" --yes "$@" >/dev/null 2>&1 || { echo "FAIL: full install with $*" >&2; exit 1; }; paste -sd'|' "$tmp/all2/log"; }
-mbfresh
+mbfresh; mock df 'printf "Filesystem 1024-blocks Used Available Capacity Mounted\nx 100 50 20971520 5%% /\n"'
 [[ "$(all2)" == 'packages --yes|toolchains --yes|binary --yes|core --yes' ]] || { echo 'FAIL: the default full install passes no MatchBox option' >&2; exit 1; }
 [[ "$(all2 --snapshot)" == 'packages --yes|toolchains --yes --snapshot|binary --yes|core --yes' ]] || { echo 'FAIL: --snapshot is not passed on' >&2; exit 1; }
 [[ "$(all2 --matchbox-branch feature/x --matchbox-repo someone/fork)" == 'packages --yes|toolchains --yes --matchbox-branch feature/x --matchbox-repo someone/fork|binary --yes|core --yes' ]] || { echo 'FAIL: the branch options are not passed on' >&2; exit 1; }

@@ -56,8 +56,10 @@ class {
 				break;
 			case "doctor":
 			case "prerequisites":
-				println( "Workstation prerequisites: Java 21, BVM, MVM, BoxLang, MatchBox" );
-				println( "Native build prerequisites: Rust and Cargo" );
+				// One status line per tool, exit 4 when one is missing. See bxrig.Doctor and COMMAND-CONTRACT.md 13.60.
+				if ( p.len() == 1 ) CLIExit( new bxrig.Doctor( cli ).run( asJson ) );
+				println( new bxrig.CommandSpec().usage( cmd ) );
+				CLIExit( xit.usage() );
 				break;
 			case "desktop-list":
 			case "tui-list":
