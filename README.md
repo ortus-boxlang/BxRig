@@ -52,12 +52,12 @@ Details: [getting started](docs/getting-started.md).
 | Area | What |
 |---|---|
 | Toolchains | Java 21, bvm, mvm, BoxLang, MatchBox, Rust. Optional: PHP, Python, Go, JavaScript runtimes |
-| Desktop | Hyprland and Noctalia, KDE Plasma with HyprKwin tiling, one shortcut table in two styles (Traditional, Omarchy-like keys, or Mac, Cmd-style keys with the Alt and Win swap on a PC keyboard), xremap for the Cmd remaps, key cheat sheet |
+| Desktop | Hyprland and Noctalia, KDE Plasma with HyprKwin tiling, one shortcut table in two styles (Traditional, classic Super-key tiling keys, or Mac, Cmd-style keys with the Alt and Win swap on a PC keyboard), xremap for the Cmd remaps, key cheat sheet |
 | Control center | `bxrig menu` (`Super+Space`): every command as one searchable menu on your launcher (Rofi, Walker, Wofi, Fuzzel, Vicinae), with Shortcuts and Hardware sections; `bxrig menu open ROUTE` opens one section |
 | Appearance and hardware | Bar, dock, windows, fonts, backgrounds, monitors, laptop power, time zone and DNS, each one command (`appearance`, `display`, `power`, `time`, `dns`) |
 | Backups | BxRig setup snapshots, system snapshots (snapper), encrypted file backups (restic) to a NAS, a disk or the cloud, and **BxTimeMachine**, one screen for all of them (`bxrig timemachine`) |
 | NAS | Synology or any SMB or NFS share: discover, mount, automatic mounts, mirror (`bxrig nas`) |
-| Themes | 15 color themes in the Omarchy format (10 from Omarchy, 5 of ours); follows into terminals, btop, window borders and Neovim |
+| Themes | 15 color themes in the `colors.toml` format (10 community themes, 5 of ours); follows into terminals, btop, window borders and Neovim |
 | Shell and editor | zsh, fish or bash with Starship (shows the BoxLang version), Ghostty and other terminals, Neovim with LazyVim and BoxLang syntax |
 | Apps | A curated catalog of about 290 apps by category, chosen in the wizard |
 | Databases | PostgreSQL, MySQL, Redis, MongoDB, vector databases and more as local containers (`bxrig db`) |

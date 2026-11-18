@@ -45,7 +45,7 @@ Settings for tests and unusual machines: `BXRIG_DESKTOP_DIRS` (folders with `.de
 
 ## The catalog
 
-BxRig knows about 290 apps and web apps in groups (development, terminal, AI, infrastructure, network, system, desktop, everyday, web apps, media, gaming). Each is **default** (installed by the wizard's Basic mode) or **optional**. Sources: official packages first (`pacman`), then the AUR (`yay`), Omarchy's packages, vendor installers and web apps.
+BxRig knows about 290 apps and web apps in groups (development, terminal, AI, infrastructure, network, system, desktop, everyday, web apps, media, gaming). Each is **default** (installed by the wizard's Basic mode) or **optional**. Sources: official packages first (`pacman`), then the AUR (`yay`), PKGBUILDs pinned to a commit, vendor installers and web apps.
 
 ```bash
 bxrig catalog list --group media

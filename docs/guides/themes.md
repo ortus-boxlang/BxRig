@@ -6,7 +6,7 @@ summary: Twenty-one color themes, each with its own wallpaper, that follow you i
 
 # Themes
 
-BxRig ships 21 color themes in the Omarchy theme format, each with its own wallpaper: eleven of ours (six dark, five light, among them the neon 80s `bxrig-retro`) and ten taken from Omarchy.
+BxRig ships 21 color themes in the `colors.toml` theme format, each with its own wallpaper: eleven of ours (six dark, five light, among them the neon 80s `bxrig-retro`) and ten community themes.
 
 ![The BxRig theme: its wallpaper, the bar and a themed terminal](../assets/screenshots/themes/bxrig.webp)
 
@@ -38,7 +38,7 @@ Setting a theme acts at once. `--dry-run` shows what would be written without ch
 | rofi, fuzzel, wofi | a rofi theme (and a `config.rasi` stub when you have none), `fuzzel.ini`, wofi `style.css` |
 | Wallpaper | a BxRig theme brings one of our wallpapers; use `--keep-wallpaper` to skip it |
 
-A theme can name a font with a `font = "ID"` line in its `colors.toml` (an id of `bxrig appearance font list`; Omarchy ignores the line). `bxrig-retro` names `sharetech`, Share Tech Mono Nerd (Arch package `ttf-sharetech-mono-nerd`): once it is installed (`bxrig appearance font install sharetech --yes`) `theme set` makes it the shell and terminal font, and until then the plan says so. Other themes leave your font alone.
+A theme can name a font with a `font = "ID"` line in its `colors.toml` (an id of `bxrig appearance font list`; other tools ignore the line). `bxrig-retro` names `sharetech`, Share Tech Mono Nerd (Arch package `ttf-sharetech-mono-nerd`): once it is installed (`bxrig appearance font install sharetech --yes`) `theme set` makes it the shell and terminal font, and until then the plan says so. Other themes leave your font alone.
 
 `bxrig banner` prints the BXRIG wordmark in the colors of the current theme (`--json` gives the lines); the retro theme uses it as a terminal greeting.
 
@@ -48,7 +48,7 @@ Bar, dock, windows, fonts and backgrounds are in [Appearance](appearance.md).
 
 ## The themes
 
-Ours: BxRig, BxRig Cyan, BxRig Forest, BxRig Midnight and BxRig Ember (dark), BxRig Light, BxRig Dawn, BxRig Paper, BxRig Mint and BxRig Sky (light). From Omarchy: catppuccin, catppuccin-latte, tokyo-night, gruvbox, nord, rose-pine, kanagawa, everforest, matte-black and flexoki-light (MIT, credited in `themes/NOTICE.md`). Each one below is shown with its wallpaper and `btop` in a themed terminal.
+Ours: BxRig, BxRig Cyan, BxRig Forest, BxRig Midnight and BxRig Ember (dark), BxRig Light, BxRig Dawn, BxRig Paper, BxRig Mint and BxRig Sky (light). Community themes: catppuccin, catppuccin-latte, tokyo-night, gruvbox, nord, rose-pine, kanagawa, everforest, matte-black and flexoki-light (MIT, credited in `themes/NOTICE.md`). Each one below is shown with its wallpaper and `btop` in a themed terminal.
 
 | | |
 | --- | --- |
@@ -73,14 +73,14 @@ On Hyprland the Themes row of the bar's quick settings popover (the sliders butt
 
 ## More themes, and your own
 
-`bxrig theme install https://github.com/someone/omarchy-name-theme` installs an Omarchy-style theme repository (https only). Themes you already have in `~/.config/omarchy/themes` are found automatically. A theme is a folder with `colors.toml`, an optional `neovim.lua` and an optional `backgrounds/` folder:
+`bxrig theme install https://github.com/someone/name-theme` installs a theme repository in the same format (https only). Theme folders you already have from other setups are found automatically. A theme is a folder with `colors.toml`, an optional `neovim.lua` and an optional `backgrounds/` folder:
 
 ```bash
 bxrig theme import ~/my-theme --name=mine
 bxrig theme remove mine
 ```
 
-Every bundled theme, BxRig's own included, uses the Omarchy standard `colors.toml`: `mode`, `accent`, `selection`, `muted`, the background shades (`background`, `dark_background`, `darker_background`, `lighter_background`), the foreground shades (`foreground`, `dark_foreground`, `light_foreground`, `bright_foreground`) and the named colours (`red` to `brown`, then `bright_red` to `bright_magenta`). The terminal palette comes from them: black is `background`, white is `foreground`, bright black is `muted`, bright white is `bright_foreground`, and the cursor is `bright_foreground`. The older `color0` to `color15` list is still read, for themes you install from elsewhere.
+Every bundled theme, BxRig's own included, uses the standard `colors.toml`: `mode`, `accent`, `selection`, `muted`, the background shades (`background`, `dark_background`, `darker_background`, `lighter_background`), the foreground shades (`foreground`, `dark_foreground`, `light_foreground`, `bright_foreground`) and the named colours (`red` to `brown`, then `bright_red` to `bright_magenta`). The terminal palette comes from them: black is `background`, white is `foreground`, bright black is `muted`, bright white is `bright_foreground`, and the cursor is `bright_foreground`. The older `color0` to `color15` list is still read, for themes you install from elsewhere.
 
 ## Neovim
 

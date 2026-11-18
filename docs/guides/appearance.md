@@ -88,7 +88,7 @@ A theme-less icon name never leaves a gap: with `papirus`, or when an older BxRi
 
 ## Text in large letters
 
-`bxrig ascii` draws text in large letters with FIGlet fonts, the way `figlet` and Omarchy's `omarchy ascii` do, and paints it with a colour or a gradient. The BxRig logo is drawn the same way, in DOS Rebel.
+`bxrig ascii` draws text in large letters with FIGlet fonts, the way `figlet` does, and paints it with a colour or a gradient. The BxRig logo is drawn the same way, in DOS Rebel.
 
 ```bash
 bxrig ascii BxRig                                  # DOS Rebel, the brand gradient
