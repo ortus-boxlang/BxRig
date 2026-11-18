@@ -27,6 +27,8 @@ bxrig update check              # exit 10 means an update is available
 bxrig update apply --yes        # download, verify, replace atomically
 ```
 
+An install made with `install.sh --source github:...` (an unsigned test build, see [getting started](../getting-started.md)) is not tracked: `update check` reports an update because the program differs from the channel's, and `update apply --yes` replaces it with that channel's build.
+
 The release information is signed (Ed25519) and the binary's SHA-256 is checked against it; a bad signature or checksum changes nothing.
 
 ## Get told about updates

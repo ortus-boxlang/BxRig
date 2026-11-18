@@ -30,7 +30,15 @@ Unattended, with saved answers:
 curl -fsSL https://downloads.ortussolutions.com/ortussolutions/bxrig/install.sh | bash -s -- --yes --answers answers.json
 ```
 
-Add `--channel beta` for the bleeding-edge snapshots. Update later with `bxrig update apply --yes`.
+Add `--channel beta` (or `--source beta`) for the bleeding-edge snapshots. Update later with `bxrig update apply --yes`.
+
+Testing a branch (unsigned, for developers: it builds whatever that branch holds; it needs `--yes` or the typed word `unsigned`):
+
+```bash
+curl -fsSL https://downloads.ortussolutions.com/ortussolutions/bxrig/install.sh | bash -s -- --source github:ortus-boxlang/BxRig@development --yes
+```
+
+The installer builds the program with the head of the MatchBox `bxrig` branch (`--matchbox-branch REF` picks another, with `--matchbox-from-source`). Details: [getting started](docs/getting-started.md).
 
 ## What you get
 

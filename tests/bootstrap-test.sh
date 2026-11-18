@@ -536,3 +536,102 @@ nplan() { env -i HOME="$home" PATH="$home/.local/bin:$bin:$sys" BXRIG_SKIP_NETWO
 plan="$(nplan --dry-run)"
 refuse "$plan" 'nvm'; refuse "$plan" 'Node.js'; refuse "$(nplan check)" 'nvm:'; refuse "$(nplan check)" 'node:'
 echo 'bootstrap required-toolchain tests passed'
+
+# ---- MatchBox: the head of the branch (git ls-remote or the GitHub API), its immutable folder, no fallback to the stale pointer ----
+# Fake download server (a folder per URL path), fake git, curl, cargo; nothing touches the network.
+mbsrv="$tmp/mbsrv"; mbrepo="$tmp/mbrepo"; HEAD1=425a2942aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; HEAD2=beefcafe00000000000000000000000000000000; STALE=913aec6
+mkdir -p "$mbrepo/bootstrap" "$mbsrv/mb"; cp "$root/bootstrap/install.sh" "$mbrepo/bootstrap/install.sh"
+jq '.toolchain.matchbox = { version: "0.14.0", repo: "https://github.com/acme/matchbox", ref: "bxrig", downloads: "http://dl.fake/mb" }' "$repo/box.json" > "$mbrepo/box.json"
+mbpub() {  # FOLDER LABEL: a published build whose matchbox prints "MatchBox 0.14.0" and carries LABEL in the file
+	mkdir -p "$mbsrv/mb/$1"; printf '#!/usr/bin/env bash\n# %s\necho "MatchBox 0.14.0"\n' "$2" > "$mbsrv/mb/$1/matchbox-linux-x86_64"
+	echo "$(sha256sum "$mbsrv/mb/$1/matchbox-linux-x86_64" | cut -d' ' -f1)  matchbox-linux-x86_64" > "$mbsrv/mb/$1/matchbox-linux-x86_64.sha256"
+	printf 'version=0.14.0\n' > "$mbsrv/mb/$1/version.properties"
+}
+mbpub "0.14.0-425a294" head; mbpub "0.14.0-$STALE" stale
+printf 'version=0.14.0\ncommit=%s\n' "$STALE" > "$mbsrv/mb/version-latest.properties"
+mbmocks() {
+	reset_mocks; MOCK_INSTALLED="jdk21-openjdk git curl unzip rustup base-devel jq"
+	mock sudo 'exit 9'; mock java 'echo "openjdk version \"21.0.13\" 2026-04-21" >&2'; mock mvm 'echo "MVM version: 2.0.1"'; mock bvm 'echo "bvm 1.40.0"'
+	mock boxlang 'echo "Ortus BoxLang v1.19.0+67"'; mock rustc 'echo "rustc 1.90.0"'; mock rustup 'exit 0'; mock yay 'exit 0'
+	mock curl 'url=""; out=""; code=0; while [[ $# -gt 0 ]]; do case "$1" in -o) out="$2"; shift 2 ;; -w) code=1; shift 2 ;; http*) url="$1"; shift ;; *) shift ;; esac; done
+echo "$url" >> "$MB_LOG"
+case "$url" in
+  https://api.github.com/*) [[ "${MOCK_API:-500}" == 200 ]] && printf "{\"object\":{\"sha\":\"%s\"}}" "$MOCK_HEAD" > "$out" || printf "{}" > "$out"; echo "${MOCK_API:-500}" ;;
+  http://dl.fake/*) f="$MB_SRV/${url#http://dl.fake/}"; [[ -f "$f" ]] || exit 22; if [[ -n "$out" && "$out" != /dev/null ]]; then cp "$f" "$out"; elif [[ -z "$out" ]]; then cat "$f"; fi ;;
+  *) exit 22 ;;
+esac'
+	mock git 'echo "git $*" >> "$MB_LOG"
+case "$1" in
+  ls-remote) [[ "${MOCK_GIT_FAIL:-0}" == 1 ]] && exit 128; [[ -n "${MOCK_HEAD:-}" ]] && printf "%s\trefs/heads/%s\n" "$MOCK_HEAD" "${3#refs/heads/}"; exit 0 ;;
+  clone) while [[ $# -gt 1 ]]; do shift; done; mkdir -p "$1"; exit 0 ;;
+  -C) printf "abc1234\n" ;;
+esac'
+	mock cargo 'echo "cargo $*" >> "$MB_LOG"; mkdir -p target/release; printf "#!/usr/bin/env bash\necho \"MatchBox 0.15.0\"\n" > target/release/matchbox; chmod +x target/release/matchbox'
+}
+mbrun() { env -i HOME="$home" PATH="$bin:$sys" BXRIG_OS_RELEASE="$tmp/os-arch" MOCK_INSTALLED="$MOCK_INSTALLED" MOCK_UID="${MOCK_UID:-1000}" MB_LOG="$tmp/mb.log" MB_SRV="$mbsrv" MOCK_HEAD="${MOCK_HEAD-$HEAD1}" MOCK_API="${MOCK_API:-500}" MOCK_GIT_FAIL="${MOCK_GIT_FAIL:-0}" BXRIG_RETRY_WAITS=0 "$@"; }
+mbinst() { mbrun bash "$mbrepo/bootstrap/install.sh" "$@"; }
+mbfile="$home/.local/share/bxrig/matchbox"
+mbfresh() { rm -rf "$home"; mkdir -p "$home/.local/bin"; : > "$tmp/mb.log"; }
+mbmocks; mbfresh
+# the head is published: its immutable folder is used, version-latest.properties (stale) is never read
+out="$(mbinst toolchains --yes 2>&1)" || { echo "FAIL: head published: $out" >&2; exit 1; }
+need "$out" 'MatchBox 0.14.0 installed and verified.'; grep -q '# head' "$mbfile/bin/matchbox" || { echo 'FAIL: not the head build' >&2; exit 1; }
+refuse "$(cat "$tmp/mb.log")" 'dl.fake/mb/version-latest.properties'; need "$(cat "$tmp/mb.log")" 'git ls-remote https://github.com/acme/matchbox refs/heads/bxrig'
+need "$(cat "$mbfile/build.info")" 'commit=425a294'; need "$(cat "$mbfile/build.info")" 'source=published'
+# a second run finds the installed build at the head and changes nothing
+: > "$tmp/mb.log"; out="$(mbinst toolchains --yes 2>&1)"; need "$out" 'Nothing to do'; refuse "$(cat "$tmp/mb.log")" 'matchbox-linux-x86_64'
+# an installed build with no marker (the stale one) is replaced once the head can be read
+rm "$mbfile/build.info"; printf '#!/usr/bin/env bash\n# stale\necho "MatchBox 0.14.0"\n' > "$mbfile/bin/matchbox"; chmod +x "$mbfile/bin/matchbox"
+out="$(mbinst toolchains --yes 2>&1)"; grep -q '# head' "$mbfile/bin/matchbox" || { echo 'FAIL: the build without a marker was kept' >&2; exit 1; }
+# the head moved and its build is not published: stop, say which build and the ways out, keep the installed build, never the pointer
+: > "$tmp/mb.log"; if out="$(MOCK_HEAD=$HEAD2 mbinst toolchains --yes 2>&1)"; then echo 'FAIL: an unpublished head was installed' >&2; exit 1; fi
+rc=0; MOCK_HEAD=$HEAD2 mbinst toolchains --yes >/dev/null 2>&1 || rc=$?; [[ "$rc" == 1 ]] || { echo "FAIL: unpublished head exit $rc, not 1" >&2; exit 1; }
+need "$out" '0.14.0-beefcaf'; need "$out" 'not published yet'; need "$out" 'a few minutes'; need "$out" 'BXRIG_MATCHBOX_FILE=PATH'; need "$out" '--matchbox-from-source'
+refuse "$(cat "$tmp/mb.log")" 'dl.fake/mb/version-latest.properties'; grep -q '# head' "$mbfile/bin/matchbox" || { echo 'FAIL: a stop changed the installed build' >&2; exit 1; }
+# the branch does not exist
+mbfresh; if out="$(MOCK_HEAD= mbinst toolchains --yes 2>&1)"; then echo 'FAIL: a missing branch was accepted' >&2; exit 1; fi; need "$out" 'does not exist'
+# no git: the GitHub API answers (no login); a rate limit stops with a message
+mbfresh; rm "$bin/git"
+out="$(MOCK_API=200 mbinst toolchains --yes 2>&1)" || { echo "FAIL: API head: $out" >&2; exit 1; }; need "$(cat "$tmp/mb.log")" 'https://api.github.com/repos/acme/matchbox/git/ref/heads/bxrig'; need "$(cat "$mbfile/build.info")" 'commit=425a294'
+mbfresh; if out="$(MOCK_API=403 mbinst toolchains --yes 2>&1)"; then echo 'FAIL: a rate limit was ignored' >&2; exit 1; fi; need "$out" 'rate limiting'; refuse "$(cat "$tmp/mb.log")" 'dl.fake/mb/version-latest.properties'
+# the head cannot be read at all: the build named in version-latest.properties, with a warning
+mbmocks; mbfresh
+out="$(MOCK_GIT_FAIL=1 MOCK_API=500 mbinst toolchains --yes 2>&1)" || { echo "FAIL: unreadable head: $out" >&2; exit 1; }
+need "$out" 'could not be read'; need "$out" 'version-latest.properties'; grep -q '# stale' "$mbfile/bin/matchbox" || { echo 'FAIL: the pointer build was not used when the head is unreadable' >&2; exit 1; }
+# a local build through BXRIG_MATCHBOX_FILE needs no lookup
+mbfresh; printf '#!/usr/bin/env bash\necho "MatchBox 0.14.0"\n' > "$tmp/mine"; chmod +x "$tmp/mine"
+out="$(mbrun env BXRIG_MATCHBOX_FILE="$tmp/mine" bash "$mbrepo/bootstrap/install.sh" toolchains --yes 2>&1)" || { echo "FAIL: local file: $out" >&2; exit 1; }
+refuse "$(cat "$tmp/mb.log")" 'ls-remote'; need "$(cat "$mbfile/build.info")" 'source=file'
+# the branch option: validated strictly, argv only
+mbfresh
+for bad in '-x' 'a b' '$(id)' '../x' '/x' 'x/' 'a;b' "a'b" '' 'a|b'; do
+	rc=0; out="$(mbinst toolchains --yes --matchbox-branch "$bad" 2>&1)" || rc=$?; [[ "$rc" == 2 ]] || { echo "FAIL: branch '$bad' exit $rc, not 2: $out" >&2; exit 1; }
+	[[ -z "$bad" ]] || need "$out" 'Invalid MatchBox branch'
+done
+rc=0; out="$(mbrun env BXRIG_MATCHBOX_BRANCH=';touch /tmp/pwned' bash "$mbrepo/bootstrap/install.sh" toolchains --yes 2>&1)" || rc=$?; [[ "$rc" == 2 ]] && need "$out" 'Invalid MatchBox branch' || { echo 'FAIL: bad BXRIG_MATCHBOX_BRANCH accepted' >&2; exit 1; }
+[[ ! -e /tmp/pwned ]] || { echo 'FAIL: the branch was run as a shell string' >&2; exit 1; }
+# another branch has no published builds: stop unless --matchbox-from-source
+mbmocks; mbfresh
+rc=0; out="$(mbinst toolchains --yes --matchbox-branch feature/x 2>&1)" || rc=$?; [[ "$rc" == 1 ]] || { echo "FAIL: custom branch exit $rc" >&2; exit 1; }
+need "$out" 'no published builds'; need "$out" '--matchbox-from-source'; [[ ! -e "$mbfile/bin/matchbox" ]] || { echo 'FAIL: a stop installed something' >&2; exit 1; }
+out="$(mbrun env BXRIG_MATCHBOX_BRANCH=feature/x bash "$mbrepo/bootstrap/install.sh" toolchains --yes 2>&1)" && { echo 'FAIL: the env branch was not stopped' >&2; exit 1; }; need "$out" 'no published builds'
+out="$(mbinst toolchains --yes --matchbox-branch feature/x --matchbox-from-source 2>&1)" || { echo "FAIL: from source: $out" >&2; exit 1; }
+log="$(cat "$tmp/mb.log")"; need "$log" 'git clone --quiet --depth 1 --branch feature/x https://github.com/acme/matchbox'; need "$log" 'cargo build --release --features bif-tui'
+need "$out" 'Warning'; need "$out" 'box.json pins 0.14.0'; need "$(cat "$mbfile/build.info")" 'branch=feature/x'; need "$(cat "$mbfile/build.info")" 'commit=abc1234'
+refuse "$log" 'dl.fake'
+# the same branch is not rebuilt on the next run
+: > "$tmp/mb.log"; MOCK_HEAD=abc1234aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa mbinst toolchains --yes --matchbox-branch feature/x --matchbox-from-source 2>&1 | grep -q 'Nothing to do' || { echo 'FAIL: a built branch was rebuilt' >&2; exit 1; }
+# the whole install: the plan (dry run) shows the branch, the head and the build, and stops nothing
+mbfresh; mbmocks
+out="$(mbinst --dry-run 2>&1)" || { echo "FAIL: dry run: $out" >&2; exit 1; }
+need "$out" 'MatchBox: branch bxrig, build 0.14.0-425a294, published'; need "$out" 'matchbox-linux-x86_64'; need "$out" 'Dry run: nothing was changed.'; [[ ! -e "$mbfile/bin/matchbox" ]] || { echo 'FAIL: dry run installed MatchBox' >&2; exit 1; }
+out="$(MOCK_HEAD=$HEAD2 mbinst --dry-run 2>&1)" || { echo 'FAIL: dry run of an unpublished head must exit 0' >&2; exit 1; }
+need "$out" 'NOT published yet'; need "$out" 'STOP: http://dl.fake/mb/0.14.0-beefcaf/'
+out="$(mbinst --dry-run --matchbox-branch feature/x 2>&1)"; need "$out" 'MatchBox: branch feature/x (not the manifest'; need "$out" 'no published builds'
+out="$(mbinst --dry-run --matchbox-branch feature/x --matchbox-from-source 2>&1)"; need "$out" 'built from source (cargo build --release --features bif-tui)'; need "$out" 'its version may differ'
+out="$(MOCK_GIT_FAIL=1 MOCK_API=500 mbinst --dry-run 2>&1)"; need "$out" 'version-latest.properties would be used (with a warning)'
+# the full install passes the branch options to the stages (the binary stage reads the branch from the environment)
+mkdir -p "$tmp/all2"; printf '#!/usr/bin/env bash\necho "$* branch=${BXRIG_MATCHBOX_BRANCH:-}" >> "$ALL_LOG"\n' > "$tmp/all2/stage.sh"; : > "$tmp/all2/log"
+mbrun env ALL_LOG="$tmp/all2/log" BXRIG_ALL_SCRIPT="$tmp/all2/stage.sh" bash "$mbrepo/bootstrap/install.sh" --yes --matchbox-branch feature/x --matchbox-from-source >/dev/null 2>&1 || { echo 'FAIL: full install with a branch' >&2; exit 1; }
+need "$(cat "$tmp/all2/log")" 'toolchains --yes --matchbox-from-source --matchbox-branch feature/x branch=feature/x'; need "$(cat "$tmp/all2/log")" 'binary --yes branch=feature/x'
+echo 'bootstrap MatchBox head tests passed'
