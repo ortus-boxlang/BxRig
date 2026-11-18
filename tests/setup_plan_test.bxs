@@ -2,7 +2,7 @@
 testkit = new lib.Check( "setup plan" );
 plan = new bxrig.SetupPlan();
 function facts( over = {} ) {
-	f = { isRoot: false, hasSudo: true, kwinVersion: "6.6.2", desktop: "KDE", sessionType: "wayland", installed: { git: true, "python-dbus": true, "python-gobject": true, "qt6-tools": true }, hyprkwinInstalled: false, workDir: "/tmp/hk", os: "cachyos", arch: "x86_64", hasPacman: true, hyprlandAdded: [], bluetoothEnabled: true };
+	f = { isRoot: false, hasSudo: true, kwinVersion: "6.6.2", desktop: "KDE", sessionType: "wayland", installed: { git: true, "python-dbus": true, "python-gobject": true, "qt6-tools": true, swayidle: true }, hyprkwinInstalled: false, workDir: "/tmp/hk", os: "cachyos", arch: "x86_64", hasPacman: true, hyprlandAdded: [], bluetoothEnabled: true };
 	for ( k in over ) f[k] = over[k];
 	return f;
 }
@@ -18,7 +18,7 @@ testkit.check( "install runs tools/install.sh inside the checkout, as the user (
 testkit.check( "keys stay off by default and the notes say how to enable them", find( "--keys", p.notes.toList( " " ) ) > 0 && find( "Log out", p.notes.toList( " " ) ) > 0 );
 
 p = plan.plasma( facts( { installed: { git: true } } ), {} );
-testkit.check( "missing packages: one sudo pacman step first", ids( p ) == "packages,fetch,install" && p.steps[1].commands[1].toList( " " ) == "sudo pacman -S --needed --noconfirm python-dbus python-gobject qt6-tools" );
+testkit.check( "missing packages: one sudo pacman step first", ids( p ) == "packages,fetch,install" && p.steps[1].commands[1].toList( " " ) == "sudo pacman -S --needed --noconfirm python-dbus python-gobject qt6-tools swayidle" );
 p = plan.plasma( facts( { installed: {}, hasSudo: false } ), {} );
 testkit.check( "missing packages without sudo is an error", p.errors.len() == 1 && p.steps.len() == 0 );
 
@@ -64,7 +64,7 @@ part = {}; part["hyprland"] = true; part["ghostty"] = true;
 p = plan.hyprland( facts( { installed: part } ), {} );
 testkit.check( "hyprland: only the missing packages are installed", p.added.len() == pk.len() - 2 && !arrayFind( p.added, "hyprland" ) && !arrayFind( p.added, "ghostty" ) && arrayFind( p.added, "noctalia" ) > 0 );
 // plasma: the Bluetooth service on this path too
-plHave = { git: true, "python-dbus": true, "python-gobject": true, "qt6-tools": true };
+plHave = { git: true, "python-dbus": true, "python-gobject": true, "qt6-tools": true, swayidle: true };
 p = plan.plasma( facts( { bluetoothEnabled: false } ), {} );
 testkit.check( "plasma: service off and bluez missing means bluez packages, then the service step, then the checkout", ids( p ) == "packages,bluetooth,fetch,install" && arrayFind( p.steps[1].commands[1], "bluez" ) > 0 && arrayFind( p.steps[1].commands[1], "bluez-utils" ) > 0 && p.steps[2].kind == "systemd" && p.steps[2].commands[1].toList( " " ) == "sudo systemctl enable --now bluetooth.service" );
 p = plan.plasma( facts( { bluetoothEnabled: true } ), {} );
@@ -72,7 +72,7 @@ testkit.check( "plasma: an enabled service gives no Bluetooth step and no bluez 
 nf = facts( {} ); nf.delete( "bluetoothEnabled" );
 p = plan.plasma( nf, {} );
 testkit.check( "plasma: facts without bluetoothEnabled are read as off", ids( p ) == "packages,bluetooth,fetch,install" );
-p = plan.plasma( facts( { installed: { git: true, "python-dbus": true, "python-gobject": true, "qt6-tools": true, bluez: true, "bluez-utils": true }, bluetoothEnabled: false } ), {} );
+p = plan.plasma( facts( { installed: { git: true, "python-dbus": true, "python-gobject": true, "qt6-tools": true, swayidle: true, bluez: true, "bluez-utils": true }, bluetoothEnabled: false } ), {} );
 testkit.check( "plasma: bluez present and service off gives only the service step first", ids( p ) == "bluetooth,fetch,install" );
 p = plan.plasma( facts( { bluetoothEnabled: false, hyprkwinInstalled: true } ), { undoKeys: true } );
 testkit.check( "plasma --undo-keys never enables the service", ids( p ) == "fetch,keys-restore" );

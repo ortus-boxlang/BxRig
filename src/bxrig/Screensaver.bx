@@ -4,13 +4,16 @@
 //   screensaver set KEY=VALUE... [--yes]          screensaver=SECONDS lock=SECONDS (0 for never) effects=NAME,NAME
 //   screensaver logo text TEXT|image PATH|reset [--yes]   what the logo effect draws (DOS Rebel text, or a picture)
 //   screensaver effects [--json]                  the effects and which take turns
-//   screensaver start [--effect=NAME]             now, on every monitor (Hyprland): a full-screen terminal per monitor
-//   screensaver stop                              closes them (Noctalia runs this when you come back)
+//   screensaver start [--effect=NAME] [--idle]    now, on every monitor: a full-screen terminal per monitor (--idle: started by the idle
+//                                                 watcher, so it does nothing while something holds the screen awake on Plasma)
+//   screensaver stop                              closes them (the idle watcher runs this when you come back)
 //   screensaver preview [EFFECT]                  in this terminal
 //   screensaver run [--effect=NAME]               the screensaver itself, in this terminal (what each window runs)
 // Any key, click, scroll or mouse move closes it. The effects take turns, a minute each, from a random first one.
-// Settings: ScreensaverConfig (~/.config/bxrig/screensaver.json); a change is applied to a running Noctalia (`noctalia msg config-set`), and
-// a new Noctalia starter config carries it. Exit: 0 ok, 2 bad usage or a change without --yes, 4 precondition (no Hyprland or no terminal).
+// Two desktops: Hyprland (Noctalia's idle behaviors start it and lock; windows through hyprctl) and Plasma (ScreensaverPlasma: swayidle,
+// a KWin script, Plasma's own lock). Settings: ScreensaverConfig (~/.config/bxrig/screensaver.json); a change is applied to a running
+// Noctalia (`noctalia msg config-set`) and to Plasma (the idle service and kscreenlockerrc), and a new Noctalia starter config carries it.
+// Exit: 0 ok, 2 bad usage or a change without --yes, 4 precondition (neither desktop, or no terminal).
 class Screensaver {
 	function init( cli, runner = "" ) {
 		variables.cli = arguments.cli;
@@ -18,6 +21,7 @@ class Screensaver {
 		variables.proc = new bxrig.util.Proc( arguments.runner );
 		variables.conf = new bxrig.ScreensaverConfig();
 		variables.fx = new bxrig.ScreensaverEffects();
+		variables.plasma = new bxrig.ScreensaverPlasma( variables.proc );
 		return this;
 	}
 
@@ -32,7 +36,8 @@ class Screensaver {
 		var c = variables.conf.read();
 		return {
 			enabled: c.enabled, screensaver: c.screensaver, lock: c.lock, effects: c.effects, logo: c.logo,
-			running: windows().len(), file: variables.conf.file(), saved: fileExists( variables.conf.file() ), noctalia: variables.proc.has( "noctalia" )
+			running: windows().len() + plasmaWindows().len(), file: variables.conf.file(), saved: fileExists( variables.conf.file() ),
+			noctalia: variables.proc.has( "noctalia" ), desktop: desktop()
 		};
 	}
 
@@ -52,7 +57,8 @@ class Screensaver {
 			"effects      " & d.effects.toList( ", " ),
 			"logo         " & logoText( d.logo )
 		];
-		if ( !d.noctalia ) lines.append( "note: Noctalia is not installed; start it with `bxrig screensaver start` or from the menu" );
+		if ( d.desktop == "plasma" && !variables.proc.has( "swayidle" ) ) lines.append( "note: Plasma needs swayidle to start it on idle: sudo pacman -S swayidle" );
+		else if ( d.desktop == "" && !d.noctalia ) lines.append( "note: neither Hyprland with Noctalia nor Plasma is running here; try it with bxrig screensaver preview" );
 		return variables.out.say( "ok", d, arguments.asJson, lines );
 	}
 
@@ -76,8 +82,11 @@ class Screensaver {
 		if ( arguments.dry || !arguments.yes ) return new bxrig.util.Mutation( variables.out ).show( arguments.title, data, arguments.asJson, arguments.dry );
 		variables.conf.write( arguments.c );
 		data.noctalia = applyNoctalia( arguments.c );
-		var lines = [ arguments.title, "Noctalia: " & data.noctalia ];
+		var pl = variables.plasma.apply( arguments.c );
+		data.plasma = pl.status;
+		var lines = [ arguments.title, "Noctalia: " & data.noctalia & "  Plasma: " & data.plasma ];
 		if ( data.noctalia == "not running" ) lines.append( "note: Noctalia did not answer; it reads the change the next time `bxrig setup` writes its config, or run this again in your Hyprland session" );
+		for ( var n in pl.notes ) lines.append( "note: " & n );
 		return variables.out.say( "ok", data, arguments.asJson, lines );
 	}
 
@@ -142,6 +151,18 @@ class Screensaver {
 		return change( c, arguments.yes, arguments.dry, arguments.asJson, "screensaver logo: " & logoText( c.logo ) );
 	}
 
+	// ---- desktops ----
+	// "hyprland", "plasma" or "" (neither): Hyprland when its session is on or hyprctl answers outside Plasma.
+	function desktop() {
+		var d = new bxrig.util.Desktop();
+		if ( d.inHyprland() ) return "hyprland";
+		if ( d.inPlasma() ) return "plasma";
+		return variables.proc.has( "hyprctl" ) ? "hyprland" : "";
+	}
+
+	// The screensaver terminals on Plasma (pids).
+	function plasmaWindows() { return desktop() == "plasma" ? variables.plasma.pids( windowClass() ) : []; }
+
 	// ---- windows (Hyprland) ----
 	// The screensaver windows open now: [ { address, pid, monitor } ].
 	function windows() {
@@ -179,8 +200,8 @@ class Screensaver {
 
 	function shellQuote( s ) { return "'" & replace( arguments.s, "'", "'\''", "all" ) & "'"; }
 
-	// The command line of one screensaver window: the terminal with our class, running `bxrig screensaver run`.
-	function windowCommand( term, effect = "" ) {
+	// The argv of one screensaver window: the terminal with our class, running `bxrig screensaver run`.
+	function windowArgv( term, effect = "" ) {
 		var argv = [ arguments.term.cmd ];
 		for ( var a in arguments.term.classArgs ) argv.append( a );
 		for ( var a in arguments.term.execFlag ) argv.append( a );
@@ -188,12 +209,17 @@ class Screensaver {
 		argv.append( "screensaver" );
 		argv.append( "run" );
 		if ( len( arguments.effect ) ) argv.append( "--effect=" & arguments.effect );
-		return argv.map( function( a ) { return shellQuote( a ); } ).toList( " " );
+		return argv;
 	}
 
-	function startCmd( effect, asJson ) {
+	// The same as one shell command line (what hyprctl exec takes).
+	function windowCommand( term, effect = "" ) { return windowArgv( arguments.term, arguments.effect ).map( function( a ) { return shellQuote( a ); } ).toList( " " ); }
+
+	function startCmd( effect, idle, asJson ) {
 		if ( len( arguments.effect ) && !variables.fx.known( arguments.effect ) ) return variables.out.usage( "Unknown effect " & arguments.effect & " (use " & variables.fx.names().toList( ", " ) & ")", arguments.asJson );
-		if ( !variables.proc.has( "hyprctl" ) ) return variables.out.precondition( "The screensaver opens on Hyprland (hyprctl not found); try it here with bxrig screensaver preview", arguments.asJson );
+		var where = desktop();
+		if ( where == "plasma" ) return startPlasma( arguments.effect, arguments.idle, arguments.asJson );
+		if ( where == "" ) return variables.out.precondition( "The screensaver opens on Hyprland or Plasma (neither is running here); try it with bxrig screensaver preview", arguments.asJson );
 		var open = windows();
 		if ( open.len() ) return variables.out.say( "ok", { started: 0, running: open.len() }, arguments.asJson, [ "the screensaver is already running" ] );
 		var term = terminal();
@@ -219,10 +245,21 @@ class Screensaver {
 		return variables.out.say( "ok", { started: started, monitors: mons, terminal: term.id, steps: steps }, arguments.asJson, [ "screensaver on " & started & " screen" & ( started == 1 ? "" : "s" ) ] );
 	}
 
+	function startPlasma( effect, idle, asJson ) {
+		if ( arguments.idle && variables.plasma.inhibited() ) return variables.out.say( "ok", { started: 0, inhibited: true }, arguments.asJson, [ "something is keeping the screen awake; no screensaver" ] );
+		var open = plasmaWindows();
+		if ( open.len() ) return variables.out.say( "ok", { started: 0, running: open.len() }, arguments.asJson, [ "the screensaver is already running" ] );
+		var term = terminal();
+		if ( structIsEmpty( term ) ) return variables.out.precondition( "No terminal that can name its window is installed (ghostty, kitty, alacritty or foot)", arguments.asJson );
+		var r = variables.plasma.start( windowArgv( term, arguments.effect ) );
+		if ( len( r.error ) || !r.started ) return variables.out.failed( len( r.error ) ? r.error : "the screensaver windows did not start", arguments.asJson );
+		return variables.out.say( "ok", { started: r.started, screens: r.screens, terminal: term.id, desktop: "plasma" }, arguments.asJson, [ "screensaver on " & r.started & " screen" & ( r.started == 1 ? "" : "s" ) ] );
+	}
+
 	function stopCmd( asJson ) {
-		var open = windows();
 		var closed = 0;
-		for ( var w in open ) if ( w.pid > 0 && variables.proc.exec( [ "kill", "" & w.pid ], 10 ).exitCode == 0 ) closed++;
+		for ( var w in windows() ) if ( w.pid > 0 && variables.proc.exec( [ "kill", "" & w.pid ], 10 ).exitCode == 0 ) closed++;
+		for ( var p in plasmaWindows() ) if ( variables.proc.exec( [ "kill", p ], 10 ).exitCode == 0 ) closed++;
 		return variables.out.say( "ok", { closed: closed }, arguments.asJson, closed ? [ "screensaver closed" ] : [] );
 	}
 
@@ -293,7 +330,7 @@ class Screensaver {
 		if ( ( verb == "on" || verb == "off" ) && !rest.len() ) return onOff( verb == "on", arguments.yes, arguments.dry, arguments.asJson );
 		if ( verb == "set" ) return setCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
 		if ( verb == "logo" ) return logoCmd( rest, arguments.yes, arguments.dry, arguments.asJson );
-		if ( verb == "start" && !rest.len() ) return startCmd( effect, arguments.asJson );
+		if ( verb == "start" && !rest.len() ) return startCmd( effect, arguments.opts.idle ?: false, arguments.asJson );
 		if ( verb == "stop" && !rest.len() ) return stopCmd( arguments.asJson );
 		if ( verb == "preview" && rest.len() <= 1 ) return runLoop( rest.len() ? lCase( rest[ 1 ] ) : effect, arguments.asJson );
 		if ( verb == "run" && !rest.len() ) return runLoop( effect, arguments.asJson );

@@ -79,5 +79,17 @@ cmd = ss.windowCommand( { cmd: "kitty", classArgs: [ "--class", "bxrig-screensav
 testkit.check( "each window runs bxrig screensaver run in a terminal with our class", reFind( "^'kitty' '--class' 'bxrig-screensaver' '[^']+' 'screensaver' 'run' '--effect=clock'$", cmd ) );
 testkit.check( "quotes in a path are kept", ss.shellQuote( "it's" ) == "'it'\''s'" );
 
+// ---- Plasma ----
+pl = new bxrig.ScreensaverPlasma( new bxrig.util.Proc(), env );
+testkit.check( "Plasma lock: whole minutes, rounded up; 0 is no lock", pl.lockMinutes( 300 ) == 5 && pl.lockMinutes( 150 ) == 3 && pl.lockMinutes( 1 ) == 1 && pl.lockMinutes( 0 ) == 0 );
+lc = pl.lockCommands( { lock: 300 } ).map( function( c ) { return c.toList( " " ); } );
+testkit.check( "Plasma lock: Autolock on and Timeout in kscreenlockerrc", lc.len() == 2 && lc[ 1 ] == "kwriteconfig6 --file kscreenlockerrc --group Daemon --key Autolock --type bool true" && lc[ 2 ] == "kwriteconfig6 --file kscreenlockerrc --group Daemon --key Timeout 5" );
+testkit.check( "Plasma lock: lock=0 turns Autolock off", pl.lockCommands( { lock: 0 } ).len() == 1 && pl.lockCommands( { lock: 0 } )[ 1 ][ 10 ] == "false" );
+unit = pl.unitText( { screensaver: 150 } );
+testkit.check( "Plasma idle: swayidle starts it after the timeout and stops it on return", reFind( 'ExecStart=swayidle -w timeout 150 "[^"]+ screensaver start --idle" resume "[^"]+ screensaver stop"', unit ) && find( "WantedBy=graphical-session.target", unit ) );
+testkit.check( "Plasma idle: the unit lives in the user's systemd folder", pl.unitPath() == env.xdgConfig( "systemd/user/bxrig-screensaver-idle.service" ) );
+js = new bxrig.TemplateData().text( "kwin-screensaver.js" );
+testkit.check( "the KWin script places each window on a screen of its own, full screen", find( "workspace.windowAdded.connect(place)", js ) && find( "sendClientToScreen", js ) && find( "w.fullScreen = true", js ) && find( '"bxrig-screensaver"', js ) );
+
 directoryDelete( home, true );
 testkit.done( "screensaver tests passed" );

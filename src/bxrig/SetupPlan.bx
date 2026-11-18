@@ -28,9 +28,10 @@ class SetupPlan {
 		return { hyprkwin: { repo: "https://github.com/DGBooth/HyprKwin.git", tag: "v1.2.0", commit: "31abb63939111a811d1e356c693cda5dbe54ed69" } };
 	}
 
-	// Packages HyprKwin's helper scripts need (python-dbus, qdbus6 from qt6-tools, PyGObject for hyprkwinctl) and git for the checkout.
+	// Packages HyprKwin's helper scripts need (python-dbus, qdbus6 from qt6-tools, PyGObject for hyprkwinctl), git for the checkout, and
+	// swayidle, which notices idle for the screensaver on Plasma.
 	function plasmaDeps() {
-		return [ "git", "python-dbus", "python-gobject", "qt6-tools" ];
+		return [ "git", "python-dbus", "python-gobject", "qt6-tools", "swayidle" ];
 	}
 
 	// Plasma versions HyprKwin is tested on: 6.6 and 6.8; 6.7 should work but is untested.

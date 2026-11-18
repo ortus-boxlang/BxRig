@@ -454,7 +454,7 @@ class {
 				// The screensaver: terminal art on every monitor after a while idle, then the lock (Noctalia's idle behaviors). See bxrig.Screensaver.
 				ssWords = [];
 				for ( ssi = 2; ssi <= p.len(); ssi++ ) ssWords.append( p[ ssi ] );
-				CLIExit( new bxrig.Screensaver( cli ).run( ssWords, { effect: args.options.effect ?: "" }, structKeyExists( args.options, "dry-run" ), structKeyExists( args.options, "yes" ), asJson ) );
+				CLIExit( new bxrig.Screensaver( cli ).run( ssWords, { effect: args.options.effect ?: "", idle: structKeyExists( args.options, "idle" ) }, structKeyExists( args.options, "dry-run" ), structKeyExists( args.options, "yes" ), asJson ) );
 				break;
 			case "toggle":
 			case "dns":

@@ -64,6 +64,60 @@ grep -q '^kill 424242$' "$LOG" || fail 'stop kills the screensaver window only'
 rm -f "$LOG.open"
 run "$binary" screensaver stop --json | jq -e '.data.closed == 0' >/dev/null || fail 'stop with nothing open'
 
+# ---- Plasma: swayidle as a user service, Plasma's own lock, a KWin script that places one window per screen ----
+prun() { env HOME="$tmp" BXRIG_SELF="$binary" BXRIG_DESKTOP=KDE PATH="$tmp/pbin:/usr/bin:/bin" "$@"; }
+mkdir -p "$tmp/pbin"; : > "$LOG"
+pstub() { printf '#!/usr/bin/env bash\n%s\n' "$2" > "$tmp/pbin/$1"; chmod +x "$tmp/pbin/$1"; }
+pstub kwriteconfig6 'echo "kwriteconfig6 $*" >> "$LOG"'
+pstub systemctl 'echo "systemctl $*" >> "$LOG"'
+pstub qdbus6 'echo "qdbus6 $*" >> "$LOG"
+case "$*" in
+	*HasInhibit*) [[ -f "$LOG.inhibit" ]] && echo true || echo false ;;
+	*isScriptLoaded*) echo false ;;
+	*loadScript*) echo 0 ;;
+esac'
+pstub kscreen-doctor 'echo "{\"outputs\":[{\"name\":\"DP-1\",\"enabled\":true},{\"name\":\"HDMI-1\",\"enabled\":false},{\"name\":\"eDP-1\",\"enabled\":true}]}"'
+pstub kitty 'echo "kitty $*" >> "$LOG"'
+pstub pgrep '[[ -f "$LOG.open" ]] && echo 5151 || exit 1'
+pstub kill 'echo "kill $*" >> "$LOG"'
+# without swayidle the change is saved, the lock is set, and the missing tool is named
+prun "$binary" screensaver set screensaver=150 lock=300 --yes --json | jq -e '.data.plasma == "needs swayidle"' >/dev/null || fail 'Plasma without swayidle'
+grep -q "kwriteconfig6 --file kscreenlockerrc --group Daemon --key Autolock --type bool true" "$LOG" || fail 'Plasma lock on'
+grep -q "kwriteconfig6 --file kscreenlockerrc --group Daemon --key Timeout 5" "$LOG" || fail 'Plasma lock after 5 minutes'
+prun "$binary" screensaver | grep -q 'sudo pacman -S swayidle' || fail 'status names swayidle on Plasma'
+# with swayidle the idle service is written and enabled
+pstub swayidle 'exit 0'
+prun "$binary" screensaver set screensaver=300 lock=600 --yes --json | jq -e '.data.plasma == "applied"' >/dev/null || fail 'Plasma applied'
+unit="$tmp/.config/systemd/user/bxrig-screensaver-idle.service"
+grep -q "ExecStart=swayidle -w timeout 300 \"$binary screensaver start --idle\" resume \"$binary screensaver stop\"" "$unit" || fail "the idle service: $(cat "$unit" 2>/dev/null)"
+grep -q "systemctl --user enable --now bxrig-screensaver-idle.service" "$LOG" || fail 'the idle service is enabled'
+grep -q "systemctl --user restart bxrig-screensaver-idle.service" "$LOG" || fail 'the idle service picks up a new timeout'
+grep -q "Timeout 10" "$LOG" || fail 'Plasma lock after 10 minutes'
+: > "$LOG"; prun "$binary" screensaver off --yes >/dev/null || fail 'off on Plasma'
+grep -q "systemctl --user disable --now bxrig-screensaver-idle.service" "$LOG" || fail 'off disables the idle service'
+: > "$LOG"; prun "$binary" screensaver set lock=0 --yes >/dev/null || fail 'lock=0 on Plasma'
+grep -q "Autolock --type bool false" "$LOG" || fail 'lock=0 turns Plasma auto lock off'
+! grep -q "Timeout" "$LOG" || fail 'lock=0 writes no timeout'
+prun "$binary" screensaver on --yes >/dev/null
+# start: the KWin script is loaded, one terminal per enabled screen
+: > "$LOG"
+prun "$binary" screensaver start --effect=stars --json | jq -e '.ok and .data.started == 2 and .data.screens == 2 and .data.desktop == "plasma"' >/dev/null || fail "Plasma start: $(cat "$LOG")"
+grep -q "qdbus6 org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript $tmp/.local/share/bxrig/kwin/kwin-screensaver.js bxrig-screensaver" "$LOG" || fail 'the KWin script is loaded'
+grep -q 'workspace.windowAdded.connect(place)' "$tmp/.local/share/bxrig/kwin/kwin-screensaver.js" || fail 'the KWin script is written'
+for _ in 1 2 3 4 5 6 7 8 9 10; do [[ "$(grep -c '^kitty --class bxrig-screensaver' "$LOG")" == 2 ]] && break; sleep 0.2; done
+[[ "$(grep -c "^kitty --class bxrig-screensaver $binary screensaver run --effect=stars" "$LOG")" == 2 ]] || fail "two terminals: $(cat "$LOG")"
+# from idle, while something holds the screen awake: nothing
+touch "$LOG.inhibit"; : > "$LOG"
+prun "$binary" screensaver start --idle --json | jq -e '.data.inhibited and .data.started == 0' >/dev/null || fail 'idle start while inhibited'
+! grep -q '^kitty' "$LOG" || fail 'no terminal while inhibited'
+rm -f "$LOG.inhibit"
+# running: start does nothing more, stop kills the terminals
+touch "$LOG.open"
+prun "$binary" screensaver start --json | jq -e '.data.started == 0 and .data.running == 1' >/dev/null || fail 'Plasma start twice'
+prun "$binary" screensaver stop --json | jq -e '.data.closed == 1' >/dev/null || fail 'Plasma stop'
+grep -q '^kill 5151$' "$LOG" || fail 'Plasma stop kills the terminal'
+rm -f "$LOG.open"
+
 # hypridle is gone: Noctalia's idle behaviors replace it
 ! grep -q 'hypridle' "$root/templates/hyprland.lua" || fail 'hyprland.lua no longer starts hypridle'
 
