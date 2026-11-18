@@ -12,7 +12,7 @@ BxRig keeps one shortcut table (`src/bxrig/Shortcuts.bx`) and renders it for xre
 
 | | Traditional | Mac |
 |---|---|---|
-| Idea | Omarchy-like keys | Cmd-style keys for apps |
+| Idea | Classic Super-key tiling keys | Cmd-style keys for apps |
 | `Super+C V X A` | copy, paste, cut, select all (terminal aware) | same |
 | `Super+Z S F T N O P R W L B I U` and `Super+,` | plain Super keys | send the Ctrl version (Undo, Save, Find, ...) |
 | Browser | `Super+B`, `Super+Shift+Return` | `Super+Shift+Return` |

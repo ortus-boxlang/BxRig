@@ -1,7 +1,7 @@
 # Shortcut decisions (owner, merged 2026-11-15)
 
-Source: the owner's "Shortcut styles" page (Omarchy 4.5 vs BxRig Traditional vs BxRig Mac), `decisions` collection, 19 rows set by the owner (r1 to r53). Rows the owner did not touch follow the proposal on that page. Ids below (r1, x1, ...) are the page's row ids.
-Two styles: **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys for apps; on a PC keyboard the Alt key acts as Cmd and the Win key as Option, an Apple keyboard is exempt). Same key assignments in both styles unless a row says otherwise. Keys in this file are what Hyprland sees after the optional Alt/Win swap.
+Source: the owner's "Shortcut styles" page (BxRig Traditional vs BxRig Mac), `decisions` collection, 19 rows set by the owner (r1 to r53). Rows the owner did not touch follow the proposal on that page. Ids below (r1, x1, ...) are the page's row ids.
+Two styles: **Traditional** (classic Super-key tiling keys) and **Mac** (Cmd-style keys for apps; on a PC keyboard the Alt key acts as Cmd and the Win key as Option, an Apple keyboard is exempt). Same key assignments in both styles unless a row says otherwise. Keys in this file are what Hyprland sees after the optional Alt/Win swap.
 
 ## Set by the owner
 
@@ -21,7 +21,7 @@ Two styles: **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys for 
 | r31 | Full screen desktop | `Super+Ctrl+Alt+F` | same | Toggles the Noctalia bar |
 | r33 | Notification act, dismiss one, history, keyboard control | dropped | dropped | |
 | r34 | Silence notifications (DND) | `Super+Ctrl+Alt+Comma` | same | Replaces `Super+Alt+N` |
-| r36 | Night light | no key (menu only) | no key (menu only) | Omarchy has none; `Super+Alt+Shift+N` goes |
+| r36 | Night light | no key (menu only) | no key (menu only) | `Super+Alt+Shift+N` goes |
 | r39 | Close window | `Super+W`, `Super+Q` | `Super+Q` | `Super+W` is the Close tab remap in Mac mode |
 | r43 | Float or tile | `Super+T` | `Super+Alt+T` | `Super+T` is New tab in Mac mode |
 | r52 | Quake console | `Super+Shift+Grave` | `Super+Shift+Grave` | Built in the second round (`window quake`); sending a window there is `Super+Ctrl+Grave` |
@@ -30,10 +30,10 @@ Two styles: **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys for 
 | w2 | Snap to the left / right half | `Super+Alt+Left` / `Right` | same | 2026-11-16, `window snap left\|right` |
 | w3 | Next layout on the workspace | `Super+Shift+J` | same | 2026-11-16, HyprKwin's key on Plasma |
 | w4 | Narrower / wider column | `Super+Minus` / `Super+Equal` | same | 2026-11-16, HyprKwin's keys on Plasma (`Meta+-` / `Meta+=`) |
-| w5 | Previous / next workspace; take the window along | `Super+Ctrl+Left` / `Right`; with Alt | same | 2026-11-16; the window key moved from Shift to Alt on 2026-11-17 (Shift is Omarchy's monitor key) |
-| w6 | Snap to the top / bottom half; center a floating window | `Super+Alt+Up` / `Down`; `Super+Alt+Shift+C` | same | 2026-11-17 (Omarchy uses `Super+Alt+arrows` for groups, BxRig for snapping) |
-| w7 | Window to the monitor in a direction; workspace to it; focus next / previous monitor | `Super+Ctrl+Shift+arrows`; `Super+Alt+Shift+arrows`; `Ctrl+Alt+Tab` / with Shift | same | 2026-11-17, Omarchy's keys |
-| w8 | Back to the last workspace | `Super+Ctrl+Tab` | same | 2026-11-17, Omarchy's key (`previous_per_monitor`). No silent send to a workspace (owner) |
+| w5 | Previous / next workspace; take the window along | `Super+Ctrl+Left` / `Right`; with Alt | same | 2026-11-16; the window key moved from Shift to Alt on 2026-11-17 (Shift is the monitor key, see w7) |
+| w6 | Snap to the top / bottom half; center a floating window | `Super+Alt+Up` / `Down`; `Super+Alt+Shift+C` | same | 2026-11-17 |
+| w7 | Window to the monitor in a direction; workspace to it; focus next / previous monitor | `Super+Ctrl+Shift+arrows`; `Super+Alt+Shift+arrows`; `Ctrl+Alt+Tab` / with Shift | same | 2026-11-17 |
+| w8 | Back to the last workspace | `Super+Ctrl+Tab` | same | 2026-11-17 (`previous_per_monitor`). No silent send to a workspace (owner) |
 
 ## Not touched by the owner: the page proposal applies
 
@@ -46,7 +46,7 @@ Two styles: **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys for 
 | r44 | Full screen | `Super+F` | `Super+Ctrl+F` | `Super+F` is Find in Mac mode |
 | r71 | Browser; private | `Super+B`, `Super+Shift+Return`; private `Super+Alt+Shift+B` | `Super+Shift+Return`; private `Super+Shift+N` | `Super+B` is Bold in Mac mode. The Mac private key changed in the second round (Cmd+Shift+N) |
 | r72 | File manager | `Super+Shift+F`; in cwd `Super+Alt+Shift+F` | `Super+E`; in cwd `Super+Alt+Shift+F` | in cwd is `files here` (second round) |
-| r76 | Log out | System menu | `Super+Shift+Q` | Omarchy uses it for the calculator. Kept on both styles (Plasma needs it) |
+| r76 | Log out | System menu | `Super+Shift+Q` | Kept on both styles (Plasma needs it) |
 | r77, r78 | Force quit, Overview | `Super+Alt+Escape`, `Super+Ctrl+Up` | same | |
 | r81 | Noctalia settings window | `Super+Ctrl+Comma` | `Super+Ctrl+Comma` | `Super+Comma` is Preferences in Mac mode |
 | x1, r18 | Noctalia control center panel | `Super+Alt+C`, `Super+Ctrl+A/B/N/P/D` | same | Was `Super+S` (Save in Mac mode); the five panel keys open the same panel |
@@ -62,9 +62,9 @@ Two styles: **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys for 
 
 - Panel keys `Super+Ctrl+A/B/N/P/D` (r18) all open the Noctalia control center panel, the same action as `Super+Alt+C`. No panel ids are needed.
 - r25 Mac input language is `Super+Alt+I` and `Super+Alt+Shift+I` (confirmed).
-- r39 close window: `Super+Q` closes the window in both styles. Traditional also has `Super+W` (Omarchy 4.5). In the Mac style `Super+W` stays the Ctrl+W remap (close tab, which closes the window in most apps).
+- r39 close window: `Super+Q` closes the window in both styles. Traditional also has `Super+W`. In the Mac style `Super+W` stays the Ctrl+W remap (close tab, which closes the window in most apps).
 - r10 `Print` is the region screenshot. Traditional has `Print` only; the Mac style also has `Super+Shift+3/4/5`.
-- r31 `Super+Ctrl+Alt+F` ("full screen desktop", Omarchy's shell toggle that hides bar and dock) toggles the Noctalia bar in both styles (`appearance bar toggle`). The Mac full screen is `Super+Ctrl+F`, unchanged.
+- r31 `Super+Ctrl+Alt+F` ("full screen desktop", a shell toggle that hides the bar) toggles the Noctalia bar in both styles (`appearance bar toggle`). The Mac full screen is `Super+Ctrl+F`, unchanged.
 - Workspace moves: Traditional keeps `Super+Shift+1..0`. In the Mac style `Super+Shift+3/4/5` are screenshots, so moving a window to workspaces 3, 4 and 5 is `Super+Alt+Shift+3/4/5` (1, 2 and 6 to 0 stay `Super+Shift+N`). `keys conflicts` is clean in both styles.
 - xremap is always installed (copy, paste, cut and select all are remaps in both styles); the wizard no longer ties it to the Mac keys question.
 - `Alt+Space` (dictation) is the logical Alt key. With the Mac swap on a PC keyboard it is physically the Win key, the same place as Option on a Mac.
@@ -72,25 +72,23 @@ Two styles: **Traditional** (Omarchy-like keys) and **Mac** (Cmd-style keys for 
 
 ## Owner request: toggle the dock (2026-11-15)
 
-`Super+Alt+D` shows or hides the dock in both styles (macOS Cmd+Option+D; with the Alt/Win swap on a PC keyboard it lands on the same physical keys). It runs `bxrig appearance dock toggle`, which is Noctalia's `dock-toggle` IPC command. No Omarchy 4.5 key uses `Super+Alt+D` (Omarchy has `Super+Ctrl+Alt+D` for the calendar), and `keys conflicts` is clean. It is also in the runner under Trigger > Toggle. macOS's "focus the dock" key (Ctrl+F3) is not possible: Noctalia has no IPC command to focus its dock.
+`Super+Alt+D` shows or hides the dock in both styles (macOS Cmd+Option+D; with the Alt/Win swap on a PC keyboard it lands on the same physical keys). It runs `bxrig appearance dock toggle`, which is Noctalia's `dock-toggle` IPC command. `keys conflicts` is clean. It is also in the runner under Trigger > Toggle. macOS's "focus the dock" key (Ctrl+F3) is not possible: Noctalia has no IPC command to focus its dock.
 
 ## Toggle top bar (2026-11-17)
 
-`Super+Shift+Space` shows or hides the top bar in both styles (Omarchy 4.5 uses the same key for "Toggle top bar"). It runs `bxrig appearance bar toggle`, the same command as `Super+Ctrl+Alt+F` (r31, "full screen desktop"), so the bar now has two keys. Row id `bar-toggle`, group Window; in the runner under Trigger > Toggle > "Top bar: show or hide". The key is free: `Super+Space` is the runner (r1), `Super+Alt+Space` launches apps (r2), `Super+Ctrl+Shift+Space` is the theme switcher, and `keys conflicts` is clean in both styles.
+`Super+Shift+Space` shows or hides the top bar in both styles. It runs `bxrig appearance bar toggle`, the same command as `Super+Ctrl+Alt+F` (r31, "full screen desktop"), so the bar now has two keys. Row id `bar-toggle`, group Window; in the runner under Trigger > Toggle > "Top bar: show or hide". The key is free: `Super+Space` is the runner (r1), `Super+Alt+Space` launches apps (r2), `Super+Ctrl+Shift+Space` is the theme switcher, and `keys conflicts` is clean in both styles.
 
 ## Second round: the shortcuts that were missing (owner request, 2026-11-15)
 
-Omarchy 4.5.0 keys were read again from `default/hypr/bindings/{tiling,utilities,media,clipboard,applications}.lua` at the tag `v4.5.0`.
-
-| Action | Omarchy 4.5 | Traditional | Mac | Command | Choice |
-|---|---|---|---|---|---|
-| Private browser window | `Super+Alt+Shift+B` | `Super+Alt+Shift+B` | `Super+Shift+N` | `browser private` | Mac is Cmd+Shift+N as in Safari and Chrome; it does not clash (the Mac `Super+N` remap needs no Shift) |
-| File manager in the current directory | `Super+Alt+Shift+F` | `Super+Alt+Shift+F` | `Super+Alt+Shift+F` | `files here` | Same key in both styles, no Mac equivalent exists |
-| Quake console, show or hide | `Super+Grave` | `Super+Shift+Grave` | `Super+Shift+Grave` | `window quake` | `Super+Grave` stays the AI shell. `Super+Shift+Grave` was reserved for it in r52 and is the nearest free key |
-| Quake console, send the window there | `Super+Shift+Grave` | `Super+Ctrl+Grave` | `Super+Ctrl+Grave` | `window quake send` | Omarchy's key is taken by the toggle above; `Super+Ctrl+Grave` is the next free one |
-| Webcam preview, on or off | none (Omarchy 4.5 only has `Super+Alt+[` and `Super+Alt+]` to resize its overlay) | `Super+Ctrl+Alt+V` | `Super+Ctrl+Alt+V` | `webcam toggle` | The owner asked for Omarchy's key but 4.5 has no toggle key; V for video, next to the `Super+Ctrl+Alt+T/B/W` notice keys. The resize keys are not added |
-| Hardware menu | `Super+Ctrl+H` | `Super+Ctrl+H` | `Super+Ctrl+H` | `menu open hardware` | |
-| Screen recording with audio | `Alt+Print` (stops, or opens the screenrecord menu that offers the audio choices) | `Alt+Print` | `Alt+Print` | `record toggle --audio=desktop` | Omarchy's key picks the audio in a menu; BxRig binds the desktop audio case directly. `--audio=mic` is in the Capture menu |
+| Action | Traditional | Mac | Command | Choice |
+|---|---|---|---|---|
+| Private browser window | `Super+Alt+Shift+B` | `Super+Shift+N` | `browser private` | Mac is Cmd+Shift+N as in Safari and Chrome; it does not clash (the Mac `Super+N` remap needs no Shift) |
+| File manager in the current directory | `Super+Alt+Shift+F` | `Super+Alt+Shift+F` | `files here` | Same key in both styles, no Mac equivalent exists |
+| Quake console, show or hide | `Super+Shift+Grave` | `Super+Shift+Grave` | `window quake` | `Super+Grave` stays the AI shell. `Super+Shift+Grave` was reserved for it in r52 and is the nearest free key |
+| Quake console, send the window there | `Super+Ctrl+Grave` | `Super+Ctrl+Grave` | `window quake send` | `Super+Shift+Grave` is taken by the toggle above; `Super+Ctrl+Grave` is the next free one |
+| Webcam preview, on or off | `Super+Ctrl+Alt+V` | `Super+Ctrl+Alt+V` | `webcam toggle` | V for video, next to the `Super+Ctrl+Alt+T/B/W` notice keys |
+| Hardware menu | `Super+Ctrl+H` | `Super+Ctrl+H` | `menu open hardware` | |
+| Screen recording with audio | `Alt+Print` | `Alt+Print` | `record toggle --audio=desktop` | The desktop audio case is bound directly. `--audio=mic` is in the Capture menu |
 
 Decisions made while building:
 
@@ -98,7 +96,7 @@ Decisions made while building:
 - "Current directory" is the working directory of the focused window's deepest child process (`hyprctl activewindow -j` for the pid, `pgrep -P` down the tree, `/proc/PID/cwd`), else the home folder. The folder opens with `xdg-open`, so the default file manager (`default filemanager`) is used.
 - The quake console is the special workspace `qconsole`. `window quake` toggles it, and starts the default terminal there the first time. `window quake send` moves the focused window onto it, silently.
 - The webcam preview is `mpv` on `/dev/video0` in its own window class `bxrig-webcam`, which a Hyprland window rule floats at a small size. `webcam toggle` starts it, or ends it when it runs.
-- Recording audio: `--audio=desktop` records the monitor of the default sink, `--audio=mic` the default input, both with `wf-recorder -a`. Omarchy's "both at once" is not built: `wf-recorder` takes one audio source.
+- Recording audio: `--audio=desktop` records the monitor of the default sink, `--audio=mic` the default input, both with `wf-recorder -a`. Recording both at once is not built: `wf-recorder` takes one audio source.
 - The Hardware section is new and top level. It holds what `Setup > Hardware` held (GPU check, input devices, AirPlay), plus the laptop panel, mirror, brightness, a monitor list and the webcam. There is no BxRig command for audio or bluetooth, so the section has no entry for them (the panels stay on `Super+Ctrl+A` and `Super+Ctrl+B`).
 
 ## Class API (written before the code)
