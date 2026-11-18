@@ -624,7 +624,7 @@ bxrig keys mac on --yes
 bxrig keys conflicts
 ```
 
-> Two styles share one table: Traditional (Omarchy-like keys) and Mac (Cmd-style keys through xremap). The Mac style on a PC keyboard swaps Alt and Win; an Apple keyboard never swaps. `keys conflicts` checks the table, the remaps of the style that is on and your own hl.bind lines.
+> Two styles share one table: Traditional (classic Super-key tiling keys) and Mac (Cmd-style keys through xremap). The Mac style on a PC keyboard swaps Alt and Win; an Apple keyboard never swaps. `keys conflicts` checks the table, the remaps of the style that is on and your own hl.bind lines.
 
 ### `bxrig runner` {#bxrig-runner}
 
@@ -722,7 +722,7 @@ Themes, fonts, bar, dock, windows, monitors and power.
 
 ### `bxrig theme` {#bxrig-theme}
 
-Themes: 15 bundled (10 from Omarchy, 5 BxRig), set one, light or dark, install from git.
+Themes: 15 bundled (10 community themes, 5 BxRig), set one, light or dark, install from git.
 
 ```text
 bxrig theme list | show NAME | set NAME [--mode=theme|dark|light|auto] [--keep-wallpaper] | random | next | mode theme|dark|light|auto | install GIT_URL [--name=N] [--force] | import PATH [--name=N] [--force] | remove NAME | vscode [--yes] [--dry-run] | status [--dry-run] [--json]
