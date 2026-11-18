@@ -235,7 +235,7 @@
 		
 		
 		
-			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#these-docs">These docs</a></li><li class="toc-level-2"><a href="#versions">Versions</a></li><li class="toc-level-2"><a href="#languages">Languages</a></li><li class="toc-level-2"><a href="#releases">Releases</a></li><li class="toc-level-2"><a href="#writing-code-that-stays-dry">Writing code that stays DRY</a></li><li class="toc-level-2"><a href="#local-setup">Local setup</a></li><li class="toc-level-2"><a href="#running-the-tests">Running the tests</a></li></ul></details>
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#these-docs">These docs</a></li><li class="toc-level-2"><a href="#versions">Versions</a></li><li class="toc-level-2"><a href="#languages">Languages</a></li><li class="toc-level-2"><a href="#releases">Releases</a></li><li class="toc-level-2"><a href="#writing-code-that-stays-dry">Writing code that stays DRY</a></li><li class="toc-level-2"><a href="#local-setup">Local setup</a></li><li class="toc-level-3"><a href="#testing-with-another-matchbox-branch">Testing with another MatchBox branch</a></li><li class="toc-level-2"><a href="#running-the-tests">Running the tests</a></li></ul></details>
 		
 
 		
@@ -293,6 +293,43 @@ scripts/setup-local.sh --matchbox edge      # or pick one without the question
 </table></div>
 <p>The script saves the choice in <code>.cache/dev.env</code> (gitignored), builds <code>dist/bxrig</code> and runs a smoke test. <code>--no-build</code> only saves the choice. Run it again to switch. <code>scripts/dev-build.sh</code> and <code>tests/run-all.sh</code> read <code>.cache/dev.env</code>; a <code>MATCHBOX=/path/to/matchbox</code> variable overrides it.</p>
 <p>Use <code>source</code> when you also work on MatchBox: change <code>../matchbox</code>, rebuild it with <code>cargo build --features bif-tui</code>, then rebuild BxRig.</p>
+<h3 id="testing-with-another-matchbox-branch"><a href="#testing-with-another-matchbox-branch" id="testing-with-another-matchbox-branch" name="testing-with-another-matchbox-branch" class="anchor"></a>Testing with another MatchBox branch</h3>
+<p>To try a MatchBox pull request, a fork or any other branch, name it. The script clones that branch shallow (depth 1) into its own folder and builds it, so your <code>../matchbox</code> working tree is never touched:</p>
+<pre><code class="language-bash">scripts/setup-local.sh --matchbox-branch develop                         # ortus-boxlang/matchbox, branch develop
+scripts/setup-local.sh --matchbox-branch feature/x --matchbox-repo someone/matchbox   # a fork (owner/name or a full https URL)
+scripts/setup-local.sh --matchbox-branch v0.14.0 --release                # a tag, release build
+scripts/setup-local.sh --matchbox-branch 0123456789abcdef0123456789abcdef01234567    # a commit: the full 40 character id
+BXRIG_MATCHBOX_BRANCH=develop scripts/setup-local.sh                      # the same, from the environment
+</code></pre>
+<ul>
+<li>
+<p><code>--matchbox-branch REF</code> takes anything <code>git clone --branch</code> accepts (branch or tag); a full commit id is fetched by itself. <code>--matchbox-repo REPO</code> is <code>owner/name</code> on GitHub or a full <code>https://</code> URL and defaults to <code>toolchain.matchbox.repo</code> in <code>box.json</code>. <code>BXRIG_MATCHBOX_BRANCH</code> and <code>BXRIG_MATCHBOX_REPO</code> do the same; the flags win. Values may contain only letters, digits and <code>. _ / @ + -</code> (a repo URL also <code>:</code> after <code>https</code>), may not start with a dash and are passed to git as arguments, never through a shell.</p>
+</li>
+<li>
+<p>A branch other than the one in <code>box.json</code> (<code>bxrig</code>) or a repo other than the manifest repo means a source build. The clone lives in <code>.cache/matchbox-src/&lt;repo&gt;-&lt;ref&gt;</code> (for example <code>ortus-boxlang-matchbox-develop</code>) and is refreshed with a shallow fetch when it exists. Pass <code>--release</code> for an optimized MatchBox (the default is a debug build, as for <code>source</code>); both are built with <code>--features bif-tui</code>.</p>
+</li>
+<li>
+<p><code>--matchbox edge</code> is the published build of the <code>bxrig</code> branch only; combined with another branch or repo it stops with an explanation. <code>--matchbox source</code> without a branch is still <code>../matchbox</code>.</p>
+</li>
+<li>
+<p><code>.cache/dev.env</code> records <code>MATCHBOX</code> (the path), <code>MATCHBOX_REPO</code>, <code>MATCHBOX_REF</code> and <code>MATCHBOX_COMMIT</code>, which <code>scripts/dev-build.sh</code> and <code>tests/run-all.sh</code> use. Switch back with <code>scripts/setup-local.sh --matchbox edge</code>.</p>
+</li>
+<li>
+<p>A branch can report another version than <code>box.json</code> (<code>toolchain.matchbox.version</code>). For a branch build that is a warning naming both versions, from <code>setup-local.sh</code> and <code>scripts/dev-build.sh</code>, and the build goes on. The published <code>edge</code> path still refuses a MatchBox with the wrong version.</p>
+</li>
+<li>
+<p><code>scripts/get-matchbox.sh DEST --ref REF --repo REPO</code> does the same for scripts and CI: it builds that ref from source (release, no <code>--locked</code>) and writes <code>DEST</code> and <code>DEST.info</code> (with a <code>repo=</code> line). Without those options it behaves as before.</p>
+</li>
+<li>
+<p>At the end the script prints one summary: the MatchBox in use (repo, ref, commit, path), how to switch back (<code>scripts/setup-local.sh --matchbox edge</code>) and the command that tests the end-user installer with it:</p>
+<pre><code class="language-bash">BXRIG_MATCHBOX_FILE=/path/to/matchbox bash bootstrap/install.sh toolchains --yes
+</code></pre>
+<p><code>bootstrap/install.sh</code> installs that file instead of downloading the published build (it must be an executable regular file, not a symlink, and run with <code>--version</code>); the file <code>cargo build</code> leaves in <code>target/debug/matchbox</code> (or <code>target/release/matchbox</code>) is such a file. The installer then insists that the MatchBox reports the version in <code>box.json</code>: a branch that reports another version is installed and then refused with <code>MatchBox X not active after install</code>, so test the installer only with a branch build that reports the manifest version (the summary says so when it differs).</p>
+</li>
+<li>
+<p>Asked without any option, the script offers a fourth choice, <code>any GitHub branch</code>, and asks for the repo and the branch.</p>
+</li>
+</ul>
 <h2 id="running-the-tests"><a href="#running-the-tests" id="running-the-tests" name="running-the-tests" class="anchor"></a>Running the tests</h2>
 <pre><code class="language-bash">scripts/dev-build.sh                      # rebuild dist/bxrig after a change
 tests/run-all.sh                          # every shell and .bxs test (JOBS=3 by default)
@@ -307,7 +344,7 @@ bash tests/dry-test.sh                    # the ratchet: banned patterns and the
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/contributing.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/contributing.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 18, 2026, 1&#x3a;33&#x3a;01 AM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Contributing%20and%20docs%20versions&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fcontributing%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/contributing.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/contributing.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 18, 2026, 3&#x3a;30&#x3a;39 AM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Contributing%20and%20docs%20versions&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fcontributing%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
@@ -351,7 +388,7 @@ bash tests/dry-test.sh                    # the ratchet: banned patterns and the
 			
 			
 				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
-					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#these-docs">These docs</a></li><li class="toc-level-2"><a href="#versions">Versions</a></li><li class="toc-level-2"><a href="#languages">Languages</a></li><li class="toc-level-2"><a href="#releases">Releases</a></li><li class="toc-level-2"><a href="#writing-code-that-stays-dry">Writing code that stays DRY</a></li><li class="toc-level-2"><a href="#local-setup">Local setup</a></li><li class="toc-level-2"><a href="#running-the-tests">Running the tests</a></li></ul></nav>
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#these-docs">These docs</a></li><li class="toc-level-2"><a href="#versions">Versions</a></li><li class="toc-level-2"><a href="#languages">Languages</a></li><li class="toc-level-2"><a href="#releases">Releases</a></li><li class="toc-level-2"><a href="#writing-code-that-stays-dry">Writing code that stays DRY</a></li><li class="toc-level-2"><a href="#local-setup">Local setup</a></li><li class="toc-level-3"><a href="#testing-with-another-matchbox-branch">Testing with another MatchBox branch</a></li><li class="toc-level-2"><a href="#running-the-tests">Running the tests</a></li></ul></nav>
 				</aside>
 			
 		</div>
