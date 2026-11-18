@@ -461,6 +461,9 @@ class Shortcuts {
 		out.append( '-- The webcam preview (bxrig webcam toggle) floats at a small size' );
 		out.append( 'hl.window_rule({ name = "bxrig-webcam", match = { class = "^bxrig-webcam$" }, float = true, size = { 360, 270 } })' );
 		out.append( '' );
+		out.append( '-- The screensaver (bxrig screensaver start) is a full-screen terminal per monitor, without animation, border or corners' );
+		out.append( 'hl.window_rule({ name = "bxrig-screensaver", match = { class = "^bxrig-screensaver$" }, fullscreen = true, no_anim = true, border_size = 0, rounding = 0, no_shadow = true, no_blur = true })' );
+		out.append( '' );
 		out.append( '-- Noctalia settings window floats; its panels get blur and no layer animation' );
 		out.append( 'hl.window_rule({ match = { class = "dev.noctalia.Noctalia" }, float = true, size = { 1080, 920 } })' );
 		out.append( 'hl.layer_rule({ name = "noctalia", match = { namespace = "^noctalia-(bar-.+|notification|dock|panel|attached-panel|osd|window-switcher)$" }, no_anim = true, ignore_alpha = 0.5, blur = true, blur_popups = true })' );

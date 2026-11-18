@@ -1340,6 +1340,35 @@
 					]
 				},
 				{
+					"name": "screensaver",
+					"summary": "The screensaver: terminal art in the theme's colours on every monitor after a while idle, then the lock.",
+					"usage": [
+						"screensaver [status] [--json]",
+						"screensaver on|off [--yes]",
+						"screensaver set screensaver=SECONDS lock=SECONDS effects=NAME,NAME [--yes]",
+						"screensaver logo text TEXT|image PATH|reset [--yes]",
+						"screensaver effects [--json]",
+						"screensaver start [--effect=NAME]",
+						"screensaver stop",
+						"screensaver preview [EFFECT]",
+						"screensaver run [--effect=NAME]"
+					],
+					"examples": [
+						"bxrig screensaver preview clock",
+						"bxrig screensaver set screensaver=300 lock=600 --yes",
+						"bxrig screensaver logo text ACME --yes",
+						"bxrig screensaver off --yes"
+					],
+					"flags": [
+						{
+							"name": "effect",
+							"type": "value"
+						}
+					],
+					"mutates": true,
+					"note": "Effects: sweep, laptop, rain, clock, stars, logo; they take turns, a minute each. Defaults: the screensaver after 150 s idle, the lock after 300 s (0 for never), both counted from the start of idle. Noctalia runs them as idle behaviors (bxrig screensaver start, with stop as the resume command), so any input closes it and idle inhibitors hold both off. start opens a full-screen terminal per monitor on Hyprland; preview runs it in this terminal. Any key, click, scroll or mouse move closes it. Settings: ~/.config/bxrig/screensaver.json."
+				},
+				{
 					"name": "hotcorners",
 					"summary": "Hot corners: an action for each screen corner (overview, notifications, show desktop, lock, launcher, agents, themes).",
 					"usage": [

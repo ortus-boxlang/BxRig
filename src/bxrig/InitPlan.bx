@@ -118,6 +118,11 @@ class InitPlan {
 			if ( isSet( a.world_clock ) && zones.len() ) out.steps.append( { id: "world-clock", title: "world clock: " & zones.toList( ", " ), argv: [ "bxrig", "time", "world", "set", zones.toList( "," ) ], optional: true } );
 			else if ( !isSet( a.world_clock ) ) out.steps.append( { id: "world-clock", title: "no world clock", argv: [ "bxrig", "time", "world", "off" ], optional: true } );
 		}
+		// the screensaver: when it starts (the lock comes at twice that), or off with the lock kept at 5 minutes (Noctalia, so Hyprland only)
+		var ssPick = pick( a, "screensaver" );
+		if ( len( ssPick ) && ssPick != "off" && !arrayFind( [ "150", "300", "600" ], ssPick ) ) out.errors.append( "screensaver: unknown value " & ssPick );
+		else if ( wantsHypr && ssPick == "off" ) out.steps.append( { id: "screensaver", title: "no screensaver", argv: [ "bxrig", "screensaver", "off" ], optional: true } );
+		else if ( wantsHypr && len( ssPick ) ) out.steps.append( { id: "screensaver", title: "screensaver after " & ( ssPick / 60 ) & " min, lock after " & ( ssPick / 30 ) & " min", argv: [ "bxrig", "screensaver", "set", "screensaver=" & ssPick, "lock=" & ( ssPick * 2 ) ], optional: true } );
 		// hot corners: one action per corner
 		var corners = [];
 		for ( var c in [ { k: "hot_corner_tl", n: "top-left" }, { k: "hot_corner_tr", n: "top-right" }, { k: "hot_corner_bl", n: "bottom-left" }, { k: "hot_corner_br", n: "bottom-right" } ] ) {

@@ -414,6 +414,42 @@
 							"label": "UTC"
 						}
 					]
+				},
+				{
+					"type": "choice",
+					"id": "screensaver",
+					"label": "Screensaver",
+					"default": "150",
+					"when": {
+						"id": "desktops",
+						"in": [
+							"hyprland",
+							"both"
+						]
+					},
+					"help": "BXRIG art in the theme's colours on every monitor after a while idle, then the lock. Any key or mouse move closes it. Try it: bxrig screensaver preview.",
+					"options": [
+						{
+							"value": "150",
+							"label": "After 2.5 minutes",
+							"description": "The screen locks after 5 minutes."
+						},
+						{
+							"value": "300",
+							"label": "After 5 minutes",
+							"description": "The screen locks after 10 minutes."
+						},
+						{
+							"value": "600",
+							"label": "After 10 minutes",
+							"description": "The screen locks after 20 minutes."
+						},
+						{
+							"value": "off",
+							"label": "Off",
+							"description": "No screensaver; the screen still locks after 5 minutes."
+						}
+					]
 				}
 			]
 		},

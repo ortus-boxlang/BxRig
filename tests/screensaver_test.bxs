@@ -1,0 +1,83 @@
+// The screensaver: its settings, the Noctalia idle behaviors they become, the effects (drawn and read back) and the loop's rules.
+// Run from src/: (cd src && matchbox ../tests/screensaver_test.bxs)
+testkit = new lib.Check( "screensaver" );
+home = getTempDirectory() & "/bxrig-ss-" & createUUID();
+env = new bxrig.util.Env( { HOME: home, BXRIG_CONFIG_HOME: home & "/.config/bxrig" } );
+conf = new bxrig.ScreensaverConfig( env );
+fx = new bxrig.ScreensaverEffects();
+
+// ---- settings ----
+d = conf.read();
+testkit.check( "defaults: on, 150 s, lock at 300 s, every effect, the BXRIG text logo", d.enabled && d.screensaver == 150 && d.lock == 300 && d.effects.len() == 6 && d.logo.type == "text" && d.logo.text == "BXRIG" );
+d.screensaver = 60; d.lock = 0; d.effects = [ "clock", "stars" ]; d.enabled = false;
+conf.write( d );
+r = conf.read();
+testkit.check( "written settings are read back", !r.enabled && r.screensaver == 60 && r.lock == 0 && r.effects.toList() == "clock,stars" );
+fileWrite( conf.file(), '{ "screensaver": -5, "lock": "soon", "effects": [ "nope", "rain", "rain" ], "logo": { "type": "image", "path": "relative.png" }, "enabled": "maybe" }' );
+r = conf.read();
+testkit.check( "bad values keep their defaults; unknown and repeated effects are dropped", r.enabled && r.screensaver == 150 && r.lock == 300 && r.effects.toList() == "rain" && r.logo.type == "text" );
+fileWrite( conf.file(), "not json" );
+testkit.check( "a broken file gives the defaults", conf.read().screensaver == 150 );
+testkit.check( "seconds are whole, 0 to a day", conf.validSeconds( 0 ) && conf.validSeconds( 86400 ) && !conf.validSeconds( 1.5 ) && !conf.validSeconds( -1 ) && !conf.validSeconds( 86401 ) && !conf.validSeconds( "x" ) );
+testkit.check( "logo text: 1 to 10 of what the font draws", conf.validLogoText( "ACME" ) && conf.validLogoText( "Hi there!" ) && !conf.validLogoText( "" ) && !conf.validLogoText( "far too long text" ) && !conf.validLogoText( "<b>" ) );
+testkit.check( "logo pictures: an absolute path to a picture type", conf.validImagePath( "/a/b.PNG" ) && conf.validImagePath( "/a/b.svg" ) && !conf.validImagePath( "b.png" ) && !conf.validImagePath( "/a/b.txt" ) );
+testkit.check( "the lock must come after the screensaver (0 is never)", len( conf.timingProblem( 300, 150 ) ) && !len( conf.timingProblem( 150, 300 ) ) && !len( conf.timingProblem( 150, 0 ) ) && !len( conf.timingProblem( 0, 60 ) ) );
+
+// ---- Noctalia ----
+toml = conf.noctaliaToml( conf.defaults() ).toList( chr( 10 ) );
+testkit.check( "the idle section has both behaviors in order", find( '[idle]', toml ) && find( 'behavior_order = ["bxrig_screensaver", "bxrig_lock"]', toml ) && find( "[idle.behavior.bxrig_screensaver]", toml ) && find( "[idle.behavior.bxrig_lock]", toml ) );
+testkit.check( "the screensaver is a command at 150 s that stop resumes", find( "timeout = 150", toml ) && find( 'action = "command"', toml ) && reFind( "command = ""'[^']*' screensaver start""", toml ) && reFind( "resume_command = ""'[^']*' screensaver stop""", toml ) );
+testkit.check( "the lock is Noctalia's own at 300 s", find( "timeout = 300", toml ) && find( 'action = "lock"', toml ) );
+off = conf.defaults(); off.enabled = false; off.lock = 0;
+offToml = conf.noctaliaToml( off ).toList( chr( 10 ) );
+testkit.check( "off, and lock 0, turn the behaviors off", !find( "enabled = true", offToml ) && find( "enabled = false", offToml ) );
+pairs = conf.noctaliaSettings( conf.defaults() );
+paths = pairs.map( function( p ) { return p[ 1 ]; } );
+testkit.check( "config-set pairs for a running Noctalia", arrayFind( paths, "idle.behavior_order" ) && arrayFind( paths, "idle.behavior.bxrig_screensaver.resume_command" ) && arrayFind( paths, "idle.behavior.bxrig_lock.action" ) );
+testkit.check( "the starter Noctalia config carries the idle section", find( "[idle.behavior.bxrig_screensaver]", new bxrig.NoctaliaConfig().configToml( "/home/u" ) ) );
+testkit.check( "the Hyprland module makes the screensaver full screen", find( 'class = "^bxrig-screensaver$" }, fullscreen = true', new bxrig.Shortcuts( {} ).hyprland() ) );
+
+// ---- effects ----
+tui = createObject( "rust", "tui.TUI" );
+kit = new bxrig.TuiKit( tui );
+frame = function( tick, w = 100, h = 30 ) { return { tick: tick, width: w, height: h, now: createDateTime( 2026, 11, 18, 9, 41, 0 ), logo: { type: "text", text: "ACME" }, pixels: [], colors: {} }; };
+draw = function( name, f ) { tui.begin_frame(); fx.paint( kit, name, f ); return tui.render_to_string( f.width, f.height ); };
+testkit.check( "six effects, each described", fx.names().len() == 6 && fx.names().every( function( n ) { return structKeyExists( fx.describe(), n ); } ) );
+sweep = draw( "sweep", frame( 10 ) );
+testkit.check( "sweep: BXRIG in DOS Rebel and the tagline", find( "███████████  █████ █████", sweep ) && find( new bxrig.Brand().tagline(), sweep ) );
+lap = draw( "laptop", frame( 10 ) );
+testkit.check( "laptop: the laptop with BX and its caption", find( "███████████  █████ █████", lap ) && find( "BXRIG powered by BoxLang", lap ) && find( "www.boxlang.io", lap ) );
+rain1 = draw( "rain", frame( 10 ) );
+rain2 = draw( "rain", frame( 11 ) );
+testkit.check( "rain: code characters that move from frame to frame", len( trim( rain1 ) ) > 100 && rain1 != rain2 );
+testkit.check( "rain: the same frame draws the same", draw( "rain", frame( 10 ) ) == rain1 );
+clk = draw( "clock", frame( 0 ) );
+testkit.check( "clock: the time in DOS Rebel and the date", find( "Wednesday, November 18", clk ) && find( "█████", clk ) );
+testkit.check( "clock: it drifts", draw( "clock", frame( 0 ) ) != draw( "clock", frame( 40 ) ) );
+st = draw( "stars", frame( 5 ) );
+testkit.check( "stars: a starfield that moves", reFind( "[·•*✦]", st ) && st != draw( "stars", frame( 30 ) ) );
+lg = draw( "logo", frame( 5 ) );
+testkit.check( "logo: your text in DOS Rebel", find( "███", lg ) && lg != draw( "logo", frame( 60 ) ) );
+pic = frame( 5 );
+pic.logo = { type: "image", path: "/x.png" };
+pic.pixels = [ [ [ 255, 0, 0, 255 ], [ 0, 255, 0, 255 ] ], [ [ 0, 0, 255, 255 ], [ 0, 0, 0, 0 ] ] ];
+testkit.check( "logo: a picture in half blocks", find( "▀▀", draw( "logo", pic ) ) );
+tiny = draw( "sweep", frame( 3, 20, 6 ) );
+testkit.check( "a tiny screen still draws without an error", len( tiny ) > 0 && len( draw( "laptop", frame( 3, 20, 6 ) ) ) > 0 && len( draw( "clock", frame( 3, 10, 4 ) ) ) > 0 );
+testkit.check( "bounce goes there and back", fx.bounce( 0, 10 ) == 0 && fx.bounce( 10, 10 ) == 10 && fx.bounce( 15, 10 ) == 5 && fx.bounce( 20, 10 ) == 0 && fx.bounce( 5, 0 ) == 0 );
+testkit.check( "rnd is from 0 to 1 and the same for a seed", fx.rnd( 7 ) == fx.rnd( 7 ) && fx.rnd( 7 ) >= 0 && fx.rnd( 7 ) < 1 && fx.rnd( 7 ) != fx.rnd( 8 ) );
+
+// ---- the loop's rules ----
+ss = new bxrig.Screensaver( new bxrig.util.Cli( "" ) );
+list = [ "sweep", "clock", "stars" ];
+perMinute = int( 60000 / ss.frameMs() ) + 1;
+testkit.check( "the effects take turns a minute each, from the first", ss.effectAt( 0, list, 2 ) == "clock" && ss.effectAt( perMinute, list, 2 ) == "stars" && ss.effectAt( perMinute * 2, list, 2 ) == "sweep" );
+testkit.check( "--effect fixes one", ss.effectAt( perMinute * 5, list, 1, "rain" ) == "rain" );
+testkit.check( "keys, clicks, scrolls and mouse moves close it once armed", ss.closes( { type: "key" }, 20 ) && ss.closes( { type: "move" }, 20 ) && ss.closes( { type: "click" }, 20 ) && ss.closes( { type: "scroll" }, 20 ) );
+testkit.check( "not a resize, and nothing in the first half second", !ss.closes( { type: "resize" }, 20 ) && !ss.closes( { type: "key" }, 2 ) );
+cmd = ss.windowCommand( { cmd: "kitty", classArgs: [ "--class", "bxrig-screensaver" ], execFlag: [] }, "clock" );
+testkit.check( "each window runs bxrig screensaver run in a terminal with our class", reFind( "^'kitty' '--class' 'bxrig-screensaver' '[^']+' 'screensaver' 'run' '--effect=clock'$", cmd ) );
+testkit.check( "quotes in a path are kept", ss.shellQuote( "it's" ) == "'it'\''s'" );
+
+directoryDelete( home, true );
+testkit.done( "screensaver tests passed" );

@@ -1,0 +1,119 @@
+// The screensaver settings and the idle behaviors they become in Noctalia. Pure apart from reading and writing the settings file.
+//   ~/.config/bxrig/screensaver.json   { enabled, screensaver, lock, effects, logo: { type, text, path } }
+//   enabled      the screensaver starts on idle (the lock is set apart, with lock = 0 for none)
+//   screensaver  seconds idle before the screensaver starts (default 150, 0 for never)
+//   lock         seconds idle before the screen locks (default 300, 0 for never); counted from the start of idle, like the screensaver
+//   effects      the effects that take turns, a minute each (ScreensaverEffects.names())
+//   logo         what the logo effect draws: { type: "text", text: "BXRIG" } or { type: "image", path: "/abs/picture.png" }
+// Noctalia runs the two behaviors (docs.noctalia.dev, services/idle): `bxrig screensaver start` on idle with `bxrig screensaver stop` as the
+// resume command, so any input closes the screensaver, and its own lock. Idle inhibitors (a video, `bxrig toggle stay-awake`) hold both off.
+class ScreensaverConfig {
+	function init( env = "" ) {
+		variables.env = isSimpleValue( arguments.env ) ? new bxrig.util.Env() : arguments.env;
+		return this;
+	}
+
+	function file() { return variables.env.config( "screensaver.json" ); }
+	function maxSeconds() { return 86400; }
+	function maxLogoText() { return 10; }
+	function imageTypes() { return [ "png", "jpg", "jpeg", "gif", "webp", "svg" ]; }
+
+	function defaults() {
+		return { enabled: true, screensaver: 150, lock: 300, effects: new bxrig.ScreensaverEffects().names(), logo: { type: "text", text: "BXRIG", path: "" } };
+	}
+
+	// The saved settings over the defaults; a value that is not valid keeps its default, so a hand-edited file never breaks the screensaver.
+	function read() {
+		var c = defaults();
+		if ( !fileExists( file() ) ) return c;
+		var j = new bxrig.util.Json().read( file() );
+		if ( !isStruct( j ) ) return c;
+		if ( structKeyExists( j, "enabled" ) && isBoolean( j.enabled ) ) c.enabled = j.enabled ? true : false;
+		for ( var k in [ "screensaver", "lock" ] ) if ( structKeyExists( j, k ) && validSeconds( j[ k ] ) ) c[ k ] = int( j[ k ] );
+		if ( structKeyExists( j, "effects" ) && isArray( j.effects ) ) {
+			var fx = cleanEffects( j.effects );
+			if ( fx.len() ) c.effects = fx;
+		}
+		if ( structKeyExists( j, "logo" ) && isStruct( j.logo ) ) {
+			var l = j.logo;
+			if ( ( l.type ?: "" ) == "text" && validLogoText( l.text ?: "" ) ) c.logo = { type: "text", text: l.text, path: "" };
+			if ( ( l.type ?: "" ) == "image" && validImagePath( l.path ?: "" ) ) c.logo = { type: "image", text: "", path: l.path };
+		}
+		return c;
+	}
+
+	function write( c ) {
+		var f = file();
+		directoryCreate( getDirectoryFromPath( f ), true, true );
+		var o = { enabled: arguments.c.enabled, screensaver: arguments.c.screensaver, lock: arguments.c.lock, effects: arguments.c.effects, logo: arguments.c.logo };
+		fileWrite( f, jsonSerialize( o ) & chr( 10 ) );
+	}
+
+	// ---- checks ----
+	function validSeconds( v ) { return isNumeric( arguments.v ) && int( arguments.v ) == arguments.v && arguments.v >= 0 && arguments.v <= maxSeconds(); }
+	// Letters, digits, spaces and . - _ ! : (what the DOS Rebel font draws), 1 to 10 characters.
+	function validLogoText( t ) { return isSimpleValue( arguments.t ) && len( trim( arguments.t ) ) && len( arguments.t ) <= maxLogoText() && reFind( "^[A-Za-z0-9 ._!:-]+$", arguments.t ) > 0; }
+	function validImagePath( p ) {
+		if ( !isSimpleValue( arguments.p ) || !len( arguments.p ) || left( arguments.p, 1 ) != "/" ) return false;
+		return arrayFind( imageTypes(), lCase( listLast( arguments.p, "." ) ) ) > 0;
+	}
+	// The known effect names in the list, each once, in the order given.
+	function cleanEffects( list ) {
+		var fx = new bxrig.ScreensaverEffects();
+		var out = [];
+		for ( var n in arguments.list ) if ( isSimpleValue( n ) && fx.known( lCase( n ) ) && !arrayFind( out, lCase( n ) ) ) out.append( lCase( n ) );
+		return out;
+	}
+	// A problem with a pair of timeouts, "" when they are fine: the lock must come after the screensaver starts.
+	function timingProblem( screensaver, lock ) {
+		if ( arguments.screensaver > 0 && arguments.lock > 0 && arguments.lock <= arguments.screensaver ) return "the lock (" & arguments.lock & "s) must come after the screensaver (" & arguments.screensaver & "s); use lock=0 for no lock";
+		return "";
+	}
+
+	// ---- Noctalia ----
+	function behaviorNames() { return { screensaver: "bxrig_screensaver", lock: "bxrig_lock" }; }
+
+	// The command line Noctalia runs (through a shell): this bxrig, quoted.
+	function selfCommand( args ) { return "'" & replace( new bxrig.util.Env().named( "self", "bxrig" ), "'", "'\''", "all" ) & "' " & arguments.args; }
+
+	// The [idle] section of Noctalia's config.toml for the settings.
+	function noctaliaToml( c = read() ) {
+		var b = behaviorNames();
+		return [
+			"# Screensaver and lock (bxrig screensaver ...): idle " & arguments.c.screensaver & "s starts the screensaver on every monitor (any input closes it),",
+			"# idle " & arguments.c.lock & "s locks the screen. 0 turns that step off. Apps that hold the screen awake (a video, stay-awake) hold both off.",
+			"[idle]",
+			'behavior_order = ["' & b.screensaver & '", "' & b.lock & '"]',
+			"",
+			"[idle.behavior." & b.screensaver & "]",
+			"enabled = " & ( arguments.c.enabled && arguments.c.screensaver > 0 ? "true" : "false" ),
+			"timeout = " & arguments.c.screensaver,
+			'action = "command"',
+			'command = "' & replace( selfCommand( "screensaver start" ), '"', '\"', "all" ) & '"',
+			'resume_command = "' & replace( selfCommand( "screensaver stop" ), '"', '\"', "all" ) & '"',
+			"",
+			"[idle.behavior." & b.lock & "]",
+			"enabled = " & ( arguments.c.lock > 0 ? "true" : "false" ),
+			"timeout = " & arguments.c.lock,
+			'action = "lock"'
+		];
+	}
+
+	// The same settings as [ path, TOML value ] pairs for `noctalia msg config-set`, so a running Noctalia picks them up.
+	function noctaliaSettings( c ) {
+		var b = behaviorNames();
+		var s = "idle.behavior." & b.screensaver;
+		var l = "idle.behavior." & b.lock;
+		return [
+			[ "idle.behavior_order", "['" & b.screensaver & "', '" & b.lock & "']" ],
+			[ s & ".enabled", arguments.c.enabled && arguments.c.screensaver > 0 ? "true" : "false" ],
+			[ s & ".timeout", "" & arguments.c.screensaver ],
+			[ s & ".action", "'command'" ],
+			[ s & ".command", '"' & replace( selfCommand( "screensaver start" ), '"', '\"', "all" ) & '"' ],
+			[ s & ".resume_command", '"' & replace( selfCommand( "screensaver stop" ), '"', '\"', "all" ) & '"' ],
+			[ l & ".enabled", arguments.c.lock > 0 ? "true" : "false" ],
+			[ l & ".timeout", "" & arguments.c.lock ],
+			[ l & ".action", "'lock'" ]
+		];
+	}
+}

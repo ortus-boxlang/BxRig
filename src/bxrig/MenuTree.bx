@@ -419,7 +419,18 @@ class MenuTree {
 					spawn( "Suspend", [ "system", "suspend" ] ),
 					spawn( "Logout", [ "system", "logout", "--yes" ], "Log out now?" ),
 					spawn( "Reboot", [ "system", "reboot", "--yes" ], "Reboot now?" ),
-					spawn( "Shutdown", [ "system", "shutdown", "--yes" ], "Shut down now?" )
+					spawn( "Shutdown", [ "system", "shutdown", "--yes" ], "Shut down now?" ),
+					sub( "Screensaver", [
+							spawn( "Start now", [ "screensaver", "start" ] ),
+							term( "Preview in a terminal", [ "screensaver", "preview" ] ),
+							run( "Settings and effects", [ "screensaver" ] ),
+							spawn( "Turn on", [ "screensaver", "on", "--yes" ] ),
+							spawn( "Turn off", [ "screensaver", "off", "--yes" ] ),
+							spawn( "After 2.5 min, lock after 5 min (default)", [ "screensaver", "set", "screensaver=150", "lock=300", "--yes" ] ),
+							spawn( "After 5 min, lock after 10 min", [ "screensaver", "set", "screensaver=300", "lock=600", "--yes" ] ),
+							spawn( "After 10 min, lock after 20 min", [ "screensaver", "set", "screensaver=600", "lock=1200", "--yes" ] ),
+							spawn( "Logo: back to BXRIG", [ "screensaver", "logo", "reset", "--yes" ] )
+						] )
 				] ),
 			sub( "Control Center", controlCenterEntries() )
 		];

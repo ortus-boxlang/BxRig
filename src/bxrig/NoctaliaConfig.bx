@@ -276,6 +276,8 @@ class NoctaliaConfig {
 			'# Hot corners (bxrig hotcorners set top-left=overview ...): the pointer resting in a corner runs its action',
 			new bxrig.HotCorners( "" ).noctaliaToml().toList( chr( 10 ) ),
 			'',
+			new bxrig.ScreensaverConfig().noctaliaToml().toList( chr( 10 ) ),
+			'',
 			'[wallpaper]',
 			'enabled = true',
 			'fill_mode = "crop"',
