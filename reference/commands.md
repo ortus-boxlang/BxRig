@@ -140,7 +140,7 @@ bxrig status --json
 
 ### `bxrig doctor` {#bxrig-doctor}
 
-Checks the machine (Arch or CachyOS, pacman, sudo, disk) and reports problems.
+Checks every tool BxRig needs (git, curl, unzip, jq, Java 21, mvm, bvm, BoxLang, MatchBox, Rust, Cargo), one status line each. Exit 4 when one is missing.
 
 ```text
 bxrig doctor [--json]
@@ -148,6 +148,7 @@ bxrig doctor [--json]
 
 ```bash
 bxrig doctor
+bxrig doctor --json
 ```
 
 ### `bxrig update` {#bxrig-update}
@@ -493,7 +494,7 @@ bxrig dev-plan
 
 ### `bxrig prerequisites` {#bxrig-prerequisites}
 
-What BxRig needs on the machine before anything else.
+The same check as doctor: one status line per tool BxRig needs.
 
 ```text
 bxrig prerequisites [--json]
