@@ -17,6 +17,7 @@ on:
     paths:
       - box.json
       - scripts/get-matchbox.sh
+      - scripts/lib/matchbox-ref.sh
       - .github/workflows/matchbox.yml
 permissions:
   contents: read
