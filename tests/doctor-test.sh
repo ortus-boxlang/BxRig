@@ -40,12 +40,12 @@ j="$(run "$binary" doctor --json || true)"
 jq -e '.command == "doctor" and .exit == 4 and .ok == false and .data.ok == false and (.data.tools | length) == 11 and ((.data.tools[] | select(.id == "jq")) | .ok == false and .fix == "sudo pacman -S jq")' <<<"$j" >/dev/null || fail "doctor --json: $j"
 jq -e '(.data.tools[] | select(.id == "matchbox")) | .ok == true and .compiles_bxrig == true and .version == "0.14.0"' <<<"$j" >/dev/null || fail "doctor --json matchbox: $j"
 
-# a wrong Java is missing, a MatchBox without the terminal UI is ok but says it cannot compile
+# a wrong Java is missing, a MatchBox without the terminal UI is missing (it cannot compile BxRig)
 ln -s "$(command -v jq)" "$tmp/bin/jq" 2>/dev/null || true
 out="$(run env JAVA_VER=17.0.9 "$binary" doctor)" && fail 'Java 17 must exit 4' || true
 [[ "$out" == *'miss java 17.0.9 (found 17.0.9, need 21; install: sudo pacman -S jdk21-openjdk)'* ]] || fail "doctor java: $out"
-out="$(run env MB_TUI=no "$binary" doctor || true)"
-[[ "$out" == *'ok   matchbox 0.14.0 (cannot compile BxRig; to compile it: install.sh toolchains --yes --matchbox-branch bxrig)'* ]] || fail "doctor matchbox without TUI: $out"
+out="$(run env MB_TUI=no "$binary" doctor)" && fail 'a MatchBox without the terminal UI must exit 4' || true
+[[ "$out" == *'miss matchbox 0.14.0 (cannot compile BxRig; install: install.sh toolchains --yes --matchbox-branch bxrig)'* ]] || fail "doctor matchbox without TUI: $out"
 
 # nothing at all: every tool is listed as missing, not just the headers
 rm -f "$tmp/bin"/{git,curl,unzip,jq,java,mvm,bvm,boxlang,matchbox,rustc,cargo}

@@ -3,8 +3,8 @@
 //   miss jq (install: sudo pacman -S jq)
 //   ok   matchbox 0.14.0 (compiles BxRig)
 // Two groups: the workstation tools (git, curl, unzip, jq, Java 21, mvm, bvm, BoxLang) and the native build tools (Rust, Cargo, MatchBox).
-// A missing tool, or a Java that is not 21, is `miss` with the command that fixes it. A MatchBox that cannot compile BxRig (stable and
-// snapshot builds have no terminal UI yet) is still `ok`: the prebuilt bxrig does not need it; the line says what to do to compile.
+// A missing tool, a Java that is not 21, or a MatchBox that cannot compile BxRig (stable and snapshot builds have no terminal UI yet)
+// is `miss` with the command that fixes it (owner decision: the toolchain must be able to build BxRig).
 // Exit 0 when every tool is there, 4 when one is missing. `--json`: data { ok, tools: [ { id, group, name, ok, version, detail, fix } ] }.
 // The Proc runner can be injected for tests, like the other commands.
 class Doctor {
@@ -82,7 +82,9 @@ class Doctor {
 		if ( !variables.proc.has( "matchbox" ) ) return row( "matchbox", arguments.group, false, "", "", fix );
 		var v = versionOf( "matchbox" );
 		var can = compilesBxrig();
-		var r = row( "matchbox", arguments.group, true, v, can ? "compiles BxRig" : "cannot compile BxRig; to compile it: install.sh toolchains --yes --matchbox-branch bxrig", "" );
+		var r = can
+		? row( "matchbox", arguments.group, true, v, "compiles BxRig", "" )
+		: row( "matchbox", arguments.group, false, v, "cannot compile BxRig", "install.sh toolchains --yes --matchbox-branch bxrig" );
 		r.compiles_bxrig = can;
 		return r;
 	}
