@@ -6,7 +6,7 @@ cat > "$tmp/bin/pacman" <<'MOCK'
 #!/usr/bin/env bash
 case "$1" in
   -Q) [[ "$2" == kwin ]] && { [[ -n "${MOCK_NO_KWIN:-}" ]] && exit 1; echo "kwin ${MOCK_KWIN:-6.6.2-1}"; } ;;
-  -Qq) printf '%s\n' ${MOCK_INSTALLED:-git python-dbus python-gobject qt6-tools} ;;
+  -Qq) printf '%s\n' ${MOCK_INSTALLED:-git python-dbus python-gobject qt6-tools swayidle} ;;
   -S|-Rs) [[ -z "${MOCK_PACMAN_FAIL:-}" ]] || exit 1; printf 'pacman %s\n' "$*" >> "$SETUP_LOG" ;;
   --version) echo "Pacman v7.0" ;;
   *) exit 9 ;;
@@ -88,7 +88,7 @@ reset; [[ "$(MOCK_GIT_FAIL=1 code "$binary" setup plasma --yes)" == 6 ]] || fail
 
 # missing packages go through one sudo pacman call first
 reset; out="$(MOCK_INSTALLED=git run "$binary" setup plasma --yes 2>&1)" || fail "install with missing packages: $out"
-grep -Fq 'pacman -S --needed --noconfirm python-dbus python-gobject qt6-tools' "$SETUP_LOG" || fail 'one pacman call for the missing packages'
+grep -Fq 'pacman -S --needed --noconfirm python-dbus python-gobject qt6-tools swayidle' "$SETUP_LOG" || fail 'one pacman call for the missing packages'
 [[ "$(head -n1 "$SETUP_LOG")" == pacman* ]] || fail 'packages come first'
 reset; [[ "$(MOCK_INSTALLED=git MOCK_PACMAN_FAIL=1 code "$binary" setup plasma --yes)" == 5 ]] || fail 'pacman failing exits 5'
 
@@ -115,7 +115,7 @@ reset; MOCK_BT_ENABLED=1 run "$binary" setup plasma --yes >/dev/null 2>&1 || fai
 grep -Fq 'bluetooth' "$SETUP_LOG" && fail 'an enabled service is left alone'
 [[ ! -e "$tmp/state-home/bxrig/setup-plasma.json" ]] || fail 'nothing is remembered when setup did not enable it'
 # bluez present, service off: only the service step comes before the checkout
-reset; out="$(MOCK_INSTALLED="git python-dbus python-gobject qt6-tools bluez bluez-utils" run "$binary" setup plasma --dry-run --json)"
+reset; out="$(MOCK_INSTALLED="git python-dbus python-gobject qt6-tools swayidle bluez bluez-utils" run "$binary" setup plasma --dry-run --json)"
 [[ "$(jq -r '.data.steps|map(.id)|join(",")' <<<"$out")" == bluetooth,fetch,install ]] || fail 'plasma plan: only the service step when bluez is there'
 # --undo-keys never turns the service on
 reset; mkdir -p "$tmp/home/.local/share/hyprkwin"; run "$binary" setup plasma --undo-keys --yes >/dev/null 2>&1 || fail '--undo-keys with the service off'

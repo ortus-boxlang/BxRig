@@ -796,7 +796,7 @@ bxrig screensaver on|off [--yes]
 bxrig screensaver set screensaver=SECONDS lock=SECONDS effects=NAME,NAME [--yes]
 bxrig screensaver logo text TEXT|image PATH|reset [--yes]
 bxrig screensaver effects [--json]
-bxrig screensaver start [--effect=NAME]
+bxrig screensaver start [--effect=NAME] [--idle]
 bxrig screensaver stop
 bxrig screensaver preview [EFFECT]
 bxrig screensaver run [--effect=NAME]
@@ -811,7 +811,7 @@ bxrig screensaver logo text ACME --yes
 bxrig screensaver off --yes
 ```
 
-> Effects: sweep, laptop, rain, clock, stars, logo; they take turns, a minute each. Defaults: the screensaver after 150 s idle, the lock after 300 s (0 for never), both counted from the start of idle. Noctalia runs them as idle behaviors (bxrig screensaver start, with stop as the resume command), so any input closes it and idle inhibitors hold both off. start opens a full-screen terminal per monitor on Hyprland; preview runs it in this terminal. Any key, click, scroll or mouse move closes it. Settings: ~/.config/bxrig/screensaver.json.
+> Effects: sweep, laptop, rain, clock, stars, logo; they take turns, a minute each. Defaults: the screensaver after 150 s idle, the lock after 300 s (0 for never), both counted from the start of idle. On Hyprland, Noctalia runs them as idle behaviors (bxrig screensaver start, with stop as the resume command). On Plasma, a user service runs swayidle with the same two commands (start --idle does nothing while Plasma's power manager says something holds the screen awake), a KWin script puts one full-screen window on each screen, and lock= sets Plasma's own lock timeout (whole minutes, rounded up). start opens a full-screen terminal per monitor; preview runs it in this terminal. Any key, click, scroll or mouse move closes it. Settings: ~/.config/bxrig/screensaver.json.
 
 ### `bxrig hotcorners` {#bxrig-hotcorners}
 

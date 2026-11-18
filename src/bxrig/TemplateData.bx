@@ -7,6 +7,7 @@ class TemplateData {
 		for ( var p in new bxrig.util.Res().list( "templates/noctalia-plugins" ) ) if ( find( "/", p ) ) out.append( "noctalia-plugins/" & p );
 		out.append( "plymouth/bxrig.plymouth" );
 		out.append( "plymouth/bxrig.script" );
+		out.append( "kwin-screensaver.js" );
 		return out;
 	}
 	// The BxRig Noctalia plugins (clock, agents, system, quick settings, dev, power, vpn) as config service entries: Noctalia finds them in its local plugin

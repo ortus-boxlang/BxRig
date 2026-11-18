@@ -1,0 +1,125 @@
+// The screensaver on KDE Plasma. Plasma has no idle command and no per-monitor window rules that hold on Wayland, so:
+//   idle    a user service, bxrig-screensaver-idle.service, runs `swayidle -w timeout SECONDS '<bxrig> screensaver start --idle'
+//           resume '<bxrig> screensaver stop'` (KWin implements the ext-idle-notify protocol swayidle uses)
+//   video   `start --idle` first asks Plasma's power manager (org.freedesktop.PowerManagement.Inhibit.HasInhibit) and does nothing while
+//           something holds the screen awake (a video, a presentation, Stay awake)
+//   windows one terminal per enabled output (kscreen-doctor -j); the KWin script templates/kwin-screensaver.js, loaded over D-Bus,
+//           sends each to a screen of its own, full screen, above everything, without a border
+//   lock    Plasma's own lock screen: kscreenlockerrc [Daemon] Autolock and Timeout (whole minutes, rounded up), lock = 0 turns it off
+// Every outside command goes through Proc, so tests stub qdbus6, kwriteconfig6, kscreen-doctor, systemctl, swayidle and pgrep.
+class ScreensaverPlasma {
+	function init( proc, env = "" ) {
+		variables.proc = arguments.proc;
+		variables.env = isSimpleValue( arguments.env ) ? new bxrig.util.Env() : arguments.env;
+		variables.systemd = new bxrig.util.Systemd( variables.proc );
+		return this;
+	}
+
+	function unitName() { return "bxrig-screensaver-idle.service"; }
+	function unitPath() { return variables.env.xdgConfig( "systemd/user/" & unitName() ); }
+	function scriptName() { return "bxrig-screensaver"; }
+	function scriptPath() { return variables.env.data( "kwin/kwin-screensaver.js" ); }
+
+	// True when this looks like a Plasma that can show the screensaver: KWin answers on D-Bus.
+	function available() { return variables.proc.has( "qdbus6" ) && variables.proc.exec( [ "qdbus6", "org.kde.KWin", "/KWin" ], 10 ).exitCode == 0; }
+
+	// ---- idle (swayidle as a user service) ----
+	function selfQuoted() { return replace( new bxrig.util.Env().named( "self", "bxrig" ), '"', '\"', "all" ); }
+
+	function unitText( c ) {
+		var self = selfQuoted();
+		return new bxrig.util.SystemdUnit().render( [
+				{ name: "Unit", lines: [ "Description=BxRig screensaver on idle (Plasma)", "PartOf=graphical-session.target", "After=graphical-session.target" ] },
+				{ name: "Service", lines: [ 'ExecStart=swayidle -w timeout ' & arguments.c.screensaver & ' "' & self & ' screensaver start --idle" resume "' & self & ' screensaver stop"', "Restart=on-failure", "RestartSec=5" ] },
+				{ name: "Install", lines: [ "WantedBy=graphical-session.target" ] }
+			], "Written by bxrig screensaver; changed by `bxrig screensaver set|on|off`" );
+	}
+
+	// Plasma's lock timeout is in whole minutes: the seconds rounded up (lock = 0 is no automatic lock).
+	function lockMinutes( seconds ) { return arguments.seconds <= 0 ? 0 : int( ( arguments.seconds + 59 ) / 60 ); }
+
+	// The kwriteconfig6 commands for the lock.
+	function lockCommands( c ) {
+		var m = lockMinutes( arguments.c.lock );
+		var out = [ [ "kwriteconfig6", "--file", "kscreenlockerrc", "--group", "Daemon", "--key", "Autolock", "--type", "bool", m > 0 ? "true" : "false" ] ];
+		if ( m > 0 ) out.append( [ "kwriteconfig6", "--file", "kscreenlockerrc", "--group", "Daemon", "--key", "Timeout", "" & m ] );
+		return out;
+	}
+
+	// Applies the settings on Plasma: the lock, then the idle service on or off. { status: applied|skipped|needs swayidle, notes: [] }
+	function apply( c ) {
+		var res = { status: "skipped", notes: [] };
+		if ( !variables.proc.has( "kwriteconfig6" ) ) return res;
+		for ( var cmd in lockCommands( arguments.c ) ) variables.proc.exec( cmd, 15 );
+		// a running lock daemon reads the change (best effort)
+		variables.proc.exec( [ "qdbus6", "org.freedesktop.ScreenSaver", "/ScreenSaver", "configure" ], 10 );
+		res.status = "applied";
+		var want = arguments.c.enabled && arguments.c.screensaver > 0;
+		if ( !variables.systemd.available() ) { res.notes.append( "systemd is not available: the Plasma screensaver does not start on idle" ); return res; }
+		if ( want ) {
+			if ( !variables.proc.has( "swayidle" ) ) {
+				res.status = "needs swayidle";
+				res.notes.append( "Plasma needs swayidle to notice idle: sudo pacman -S swayidle (bxrig setup plasma installs it), then run this again" );
+				return res;
+			}
+			var f = unitPath();
+			directoryCreate( getDirectoryFromPath( f ), true, true );
+			fileWrite( f, unitText( arguments.c ) );
+			variables.systemd.reload( true );
+			variables.systemd.enable( [ unitName() ], true );
+			// a new timeout needs a restart of a service that was already running
+			variables.proc.exec( variables.systemd.argv( "restart", [ unitName() ], true ), 20 );
+		} else if ( fileExists( unitPath() ) ) {
+			variables.systemd.disable( [ unitName() ], true );
+		}
+		return res;
+	}
+
+	// ---- start and stop ----
+	// True when something holds the screen awake (Plasma's power manager); false when it cannot be asked.
+	function inhibited() {
+		var r = variables.proc.exec( [ "qdbus6", "org.freedesktop.PowerManagement", "/org/freedesktop/PowerManagement/Inhibit", "org.freedesktop.PowerManagement.Inhibit.HasInhibit" ], 10 );
+		return r.exitCode == 0 && trim( r.output ) == "true";
+	}
+
+	// How many screens are on (kscreen-doctor -j), at least 1.
+	function screenCount() {
+		if ( !variables.proc.has( "kscreen-doctor" ) ) return 1;
+		var r = variables.proc.exec( [ "kscreen-doctor", "-j" ], 15 );
+		if ( r.exitCode != 0 ) return 1;
+		try {
+			var n = 0;
+			for ( var o in ( jsonDeserialize( r.output ).outputs ?: [] ) ) if ( ( o.enabled ?: false ) == true ) n++;
+			return max( 1, n );
+		} catch ( any e ) { return 1; }
+	}
+
+	// Writes the KWin script and loads it once (it stays loaded and places every screensaver window from then on).
+	function ensureScript() {
+		var f = scriptPath();
+		directoryCreate( getDirectoryFromPath( f ), true, true );
+		fileWrite( f, new bxrig.TemplateData().text( "kwin-screensaver.js" ) );
+		var loaded = variables.proc.exec( [ "qdbus6", "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting.isScriptLoaded", scriptName() ], 10 );
+		if ( loaded.exitCode == 0 && trim( loaded.output ) == "true" ) return true;
+		var r = variables.proc.exec( [ "qdbus6", "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting.loadScript", f, scriptName() ], 10 );
+		if ( r.exitCode != 0 ) return false;
+		variables.proc.exec( [ "qdbus6", "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting.start" ], 10 );
+		return true;
+	}
+
+	// The pids of the screensaver terminals (their command line names our window class).
+	function pids( cls ) {
+		var r = variables.proc.exec( [ "pgrep", "-f", "--", "[-= ]" & arguments.cls & "( |$)" ], 10 );
+		if ( r.exitCode != 0 ) return [];
+		return listToArray( r.output, chr( 10 ) ).map( function( p ) { return trim( p ); } ).filter( function( p ) { return isNumeric( p ); } );
+	}
+
+	// Opens one terminal per screen: { started, screens, error }.
+	function start( argv ) {
+		if ( !ensureScript() ) return { started: 0, screens: 0, error: "KWin did not load the placement script" };
+		var n = screenCount();
+		var started = 0;
+		for ( var i = 1; i <= n; i++ ) if ( variables.proc.detach( arguments.argv ).exitCode == 0 ) started++;
+		return { started: started, screens: n, error: "" };
+	}
+}
