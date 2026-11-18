@@ -66,5 +66,12 @@ for t in "$root"/tests/*-test.sh "$root"/tests/*_test.bxs "$root"/tests/catalog_
 	[[ -f "$t" ]] || continue
 	grep -q "$(basename "$t")" "$root/.github/workflows/ci.yml" || { echo "FAIL: $(basename "$t") is not listed in .github/workflows/ci.yml"; fails=$((fails+1)); }
 done
+# every tracked shell script is syntax-checked by CI job 1 (the `bash -n` list)
+bashn="$(sed -n 's/^ *bash -n //p' "$root/.github/workflows/ci.yml" | head -n1)"
+while IFS= read -r f; do
+	[[ " $bashn " == *" $f "* ]] || { echo "FAIL: $f is not in the bash -n list of .github/workflows/ci.yml"; fails=$((fails+1)); }
+done < <(git -C "$root" ls-files '*.sh' 2>/dev/null)
+# the formatting CI job 1 checks (tabs, LF, final newline, no trailing spaces): run scripts/format.sh before you commit
+bash "$root/scripts/format.sh" --check >/dev/null 2>&1 || { echo "FAIL: scripts/format.sh --check lists unformatted files (run scripts/format.sh)"; fails=$((fails+1)); }
 (( fails == 0 )) || exit 1
 echo "dry-test: ok"

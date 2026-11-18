@@ -30,13 +30,17 @@ finish() {  # FILE SOURCE COMMIT
 }
 
 # The evergreen files can be served stale by the CDN (version-latest.properties too, for about a day), so the build is taken
-# from its immutable folder (<version>-<commit>/): first the one for the commit the branch is on now (git ls-remote), then the one
-# named in version-latest.properties; without either the evergreen folder is used.
+# from its immutable folder (<version>-<commit>/): the one for the commit the branch is on now (git ls-remote). When the branch head is
+# known but that build is not published yet, nothing is returned: an older published build (version-latest.properties, or the evergreen
+# file) is behind the branch and can lack what BxRig and its modules need (a stale 0.14.0 build lacked matchbox.types.v1, so bx-image did
+# not load), so the caller builds the head from source. Only when the head cannot be read (no git, no network to the repo) the build named
+# in version-latest.properties, or else the evergreen folder, is used.
 build_base() {
 	local props v c head
 	if [[ -n "$repo" && -n "$ref" ]] && command -v git >/dev/null; then
 		head="$(git ls-remote "$repo" "refs/heads/$ref" 2>/dev/null | awk '{print substr($1, 1, 7); exit}')" || head=""
 		if [[ -n "$head" ]] && curl -fsSL -m 30 -o /dev/null "$base/$want-$head/version.properties" 2>/dev/null; then echo "$base/$want-$head"; return; fi
+		[[ -z "$head" ]] || return 1
 	fi
 	props="$(curl -fsSL -m 30 "$base/version-latest.properties" 2>/dev/null)" || { echo "$base"; return; }
 	v="$(sed -n 's/^version=//p' <<<"$props" | head -n1)"; c="$(sed -n 's/^commit=//p' <<<"$props" | head -n1)"
@@ -44,8 +48,7 @@ build_base() {
 }
 
 if (( ! from_source )) && [[ -n "$base" ]]; then
-	dl="$(build_base)"
-	if curl -fsSL -m 300 -o "$work/matchbox" "$dl/matchbox-linux-x86_64" \
+	if dl="$(build_base)" && curl -fsSL -m 300 -o "$work/matchbox" "$dl/matchbox-linux-x86_64" \
 		 && curl -fsSL -m 30 -o "$work/matchbox.sha256" "$dl/matchbox-linux-x86_64.sha256"; then
 		expected="$(awk '{print $1; exit}' "$work/matchbox.sha256")"
 		actual="$(sha256sum "$work/matchbox" | awk '{print $1}')"
@@ -53,7 +56,7 @@ if (( ! from_source )) && [[ -n "$base" ]]; then
 		finish "$work/matchbox" "published" "" && exit 0
 		echo "The published MatchBox does not match box.json; building from source instead" >&2
 	else
-		echo "No published MatchBox at $base yet; building from source" >&2
+		echo "No published MatchBox at $base for the $ref branch head; building from source" >&2
 	fi
 fi
 
