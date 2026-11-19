@@ -1799,9 +1799,9 @@
 			"group": "ai",
 			"category": "Assistants",
 			"tier": "optional",
-			"source": "aur",
+			"source": "pacman",
 			"targets": [
-				"chatgpt-desktop"
+				"chatgpt-desktop-bin"
 			],
 			"homepage": "https://chatgpt.com/download",
 			"macos": "ChatGPT (same)",
@@ -1809,7 +1809,8 @@
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-09"
+			"verified_on": "2026-11-19",
+			"repo": "cachyos"
 		},
 		{
 			"id": "claude-desktop",
@@ -6555,7 +6556,7 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
+			"verified_on": "2026-11-19",
 			"source": "pacman",
 			"repo": "extra",
 			"description_source": "arch",
@@ -6565,7 +6566,8 @@
 			"group": "media",
 			"category": "Media",
 			"targets": [
-				"vlc"
+				"vlc",
+				"vlc-plugins-all"
 			],
 			"homepage": "https://www.videolan.org/vlc/",
 			"macos": "QuickTime Player"
@@ -7257,6 +7259,874 @@
 			],
 			"verified_on": "2026-11-13",
 			"macos": "AirPlay receiver"
+		},
+		{
+			"id": "gh",
+			"name": "GitHub CLI",
+			"description": "The GitHub CLI",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "development",
+			"category": "Version control",
+			"tier": "default",
+			"source": "pacman",
+			"targets": [
+				"github-cli"
+			],
+			"repo": "extra",
+			"homepage": "https://github.com/cli/cli",
+			"macos": "gh via Homebrew",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "cmake",
+			"name": "CMake",
+			"description": "A cross-platform open-source make system",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "development",
+			"category": "Language tooling",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"cmake"
+			],
+			"repo": "extra",
+			"homepage": "https://www.cmake.org/",
+			"macos": "cmake via Homebrew",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "direnv",
+			"name": "direnv",
+			"description": "A shell extension that manages your environment",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "development",
+			"category": "Shell",
+			"tier": "default",
+			"source": "pacman",
+			"targets": [
+				"direnv"
+			],
+			"repo": "extra",
+			"homepage": "https://direnv.net",
+			"macos": "direnv via Homebrew",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "tree-sitter-cli",
+			"name": "Tree-sitter CLI",
+			"description": "CLI tool for developing, testing, and using Tree-sitter parsers",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "development",
+			"category": "Language tooling",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"tree-sitter-cli"
+			],
+			"repo": "extra",
+			"homepage": "https://github.com/tree-sitter/tree-sitter",
+			"macos": "tree-sitter via Homebrew",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "vim",
+			"name": "Vim",
+			"description": "Vi Improved, a highly configurable, improved version of the vi text editor",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "development",
+			"category": "Editors and IDEs",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"vim"
+			],
+			"repo": "extra",
+			"homepage": "https://www.vim.org",
+			"macos": "vim (built in)",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "mysql-workbench",
+			"name": "MySQL Workbench",
+			"description": "A cross-platform, visual database design tool developed by MySQL",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "infra",
+			"category": "Databases",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"mysql-workbench"
+			],
+			"repo": "extra",
+			"homepage": "https://www.mysql.com/products/workbench/",
+			"macos": "MySQL Workbench (same)",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "duf",
+			"name": "duf",
+			"description": "Disk Usage/Free Utility",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "system",
+			"category": "Disk",
+			"tier": "default",
+			"source": "pacman",
+			"targets": [
+				"duf"
+			],
+			"repo": "extra",
+			"homepage": "https://github.com/muesli/duf",
+			"macos": "duf via Homebrew",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "smartmontools",
+			"name": "smartmontools",
+			"description": "Control and monitor S.M.A.R.T. enabled ATA and SCSI Hard Drives",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "system",
+			"category": "Disk",
+			"tier": "default",
+			"source": "pacman",
+			"targets": [
+				"smartmontools"
+			],
+			"repo": "extra",
+			"homepage": "https://www.smartmontools.org/",
+			"macos": "smartmontools via Homebrew",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "partitionmanager",
+			"name": "KDE Partition Manager",
+			"description": "A KDE utility that allows you to manage disks, partitions, and file systems",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "system",
+			"category": "Disk",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"partitionmanager"
+			],
+			"repo": "extra",
+			"homepage": "https://apps.kde.org/partitionmanager/",
+			"macos": "Disk Utility",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "7zip",
+			"name": "7-Zip",
+			"description": "File archiver for extremely high compression",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "system",
+			"category": "Utilities",
+			"tier": "default",
+			"source": "pacman",
+			"targets": [
+				"7zip"
+			],
+			"repo": "extra",
+			"homepage": "https://www.7-zip.org",
+			"macos": "sevenzip via Homebrew",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "unrar",
+			"name": "unrar",
+			"description": "The RAR uncompression program",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "system",
+			"category": "Utilities",
+			"tier": "default",
+			"source": "pacman",
+			"targets": [
+				"unrar"
+			],
+			"repo": "extra",
+			"homepage": "https://www.rarlab.com/rar_add.htm",
+			"macos": "The Unarchiver",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "pika-backup",
+			"name": "Pika Backup",
+			"description": "Easy to use backup tool to keep your data safe",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "system",
+			"category": "Utilities",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"pika-backup"
+			],
+			"repo": "extra",
+			"homepage": "https://apps.gnome.org/PikaBackup/",
+			"macos": "Time Machine",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "flatseal",
+			"name": "Flatseal",
+			"description": "A permissions manager for Flatpak",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "system",
+			"category": "System",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"flatseal"
+			],
+			"repo": "extra",
+			"homepage": "https://github.com/tchx84/Flatseal/",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "kinfocenter",
+			"name": "KDE Info Center",
+			"description": "A utility that provides information about a computer system",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "system",
+			"category": "System",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"kinfocenter"
+			],
+			"repo": "extra",
+			"homepage": "https://kde.org/plasma-desktop/",
+			"macos": "System Information",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "snapd",
+			"name": "snapd",
+			"description": "Service and tools for management of snap packages.",
+			"description_source": "aur",
+			"kind": "tui",
+			"group": "system",
+			"category": "System",
+			"tier": "optional",
+			"source": "aur",
+			"targets": [
+				"snapd"
+			],
+			"homepage": "https://github.com/snapcore/snapd",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "cups",
+			"name": "CUPS printing",
+			"description": "OpenPrinting CUPS - daemon package",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "system",
+			"category": "System",
+			"tier": "default",
+			"source": "pacman",
+			"targets": [
+				"cups"
+			],
+			"repo": "extra",
+			"homepage": "https://openprinting.github.io/cups/",
+			"macos": "Printing (built in)",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19",
+			"note": "Enable the printing service once: sudo systemctl enable --now cups.service"
+		},
+		{
+			"id": "cups-pdf",
+			"name": "CUPS PDF printer",
+			"description": "PDF printer for cups",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "system",
+			"category": "System",
+			"tier": "default",
+			"source": "pacman",
+			"targets": [
+				"cups-pdf"
+			],
+			"repo": "extra",
+			"homepage": "https://www.cups-pdf.de/welcome.shtml",
+			"macos": "Print to PDF (built in)",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "hplip",
+			"name": "HP printer drivers",
+			"description": "Drivers for HP DeskJet, OfficeJet, Photosmart, Business Inkjet and some LaserJet",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "system",
+			"category": "System",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"hplip"
+			],
+			"repo": "extra",
+			"homepage": "https://hplipopensource.com",
+			"macos": "HP Smart",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "wget",
+			"name": "Wget",
+			"description": "Network utility to retrieve files from the web",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "network",
+			"category": "File Transfer",
+			"tier": "default",
+			"source": "pacman",
+			"targets": [
+				"wget"
+			],
+			"repo": "extra",
+			"homepage": "https://www.gnu.org/software/wget/wget.html",
+			"macos": "wget via Homebrew",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "ufw",
+			"name": "ufw firewall",
+			"description": "Uncomplicated and easy to use CLI tool for managing a netfilter firewall",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "network",
+			"category": "Networking",
+			"tier": "default",
+			"source": "pacman",
+			"targets": [
+				"ufw"
+			],
+			"repo": "extra",
+			"homepage": "https://launchpad.net/ufw",
+			"macos": "macOS firewall (built in)",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19",
+			"note": "Installed off; turn it on with: sudo ufw enable"
+		},
+		{
+			"id": "ufw-extras",
+			"name": "ufw extras",
+			"description": "Extra configuration files for UFW",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "network",
+			"category": "Networking",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"ufw-extras"
+			],
+			"repo": "extra",
+			"homepage": "https://github.com/xyproto/ufw-extras",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "networkmanager-openvpn",
+			"name": "OpenVPN for NetworkManager",
+			"description": "NetworkManager VPN plugin for OpenVPN (with GUI)",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "network",
+			"category": "Networking",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"networkmanager-openvpn"
+			],
+			"repo": "extra",
+			"homepage": "https://networkmanager.dev/docs/vpn/",
+			"macos": "Tunnelblick",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "imagemagick",
+			"name": "ImageMagick",
+			"description": "An image viewing/manipulation program",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "media",
+			"category": "Graphics",
+			"tier": "default",
+			"source": "pacman",
+			"targets": [
+				"imagemagick"
+			],
+			"repo": "extra",
+			"homepage": "https://www.imagemagick.org/",
+			"macos": "imagemagick via Homebrew",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "haruna",
+			"name": "Haruna",
+			"description": "Video player built with Qt/QML on top of libmpv",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "media",
+			"category": "Media",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"haruna"
+			],
+			"repo": "extra",
+			"homepage": "https://apps.kde.org/haruna/",
+			"macos": "IINA",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "elisa",
+			"name": "Elisa",
+			"description": "A simple music player aiming to provide a nice experience for its users",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "media",
+			"category": "Audio",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"elisa"
+			],
+			"repo": "extra",
+			"homepage": "https://apps.kde.org/elisa/",
+			"macos": "Apple Music",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "kooha",
+			"name": "Kooha",
+			"description": "Elegantly record your screen",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "media",
+			"category": "Screenshots and recording",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"kooha"
+			],
+			"repo": "extra",
+			"homepage": "https://github.com/SeaDve/Kooha",
+			"macos": "QuickTime Player screen recording",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "kcalc",
+			"name": "KCalc",
+			"description": "Scientific Calculator",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "everyday",
+			"category": "Productivity",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"kcalc"
+			],
+			"repo": "extra",
+			"homepage": "https://apps.kde.org/kcalc/",
+			"macos": "Calculator",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "evolution",
+			"name": "Evolution",
+			"description": "Manage your email, contacts and schedule",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "everyday",
+			"category": "Email",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"evolution"
+			],
+			"repo": "extra",
+			"homepage": "https://gitlab.gnome.org/GNOME/evolution/-/wikis/home",
+			"macos": "Mail and Calendar",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "seahorse",
+			"name": "Seahorse (Passwords and Keys)",
+			"description": "GNOME application for managing PGP keys",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "everyday",
+			"category": "Security",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"seahorse"
+			],
+			"repo": "extra",
+			"homepage": "https://wiki.gnome.org/Apps/Seahorse",
+			"macos": "Keychain Access",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "thunar",
+			"name": "Thunar",
+			"description": "Modern, fast and easy-to-use file manager for Xfce",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "desktop",
+			"category": "File Management",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"thunar"
+			],
+			"repo": "extra",
+			"homepage": "https://docs.xfce.org/xfce/thunar/start",
+			"macos": "Finder",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "kio-admin",
+			"name": "Dolphin admin mode",
+			"description": "Manage files as administrator using the admin:// KIO protocol",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "desktop",
+			"category": "File Management",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"kio-admin"
+			],
+			"repo": "extra",
+			"homepage": "https://invent.kde.org/system/kio-admin",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "kio-gdrive",
+			"name": "Google Drive in Dolphin",
+			"description": "KIO Slave to access Google Drive",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "infra",
+			"category": "Cloud Storage",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"kio-gdrive"
+			],
+			"repo": "extra",
+			"homepage": "https://apps.kde.org/kio_gdrive/",
+			"macos": "Google Drive for desktop",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "dropbox-kde-icons",
+			"name": "Dropbox KDE tray icons",
+			"description": "Dropbox systray icons that fit better in KDE",
+			"description_source": "aur",
+			"kind": "desktop",
+			"group": "infra",
+			"category": "Cloud Storage",
+			"tier": "optional",
+			"source": "aur",
+			"targets": [
+				"dropbox-kde-systray-icons"
+			],
+			"homepage": "https://www.opendesktop.org/c/1466612163",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "kvantum",
+			"name": "Kvantum",
+			"description": "SVG-based theme engine for Qt6 (including config tool and extra themes)",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "desktop",
+			"category": "Themes",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"kvantum"
+			],
+			"repo": "extra",
+			"homepage": "https://github.com/tsujan/Kvantum",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "darkly",
+			"name": "Darkly Qt style",
+			"description": "Fork of Lightly (A modern style for Qt applications)",
+			"description_source": "aur",
+			"kind": "desktop",
+			"group": "desktop",
+			"category": "Themes",
+			"tier": "optional",
+			"source": "aur",
+			"targets": [
+				"darkly-bin"
+			],
+			"homepage": "https://github.com/Bali10050/darkly",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "papirus-folders",
+			"name": "Papirus folder colours",
+			"description": "Allows changing the color of folders in Papirus icon theme and its forks",
+			"description_source": "aur",
+			"kind": "tui",
+			"group": "desktop",
+			"category": "Themes",
+			"tier": "optional",
+			"source": "aur",
+			"targets": [
+				"papirus-folders"
+			],
+			"homepage": "https://github.com/PapirusDevelopmentTeam/papirus-folders",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "qtengine",
+			"name": "qtengine",
+			"description": "QT Platform Theme made easy",
+			"description_source": "aur",
+			"kind": "desktop",
+			"group": "desktop",
+			"category": "Themes",
+			"tier": "optional",
+			"source": "aur",
+			"targets": [
+				"qtengine"
+			],
+			"homepage": "https://github.com/kossLAN/qtengine",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19"
+		},
+		{
+			"id": "waybar",
+			"name": "Waybar",
+			"description": "Highly customizable Wayland bar for Sway and Wlroots based compositors",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "desktop",
+			"category": "Desktop polish",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"waybar"
+			],
+			"repo": "extra",
+			"homepage": "https://github.com/Alexays/Waybar/",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19",
+			"note": "An alternative bar; BxRig's Hyprland desktop uses Noctalia's bar"
+		},
+		{
+			"id": "hyprpaper",
+			"name": "hyprpaper",
+			"description": "a blazing fast wayland wallpaper utility with IPC controls",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "desktop",
+			"category": "Desktop polish",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"hyprpaper"
+			],
+			"repo": "extra",
+			"homepage": "https://github.com/hyprwm/hyprpaper",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19",
+			"note": "An alternative wallpaper tool; Noctalia sets the wallpaper in BxRig"
+		},
+		{
+			"id": "hyprlauncher",
+			"name": "hyprlauncher",
+			"description": "A multipurpose and versatile launcher / picker for Hyprland",
+			"description_source": "arch",
+			"kind": "desktop",
+			"group": "desktop",
+			"category": "Launchers",
+			"tier": "optional",
+			"source": "pacman",
+			"targets": [
+				"hyprlauncher"
+			],
+			"repo": "extra",
+			"homepage": "https://github.com/hyprwm/hyprlauncher",
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true,
+			"verified_on": "2026-11-19",
+			"note": "An alternative launcher; Noctalia's launcher is BxRig's default"
 		}
 	]
 }

@@ -88,7 +88,7 @@ hypr "$binary" appearance windows snap on >/dev/null; ! lookhas 'snap' || fail '
 [[ "$(code "$binary" appearance windows snap maybe)" == 2 ]] || fail 'bad snap value'
 
 # ---- the font: list, install, set (Noctalia + the terminal starters you have not changed) ----
-run "$binary" appearance font list --json | jq -e '(.data.fonts | length == 8) and (.data.fonts | map(select(.id == "cascadia" and .installed)) | length == 1) and (.data.fonts | map(select(.id == "victor" and (.installed | not))) | length == 1)' >/dev/null || fail 'font list'
+run "$binary" appearance font list --json | jq -e '(.data.fonts | length == 10) and (.data.fonts | map(select(.id == "cascadia" and .installed)) | length == 1) and (.data.fonts | map(select(.id == "victor" and (.installed | not))) | length == 1)' >/dev/null || fail 'font list'
 [[ "$(code "$binary" appearance font victor)" == 4 ]] || fail 'a font that is not installed exits 4'
 [[ "$(code "$binary" appearance font install nope)" == 2 ]] || fail 'unknown font id'
 run "$binary" appearance font install victor --yes >/dev/null; has 'pacman -S --needed --noconfirm ttf-victor-mono-nerd' || fail "font install: $(cat "$LOG")"

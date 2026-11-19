@@ -76,7 +76,7 @@ With `--json` a command prints one JSON object on stdout and no human text (`Cli
 
 ## 5. Catalog (single source of truth)
 
-The catalog is `catalog/apps.json` (schema 3, 289 apps today, version in `catalog_version`), packed into the binary as a resource (`src/resources/catalog`). It started as the legacy `apps.json` (482 entries) and replaced the hardcoded lists. The findings below are the 2026-11-09 audit of that legacy data and are kept as the record of why the catalog looks as it does.
+The catalog is `catalog/apps.json` (schema 3, 349 apps today, version in `catalog_version`), packed into the binary as a resource (`src/resources/catalog`). It started as the legacy `apps.json` (482 entries) and replaced the hardcoded lists. The findings below are the 2026-11-09 audit of that legacy data and are kept as the record of why the catalog looks as it does.
 
 Entry schema (legacy fields kept, new fields marked):
 

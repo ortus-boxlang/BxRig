@@ -12,7 +12,9 @@ class Fonts {
 			f( "victor", "Victor Code", "VictorMono Nerd Font", "ttf-victor-mono-nerd" ),
 			f( "bitstream", "Bitstream Vera Mono", "BitstromWera Nerd Font", "ttf-bitstream-vera-mono-nerd" ),
 			f( "iosevka", "Iosevka", "Iosevka Nerd Font", "ttf-iosevka-nerd" ),
-			f( "sharetech", "Share Tech Mono", "ShareTechMono Nerd Font", "ttf-sharetech-mono-nerd" )
+			f( "sharetech", "Share Tech Mono", "ShareTechMono Nerd Font", "ttf-sharetech-mono-nerd" ),
+			f( "hack", "Hack", "Hack Nerd Font", "ttf-hack-nerd" ),
+			f( "sourcecodepro", "Source Code Pro", "SauceCodePro Nerd Font", "ttf-sourcecodepro-nerd" )
 		];
 	}
 
