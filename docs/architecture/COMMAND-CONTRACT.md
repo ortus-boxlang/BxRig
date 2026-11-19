@@ -76,7 +76,7 @@ With `--json` a command prints one JSON object on stdout and no human text (`Cli
 
 ## 5. Catalog (single source of truth)
 
-The catalog is `catalog/apps.json` (schema 3, 289 apps today, version in `catalog_version`), packed into the binary as a resource (`src/resources/catalog`). It started as the legacy `apps.json` (482 entries) and replaced the hardcoded lists. The findings below are the 2026-11-09 audit of that legacy data and are kept as the record of why the catalog looks as it does.
+The catalog is `catalog/apps.json` (schema 3, 349 apps today, version in `catalog_version`), packed into the binary as a resource (`src/resources/catalog`). It started as the legacy `apps.json` (482 entries) and replaced the hardcoded lists. The findings below are the 2026-11-09 audit of that legacy data and are kept as the record of why the catalog looks as it does.
 
 Entry schema (legacy fields kept, new fields marked):
 
@@ -507,7 +507,7 @@ Init rules for this page: a default agent that was not ticked is installed too; 
 - `containers socket enable [--yes]` runs `systemctl --user enable --now podman.socket` and prints `DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock`.
 - `containers docker-compat [--yes]` installs `podman-docker` (ships `/usr/bin/docker`) and `podman-compose` with `sudo pacman -S --needed`. Refused with exit 4 while the `docker` package is installed (it conflicts). Real wrapper scripts are not written: the packages are the compatibility layer. The wizard asks `docker_compat` (default yes) when Podman is the engine; `init` runs it after the containers profile.
 - `containers list [--json]` lists every container on the configured engine (`bxrig db engine`, Podman by default) with `ps -a --format`: `data.containers[]` is `{name, image, state ("running", "exited", "created", "paused"), ports (host ports, numbers), ports_text, created, kind}`; `kind` is `database` for `bxrig-db-*`, `vm` for `bxrig-vm-*`, else `container`. `containers start|stop|restart NAME` act on one container by its engine name (reversible, so no `--yes`, like `db stop` and `vm stop`; starting a running or stopping a stopped container is a no-op with `data.already`). `containers logs NAME [--lines=N]` prints the last N lines (default 200, 1 to 10000; both output streams). Exit 2 for a bad name or `--lines`, 4 when the engine is missing or the container does not exist, 6 when the engine command fails. This is the data source of the Developer bar plugin. Tests: `tests/containers-test.sh` (fake Podman and Docker).
-- `editor lazyvim [--yes]` follows lazyvim.org/installation: installs `neovim git ripgrep fd lazygit` when missing, `git clone https://github.com/LazyVim/starter ~/.config/nvim`, removes its `.git`. An existing `~/.config/nvim` is **never** touched (exit 4 with the `mv` to run). Wizard: `editor_starter` (`none` default, `lazyvim`) on the Developer page.
+- `editor lazyvim [--yes]` follows lazyvim.org/installation: installs `neovim git ripgrep fd lazygit tree-sitter-cli` when missing (`tree-sitter-cli` builds the grammars for nvim-treesitter's `main` branch, which LazyVim uses), `git clone https://github.com/LazyVim/starter ~/.config/nvim`, removes its `.git`. An existing `~/.config/nvim` is **never** touched (exit 4 with the `mv` to run). Wizard: `editor_starter` (`none` default, `lazyvim`) on the Developer page.
 - Package names checked on archlinux.org 2026-11-12 (all in `extra`). Tests: `tests/containers-test.sh`.
 
 ### 13.18 Desktop utilities: clipboard history and screen recording (decided with the owner 2026-11-12)

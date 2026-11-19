@@ -1,6 +1,6 @@
 // `bxrig editor lazyvim [--yes] | boxlang [--yes] | status | refresh [--force] [--yes]`: Neovim with LazyVim, the BxRig layer and BoxLang.
 //   lazyvim  Steps from lazyvim.org/installation: git clone https://github.com/LazyVim/starter ~/.config/nvim, then remove its .git folder.
-//            Neovim and the tools LazyVim's checks look for (git, ripgrep, fd, lazygit) are installed first with pacman when missing.
+//            Neovim and the tools LazyVim needs (git, ripgrep, fd, lazygit, and tree-sitter-cli for nvim-treesitter's parsers) are installed first with pacman when missing.
 //            Then the BxRig layer goes on top (see layer()). An existing ~/.config/nvim is NEVER touched: the command says so and stops.
 //   boxlang  Only the BoxLang plugin spec (lua/plugins/boxlang.lua), for a LazyVim config you already have. Adds that one file, edits nothing.
 //   refresh  Rewrites the layer files that are still as BxRig wrote them (missing, clean or outdated); files you changed are kept
@@ -113,7 +113,7 @@ class Editor {
 		var dir = target();
 		if ( directoryExists( dir ) || fileExists( dir ) ) return variables.cli.say( cmd, "precondition", { error: dir & " exists", target: dir }, arguments.asJson, [ "error: " & dir & " already exists, so it was left alone. Move it first (mv " & dir & " " & dir & ".bak) and run this again.", "To add only the BoxLang plugin to it: bxrig editor boxlang --yes" ] );
 		var pkgs = [];
-		for ( var p in [ "neovim", "git", "ripgrep", "fd", "lazygit" ] ) if ( !variables.pacman.isInstalled( p ) ) pkgs.append( p );
+		for ( var p in [ "neovim", "git", "ripgrep", "fd", "lazygit", "tree-sitter-cli" ] ) if ( !variables.pacman.isInstalled( p ) ) pkgs.append( p );
 		var data = { target: dir, packages: pkgs, layer: layerFiles() };
 		if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( ( pkgs.len() ? variables.pacman.installLine( pkgs ) & "; " : "" ) & "git clone https://github.com/LazyVim/starter " & dir & "; remove " & dir & "/.git; add the BxRig layer (" & layerFiles().len() & " files: transparency, BoxLang syntax, theme following, no news popups) and the neo-tree extra", data, arguments.asJson );
 		if ( pkgs.len() ) {
