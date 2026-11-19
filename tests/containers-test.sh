@@ -100,7 +100,7 @@ rm -f "$tmp/installed/"*
 [[ "$(code "$binary" editor lazyvim)" == 2 ]] || fail 'lazyvim without --yes exits 2'
 [[ ! -e "$tmp/home/.config/nvim" ]] || fail 'the plan cloned'
 : > "$LOG"; run "$binary" editor lazyvim --yes | grep -q 'LazyVim starter is in' || fail 'lazyvim --yes'
-grep -q 'sudo pacman -S --needed --noconfirm neovim git ripgrep fd lazygit' "$LOG" || fail "tools installed first: $(cat "$LOG")"
+grep -q 'sudo pacman -S --needed --noconfirm neovim git ripgrep fd lazygit tree-sitter-cli' "$LOG" || fail "tools installed first: $(cat "$LOG")"
 grep -q "git clone https://github.com/LazyVim/starter $tmp/home/.config/nvim" "$LOG" || fail 'clone command'
 [[ -f "$tmp/home/.config/nvim/init.lua" && ! -e "$tmp/home/.config/nvim/.git" ]] || fail 'the .git folder is removed'
 echo mine > "$tmp/home/.config/nvim/init.lua"; : > "$LOG"
