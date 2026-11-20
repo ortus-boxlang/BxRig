@@ -1,12 +1,3 @@
-          install -m 755 dist/bxrig /usr/local/bin/bxrig
-          bxrig catalog check
-          bxrig catalog coverage
-          # the catalog reads this distribution (git installs from its own package manager)
-          bxrig catalog show git --json | grep -Eq '"source":"(zypper|apt)"'
-          # setup refuses root and needs sudo: plan it as a normal user
-          if command -v zypper >/dev/null; then zypper --non-interactive install sudo; else apt-get update -qq && apt-get install -y -qq sudo; fi
-          useradd -m tester
-          su tester -c "bxrig setup hyprland --dry-run"
 name: BxRig CI
 on:
   push:
