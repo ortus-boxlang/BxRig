@@ -1,0 +1,118 @@
+// `bxrig catalog map DISTRO [--write] [--json]`: proposes the install file of a distribution, run ON that distribution (a container of it is
+// enough). For every catalog app it asks this machine's package manager for the Arch package names (through the file's `names` map), then
+// the same names without an Arch-only suffix (-bin, -git), then Flathub (the app's name, exact match), and reports each app as kept (the
+// file already has it), found, flatpak or missing. It also checks the Arch names BxRig installs itself (setup, the shell, terminals, the
+// editor and fonts): one the distribution spells differently needs a line in `names`.
+// --write writes catalog/install/DISTRO.json in the current folder: the existing entries, plus every found and flatpak one (review it, then
+// format it with jq --tab). Exit: 0 done, 2 usage, 4 not on that distribution or no package manager.
+class CatalogMap {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( variables.cli, "catalog map" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		return this;
+	}
+
+	function targets() { return [ "suse", "debian", "ubuntu" ]; }
+
+	// The Arch package names BxRig installs outside the catalog.
+	function codeNames() {
+		var sp = new bxrig.SetupPlan();
+		var out = [];
+		var add = function( list ) { for ( var p in list ) if ( len( p ) && !arrayFind( out, p ) ) out.append( p ); };
+		add( sp.hyprlandPackages() );
+		add( sp.plasmaDeps() );
+		add( sp.bluetoothPackages() );
+		var sc = new bxrig.ShellConfig();
+		for ( var sh in sc.shells() ) add( sc.packages( sh ) );
+		add( new bxrig.TerminalConfig().terminals().map( function( t ) { return t.pkg; } ) );
+		add( [ "neovim", "git", "ripgrep", "fd", "lazygit", "tree-sitter-cli" ] );
+		add( new bxrig.Fonts().list().map( function( f ) { return f.pkg; } ) );
+		return out;
+	}
+
+	// The names to try for an Arch package: the name map's answer, the name itself, and the name without -bin or -git.
+	function candidates( name, map ) {
+		var out = [];
+		if ( structKeyExists( arguments.map, arguments.name ) ) { out.append( arguments.map[ arguments.name ] ); return out; }
+		out.append( arguments.name );
+		for ( var suf in [ "-bin", "-git", "-desktop-bin", "-electron" ] ) if ( right( arguments.name, len( suf ) ) == suf ) out.append( left( arguments.name, len( arguments.name ) - len( suf ) ) );
+		return out;
+	}
+
+	// The first candidate the repositories have, "" when none ("-" when the map says the distribution needs nothing).
+	function firstKnown( pm, name, map ) {
+		for ( var c in candidates( arguments.name, arguments.map ) ) {
+			if ( !len( c ) ) return "-";
+			if ( arguments.pm.known( c ) ) return c;
+		}
+		return "";
+	}
+
+	// A Flathub application id whose name is exactly the app's name (flatpak search), "" for none.
+	function flathubId( name ) {
+		var r = variables.proc.exec( [ "flatpak", "search", "--columns=name,application", arguments.name ], 60 );
+		if ( r.exitCode != 0 ) return "";
+		for ( var l in listToArray( r.output, chr( 10 ) ) ) {
+			var cols = listToArray( l, chr( 9 ) );
+			if ( cols.len() >= 2 && lCase( trim( cols[ 1 ] ) ) == lCase( trim( arguments.name ) ) ) return trim( cols[ 2 ] );
+		}
+		return "";
+	}
+
+	function run( distro, write, asJson ) {
+		var d = lCase( arguments.distro );
+		if ( !arrayFind( targets(), d ) ) return variables.out.usage( new bxrig.CommandSpec().usage( "catalog" ), arguments.asJson );
+		var here = new bxrig.util.Distro().family();
+		if ( here != d ) return variables.out.precondition( "catalog map " & d & " asks the package manager of " & d & "; this is " & ( len( here ) ? here : "an unknown system" ) & " (run it in a " & d & " container)", arguments.asJson );
+		var pm = new bxrig.util.Packages().native( variables.proc, d );
+		if ( !pm.available() ) return variables.out.precondition( pm.tool() & " was not found", arguments.asJson );
+		var cat = new bxrig.Catalog();
+		var shared = jsonDeserialize( new bxrig.CatalogData().json() );
+		var arch = cat.install( "arch" ).apps;
+		var file = cat.install( d );
+		if ( structIsEmpty( file ) ) file = { schema: 1, distro: d, names: {}, repos: [], apps: {} };
+		var map = file.names ?: {};
+		var flat = new bxrig.util.Flatpak( variables.proc ).available();
+		var native = pm.tool() == "apt" ? "apt" : "zypper";
+		var rows = [];
+		var counts = { kept: 0, found: 0, flatpak: 0, missing: 0 };
+		for ( var a in shared.apps ) {
+			if ( ( a.source ?: "" ) == "web" ) continue;
+			if ( structKeyExists( file.apps, a.id ) ) { counts.kept++; rows.append( { id: a.id, result: "kept" } ); continue; }
+			var e = arch[ a.id ] ?: {};
+			var names = ( e.source ?: "" ) == "aur" && structKeyExists( e, "aur_targets" ) ? e.aur_targets : ( e.targets ?: [] );
+			var got = [];
+			var ok = names.len() > 0 && arrayFind( [ "pacman", "aur" ], e.source ?: "" );
+			if ( ok ) for ( var n in names ) {
+				var k = firstKnown( pm, n, map );
+				if ( !len( k ) ) { ok = false; break; }
+				if ( k != "-" ) got.append( k );
+			}
+			if ( ok && got.len() ) {
+				file.apps[ a.id ] = { source: native, targets: got };
+				counts.found++; rows.append( { id: a.id, result: "found", targets: got } );
+				continue;
+			}
+			var fid = flat ? flathubId( a.name ) : "";
+			if ( len( fid ) ) {
+				file.apps[ a.id ] = { source: "flatpak", targets: [ fid ] };
+				counts.flatpak++; rows.append( { id: a.id, result: "flatpak", targets: [ fid ] } );
+				continue;
+			}
+			counts.missing++; rows.append( { id: a.id, result: "missing", arch: names } );
+		}
+		var codeMissing = codeNames().filter( function( n ) { return !len( firstKnown( pm, n, map ) ); } );
+		if ( arguments.write ) {
+			var path = expandPath( "catalog/install/" & d & ".json" );
+			if ( !directoryExists( getDirectoryFromPath( path ) ) ) return variables.out.precondition( "catalog/install was not found here (run it from the BxRig checkout)", arguments.asJson );
+			fileWrite( path, jsonSerialize( file ) & chr( 10 ) );
+		}
+		var lines = [];
+		for ( var r in rows ) if ( r.result != "kept" ) lines.append( left( r.result & "        ", 8 ) & r.id & ( structKeyExists( r, "targets" ) ? "  " & r.targets.toList( " " ) : "" ) );
+		lines.append( d & ": " & counts.kept & " kept, " & counts.found & " found, " & counts.flatpak & " flatpak, " & counts.missing & " missing" & ( flat ? "" : " (flatpak is not installed: Flathub was not asked)" ) );
+		if ( codeMissing.len() ) lines.append( "names BxRig installs that " & d & " spells differently or lacks (add them to `names`): " & codeMissing.toList( " " ) );
+		if ( arguments.write ) lines.append( "wrote catalog/install/" & d & ".json" );
+		return variables.out.say( "ok", { distro: d, counts: counts, apps: rows, codeMissing: codeMissing }, arguments.asJson, lines );
+	}
+}

@@ -65,6 +65,8 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `pkg` | `--limit` | value |  |
 | `pkg` | `--name` | any |  |
 | `pkg` | `--source` | value |  |
+| `catalog` | `--distro` | value | `suse` |
+| `catalog` | `--write` | bool |  |
 | `catalog` | `--category` | value |  |
 | `catalog` | `--group` | value | `ai` |
 | `catalog` | `--kind` | value |  |

@@ -1,0 +1,126 @@
+// zypper (openSUSE Tumbleweed and Slowroll): the same methods as Pacman. Builders return argv arrays; queries run through Proc (rpm for what
+// is installed, zypper for the repositories). Package names given in Arch spelling go through the `names` map (util.Packages).
+class Zypper {
+	function init( proc = "", names = {} ) {
+		variables.proc = isSimpleValue( arguments.proc ) ? new bxrig.util.Proc( arguments.proc ) : arguments.proc;
+		variables.map = arguments.names;
+		return this;
+	}
+
+	function tool() { return "zypper"; }
+	function available() { return variables.proc.has( "zypper" ); }
+	function pkgs( list ) { return new bxrig.util.PackageNames().translate( arguments.list, variables.map ); }
+
+	// ---- argv builders (pure) ----
+	function base( asRoot = false ) { return arguments.asRoot ? [ "zypper", "--non-interactive" ] : [ "sudo", "zypper", "--non-interactive" ]; }
+
+	function installArgv( list, asRoot = false ) {
+		var argv = base( arguments.asRoot );
+		argv.append( "install" );
+		for ( var p in pkgs( arguments.list ) ) argv.append( p );
+		return argv;
+	}
+
+	// zypper remove --clean-deps PKG... (flags is pacman's and ignored: zypper keeps no per-package config to choose about)
+	function removeArgv( list, flags = "", asRoot = false ) {
+		var argv = base( arguments.asRoot );
+		argv.append( "remove" );
+		argv.append( "--clean-deps" );
+		for ( var p in pkgs( arguments.list ) ) argv.append( p );
+		return argv;
+	}
+
+	// Tumbleweed and Slowroll are rolling: a distribution upgrade (zypper dup), not zypper update.
+	function upgradeArgv( asRoot = false ) {
+		var argv = base( arguments.asRoot );
+		argv.append( "dup" );
+		return argv;
+	}
+
+	function installLine( list ) { return "sudo zypper install " & pkgs( arguments.list ).toList( " " ); }
+
+	// ---- queries ----
+	function rpm( args, timeout = 30 ) {
+		var argv = [ "rpm" ];
+		for ( var a in arguments.args ) argv.append( a );
+		return variables.proc.exec( argv, arguments.timeout );
+	}
+
+	function installedNames() {
+		var r = rpm( [ "-qa", "--qf", "%{NAME}\n" ] );
+		if ( r.exitCode != 0 ) return [];
+		return listToArray( trim( r.output ), chr( 10 ) ).map( function( n ) { return trim( n ); } ).filter( function( n ) { return len( n ) > 0; } );
+	}
+
+	function installed() {
+		var s = {};
+		for ( var n in installedNames() ) s[ n ] = true;
+		return s;
+	}
+
+	function versions( explicit = false ) {
+		var r = rpm( [ "-qa", "--qf", "%{NAME} %{VERSION}-%{RELEASE}\n" ] );
+		var rows = [];
+		for ( var l in listToArray( r.output, chr( 10 ) ) ) { var parts = listToArray( trim( l ), " " ); if ( parts.len() >= 2 ) rows.append( { name: parts[ 1 ], version: parts[ 2 ] } ); }
+		return { ok: r.exitCode == 0, rows: rows };
+	}
+
+	// zypper keeps no "asked for" mark that rpm shows, so this is every installed package.
+	function explicit() { return installedNames(); }
+	// No AUR: nothing is foreign.
+	function foreign() { return []; }
+
+	function isInstalled( pkg ) {
+		var n = pkgs( arguments.pkg );
+		return n.len() ? rpm( [ "-q", "--whatprovides", n[ 1 ] ], 15 ).exitCode == 0 : true;
+	}
+
+	function version( pkg ) {
+		var n = pkgs( arguments.pkg );
+		if ( !n.len() ) return "";
+		var r = rpm( [ "-q", "--whatprovides", "--qf", "%{VERSION}-%{RELEASE}\n", n[ 1 ] ], 15 );
+		return r.exitCode == 0 ? trim( listFirst( r.output, chr( 10 ) ) ) : "";
+	}
+
+	// True when a repository has a package of this name or one that provides it (python3-pip is provided by python313-pip; zypper exits 104
+	// when nothing matches).
+	function known( name ) { return variables.proc.exec( [ "zypper", "--non-interactive", "--quiet", "search", "--match-exact", "--provides", "-t", "package", arguments.name ], 60 ).exitCode == 0; }
+	function info( name ) { return trim( variables.proc.exec( [ "zypper", "--non-interactive", "--quiet", "info", arguments.name ], 60 ).output ); }
+
+	function search( text ) {
+		var r = variables.proc.exec( [ "zypper", "--non-interactive", "--quiet", "search", "-t", "package", arguments.text ], 60 );
+		return { ok: r.exitCode == 0, output: r.output };
+	}
+
+	// zypper search prints a table: "S | Name | Summary | Type". Rows: [ { name, version, repo, description } ].
+	function searchRows( text ) {
+		var out = [];
+		for ( var l in listToArray( search( arguments.text ).output, chr( 10 ) ) ) {
+			var cols = listToArray( l, "|", true ).map( function( c ) { return trim( c ); } );
+			if ( cols.len() < 4 || cols[ 2 ] == "Name" || !len( cols[ 2 ] ) || left( trim( l ), 1 ) == "-" ) continue;
+			out.append( { name: cols[ 2 ], version: "", repo: "zypper", description: cols[ 3 ] } );
+		}
+		return out;
+	}
+
+	function searchNames( pattern ) { return searchRows( arguments.pattern ).map( function( r ) { return r.name; } ); }
+
+	// ---- pending updates ----
+	function canCheckUpdates() { return available(); }
+
+	// zypper list-updates --dup prints "v | Repository | Name | Current Version | Available Version | Arch".
+	function parseUpgrades( text ) {
+		var rows = [];
+		for ( var l in listToArray( arguments.text, chr( 10 ) ) ) {
+			var cols = listToArray( l, "|", true ).map( function( c ) { return trim( c ); } );
+			if ( cols.len() >= 5 && cols[ 1 ] == "v" && cols[ 3 ] != "Name" ) rows.append( { name: cols[ 3 ], old: cols[ 4 ], new: cols[ 5 ] } );
+		}
+		return rows;
+	}
+
+	function pendingUpdates() {
+		var r = variables.proc.exec( [ "zypper", "--non-interactive", "--quiet", "list-updates", "--dup" ], 180 );
+		if ( r.exitCode != 0 ) return { ok: false, rows: [], error: trim( variables.proc.why( r ) ) };
+		return { ok: true, rows: parseUpgrades( r.output ), error: "" };
+	}
+}

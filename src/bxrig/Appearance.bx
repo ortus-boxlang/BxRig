@@ -276,6 +276,8 @@ class Appearance {
 			var wantFont = arguments.args[ 2 ];
 			var hit = fonts().filter( function( f ) { return f.id == wantFont; } );
 			if ( !hit.len() ) return variables.out.fail( "usage", "unknown font " & arguments.args[ 2 ] & " (bxrig appearance font list)", arguments.asJson );
+			var dist = new bxrig.util.Distro();
+			if ( !new bxrig.util.Packages().native( "", dist.catalogName() ).pkgs( [ hit[ 1 ].pkg ] ).len() ) return variables.out.fail( "precondition", hit[ 1 ].label & " Nerd Font is not packaged on " & dist.prettyName() & ": download it from nerdfonts.com into ~/.local/share/fonts, then run fc-cache -f", arguments.asJson );
 			return new bxrig.Pkg( variables.cli ).install( [ hit[ 1 ].pkg ], false, arguments.yes, arguments.dry, arguments.asJson );
 		}
 		var family = v;

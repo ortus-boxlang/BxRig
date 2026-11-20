@@ -338,10 +338,13 @@ bxrig pkg remove htop --yes
 Browse the app catalog.
 
 ```text
-bxrig catalog list [--group=G] [--category=C] [--tier=default|optional] [--kind=K] [--source=S] [--json] | show ID | groups | check | version
+bxrig catalog list [--group=G] [--category=C] [--tier=default|optional] [--kind=K] [--source=S] [--distro=D] [--json] | show ID [--distro=D] | groups | check | coverage [--distro=D] | version
+bxrig catalog map suse|debian|ubuntu [--write] [--json]
 ```
 
 ```bash
+bxrig catalog coverage
+bxrig catalog list --distro=suse --tier=default
 bxrig catalog groups
 bxrig catalog list --group=ai --tier=default
 bxrig catalog show lazygit

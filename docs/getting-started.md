@@ -8,9 +8,9 @@ summary: Install BxRig, run the wizard, and find your way around.
 
 ## What you need
 
-**Supported today: CachyOS and Arch Linux. Other distributions (Debian, Ubuntu, Fedora) are the direction, not yet supported.**
+**Supported: CachyOS, Arch Linux, openSUSE Tumbleweed and Slowroll, Ubuntu 26.04 LTS and Debian 13.** See [Distributions](guides/distributions.md) for what each one offers.
 
-- CachyOS or Arch Linux (a system with `pacman`), x86_64.
+- CachyOS or Arch Linux (`pacman`), openSUSE Tumbleweed or Slowroll (`zypper`), Ubuntu 26.04 LTS or Debian 13 (`apt`), x86_64.
 - A normal user with `sudo`. The installer refuses to run as root.
 - A network connection.
 

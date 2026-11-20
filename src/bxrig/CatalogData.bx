@@ -1,4 +1,6 @@
-// The app catalog (catalog/apps.json, packed with BxRig as a resource).
+// The app catalog, packed with BxRig as resources: catalog/apps.json (what each app is) and catalog/install/DISTRO.json (how to install it).
 class CatalogData {
 	function json() { return new bxrig.util.Res().trimmed( "catalog/apps.json" ); }
+	function hasInstall( distro ) { return reFind( "^[a-z]+$", arguments.distro ) && resourceExists( "catalog/install/" & arguments.distro & ".json" ); }
+	function installJson( distro ) { return new bxrig.util.Res().trimmed( "catalog/install/" & arguments.distro & ".json" ); }
 }

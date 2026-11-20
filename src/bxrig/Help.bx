@@ -37,7 +37,7 @@ class Help {
 			}
 			println( "" );
 			println( "More: bxrig help COMMAND    " & new bxrig.util.Urls().commandsReference() );
-			println( "Supported today: CachyOS and Arch Linux. Other distributions (Debian, Ubuntu, Fedora) are the direction, not yet supported." );
+			println( "Supported: " & new bxrig.util.Distro().supportedText() & ". Each has its own catalog of apps (bxrig catalog coverage)." );
 			return new bxrig.util.Exit().ok();
 		}
 		var hit = find( arguments.words[ 1 ] );

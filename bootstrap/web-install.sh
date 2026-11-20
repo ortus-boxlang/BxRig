@@ -11,7 +11,8 @@
 #          snapshot build; --matchbox-branch REF [--matchbox-repo OWNER/NAME] (BXRIG_MATCHBOX_BRANCH, BXRIG_MATCHBOX_REPO) builds that branch with cargo
 #          (see bootstrap/install.sh). A github source compiles bxrig, so it builds the manifest's MatchBox branch (bxrig) unless you name another.
 # It downloads the channel's bxrig binary and bootstrap bundle, verifies the Ed25519 signature of the release information and the SHA-256 of both files, runs the install stages (packages, toolchains,
-# binary, core apps) and then the wizard. Everything is logged to ~/.cache/bxrig/install.log. Needs CachyOS or Arch, a normal user, sudo.
+# binary, core apps) and then the wizard. Everything is logged to ~/.cache/bxrig/install.log. Needs CachyOS, Arch, openSUSE Tumbleweed or
+# Slowroll, Ubuntu 26.04 or Debian 13, a normal user, sudo.
 set -Eeuo pipefail
 
 BASE="${BXRIG_BASE_URL:-https://downloads.ortussolutions.com/ortussolutions/bxrig}"
@@ -212,19 +213,21 @@ prop() { sed -n "s/^$2=//p" "$1" | head -n 1; }
 preflight() {
 	# BXRIG_INSTALL_ALLOW_ROOT=1 is for the test suite only
 	[[ "$(id -u)" != 0 || "${BXRIG_INSTALL_ALLOW_ROOT:-}" == 1 ]] || die "run this as your normal user, not as root (sudo is used only where needed)"
-	command -v pacman >/dev/null 2>&1 || die "BxRig needs CachyOS or Arch Linux (pacman was not found)"
+	# the package manager of a supported distribution (install.sh checks the release itself)
+	PM=""; for t in pacman zypper apt-get; do command -v "$t" >/dev/null 2>&1 && { PM="$t"; break; }; done
+	[[ -n "$PM" ]] || die "BxRig needs CachyOS, Arch Linux, openSUSE Tumbleweed or Slowroll, Ubuntu 26.04 or Debian 13 (no pacman, zypper or apt-get was found)"
 	command -v curl >/dev/null 2>&1 || die "curl is required"
 	command -v sha256sum >/dev/null 2>&1 || die "sha256sum is required"
 	[[ "$(uname -m)" == x86_64 ]] || die "only x86_64 is supported for now (found $(uname -m))"
 	command -v sudo >/dev/null 2>&1 || die "sudo is required"
-	info "CachyOS or Arch, normal user, x86_64"
+	info "$PM, normal user, x86_64"
 }
 
 ask_sudo() {
 	if [[ $YES == yes ]]; then
 		sudo -n true 2>/dev/null || die "--yes needs passwordless sudo (or run sudo -v first): sudo asked for a password"
 	else
-		printf '  %sAdministrator access is needed for pacman.%s\n' "$C_DIM" "$C_RESET"
+		printf '  %sAdministrator access is needed for %s.%s\n' "$C_DIM" "${PM:-the package manager}" "$C_RESET"
 		sudo -v <"$TTY" || die "sudo was not granted"
 	fi
 }
@@ -335,7 +338,7 @@ github_main() {
 	local inst="$TREE/bootstrap/install.sh"
 	section "Installing"
 	ask_sudo
-	run_live "packages (pacman)" bash "$inst" packages --yes
+	run_live "packages (${PM:-pacman})" bash "$inst" packages --yes
 	run_task "toolchains (Java, bvm, mvm, BoxLang, MatchBox, Rust)" bash "$inst" toolchains --yes ${MBARGS[@]+"${MBARGS[@]}"}
 	run_task "the bxrig program, built from this tree" bash "$inst" binary --yes --force
 	run_live "the core apps" bash "$inst" core --yes
@@ -385,7 +388,7 @@ main() {
 	local inst="$TMP/src/bootstrap/install.sh"
 	section "Installing"
 	ask_sudo
-	run_live "packages (pacman)" bash "$inst" packages --yes
+	run_live "packages (${PM:-pacman})" bash "$inst" packages --yes
 	run_task "toolchains (Java, bvm, mvm, BoxLang, MatchBox, Rust)" bash "$inst" toolchains --yes ${MBARGS[@]+"${MBARGS[@]}"}
 	run_task "the bxrig program" bash "$inst" binary --yes --binary "$TMP/bxrig" --force
 	run_live "the core apps" bash "$inst" core --yes

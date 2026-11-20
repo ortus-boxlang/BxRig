@@ -33,7 +33,7 @@ stub_sudo
 stub_id
 chmod +x "$tmp/bin/"*
 export SETUP_LOG="$tmp/setup.log"
-printf 'NAME="CachyOS Linux"\nID=cachyos\nID_LIKE=arch\n' > "$tmp/os-cachyos"; printf 'ID=ubuntu\n' > "$tmp/os-ubuntu"
+printf 'NAME="CachyOS Linux"\nID=cachyos\nID_LIKE=arch\n' > "$tmp/os-cachyos"; printf 'ID=fedora\n' > "$tmp/os-other"
 mkdir -p "$tmp/sysd"   # systemd is "running" for the steps below (BXRIG_SYSTEMD_RUN_DIR names /run/systemd/system)
 run() { env BXRIG_SYSTEMD_RUN_DIR="${SYSD_DIR:-$tmp/sysd}" BXRIG_OS_RELEASE="${OS_FILE:-$tmp/os-cachyos}" BXRIG_STATE_HOME="$tmp/state-home" HOME="$tmp/home" PATH="$tmp/bin:$PATH" XDG_CURRENT_DESKTOP=KDE XDG_SESSION_TYPE=wayland SETUP_LOG="$SETUP_LOG" MOCK_INSTALL_FAIL="${MOCK_INSTALL_FAIL:-}" "$@"; }
 reset() { : > "$SETUP_LOG"; rm -rf "$tmp/home/.local" "$tmp/state-home"; }
@@ -139,7 +139,7 @@ reset; [[ "$(code "$binary" setup hyprland)" == 2 ]] || fail 'hyprland without -
 run "$binary" setup hyprland --dry-run | grep -F 'sudo pacman -S --needed --noconfirm' >/dev/null || fail 'the plan shows the exact pacman command'
 [[ ! -s "$SETUP_LOG" && ! -e "$tmp/state-home" ]] || fail 'plan or dry run changed something'
 [[ "$(MOCK_UID=0 code "$binary" setup hyprland --yes)" == 4 ]] || fail 'hyprland as root exits 4'
-[[ "$(OS_FILE="$tmp/os-ubuntu" code "$binary" setup hyprland --yes)" == 4 ]] || fail 'hyprland on another OS exits 4'
+[[ "$(OS_FILE="$tmp/os-other" code "$binary" setup hyprland --yes)" == 4 ]] || fail 'hyprland on an unsupported OS exits 4'
 [[ ! -s "$SETUP_LOG" ]] || fail 'a refused run changed something'
 # install: one pacman call with the missing packages; the added list is remembered
 run "$binary" setup hyprland --yes >/dev/null 2>&1 || fail 'setup hyprland --yes'

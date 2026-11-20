@@ -27,7 +27,7 @@ class StarterOptions {
 	}
 
 	function defaults() {
-		return { terminal: "ghostty", layout: "dwindle", workspaces: 4, naturalScroll: false, layouts: [ "us" ], theme: "dark", wallpaper: "" };
+		return { terminal: new bxrig.TerminalConfig().defaultTerminal(), layout: "dwindle", workspaces: 4, naturalScroll: false, layouts: [ "us" ], theme: "dark", wallpaper: "" };
 	}
 
 	// Defaults overlaid with the given values (empty or missing keep the default). Returns { value, errors }.

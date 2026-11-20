@@ -1,0 +1,152 @@
+// apt (Debian 13 and Ubuntu 26.04): the same methods as Pacman. Builders return argv arrays; queries run through Proc (dpkg-query for what is
+// installed, apt-cache for the repositories). Package names given in Arch spelling go through the `names` map (util.Packages).
+// A name may carry a release ("hyprland/trixie-backports"): apt installs that package from that release.
+class Apt {
+	function init( proc = "", names = {}, distro = "debian" ) {
+		variables.proc = isSimpleValue( arguments.proc ) ? new bxrig.util.Proc( arguments.proc ) : arguments.proc;
+		variables.map = arguments.names;
+		variables.distro = arguments.distro;
+		return this;
+	}
+
+	function tool() { return "apt"; }
+	function available() { return variables.proc.has( "apt-get" ); }
+	function pkgs( list ) { return new bxrig.util.PackageNames().translate( arguments.list, variables.map ); }
+	// A name without its release ("hyprland/trixie-backports" -> "hyprland").
+	function bare( name ) { return listFirst( arguments.name, "/" ); }
+
+	// ---- argv builders (pure) ----
+	function base( asRoot = false ) { return arguments.asRoot ? [ "env", "DEBIAN_FRONTEND=noninteractive", "apt-get" ] : [ "sudo", "env", "DEBIAN_FRONTEND=noninteractive", "apt-get" ]; }
+
+	function installArgv( list, asRoot = false ) {
+		var argv = base( arguments.asRoot );
+		argv.append( "install" );
+		argv.append( "-y" );
+		for ( var p in pkgs( arguments.list ) ) argv.append( p );
+		return argv;
+	}
+
+	// apt-get purge (pacman -Rns removes the config too) or remove for "-Rs" (keep the config), then autoremove.
+	function removeArgv( list, flags = "-Rns", asRoot = false ) {
+		var argv = base( arguments.asRoot );
+		argv.append( arguments.flags == "-Rs" ? "remove" : "purge" );
+		argv.append( "-y" );
+		argv.append( "--autoremove" );
+		for ( var p in pkgs( arguments.list ) ) argv.append( bare( p ) );
+		return argv;
+	}
+
+	function upgradeArgv( asRoot = false ) {
+		var argv = base( arguments.asRoot );
+		argv.append( "full-upgrade" );
+		argv.append( "-y" );
+		return argv;
+	}
+
+	function refreshArgv( asRoot = false ) {
+		var argv = base( arguments.asRoot );
+		argv.append( "update" );
+		return argv;
+	}
+
+	function installLine( list ) { return "sudo apt-get install " & pkgs( arguments.list ).toList( " " ); }
+
+	// ---- queries ----
+	function dpkg( args, timeout = 30 ) {
+		var argv = [ "dpkg-query" ];
+		for ( var a in arguments.args ) argv.append( a );
+		return variables.proc.exec( argv, arguments.timeout );
+	}
+
+	// "name version status" rows of what dpkg knows; only "install ok installed" ones count.
+	function rows() {
+		var r = dpkg( [ "-W", "-f", "${Package} ${Version} ${db:Status-Abbrev}\n" ] );
+		var out = [];
+		for ( var l in listToArray( r.output, chr( 10 ) ) ) {
+			var w = listToArray( trim( l ), " " );
+			if ( w.len() >= 3 && left( w[ 3 ], 2 ) == "ii" ) out.append( { name: w[ 1 ], version: w[ 2 ] } );
+		}
+		return { ok: r.exitCode == 0, rows: out };
+	}
+
+	function installedNames() { return rows().rows.map( function( r ) { return r.name; } ); }
+
+	function installed() {
+		var s = {};
+		for ( var n in installedNames() ) s[ n ] = true;
+		return s;
+	}
+
+	function versions( explicit = false ) {
+		if ( !arguments.explicit ) return rows();
+		var manual = {};
+		for ( var n in explicit() ) manual[ n ] = true;
+		var r = rows();
+		return { ok: r.ok, rows: r.rows.filter( function( x ) { return structKeyExists( manual, x.name ); } ) };
+	}
+
+	// What you asked for (apt-mark showmanual).
+	function explicit() {
+		var r = variables.proc.exec( [ "apt-mark", "showmanual" ], 30 );
+		if ( r.exitCode != 0 ) return [];
+		return listToArray( trim( r.output ), chr( 10 ) ).map( function( n ) { return trim( n ); } ).filter( function( n ) { return len( n ) > 0; } );
+	}
+
+	// No AUR: nothing is foreign.
+	function foreign() { return []; }
+
+	function isInstalled( pkg ) {
+		var n = pkgs( arguments.pkg );
+		if ( !n.len() ) return true;
+		var r = dpkg( [ "-W", "-f", "${db:Status-Abbrev}", bare( n[ 1 ] ) ], 15 );
+		return r.exitCode == 0 && left( trim( r.output ), 2 ) == "ii";
+	}
+
+	function version( pkg ) {
+		var n = pkgs( arguments.pkg );
+		if ( !n.len() || !isInstalled( arguments.pkg ) ) return "";
+		return trim( dpkg( [ "-W", "-f", "${Version}", bare( n[ 1 ] ) ], 15 ).output );
+	}
+
+	// True when a repository has the package (apt-cache show finds a candidate).
+	function known( name ) { return variables.proc.exec( [ "apt-cache", "show", "--no-all-versions", bare( arguments.name ) ], 30 ).exitCode == 0; }
+	function info( name ) { return trim( variables.proc.exec( [ "apt-cache", "show", "--no-all-versions", bare( arguments.name ) ], 30 ).output ); }
+
+	function search( text ) {
+		var r = variables.proc.exec( [ "apt-cache", "search", arguments.text ], 60 );
+		return { ok: r.exitCode == 0, output: r.output };
+	}
+
+	// apt-cache search prints "name - description". Rows: [ { name, version, repo, description } ].
+	function searchRows( text ) {
+		var out = [];
+		for ( var l in listToArray( search( arguments.text ).output, chr( 10 ) ) ) {
+			var i = find( " - ", l );
+			if ( i > 1 ) out.append( { name: left( l, i - 1 ), version: "", repo: "apt", description: mid( l, i + 3, len( l ) ) } );
+		}
+		return out;
+	}
+
+	function searchNames( pattern ) { return searchRows( arguments.pattern ).map( function( r ) { return r.name; } ); }
+
+	// ---- pending updates ----
+	function canCheckUpdates() { return available(); }
+
+	// apt list --upgradable: "name/suite new arch [upgradable from: old]".
+	function parseUpgrades( text ) {
+		var rows = [];
+		for ( var l in listToArray( arguments.text, chr( 10 ) ) ) {
+			var t = trim( l );
+			var m = reFind( "^([^/ ]+)/\S+ (\S+) \S+ \[upgradable from: ([^\]]+)\]", t, 1, true );
+			if ( m.pos[ 1 ] ) rows.append( { name: mid( t, m.pos[ 2 ], m.len[ 2 ] ), old: mid( t, m.pos[ 4 ], m.len[ 4 ] ), new: mid( t, m.pos[ 3 ], m.len[ 3 ] ) } );
+		}
+		return rows;
+	}
+
+	// The list from the last `apt update` (no root needed; a timer or the update command refreshes it).
+	function pendingUpdates() {
+		var r = variables.proc.exec( [ "apt", "list", "--upgradable" ], 120 );
+		if ( r.exitCode != 0 ) return { ok: false, rows: [], error: trim( variables.proc.why( r ) ) };
+		return { ok: true, rows: parseUpgrades( r.output ), error: "" };
+	}
+}

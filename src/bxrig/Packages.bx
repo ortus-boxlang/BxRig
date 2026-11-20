@@ -10,7 +10,7 @@ class Packages {
 
 	// Names of all installed pacman packages as a set. Empty when pacman is missing or times out.
 	function installedNames() {
-		return new bxrig.util.Pacman().installed();
+		return new bxrig.util.Packages().native().installed();
 	}
 
 	// Where `install` puts the launcher of a web app (decided in COMMAND-CONTRACT section 11).
@@ -128,10 +128,10 @@ class Packages {
 		var needsUser = false; var needsYay = false;
 		for ( var st in built.steps ) {
 			if ( st.kind == "aur" ) { needsUser = true; needsYay = true; }
-			if ( st.kind == "pkgbuild" ) needsUser = true;
+			if ( st.kind == "pkgbuild" || st.kind == "flatpak" ) needsUser = true;
 		}
 		if ( needsUser && inst.isRoot() ) {
-			println( "AUR and PKGBUILD builds never run as root. Nothing was changed." );
+			println( "AUR and PKGBUILD builds and Flatpak apps (installed for your user) never run as root. Nothing was changed." );
 			return new bxrig.util.Exit().precondition();
 		}
 		if ( needsYay && !new bxrig.util.Aur( inst.proc() ).available() ) {

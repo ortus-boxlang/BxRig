@@ -97,6 +97,6 @@ run "$binary" remove "$webid" --dry-run --json | jq -e --arg id "$webid" '.data.
 run "$binary" remove "$webid" --yes | grep -q "Removed web app: $webid" || fail 'web launcher removed'
 [[ ! -e "$tmp/home/.local/share/applications/bxrig-$webid.desktop" ]] || fail 'launcher still there'
 run "$binary" remove "$webid" --yes | grep -q 'Nothing to do' || fail 'a removed web app is a no-op'
-scriptid="$(cd "$(dirname "$binary")/.." && jq -r '[.apps[] | select(.source == "script")][0].id' catalog/apps.json)"
+scriptid="$(cd "$(dirname "$binary")/.." && jq -r '[.apps | to_entries[] | select(.value.source == "script")][0].key' catalog/install/arch.json)"
 run "$binary" remove "$scriptid" --json | jq -e '.exit == 4 and (.data.manual | length == 1)' >/dev/null || { [[ "$(code "$binary" remove "$scriptid")" == 4 ]] || fail 'vendor-script apps are reported, not guessed'; }
 echo "pkg-test: ok"

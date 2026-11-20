@@ -20,7 +20,7 @@ class Update {
 		variables.text = new bxrig.util.Text();
 		variables.out = new bxrig.util.Out( variables.cli, "update" );
 		variables.proc = new bxrig.util.Proc( arguments.runner );
-		variables.pacman = new bxrig.util.Pacman( variables.proc );
+		variables.pacman = new bxrig.util.Packages().native( variables.proc );
 		variables.aur = new bxrig.util.Aur( variables.proc );
 		variables.systemd = new bxrig.util.Systemd( variables.proc );
 		variables.http = new bxrig.util.Http( variables.proc );
@@ -182,7 +182,8 @@ class Update {
 	}
 
 	// `system update [--repo|--aur|--all] [--yes] [--dry-run]`: a snapshot first (snapper or timeshift when present), then the repository
-	// packages (`sudo pacman -Syu`), the AUR packages (yay or paru `-Sua`), or both (the default). scope is repo, aur or all.
+	// packages (`sudo pacman -Syu`, `zypper dup`, or `apt update` then `apt full-upgrade`, and the Flathub apps off Arch), the AUR packages
+	// (yay or paru `-Sua`), or both (the default). scope is repo, aur or all.
 	// Text mode names each step as it starts, so a terminal shows the snapshot and the progress. Exit 2 plan, 4 no AUR helper for --aur, 6 a step failed.
 	function systemUpdate( yes, asJson, scope = "all", dry = false ) {
 		var snap = variables.proc.has( "snapper" ) ? [ "sudo", "snapper", "create", "--description", "before bxrig system update" ] : ( variables.proc.has( "timeshift" ) ? [ "sudo", "timeshift", "--create", "--comments", "before bxrig system update" ] : [] );
@@ -192,8 +193,12 @@ class Update {
 		if ( !wantRepo && !len( helper ) ) return variables.out.say( "precondition", { error: "no AUR helper installed (yay or paru)" }, arguments.asJson, [ "error: no AUR helper installed (yay or paru), so there is nothing to update from the AUR" ] );
 		var steps = [];
 		if ( snap.len() ) steps.append( snap );
+		// apt upgrades from the lists of the last `apt update`: refresh them first (pacman -Syu and zypper dup refresh by themselves)
+		if ( wantRepo && variables.pacman.tool() == "apt" ) steps.append( variables.pacman.refreshArgv() );
 		if ( wantRepo ) steps.append( variables.pacman.upgradeArgv() );
 		if ( wantAur && len( helper ) ) steps.append( variables.aur.upgradeArgv( helper ) );
+		// the user's Flathub apps (installed by the catalog where a distribution has no package)
+		if ( wantRepo && variables.pacman.tool() != "pacman" && new bxrig.util.Flatpak( variables.proc ).available() ) steps.append( new bxrig.util.Flatpak( variables.proc ).upgradeArgv() );
 		var data = { scope: arguments.scope, steps: steps.map( function( s ) { return s.toList( " " ); } ), snapshot: snap.len() > 0 };
 		if ( !arguments.yes || arguments.dry ) {
 			var shown = data.steps.map( function( st ) { return "  " & st; } );

@@ -1,4 +1,5 @@
-// `bxrig catalog list|show|groups|check|version`: reads the app catalog. Every method returns the exit code.
+// `bxrig catalog list|show|groups|check|coverage|map|version`: reads the app catalog. Every method returns the exit code.
+// --distro=arch|suse|debian|ubuntu reads another distribution's view (default: this machine's, util.Distro().catalogName()).
 class CatalogCmd {
 	function init( cli, catalog ) {
 		variables.cli = arguments.cli;
@@ -10,17 +11,20 @@ class CatalogCmd {
 	function run( p, options, asJson ) {
 		var catVerb = p.len() >= 2 ? p[2] : "";
 		var catArg = p.len() >= 3 ? p[3] : "";
-		var catBad = p.len() > 3 || !arrayFind( [ "list", "show", "groups", "check", "version" ], catVerb ) || ( catVerb == "show" && p.len() != 3 ) || ( catVerb != "show" && p.len() > 2 );
-		var catOpts = [ "json", "group", "category", "tier", "kind", "source" ];
+		var catBad = p.len() > 3 || !arrayFind( [ "list", "show", "groups", "check", "coverage", "map", "version" ], catVerb ) || ( ( catVerb == "show" || catVerb == "map" ) && p.len() != 3 ) || ( catVerb != "show" && catVerb != "map" && p.len() > 2 );
+		var catOpts = [ "json", "group", "category", "tier", "kind", "source", "distro", "write" ];
+		var distro = lCase( options.distro ?: "" );
+		if ( len( distro ) && !arrayFind( variables.catalog.distros(), distro ) ) catBad = true;
 		for ( var o in options ) if ( !arrayFind( catOpts, o ) && !arrayFind( [ "yes", "dry-run", "force", "quiet" ], o ) ) catBad = true;
 		if ( catBad ) {
 			println( new bxrig.CommandSpec().usage( "catalog" ) );
 			return new bxrig.util.Exit().usage();
 		}
-		var cat = variables.catalog.load();
+		if ( catVerb == "map" ) return new bxrig.CatalogMap( variables.cli ).run( catArg, structKeyExists( options, "write" ), asJson );
+		var cat = variables.catalog.load( distro );
 		if ( catVerb == "version" ) {
-			if ( asJson ) println( variables.cli.envelope( "catalog version", 0, { catalog_version: cat.catalog_version, schema: cat.schema, apps: cat.apps.len() } ) );
-			else println( "catalog " & cat.catalog_version & " (schema " & cat.schema & ", " & cat.apps.len() & " apps)" );
+			if ( asJson ) println( variables.cli.envelope( "catalog version", 0, { catalog_version: cat.catalog_version, schema: cat.schema, apps: cat.apps.len(), distro: cat.distro } ) );
+			else println( "catalog " & cat.catalog_version & " (schema " & cat.schema & ", " & cat.apps.len() & " apps on " & cat.distro & ")" );
 			return new bxrig.util.Exit().ok();
 		}
 		if ( catVerb == "groups" ) {
@@ -36,6 +40,10 @@ class CatalogCmd {
 		}
 		if ( catVerb == "show" ) {
 			var found = variables.catalog.find( cat, catArg );
+			if ( structIsEmpty( found ) && arrayFind( cat.unavailable, catArg ) ) {
+				println( catArg & " is not available on " & cat.distro );
+				return new bxrig.util.Exit().precondition();
+			}
 			if ( structIsEmpty( found ) ) {
 				println( "Unknown catalog id: " & catArg );
 				return new bxrig.util.Exit().timeout();
@@ -54,16 +62,26 @@ class CatalogCmd {
 			return new bxrig.util.Exit().ok();
 		}
 		if ( catVerb == "check" ) {
-			var res = variables.catalog.check( cat );
+			var res = variables.catalog.checkAll();
 			var code = res.errors.len() ? 1 : 0;
 			if ( asJson ) {
 				println( variables.cli.envelope( "catalog check", code, res ) );
 			} else {
 				for ( var e in res.errors ) println( "error: " & e );
 				for ( var w in res.warnings ) println( "warning: " & w );
-				println( "catalog check: " & res.errors.len() & " errors, " & res.warnings.len() & " warnings, " & cat.apps.len() & " apps" );
+				var parts = [];
+				for ( var d in variables.catalog.distros() ) if ( structKeyExists( res.coverage, d ) ) parts.append( d & " " & res.coverage[ d ].offered );
+				println( "catalog check: " & res.errors.len() & " errors, " & res.warnings.len() & " warnings, " & jsonDeserialize( new bxrig.CatalogData().json() ).apps.len() & " apps (" & parts.toList( ", " ) & ")" );
 			}
 			return code;
+		}
+		if ( catVerb == "coverage" ) {
+			var all = variables.catalog.checkAll().coverage;
+			var rows = [];
+			for ( var d in variables.catalog.distros() ) if ( structKeyExists( all, d ) && ( !len( distro ) || d == distro ) ) rows.append( { distro: d, offered: all[ d ].offered, total: all[ d ].total, unavailable: all[ d ].unavailable } );
+			if ( asJson ) println( variables.cli.envelope( "catalog coverage", 0, { distros: rows } ) );
+			else for ( var r in rows ) println( left( r.distro & "          ", 8 ) & r.offered & " of " & r.total & " apps" & ( len( distro ) && r.unavailable.len() ? chr( 10 ) & "  not available: " & r.unavailable.toList( ", " ) : "" ) );
+			return new bxrig.util.Exit().ok();
 		}
 		// list
 		var sel = cat.apps.filter( function( a ) {

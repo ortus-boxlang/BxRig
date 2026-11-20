@@ -1,5 +1,5 @@
 {
-	"schema": 3,
+	"schema": 4,
 	"catalog_version": "0.12.0-draft",
 	"generated": "2026-11-09",
 	"notes": [
@@ -471,17 +471,11 @@
 			"group": "development",
 			"category": "Data",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"jq"
-			],
-			"repo": "extra",
 			"homepage": "https://jqlang.github.io/jq/",
 			"macos": "jq via Homebrew",
 			"origin": [
 				"omarchy-shell-tool"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"core": "default"
 			}
@@ -512,17 +506,11 @@
 			"group": "development",
 			"category": "Editors and IDEs",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"micro"
-			],
-			"repo": "extra",
 			"homepage": "https://micro-editor.github.io/",
 			"macos": "micro via Homebrew",
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"editors": "optional"
 			}
@@ -536,17 +524,11 @@
 			"group": "development",
 			"category": "Editors and IDEs",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"neovim"
-			],
-			"repo": "extra",
 			"homepage": "https://neovim.io",
 			"macos": "Neovim (same)",
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"terminal": "default",
 				"editors": "default"
@@ -561,17 +543,12 @@
 			"group": "development",
 			"category": "Editors and IDEs",
 			"tier": "default",
-			"source": "aur",
-			"targets": [
-				"visual-studio-code-bin"
-			],
 			"homepage": "https://code.visualstudio.com/",
 			"macos": "VS Code (same)",
 			"origin": [
 				"owner-pick",
 				"omarchy-desktop"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"editors": "default"
 			}
@@ -585,17 +562,11 @@
 			"group": "development",
 			"category": "Editors and IDEs",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"cursor-bin"
-			],
-			"repo": "cachyos",
 			"homepage": "https://www.cursor.com",
 			"macos": "Cursor (same)",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"editors": "optional"
 			}
@@ -609,16 +580,11 @@
 			"group": "development",
 			"category": "Editors and IDEs",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"datagrip"
-			],
 			"homepage": "https://www.jetbrains.com/datagrip/",
 			"macos": "DataGrip (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "helix",
@@ -629,14 +595,8 @@
 			"group": "development",
 			"category": "Editors and IDEs",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"helix"
-			],
-			"repo": "extra",
 			"homepage": "https://helix-editor.com",
 			"macos": "Helix (same)",
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"editors": "optional"
 			}
@@ -650,19 +610,13 @@
 			"group": "development",
 			"category": "Editors and IDEs",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"intellij-idea-oss"
-			],
 			"macos": "IntelliJ IDEA (same)",
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"editors": "optional"
-			},
-			"repo": "extra"
+			}
 		},
 		{
 			"id": "omazed",
@@ -673,22 +627,12 @@
 			"group": "development",
 			"category": "Editors and IDEs",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"omazed"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omazed",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/aps6/omazed",
 			"macos": "Zed theme",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "sublime-text",
@@ -699,16 +643,11 @@
 			"group": "development",
 			"category": "Editors and IDEs",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"sublime-text-4"
-			],
 			"homepage": "https://www.sublimetext.com/download",
 			"macos": "Sublime Text (same)",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "zed",
@@ -719,14 +658,8 @@
 			"group": "development",
 			"category": "Editors and IDEs",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"zed"
-			],
-			"repo": "extra",
 			"homepage": "https://zed.dev",
 			"macos": "Zed (same)",
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"editors": "optional"
 			}
@@ -740,17 +673,11 @@
 			"group": "development",
 			"category": "Language tooling",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"maven"
-			],
-			"repo": "extra",
 			"homepage": "https://maven.apache.org",
 			"macos": "Maven via Homebrew",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"jvm": "default"
 			}
@@ -764,17 +691,11 @@
 			"group": "development",
 			"category": "Language tooling",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"jdk21-openjdk"
-			],
-			"repo": "extra",
 			"homepage": "https://openjdk.java.net/",
 			"macos": "OpenJDK via Homebrew",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"jvm": "default"
 			}
@@ -788,17 +709,11 @@
 			"group": "development",
 			"category": "Language tooling",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"bun"
-			],
-			"repo": "extra",
 			"homepage": "https://bun.sh/",
 			"macos": "bun (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10"
+			]
 		},
 		{
 			"id": "composer",
@@ -809,17 +724,11 @@
 			"group": "development",
 			"category": "Language tooling",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"composer"
-			],
 			"homepage": "https://getcomposer.org/",
 			"macos": "composer via Homebrew",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-10",
-			"repo": "extra",
 			"profiles": {
 				"php": "default"
 			}
@@ -833,17 +742,11 @@
 			"group": "development",
 			"category": "Language tooling",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"deno"
-			],
-			"repo": "extra",
 			"homepage": "https://deno.com/",
 			"macos": "deno (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10"
+			]
 		},
 		{
 			"id": "go",
@@ -854,17 +757,11 @@
 			"group": "development",
 			"category": "Language tooling",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"go"
-			],
 			"homepage": "https://go.dev/",
 			"macos": "go via Homebrew",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-10",
-			"repo": "extra",
 			"profiles": {
 				"go": "default"
 			}
@@ -878,17 +775,11 @@
 			"group": "development",
 			"category": "Language tooling",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"gradle"
-			],
-			"repo": "extra",
 			"homepage": "https://gradle.org/",
 			"macos": "Gradle via Homebrew",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"jvm": "default"
 			}
@@ -902,17 +793,11 @@
 			"group": "development",
 			"category": "Language tooling",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"mise"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/jdx/mise",
 			"macos": "mise via Homebrew",
 			"origin": [
 				"omarchy-shell-tool"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "php",
@@ -923,17 +808,11 @@
 			"group": "development",
 			"category": "Language tooling",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"php"
-			],
 			"homepage": "https://www.php.net/",
 			"macos": "php via Homebrew",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-10",
-			"repo": "extra",
 			"profiles": {
 				"php": "default"
 			}
@@ -947,17 +826,11 @@
 			"group": "development",
 			"category": "Language tooling",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"php-sqlite"
-			],
 			"homepage": "https://www.php.net/",
 			"macos": null,
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-10",
-			"repo": "extra",
 			"profiles": {
 				"php": "default"
 			}
@@ -971,17 +844,11 @@
 			"group": "development",
 			"category": "Language tooling",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"python-pip"
-			],
 			"homepage": "https://pip.pypa.io/",
 			"macos": "pip (same)",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-10",
-			"repo": "extra",
 			"profiles": {
 				"python": "default"
 			}
@@ -995,17 +862,11 @@
 			"group": "development",
 			"category": "Language tooling",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"uv"
-			],
 			"homepage": "https://docs.astral.sh/uv/",
 			"macos": "uv (same)",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-10",
-			"repo": "extra",
 			"profiles": {
 				"python": "default"
 			}
@@ -1019,17 +880,11 @@
 			"group": "development",
 			"category": "Shell",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"starship"
-			],
-			"repo": "extra",
 			"homepage": "https://starship.rs/",
 			"macos": "Starship (same)",
 			"origin": [
 				"omarchy-shell-tool"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"terminal": "default"
 			}
@@ -1043,17 +898,11 @@
 			"group": "development",
 			"category": "Shell",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"zsh"
-			],
-			"repo": "extra",
 			"homepage": "https://www.zsh.org/",
 			"macos": "zsh (macOS default)",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-10",
 			"profiles": {
 				"terminal": "default"
 			}
@@ -1067,17 +916,11 @@
 			"group": "development",
 			"category": "Shell",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"zsh-autosuggestions"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/zsh-users/zsh-autosuggestions",
 			"macos": "zsh-autosuggestions (same)",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-10",
 			"profiles": {
 				"terminal": "default"
 			}
@@ -1091,17 +934,11 @@
 			"group": "development",
 			"category": "Shell",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"zsh-completions"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/zsh-users/zsh-completions",
 			"macos": "zsh-completions (same)",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-10",
 			"profiles": {
 				"terminal": "default"
 			}
@@ -1115,17 +952,11 @@
 			"group": "development",
 			"category": "Shell",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"zsh-syntax-highlighting"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/zsh-users/zsh-syntax-highlighting",
 			"macos": "zsh-syntax-highlighting (same)",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-10",
 			"profiles": {
 				"terminal": "default"
 			}
@@ -1139,17 +970,11 @@
 			"group": "development",
 			"category": "Shell",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"bat"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/sharkdp/bat",
 			"macos": "cat with syntax colors",
 			"origin": [
 				"omarchy-shell-tool"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"terminal": "default"
 			}
@@ -1163,17 +988,11 @@
 			"group": "development",
 			"category": "Shell",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"eza"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/eza-community/eza",
 			"macos": "ls",
 			"origin": [
 				"omarchy-shell-tool"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"terminal": "optional"
 			}
@@ -1187,17 +1006,11 @@
 			"group": "development",
 			"category": "Shell",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"fd"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/sharkdp/fd",
 			"macos": "Spotlight (file search)",
 			"origin": [
 				"omarchy-shell-tool"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"terminal": "default"
 			}
@@ -1211,17 +1024,11 @@
 			"group": "development",
 			"category": "Shell",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"fish"
-			],
-			"repo": "extra",
 			"homepage": "https://fishshell.com/",
 			"macos": "fish (same)",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-10",
 			"profiles": {
 				"terminal": "optional"
 			}
@@ -1235,17 +1042,11 @@
 			"group": "development",
 			"category": "Shell",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"ripgrep"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/BurntSushi/ripgrep",
 			"macos": "Spotlight (text search)",
 			"origin": [
 				"omarchy-shell-tool"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"terminal": "default"
 			}
@@ -1259,17 +1060,11 @@
 			"group": "development",
 			"category": "Shell",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"tldr"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/tldr-pages/tldr-python-client",
 			"macos": "man pages, short",
 			"origin": [
 				"omarchy-shell-tool"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"terminal": "optional"
 			}
@@ -1283,17 +1078,11 @@
 			"group": "development",
 			"category": "Version control",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"git"
-			],
-			"repo": "extra",
 			"homepage": "https://git-scm.com/",
 			"macos": "git (same)",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"core": "default"
 			}
@@ -1307,17 +1096,11 @@
 			"group": "development",
 			"category": "Version control",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"lazygit"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/jesseduffield/lazygit",
 			"macos": "Tower / Fork",
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"terminal": "default"
 			}
@@ -1331,17 +1114,11 @@
 			"group": "development",
 			"category": "Version control",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"meld"
-			],
-			"repo": "extra",
 			"homepage": "https://meldmerge.org/",
 			"macos": "Kaleidoscope / FileMerge",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-13",
 			"profiles": {
 				"editors": "default"
 			}
@@ -1355,17 +1132,11 @@
 			"group": "development",
 			"category": "Version control",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"chezmoi"
-			],
-			"repo": "extra",
 			"homepage": "https://www.chezmoi.io/",
 			"macos": "chezmoi (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-11"
+			]
 		},
 		{
 			"id": "stow",
@@ -1376,17 +1147,11 @@
 			"group": "development",
 			"category": "Version control",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"stow"
-			],
-			"repo": "extra",
 			"homepage": "https://www.gnu.org/software/stow/",
 			"macos": "stow (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-11"
+			]
 		},
 		{
 			"id": "sublime-merge",
@@ -1397,16 +1162,11 @@
 			"group": "development",
 			"category": "Version control",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"sublime-merge"
-			],
 			"homepage": "https://www.sublimemerge.com",
 			"macos": "Sublime Merge (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "yadm",
@@ -1417,17 +1177,11 @@
 			"group": "development",
 			"category": "Version control",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"yadm"
-			],
-			"repo": "extra",
 			"homepage": "https://yadm.io/",
 			"macos": "yadm (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-11"
+			]
 		},
 		{
 			"id": "virt-manager",
@@ -1438,17 +1192,11 @@
 			"group": "development",
 			"category": "Virtual machines",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"virt-manager"
-			],
-			"repo": "extra",
 			"homepage": "https://virt-manager.org/",
 			"macos": "UTM / Parallels",
 			"origin": [
 				"owner-pick"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "tmux",
@@ -1459,17 +1207,11 @@
 			"group": "terminal",
 			"category": "Multiplexers",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"tmux"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/tmux/tmux/wiki",
 			"macos": "iTerm2 panes",
 			"origin": [
 				"omarchy-shell-tool"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"terminal": "default"
 			}
@@ -1483,17 +1225,11 @@
 			"group": "terminal",
 			"category": "Navigation",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"yazi"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/sxyazi/yazi",
 			"macos": "yazi via Homebrew",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"terminal": "default"
 			}
@@ -1507,17 +1243,11 @@
 			"group": "terminal",
 			"category": "Navigation",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"zoxide"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/ajeetdsouza/zoxide",
 			"macos": "zoxide via Homebrew",
 			"origin": [
 				"omarchy-shell-tool"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"terminal": "default"
 			}
@@ -1531,17 +1261,11 @@
 			"group": "terminal",
 			"category": "Navigation",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"fzf"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/junegunn/fzf",
 			"macos": "fzf via Homebrew",
 			"origin": [
 				"omarchy-shell-tool"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"terminal": "default"
 			}
@@ -1555,17 +1279,11 @@
 			"group": "terminal",
 			"category": "Terminal",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"ghostty"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/ghostty-org/ghostty",
 			"macos": "Terminal / iTerm2",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"terminal": "default"
 			}
@@ -1579,17 +1297,11 @@
 			"group": "terminal",
 			"category": "Terminal",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"alacritty"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/alacritty/alacritty",
 			"macos": "Terminal",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "foot",
@@ -1600,17 +1312,11 @@
 			"group": "terminal",
 			"category": "Terminal",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"foot"
-			],
-			"repo": "extra",
 			"homepage": "https://codeberg.org/dnkl/foot",
 			"macos": "Terminal",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "kitty",
@@ -1621,17 +1327,11 @@
 			"group": "terminal",
 			"category": "Terminal",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"kitty"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/kovidgoyal/kitty",
 			"macos": "iTerm2",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "konsole",
@@ -1642,17 +1342,11 @@
 			"group": "terminal",
 			"category": "Terminal",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"konsole"
-			],
-			"repo": "extra",
 			"homepage": "https://konsole.kde.org/",
 			"macos": "Terminal",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10"
+			]
 		},
 		{
 			"id": "tabby",
@@ -1663,17 +1357,12 @@
 			"group": "terminal",
 			"category": "Terminal",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"tabby"
-			],
 			"homepage": "https://tabby.sh",
 			"macos": "Termius",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-09"
+			"decided_by_owner": true
 		},
 		{
 			"id": "buzz",
@@ -1684,22 +1373,12 @@
 			"group": "ai",
 			"category": "Agent tools",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"buzz"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/buzz",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/block/buzz",
 			"macos": "Agent workspace",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "collie",
@@ -1710,22 +1389,12 @@
 			"group": "ai",
 			"category": "Agent tools",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"collie-bin"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/collie-bin",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/AltanS/collie",
 			"macos": "Agent remote UI",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "hermes-agent",
@@ -1736,16 +1405,11 @@
 			"group": "ai",
 			"category": "Agent tools",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"hermes-agent"
-			],
 			"homepage": "https://github.com/NousResearch/hermes-agent",
 			"macos": "Hermes Agent (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "hermes-desktop",
@@ -1756,22 +1420,12 @@
 			"group": "ai",
 			"category": "Agent tools",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"hermes-desktop"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/hermes-desktop",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/NousResearch/hermes-agent",
 			"macos": "Agent desktop",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "chatgpt",
@@ -1799,18 +1453,12 @@
 			"group": "ai",
 			"category": "Assistants",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"chatgpt-desktop-bin"
-			],
 			"homepage": "https://chatgpt.com/download",
 			"macos": "ChatGPT (same)",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19",
-			"repo": "cachyos"
+			"decided_by_owner": true
 		},
 		{
 			"id": "claude-desktop",
@@ -1821,18 +1469,13 @@
 			"group": "ai",
 			"category": "Assistants",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"claude-desktop"
-			],
 			"homepage": "https://claude.com/download",
 			"macos": "Claude (same)",
 			"origin": [
 				"owner-pick",
 				"omarchy-desktop"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-09"
+			"decided_by_owner": true
 		},
 		{
 			"id": "grok",
@@ -1860,10 +1503,6 @@
 			"group": "ai",
 			"category": "Assistants",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"grokbot-linux-port-bin"
-			],
 			"homepage": "https://x.ai/bot",
 			"macos": "Grok",
 			"origin": [
@@ -1871,8 +1510,7 @@
 				"omarchy-desktop"
 			],
 			"decided_by_owner": true,
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "openclaw",
@@ -1883,16 +1521,11 @@
 			"group": "ai",
 			"category": "Assistants",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"openclaw"
-			],
 			"homepage": "https://github.com/openclaw/openclaw",
 			"macos": "AI gateway",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "perplexity",
@@ -1903,16 +1536,11 @@
 			"group": "ai",
 			"category": "Assistants",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"perplexity"
-			],
 			"homepage": "https://github.com/mazixs/perplexity",
 			"macos": "Perplexity (same)",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "claude-code",
@@ -1923,14 +1551,8 @@
 			"group": "ai",
 			"category": "Coding agents",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"claude-code"
-			],
-			"repo": "cachyos",
 			"homepage": "https://github.com/anthropics/claude-code",
 			"macos": null,
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"ai": "default"
 			}
@@ -1944,16 +1566,10 @@
 			"group": "ai",
 			"category": "Coding agents",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"openai-codex"
-			],
 			"macos": null,
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"ai": "optional"
 			},
-			"repo": "extra",
 			"homepage": "https://github.com/openai/codex"
 		},
 		{
@@ -1965,22 +1581,12 @@
 			"group": "ai",
 			"category": "Coding agents",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"openai-codex-desktop"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/openai-codex-desktop",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://chatgpt.com/codex/",
 			"macos": "ChatGPT (same)",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "gemini-cli",
@@ -1991,17 +1597,11 @@
 			"group": "ai",
 			"category": "Coding agents",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"gemini-cli"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/google-gemini/gemini-cli",
 			"macos": "Gemini CLI (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "github-copilot",
@@ -2029,13 +1629,8 @@
 			"group": "ai",
 			"category": "Coding agents",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"antigravity"
-			],
 			"homepage": "https://antigravity.google/product/antigravity-2",
-			"macos": null,
-			"verified_on": "2026-11-09"
+			"macos": null
 		},
 		{
 			"id": "opencode-cli",
@@ -2046,18 +1641,12 @@
 			"group": "ai",
 			"category": "Coding agents",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"opencode"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/anomalyco/opencode",
 			"macos": null,
 			"origin": [
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"ai": "optional"
 			}
@@ -2071,16 +1660,11 @@
 			"group": "ai",
 			"category": "Coding agents",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"opencode-desktop-bin"
-			],
 			"homepage": "https://opencode.ai/",
 			"macos": "OpenCode (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "pi-agent",
@@ -2091,16 +1675,11 @@
 			"group": "ai",
 			"category": "Coding agents",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"pi-bin"
-			],
 			"macos": null,
 			"origin": [
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-09",
 			"homepage": "https://pi.dev/"
 		},
 		{
@@ -2112,16 +1691,11 @@
 			"group": "ai",
 			"category": "Coding agents",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"t3code-bin"
-			],
 			"homepage": "https://github.com/pingdotgg/t3code",
 			"macos": "Agent control plane",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "pane",
@@ -2132,16 +1706,11 @@
 			"group": "ai",
 			"category": "Coding orchestration",
 			"tier": "default",
-			"source": "aur",
-			"targets": [
-				"pane-bin"
-			],
 			"homepage": "https://github.com/dcouple/Pane",
 			"macos": "Pane (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10"
+			]
 		},
 		{
 			"id": "herdr",
@@ -2152,16 +1721,11 @@
 			"group": "ai",
 			"category": "Coding orchestration",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"herdr"
-			],
 			"homepage": "https://herdr.dev",
 			"macos": null,
 			"origin": [
 				"owner-pick"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "orca",
@@ -2172,16 +1736,11 @@
 			"group": "ai",
 			"category": "Coding orchestration",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"stably-orca-bin"
-			],
 			"homepage": "https://github.com/stablyai/orca",
 			"macos": "Orca (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10"
+			]
 		},
 		{
 			"id": "lm-studio",
@@ -2192,16 +1751,11 @@
 			"group": "ai",
 			"category": "Local models",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"lmstudio-bin"
-			],
 			"macos": "LM Studio (same)",
 			"origin": [
 				"omarchy-desktop"
 			],
 			"note": "In Omarchy catalog; no public PKGBUILD found",
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"ai": "optional"
 			}
@@ -2215,17 +1769,11 @@
 			"group": "ai",
 			"category": "Local models",
 			"tier": "optional",
-			"source": "pacman",
 			"homepage": "https://github.com/ollama/ollama",
 			"macos": null,
 			"profiles": {
 				"ai": "optional"
-			},
-			"targets": [
-				"ollama"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
+			}
 		},
 		{
 			"id": "dropbox",
@@ -2236,16 +1784,11 @@
 			"group": "infra",
 			"category": "Cloud Storage",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"dropbox"
-			],
 			"homepage": "https://www.dropbox.com",
 			"macos": "Dropbox (same)",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "fuse3",
@@ -2256,18 +1799,12 @@
 			"group": "infra",
 			"category": "Cloud Storage",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"fuse3"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/libfuse/libfuse",
 			"macos": null,
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-09"
+			"decided_by_owner": true
 		},
 		{
 			"id": "rclone",
@@ -2278,18 +1815,12 @@
 			"group": "infra",
 			"category": "Cloud Storage",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"rclone"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/rclone/rclone",
 			"macos": null,
 			"origin": [
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"networking": "optional"
 			}
@@ -2303,17 +1834,11 @@
 			"group": "infra",
 			"category": "Containers",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"lazydocker"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/jesseduffield/lazydocker",
 			"macos": "Docker Desktop",
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"containers": "default"
 			}
@@ -2327,19 +1852,10 @@
 			"group": "infra",
 			"category": "Containers",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"podman",
-				"podman-compose",
-				"buildah",
-				"skopeo"
-			],
-			"repo": "extra",
 			"macos": "Docker Desktop",
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"containers": "default"
 			}
@@ -2353,17 +1869,11 @@
 			"group": "infra",
 			"category": "Containers",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"podman-desktop"
-			],
-			"repo": "extra",
 			"homepage": "https://podman-desktop.io",
 			"macos": "Docker Desktop",
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"containers": "default"
 			}
@@ -2377,16 +1887,11 @@
 			"group": "infra",
 			"category": "Containers",
 			"tier": "default",
-			"source": "aur",
-			"targets": [
-				"podman-tui"
-			],
 			"homepage": "https://github.com/containers/podman-tui",
 			"macos": "Podman Desktop",
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"containers": "default"
 			}
@@ -2400,18 +1905,10 @@
 			"group": "infra",
 			"category": "Containers",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"docker",
-				"docker-compose",
-				"docker-buildx"
-			],
-			"repo": "extra",
 			"macos": "Docker Desktop",
 			"origin": [
 				"omarchy-shell-tool"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"containers": "optional"
 			}
@@ -2425,16 +1922,11 @@
 			"group": "infra",
 			"category": "Databases",
 			"tier": "default",
-			"source": "aur",
-			"targets": [
-				"beekeeper-studio"
-			],
 			"homepage": "https://github.com/beekeeper-studio/beekeeper-studio",
 			"macos": null,
 			"origin": [
 				"owner-pick"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "filezilla",
@@ -2445,18 +1937,12 @@
 			"group": "network",
 			"category": "File Transfer",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"filezilla"
-			],
-			"repo": "extra",
 			"homepage": "https://filezilla-project.org",
 			"macos": "Transmit / Cyberduck",
 			"origin": [
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"networking": "optional"
 			}
@@ -2470,18 +1956,12 @@
 			"group": "network",
 			"category": "Networking",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"nfs-utils"
-			],
-			"repo": "core",
 			"homepage": "http://nfs.sourceforge.net",
 			"macos": null,
 			"origin": [
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"networking": "default"
 			}
@@ -2495,18 +1975,12 @@
 			"group": "network",
 			"category": "Networking",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"cifs-utils"
-			],
-			"repo": "extra",
 			"homepage": "https://wiki.samba.org/index.php/LinuxCIFS_utils",
 			"macos": null,
 			"origin": [
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"networking": "default"
 			}
@@ -2520,18 +1994,12 @@
 			"group": "network",
 			"category": "Networking",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"sshfs"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/libfuse/sshfs",
 			"macos": null,
 			"origin": [
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"networking": "default"
 			}
@@ -2545,18 +2013,12 @@
 			"group": "network",
 			"category": "Networking",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"tailscale"
-			],
-			"repo": "extra",
 			"homepage": "https://tailscale.com",
 			"macos": "Tailscale (same)",
 			"origin": [
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"networking": "default"
 			}
@@ -2570,17 +2032,11 @@
 			"group": "network",
 			"category": "Networking",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"mullvad-vpn"
-			],
 			"homepage": "https://mullvad.net/",
 			"macos": "Mullvad VPN (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10",
-			"repo": "extra"
+			]
 		},
 		{
 			"id": "nordvpn",
@@ -2591,13 +2047,8 @@
 			"group": "network",
 			"category": "Networking",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"nordvpn-bin"
-			],
 			"homepage": "https://nordvpn.com/download/linux/",
 			"macos": "VPN settings",
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"networking": "optional"
 			}
@@ -2611,16 +2062,11 @@
 			"group": "network",
 			"category": "Networking",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"nordlayer"
-			],
 			"homepage": "https://nordlayer.com/download/linux/",
 			"macos": "NordLayer (same)",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-17",
 			"note": "The AUR package nordlayer (checked on the AUR RPC 2026-11-17, 3.6.0) repackages the vendor's .deb from downloads.nordlayer.com; the vendor itself ships only .deb and .rpm. After the install log out and in so your user joins the nordlayer group, then log in with the NordLayer app. Never run it with sudo. Used by `bxrig vpn`.",
 			"profiles": {
 				"networking": "optional"
@@ -2635,17 +2081,11 @@
 			"group": "network",
 			"category": "Networking",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"openvpn"
-			],
 			"homepage": "https://openvpn.net/",
 			"macos": "Tunnelblick / OpenVPN Connect",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10",
-			"repo": "extra"
+			]
 		},
 		{
 			"id": "proton-vpn",
@@ -2656,17 +2096,11 @@
 			"group": "network",
 			"category": "Networking",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"proton-vpn-gtk-app"
-			],
 			"homepage": "https://protonvpn.com/",
 			"macos": "Proton VPN (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10",
-			"repo": "extra"
+			]
 		},
 		{
 			"id": "speedtest",
@@ -2677,22 +2111,12 @@
 			"group": "network",
 			"category": "Networking",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"omarchy-speedtest"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omarchy-speedtest",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/omacom/omarchy-speedtest",
 			"macos": "Network Utility",
 			"origin": [
 				"omarchy-desktop"
 			],
 			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"networking": "optional"
 			}
@@ -2706,17 +2130,11 @@
 			"group": "network",
 			"category": "Networking",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"wireguard-tools"
-			],
 			"homepage": "https://www.wireguard.com/",
 			"macos": "WireGuard",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10",
-			"repo": "extra"
+			]
 		},
 		{
 			"id": "remmina",
@@ -2727,18 +2145,12 @@
 			"group": "network",
 			"category": "Remote desktop",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"remmina"
-			],
-			"repo": "extra",
 			"homepage": "https://www.remmina.org",
 			"macos": "Screen Sharing / Microsoft Remote Desktop",
 			"origin": [
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"networking": "default"
 			}
@@ -2752,18 +2164,12 @@
 			"group": "network",
 			"category": "Remote desktop",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"freerdp"
-			],
-			"repo": "extra",
 			"homepage": "https://www.freerdp.com/",
 			"macos": "Microsoft Remote Desktop",
 			"origin": [
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"networking": "optional"
 			}
@@ -2777,22 +2183,12 @@
 			"group": "network",
 			"category": "Remote desktop",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"gliff"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/gliff",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/omacom/gliff",
 			"macos": "Screen Sharing",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "moonlight",
@@ -2803,17 +2199,11 @@
 			"group": "network",
 			"category": "Remote desktop",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"moonlight-qt"
-			],
-			"repo": "extra",
 			"homepage": "https://moonlight-stream.org",
 			"macos": "Screen Sharing",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "rustdesk",
@@ -2824,16 +2214,11 @@
 			"group": "network",
 			"category": "Remote desktop",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"rustdesk"
-			],
 			"homepage": "https://rustdesk.com/",
 			"macos": "AnyDesk / Screen Sharing",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"networking": "optional"
 			}
@@ -2847,17 +2232,11 @@
 			"group": "network",
 			"category": "Remote desktop",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"sunshine"
-			],
-			"repo": "cachyos",
 			"homepage": "https://app.lizardbyte.dev/Sunshine",
 			"macos": "Screen Sharing",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "hex",
@@ -2868,16 +2247,11 @@
 			"group": "system",
 			"category": "Accessibility",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"hex-bin"
-			],
 			"homepage": "https://github.com/anomalyco/hex",
 			"macos": "Dictation",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "superwhisper",
@@ -2888,22 +2262,12 @@
 			"group": "system",
 			"category": "Accessibility",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"superwhisper-bin"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/superwhisper-bin",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://superwhisper.com",
 			"macos": "Dictation / Superwhisper",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "voxtype",
@@ -2914,16 +2278,11 @@
 			"group": "system",
 			"category": "Accessibility",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"voxtype-bin"
-			],
 			"homepage": "https://voxtype.io",
 			"macos": "Dictation",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "borg",
@@ -2934,17 +2293,11 @@
 			"group": "system",
 			"category": "Disk",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"borg"
-			],
 			"homepage": "https://www.borgbackup.org/",
 			"macos": "borgbackup (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10",
-			"repo": "extra"
+			]
 		},
 		{
 			"id": "gnome-disk-utility",
@@ -2955,17 +2308,11 @@
 			"group": "system",
 			"category": "Disk",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"gnome-disk-utility"
-			],
-			"repo": "extra",
 			"homepage": "https://apps.gnome.org/DiskUtility/",
 			"macos": "Disk Utility",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "restic",
@@ -2976,17 +2323,11 @@
 			"group": "system",
 			"category": "Disk",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"restic"
-			],
 			"homepage": "https://restic.net/",
 			"macos": "restic (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10",
-			"repo": "extra"
+			]
 		},
 		{
 			"id": "snap-pac",
@@ -2997,17 +2338,11 @@
 			"group": "system",
 			"category": "Disk",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"snap-pac"
-			],
 			"homepage": "https://github.com/wesbarnett/snap-pac",
 			"macos": null,
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10",
-			"repo": "extra"
+			]
 		},
 		{
 			"id": "snapper",
@@ -3018,17 +2353,11 @@
 			"group": "system",
 			"category": "Disk",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"snapper"
-			],
 			"homepage": "https://github.com/openSUSE/snapper",
 			"macos": "Time Machine",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10",
-			"repo": "extra"
+			]
 		},
 		{
 			"id": "btop",
@@ -3039,17 +2368,11 @@
 			"group": "system",
 			"category": "System",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"btop"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/aristocratos/btop",
 			"macos": "Activity Monitor",
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"terminal": "default"
 			}
@@ -3063,16 +2386,11 @@
 			"group": "system",
 			"category": "System",
 			"tier": "default",
-			"source": "aur",
-			"targets": [
-				"disktree-bin"
-			],
 			"homepage": "https://github.com/tobi/disktree",
 			"macos": "DaisyDisk",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "pacseek",
@@ -3083,16 +2401,11 @@
 			"group": "system",
 			"category": "System",
 			"tier": "default",
-			"source": "aur",
-			"targets": [
-				"pacseek"
-			],
 			"homepage": "https://github.com/moson-mo/pacseek",
 			"macos": "App Store",
 			"origin": [
 				"owner-pick"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "tmog",
@@ -3103,17 +2416,12 @@
 			"group": "system",
 			"category": "System",
 			"tier": "default",
-			"source": "aur",
-			"targets": [
-				"tmog-bin"
-			],
 			"homepage": "https://tmog.org",
 			"macos": "Activity Monitor",
 			"origin": [
 				"owner-pick",
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "fastfetch",
@@ -3124,17 +2432,11 @@
 			"group": "system",
 			"category": "System",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"fastfetch"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/fastfetch-cli/fastfetch",
 			"macos": "About This Mac",
 			"origin": [
 				"omarchy-shell-tool"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "rumb",
@@ -3145,22 +2447,12 @@
 			"group": "system",
 			"category": "System",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"rumb"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/rumb",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/HANCORE-linux/rumb",
 			"macos": "Software Update",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "curl",
@@ -3171,17 +2463,11 @@
 			"group": "system",
 			"category": "Utilities",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"curl"
-			],
-			"repo": "core",
 			"homepage": "https://curl.se/",
 			"macos": "curl (preinstalled)",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"core": "default"
 			}
@@ -3195,17 +2481,11 @@
 			"group": "system",
 			"category": "Utilities",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"unzip"
-			],
-			"repo": "extra",
 			"homepage": "http://infozip.sourceforge.net/UnZip.html",
 			"macos": "unzip (preinstalled)",
 			"origin": [
 				"owner-request"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"core": "default"
 			}
@@ -3219,16 +2499,11 @@
 			"group": "system",
 			"category": "Utilities",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"makima-bin"
-			],
 			"homepage": "https://github.com/cyber-sushi/makima",
 			"macos": "Karabiner-Elements",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "omacalc",
@@ -3239,22 +2514,12 @@
 			"group": "system",
 			"category": "Utilities",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"omacalc"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omacalc",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/omacom-io/omacalc",
 			"macos": "Calculator",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "omakeyboard",
@@ -3265,22 +2530,12 @@
 			"group": "system",
 			"category": "Utilities",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"omakeyboard"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omakeyboard",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/gabamnml/omakeyboard",
 			"macos": "Karabiner-Elements",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "omawake",
@@ -3291,22 +2546,12 @@
 			"group": "system",
 			"category": "Utilities",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"omawake-bin"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omawake-bin",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/jacob-vincent-mink/omawake",
 			"macos": "Siri wake word",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "system-config-printer",
@@ -3317,17 +2562,11 @@
 			"group": "system",
 			"category": "Utilities",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"system-config-printer"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/OpenPrinting/system-config-printer",
 			"macos": "Printers & Scanners",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "hyprpicker",
@@ -3338,16 +2577,10 @@
 			"group": "desktop",
 			"category": "Desktop polish",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"hyprpicker"
-			],
-			"repo": "extra",
 			"macos": "Digital Color Meter",
 			"origin": [
 				"omarchy-shell-tool"
 			],
-			"verified_on": "2026-11-09",
 			"shells": [
 				"hyprland"
 			]
@@ -3361,17 +2594,11 @@
 			"group": "desktop",
 			"category": "Desktop polish",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"hyprsunset"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/hyprwm/hyprsunset",
 			"macos": "Night Shift",
 			"origin": [
 				"omarchy-shell-tool"
 			],
-			"verified_on": "2026-11-09",
 			"shells": [
 				"hyprland"
 			]
@@ -3385,16 +2612,11 @@
 			"group": "desktop",
 			"category": "Desktop polish",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"owe"
-			],
 			"homepage": "https://github.com/omacom/owe",
 			"macos": "Dynamic Wallpaper",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"verified_on": "2026-11-09",
 			"shells": [
 				"hyprland"
 			]
@@ -3408,16 +2630,11 @@
 			"group": "desktop",
 			"category": "Desktop polish",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"wayfreeze"
-			],
 			"homepage": "https://github.com/Jappie3/wayfreeze",
 			"macos": "Screenshot freeze",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"verified_on": "2026-11-09",
 			"shells": [
 				"hyprland"
 			]
@@ -3431,16 +2648,10 @@
 			"group": "desktop",
 			"category": "File Management",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"ark"
-			],
-			"repo": "extra",
 			"macos": "Archive Utility",
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"files": "default"
 			}
@@ -3454,17 +2665,11 @@
 			"group": "desktop",
 			"category": "File Management",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"kdegraphics-thumbnailers"
-			],
-			"repo": "extra",
 			"homepage": "https://apps.kde.org/kdegraphics_thumbnailers/",
 			"macos": null,
 			"origin": [
 				"owner-pick"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "dolphin",
@@ -3475,16 +2680,10 @@
 			"group": "desktop",
 			"category": "File Management",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"dolphin"
-			],
-			"repo": "extra",
 			"macos": "Finder",
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"files": "default"
 			}
@@ -3498,17 +2697,11 @@
 			"group": "desktop",
 			"category": "File Management",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"dolphin-plugins"
-			],
-			"repo": "extra",
 			"homepage": "https://apps.kde.org/dolphin_plugins/",
 			"macos": null,
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"files": "default"
 			}
@@ -3522,17 +2715,11 @@
 			"group": "desktop",
 			"category": "File Management",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"filelight"
-			],
-			"repo": "extra",
 			"homepage": "https://apps.kde.org/filelight/",
 			"macos": "DaisyDisk",
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"files": "default"
 			}
@@ -3546,17 +2733,11 @@
 			"group": "desktop",
 			"category": "File Management",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"kimageformats"
-			],
-			"repo": "extra",
 			"homepage": "https://develop.kde.org/products/frameworks/",
 			"macos": null,
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"files": "default"
 			}
@@ -3570,17 +2751,11 @@
 			"group": "desktop",
 			"category": "File Management",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"kio-extras"
-			],
-			"repo": "extra",
 			"homepage": "https://www.kde.org/",
 			"macos": null,
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"files": "default"
 			}
@@ -3594,17 +2769,11 @@
 			"group": "desktop",
 			"category": "File Management",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"kompare"
-			],
-			"repo": "extra",
 			"homepage": "https://apps.kde.org/kompare/",
 			"macos": null,
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"files": "optional"
 			}
@@ -3618,17 +2787,11 @@
 			"group": "desktop",
 			"category": "File Management",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"ffmpegthumbs"
-			],
-			"repo": "extra",
 			"homepage": "https://apps.kde.org/ffmpegthumbs/",
 			"macos": null,
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"files": "default"
 			}
@@ -3642,16 +2805,10 @@
 			"group": "desktop",
 			"category": "File Management",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"nautilus"
-			],
-			"repo": "extra",
 			"macos": "Finder",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"kind": "desktop",
@@ -3659,20 +2816,12 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
 			"id": "strata",
 			"name": "Strata File Manager",
 			"description": "Keyboard-first file manager with Miller columns, previews and Send to",
 			"description_source": "curated",
 			"group": "desktop",
 			"category": "File Management",
-			"source": "script",
-			"script": {
-				"url": "https://raw.githubusercontent.com/lgse/strata/5f17c9fdc8967e1b4ba8aaf8de113b46d824b0dd/install.sh",
-				"args": [
-					"--non-interactive"
-				]
-			},
 			"homepage": "https://github.com/lgse/strata",
 			"macos": "Finder",
 			"profiles": {
@@ -3689,17 +2838,11 @@
 			"group": "desktop",
 			"category": "Launchers",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"fuzzel"
-			],
 			"homepage": "https://codeberg.org/dnkl/fuzzel",
 			"macos": "Spotlight",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10",
-			"repo": "extra"
+			]
 		},
 		{
 			"id": "rofi",
@@ -3710,17 +2853,11 @@
 			"group": "desktop",
 			"category": "Launchers",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"rofi"
-			],
 			"homepage": "https://github.com/davatorium/rofi",
 			"macos": "Spotlight / Alfred",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10",
-			"repo": "extra"
+			]
 		},
 		{
 			"id": "vicinae",
@@ -3731,16 +2868,11 @@
 			"group": "desktop",
 			"category": "Launchers",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"vicinae-bin"
-			],
 			"homepage": "https://github.com/vicinaehq/vicinae",
 			"macos": "Raycast",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10"
+			]
 		},
 		{
 			"id": "walker",
@@ -3751,17 +2883,11 @@
 			"group": "desktop",
 			"category": "Launchers",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"walker"
-			],
-			"repo": "cachyos",
 			"homepage": "https://github.com/abenz1267/walker",
 			"macos": "Spotlight",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"verified_on": "2026-11-09",
 			"shells": [
 				"hyprland"
 			]
@@ -3775,17 +2901,11 @@
 			"group": "desktop",
 			"category": "Launchers",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"wofi"
-			],
 			"homepage": "https://hg.sr.ht/~scoopta/wofi",
 			"macos": "Spotlight",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10",
-			"repo": "extra"
+			]
 		},
 		{
 			"id": "papirus-icon-theme",
@@ -3796,11 +2916,6 @@
 			"group": "desktop",
 			"category": "Themes",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"papirus-icon-theme"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/PapirusDevelopmentTeam/papirus-icon-theme",
 			"macos": null,
 			"origin": [
@@ -3816,16 +2931,11 @@
 			"group": "desktop",
 			"category": "Themes",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"aether"
-			],
 			"homepage": "https://github.com/omacom/aether",
 			"macos": "Theme creator",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"verified_on": "2026-11-09",
 			"shells": [
 				"hyprland"
 			]
@@ -3839,18 +2949,12 @@
 			"group": "everyday",
 			"category": "Browsers",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"brave-bin"
-			],
-			"repo": "cachyos",
 			"homepage": "https://brave.com",
 			"macos": "Safari / Chrome",
 			"origin": [
 				"owner-pick",
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "chromium",
@@ -3861,17 +2965,11 @@
 			"group": "everyday",
 			"category": "Browsers",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"chromium"
-			],
-			"repo": "extra",
 			"homepage": "https://www.chromium.org/Home",
 			"macos": "Chrome",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "firefox",
@@ -3882,16 +2980,10 @@
 			"group": "everyday",
 			"category": "Browsers",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"firefox"
-			],
-			"repo": "extra",
 			"macos": "Safari",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "google-chrome",
@@ -3902,16 +2994,11 @@
 			"group": "everyday",
 			"category": "Browsers",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"google-chrome"
-			],
 			"homepage": "https://www.google.com/chrome",
 			"macos": "Chrome",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "helium",
@@ -3922,17 +3009,11 @@
 			"group": "everyday",
 			"category": "Browsers",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"helium-browser-bin"
-			],
-			"repo": "cachyos",
 			"homepage": "https://github.com/imputnet/helium-linux",
 			"macos": "Safari / Chrome",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "edge",
@@ -3943,16 +3024,11 @@
 			"group": "everyday",
 			"category": "Browsers",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"microsoft-edge-stable-bin"
-			],
 			"homepage": "https://www.microsoftedgeinsider.com/en-us/download",
 			"macos": "Edge",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "tor-browser",
@@ -3963,16 +3039,10 @@
 			"group": "everyday",
 			"category": "Browsers",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"torbrowser-launcher"
-			],
-			"repo": "extra",
 			"macos": "Safari private browsing",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "zen",
@@ -3983,18 +3053,12 @@
 			"group": "everyday",
 			"category": "Browsers",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"zen-browser-bin"
-			],
-			"repo": "cachyos",
 			"homepage": "https://github.com/zen-browser/desktop",
 			"macos": "Arc",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-09"
+			"decided_by_owner": true
 		},
 		{
 			"id": "localsend",
@@ -4005,21 +3069,12 @@
 			"group": "everyday",
 			"category": "Communication",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"localsend"
-			],
-			"aur_targets": [
-				"localsend-bin"
-			],
-			"repo": "cachyos",
 			"homepage": "https://github.com/localsend/localsend",
 			"macos": "AirDrop",
 			"origin": [
 				"owner-pick",
 				"omarchy-desktop"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"productivity": "optional"
 			}
@@ -4033,10 +3088,6 @@
 			"group": "everyday",
 			"category": "Communication",
 			"tier": "default",
-			"source": "aur",
-			"targets": [
-				"slack-desktop"
-			],
 			"homepage": "https://slack.com/downloads",
 			"macos": "Slack (same)",
 			"origin": [
@@ -4044,7 +3095,6 @@
 				"omarchy-desktop"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"productivity": "optional"
 			}
@@ -4058,17 +3108,12 @@
 			"group": "everyday",
 			"category": "Communication",
 			"tier": "default",
-			"source": "aur",
-			"targets": [
-				"zoom"
-			],
 			"homepage": "https://zoom.us/",
 			"macos": "Zoom (same)",
 			"origin": [
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"productivity": "optional"
 			}
@@ -4082,22 +3127,12 @@
 			"group": "everyday",
 			"category": "Communication",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"omairc"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omairc",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/fredimachado/omairc",
 			"macos": "Colloquy",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "signal",
@@ -4108,17 +3143,11 @@
 			"group": "everyday",
 			"category": "Communication",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"signal-desktop"
-			],
-			"repo": "extra",
 			"homepage": "https://signal.org",
 			"macos": "Signal (same)",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "telegram",
@@ -4129,18 +3158,12 @@
 			"group": "everyday",
 			"category": "Communication",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"telegram-desktop"
-			],
-			"repo": "extra",
 			"homepage": "https://desktop.telegram.org/",
 			"macos": "Telegram (same)",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-09"
+			"decided_by_owner": true
 		},
 		{
 			"id": "zap-whatsapp",
@@ -4151,15 +3174,10 @@
 			"group": "everyday",
 			"category": "Communication",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"zapfast-bin"
-			],
 			"macos": null,
 			"origin": [
 				"owner-pick"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "gwenview",
@@ -4170,17 +3188,11 @@
 			"group": "desktop",
 			"category": "File Management",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"gwenview"
-			],
-			"repo": "extra",
 			"homepage": "https://apps.kde.org/gwenview/",
 			"macos": "Preview",
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-15",
 			"profiles": {
 				"files": "default"
 			}
@@ -4194,17 +3206,11 @@
 			"group": "everyday",
 			"category": "Documents",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"okular"
-			],
-			"repo": "extra",
 			"homepage": "https://apps.kde.org/okular/",
 			"macos": "Preview",
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-15",
 			"profiles": {
 				"productivity": "default"
 			}
@@ -4218,17 +3224,11 @@
 			"group": "media",
 			"category": "Screenshots and recording",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"satty"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/gabm/satty",
 			"macos": "Preview (Markup)",
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-15",
 			"profiles": {
 				"media": "default"
 			}
@@ -4242,17 +3242,12 @@
 			"group": "everyday",
 			"category": "Documents",
 			"tier": "default",
-			"source": "aur",
-			"targets": [
-				"signed"
-			],
 			"homepage": "https://github.com/omacom/signed",
 			"macos": "Preview (sign PDF)",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-15"
+			"decided_by_owner": true
 		},
 		{
 			"id": "hey",
@@ -4280,16 +3275,11 @@
 			"group": "everyday",
 			"category": "Email",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"mailspring"
-			],
 			"homepage": "https://github.com/Foundry376/Mailspring",
 			"macos": "Mailspring (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "omawrite",
@@ -4300,16 +3290,11 @@
 			"group": "everyday",
 			"category": "Notes and writing",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"omawrite"
-			],
 			"homepage": "https://github.com/omacom-io/omawrite",
 			"macos": "TextEdit",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "slap-notes",
@@ -4320,22 +3305,12 @@
 			"group": "everyday",
 			"category": "Notes and writing",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"slap-notes-bin"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/slap-notes-bin",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://slapnotes.com",
 			"macos": "Notes",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "typora",
@@ -4346,16 +3321,11 @@
 			"group": "everyday",
 			"category": "Notes and writing",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"typora"
-			],
 			"homepage": "https://typora.io/",
 			"macos": "Typora (same)",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "hype",
@@ -4366,22 +3336,12 @@
 			"group": "everyday",
 			"category": "Presentations",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"hype"
-			],
 			"macos": "Keynote",
 			"origin": [
 				"omarchy-desktop"
 			],
 			"note": "AUR package 'hype' is a Twitch tool, not the Omarchy presentation app; the right package is not found yet",
-			"verified_on": "2026-11-09",
-			"homepage": "https://github.com/omacom/hype",
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/hype",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			}
+			"homepage": "https://github.com/omacom/hype"
 		},
 		{
 			"id": "onlyoffice",
@@ -4392,18 +3352,12 @@
 			"group": "everyday",
 			"category": "Productivity",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"onlyoffice-bin"
-			],
-			"repo": "cachyos",
 			"homepage": "https://www.onlyoffice.com/",
 			"macos": "Pages / Numbers / Keynote",
 			"origin": [
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"productivity": "default"
 			}
@@ -4417,16 +3371,11 @@
 			"group": "everyday",
 			"category": "Productivity",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"gridcraft-bin"
-			],
 			"homepage": "https://github.com/storytold/gridcraft",
 			"macos": "Numbers",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "libreoffice",
@@ -4437,16 +3386,10 @@
 			"group": "everyday",
 			"category": "Productivity",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"libreoffice-fresh"
-			],
-			"repo": "extra",
 			"macos": "Pages / Numbers / Keynote",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"productivity": "optional"
 			}
@@ -4460,22 +3403,12 @@
 			"group": "everyday",
 			"category": "Productivity",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"omarchy-meeting-recorder-bin"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omarchy-meeting-recorder-bin",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/jankeesvw/omarchy-meeting-recorder",
 			"macos": "Otter / Granola",
 			"origin": [
 				"omarchy-desktop"
 			],
 			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"productivity": "optional"
 			}
@@ -4489,10 +3422,6 @@
 			"group": "everyday",
 			"category": "Productivity",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"notion-app-electron"
-			],
 			"homepage": "https://www.notion.com/desktop",
 			"macos": "Notion (same)",
 			"origin": [
@@ -4500,7 +3429,6 @@
 				"omarchy-desktop"
 			],
 			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"productivity": "optional"
 			}
@@ -4514,17 +3442,11 @@
 			"group": "everyday",
 			"category": "Productivity",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"obsidian"
-			],
-			"repo": "extra",
 			"homepage": "https://obsidian.md",
 			"macos": "Notes / Obsidian",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"productivity": "default"
 			}
@@ -4538,16 +3460,11 @@
 			"group": "everyday",
 			"category": "Productivity",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"ticktick"
-			],
 			"homepage": "https://ticktick.com/download",
 			"macos": "TickTick (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "wordcraft",
@@ -4558,16 +3475,11 @@
 			"group": "everyday",
 			"category": "Productivity",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"wordcraft-bin"
-			],
 			"homepage": "https://github.com/storytold/wordcraft",
 			"macos": "Pages",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "papers",
@@ -4578,16 +3490,10 @@
 			"group": "everyday",
 			"category": "Reading",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"papers"
-			],
-			"repo": "extra",
 			"macos": "Preview",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "1password",
@@ -4598,16 +3504,11 @@
 			"group": "everyday",
 			"category": "Security",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"1password"
-			],
 			"homepage": "https://1password.com",
 			"macos": "Passwords",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"productivity": "optional"
 			}
@@ -4621,17 +3522,11 @@
 			"group": "everyday",
 			"category": "Security",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"bitwarden"
-			],
 			"homepage": "https://bitwarden.com/",
 			"macos": "Bitwarden (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10",
-			"repo": "extra"
+			]
 		},
 		{
 			"id": "bitwarden-cli",
@@ -4642,17 +3537,11 @@
 			"group": "everyday",
 			"category": "Security",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"bitwarden-cli"
-			],
 			"homepage": "https://bitwarden.com/help/cli/",
 			"macos": "Bitwarden CLI (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-15",
-			"repo": "extra"
+			]
 		},
 		{
 			"id": "enpass",
@@ -4663,16 +3552,11 @@
 			"group": "everyday",
 			"category": "Security",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"enpass-bin"
-			],
 			"homepage": "https://www.enpass.io/",
 			"macos": "Enpass (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-15"
+			]
 		},
 		{
 			"id": "gopass",
@@ -4683,17 +3567,11 @@
 			"group": "everyday",
 			"category": "Security",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"gopass"
-			],
 			"homepage": "https://www.gopass.pw/",
 			"macos": "Passwords",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-15",
-			"repo": "extra"
+			]
 		},
 		{
 			"id": "keepassxc",
@@ -4704,17 +3582,11 @@
 			"group": "everyday",
 			"category": "Security",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"keepassxc"
-			],
 			"homepage": "https://keepassxc.org/",
 			"macos": "KeePassXC (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-10",
-			"repo": "extra"
+			]
 		},
 		{
 			"id": "keeper",
@@ -4725,16 +3597,11 @@
 			"group": "everyday",
 			"category": "Security",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"keeper-password-manager"
-			],
 			"homepage": "https://www.keepersecurity.com/",
 			"macos": "Keeper (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-15"
+			]
 		},
 		{
 			"id": "nordpass",
@@ -4745,16 +3612,11 @@
 			"group": "everyday",
 			"category": "Security",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"nordpass-bin"
-			],
 			"homepage": "https://nordpass.com/",
 			"macos": "NordPass (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-15"
+			]
 		},
 		{
 			"id": "pass",
@@ -4765,17 +3627,11 @@
 			"group": "everyday",
 			"category": "Security",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"pass"
-			],
 			"homepage": "https://www.passwordstore.org/",
 			"macos": "Passwords",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-15",
-			"repo": "extra"
+			]
 		},
 		{
 			"id": "proton-pass",
@@ -4786,16 +3642,11 @@
 			"group": "everyday",
 			"category": "Security",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"proton-pass-bin"
-			],
 			"homepage": "https://proton.me/pass",
 			"macos": "Proton Pass (same)",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-15"
+			]
 		},
 		{
 			"id": "maps",
@@ -5215,26 +4066,14 @@
 			"group": "media",
 			"category": "Audio",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"pipewire",
-				"pipewire-pulse",
-				"wireplumber",
-				"libpulse"
-			],
-			"repo": "extra",
 			"homepage": "https://pipewire.org/",
 			"macos": "Sound settings",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-15"
+			]
 		},
 		{
 			"tier": "default",
-			"source": "pacman",
-			"repo": "extra",
-			"verified_on": "2026-11-15",
 			"macos": "Media keys",
 			"origin": [
 				"owner-request"
@@ -5246,16 +4085,10 @@
 			"kind": "tui",
 			"group": "media",
 			"category": "Audio",
-			"targets": [
-				"playerctl"
-			],
 			"homepage": "https://github.com/altdesktop/playerctl"
 		},
 		{
 			"tier": "default",
-			"source": "pacman",
-			"repo": "extra",
-			"verified_on": "2026-11-15",
 			"macos": "Sound settings",
 			"origin": [
 				"owner-request"
@@ -5267,9 +4100,6 @@
 			"kind": "tui",
 			"group": "media",
 			"category": "Audio",
-			"targets": [
-				"wiremix"
-			],
 			"homepage": "https://github.com/tsowell/wiremix"
 		},
 		{
@@ -5281,16 +4111,11 @@
 			"group": "media",
 			"category": "Audio",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"cliamp"
-			],
 			"homepage": "https://github.com/bjarneo/cliamp",
 			"macos": "Music (retro player)",
 			"origin": [
 				"omarchy-shell-tool"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "omaspeak",
@@ -5301,22 +4126,12 @@
 			"group": "media",
 			"category": "Audio",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"omaspeak-bin"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omaspeak-bin",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/jacob-vincent-mink/omaspeak",
 			"macos": "Spoken Content",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "bambustudio",
@@ -5327,16 +4142,11 @@
 			"group": "media",
 			"category": "CAD",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"bambustudio-bin"
-			],
 			"homepage": "https://github.com/bambulab/BambuStudio",
 			"macos": "Bambu Studio (same)",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "canva",
@@ -5398,22 +4208,12 @@
 			"group": "media",
 			"category": "Design",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"omacharts"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omacharts",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/jorgemanrubia/omacharts",
 			"macos": "Numbers charts",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "omadesign",
@@ -5424,22 +4224,12 @@
 			"group": "media",
 			"category": "Design",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"omadesign-bin"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omadesign-bin",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/michaelmonetized/omadesign",
 			"macos": "Pixelmator / Affinity",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "pinta",
@@ -5450,17 +4240,11 @@
 			"group": "media",
 			"category": "Graphics",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"pinta"
-			],
-			"repo": "extra",
 			"homepage": "https://pinta-project.com/",
 			"macos": "Preview / Pixelmator",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "schist",
@@ -5471,16 +4255,11 @@
 			"group": "media",
 			"category": "Graphics",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"schist-bin"
-			],
 			"homepage": "https://github.com/Infrawrench/schist",
 			"macos": "Pixelmator (PSD)",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "mpv",
@@ -5491,18 +4270,12 @@
 			"group": "media",
 			"category": "Media",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"mpv"
-			],
-			"repo": "extra",
 			"homepage": "https://mpv.io/",
 			"macos": "QuickTime / IINA",
 			"origin": [
 				"owner-pick",
 				"omarchy-desktop"
 			],
-			"verified_on": "2026-11-15",
 			"profiles": {
 				"media": "default"
 			}
@@ -5516,17 +4289,11 @@
 			"group": "media",
 			"category": "Media",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"ffmpeg"
-			],
-			"repo": "extra",
 			"homepage": "https://ffmpeg.org",
 			"macos": "ffmpeg via Homebrew",
 			"origin": [
 				"omarchy-shell-tool"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"media": "default"
 			}
@@ -5540,17 +4307,11 @@
 			"group": "media",
 			"category": "Media",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"imv"
-			],
-			"repo": "extra",
 			"homepage": "https://sr.ht/~exec64/imv/",
 			"macos": "Preview",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "kdenlive",
@@ -5561,14 +4322,8 @@
 			"group": "media",
 			"category": "Media",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"kdenlive"
-			],
-			"repo": "extra",
 			"homepage": "https://apps.kde.org/kdenlive/",
 			"macos": "iMovie / Final Cut",
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"media": "optional"
 			}
@@ -5582,22 +4337,12 @@
 			"group": "media",
 			"category": "Media",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"link-studio"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/link-studio",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://jweaver60.github.io/link-studio/",
 			"macos": "Insta360 Link Controller",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "monologue",
@@ -5608,22 +4353,12 @@
 			"group": "media",
 			"category": "Media",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"monologue"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/monologue",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/omacom/monologue",
 			"macos": "Photo Booth",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "obs",
@@ -5634,14 +4369,8 @@
 			"group": "media",
 			"category": "Media",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"obs-studio"
-			],
-			"repo": "extra",
 			"homepage": "https://obsproject.com",
 			"macos": "ScreenFlow / QuickTime",
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"media": "optional"
 			}
@@ -5655,22 +4384,12 @@
 			"group": "media",
 			"category": "Media",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"omacut"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omacut",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/omacom/omacut",
 			"macos": "QuickTime trim",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "omareel",
@@ -5681,22 +4400,12 @@
 			"group": "media",
 			"category": "Media",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"omareel"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omareel",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/omacom/omareel",
 			"macos": "ScreenFlow",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "spotify",
@@ -5707,17 +4416,12 @@
 			"group": "media",
 			"category": "Media",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"spotify"
-			],
 			"homepage": "https://www.spotify.com",
 			"macos": "Music / Spotify",
 			"origin": [
 				"owner-pick",
 				"omarchy-desktop"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"media": "optional"
 			}
@@ -5731,17 +4435,11 @@
 			"group": "media",
 			"category": "Media",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"yt-dlp"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/yt-dlp/yt-dlp",
 			"macos": "yt-dlp via Homebrew",
 			"origin": [
 				"omarchy-shell-tool"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"media": "default"
 			}
@@ -5755,22 +4453,12 @@
 			"group": "media",
 			"category": "Photos",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"rawmakase-bin"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/rawmakase-bin",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/pch/rawmakase",
 			"macos": "Lightroom",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "flameshot",
@@ -5781,17 +4469,11 @@
 			"group": "media",
 			"category": "Screenshots and recording",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"flameshot"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/flameshot-org/flameshot",
 			"macos": "Screenshot (Shift+Cmd+4) / Shottr",
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"media": "optional"
 			}
@@ -5805,17 +4487,11 @@
 			"group": "media",
 			"category": "Screenshots and recording",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"gpu-screen-recorder"
-			],
-			"repo": "extra",
 			"homepage": "https://git.dec05eba.com/gpu-screen-recorder",
 			"macos": "Screen recording (Shift+Cmd+5)",
 			"origin": [
 				"omarchy-shell-tool"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"media": "optional"
 			}
@@ -5829,22 +4505,12 @@
 			"group": "media",
 			"category": "Screenshots and recording",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"omasnap"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omasnap",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://github.com/omacom/omasnap",
 			"macos": "Screenshot (Shift+Cmd+4)",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "tensaku",
@@ -5855,16 +4521,11 @@
 			"group": "media",
 			"category": "Screenshots and recording",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"tensaku"
-			],
 			"homepage": "https://github.com/jondkinney/tensaku",
 			"macos": "Screenshot markup",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "discord",
@@ -5875,16 +4536,10 @@
 			"group": "gaming",
 			"category": "Chat",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"discord"
-			],
-			"repo": "extra",
 			"macos": "Discord (same)",
 			"origin": [
 				"gaming"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"gaming": "optional"
 			}
@@ -5898,18 +4553,11 @@
 			"group": "gaming",
 			"category": "Launchers",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"cachyos-gaming-meta",
-				"cachyos-gaming-applications"
-			],
-			"repo": "cachyos",
 			"macos": "Game Mode / Steam setup",
 			"origin": [
 				"gaming"
 			],
 			"note": "CachyOS meta-packages: Steam, Lutris, Heroic, Faugus, gamescope, MangoHud, GOverlay, Proton/Wine runtimes",
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"gaming": "default"
 			}
@@ -5923,17 +4571,11 @@
 			"group": "gaming",
 			"category": "Launchers",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"heroic-games-launcher-bin"
-			],
-			"repo": "cachyos",
 			"homepage": "https://heroicgameslauncher.com/",
 			"macos": "Epic Games Launcher",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"gaming": "default"
 			}
@@ -5947,17 +4589,11 @@
 			"group": "gaming",
 			"category": "Launchers",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"lutris"
-			],
-			"repo": "extra",
 			"homepage": "https://lutris.net",
 			"macos": "CrossOver / Whisky",
 			"origin": [
 				"gaming"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"gaming": "default"
 			}
@@ -5971,16 +4607,11 @@
 			"group": "gaming",
 			"category": "Launchers",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"minecraft-launcher"
-			],
 			"homepage": "https://mojang.com/",
 			"macos": "Minecraft Launcher",
 			"origin": [
 				"omarchy-desktop"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "omakade",
@@ -5991,22 +4622,12 @@
 			"group": "gaming",
 			"category": "Launchers",
 			"tier": "optional",
-			"source": "pkgbuild",
-			"targets": [
-				"omakade"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omakade",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
 			"homepage": "https://btsouth.github.io/omakade/",
 			"macos": "Game Center",
 			"origin": [
 				"omarchy-desktop"
 			],
-			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)",
-			"verified_on": "2026-11-09"
+			"note": "Build from the Omarchy PKGBUILD (omacom/omarchy-pkgs)"
 		},
 		{
 			"id": "prismlauncher",
@@ -6017,17 +4638,11 @@
 			"group": "gaming",
 			"category": "Launchers",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"prismlauncher"
-			],
-			"repo": "extra",
 			"homepage": "https://prismlauncher.org",
 			"macos": "Minecraft Launcher",
 			"origin": [
 				"gaming"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "retroarch",
@@ -6038,17 +4653,11 @@
 			"group": "gaming",
 			"category": "Launchers",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"retroarch"
-			],
-			"repo": "extra",
 			"homepage": "http://www.libretro.com/",
 			"macos": "OpenEmu",
 			"origin": [
 				"gaming"
-			],
-			"verified_on": "2026-11-09"
+			]
 		},
 		{
 			"id": "steam",
@@ -6059,16 +4668,10 @@
 			"group": "gaming",
 			"category": "Launchers",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"steam"
-			],
-			"repo": "multilib",
 			"macos": "Steam (same)",
 			"origin": [
 				"gaming"
 			],
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"gaming": "default"
 			}
@@ -6082,17 +4685,12 @@
 			"group": "gaming",
 			"category": "Streaming",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"greenlight-bin"
-			],
 			"homepage": "https://github.com/unknownskl/greenlight",
 			"macos": "Xbox app",
 			"origin": [
 				"gaming"
 			],
-			"note": "Unofficial open-source client for Xbox Remote Play",
-			"verified_on": "2026-11-09"
+			"note": "Unofficial open-source client for Xbox Remote Play"
 		},
 		{
 			"id": "geforce-now",
@@ -6103,17 +4701,12 @@
 			"group": "gaming",
 			"category": "Streaming",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"geforcenow-electron"
-			],
 			"homepage": "https://github.com/hmlendea/gfn-electron",
 			"macos": "GeForce NOW (same)",
 			"origin": [
 				"gaming"
 			],
-			"note": "Unofficial Electron wrapper in the AUR; NVIDIA has no official Linux app",
-			"verified_on": "2026-11-09"
+			"note": "Unofficial Electron wrapper in the AUR; NVIDIA has no official Linux app"
 		},
 		{
 			"id": "xbox-cloud",
@@ -6141,18 +4734,12 @@
 			"group": "gaming",
 			"category": "Tools",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"protonup-qt"
-			],
-			"repo": "cachyos",
 			"homepage": "https://davidotek.github.io/protonup-qt",
 			"macos": null,
 			"origin": [
 				"gaming"
 			],
 			"note": "Installs Proton-GE and Wine-GE compatibility tools",
-			"verified_on": "2026-11-09",
 			"profiles": {
 				"gaming": "default"
 			}
@@ -6163,11 +4750,6 @@
 			"description": "Create, run and share large language models (LLMs) with CUDA (add-on for ollama)",
 			"description_source": "arch",
 			"kind": "tui",
-			"source": "pacman",
-			"targets": [
-				"ollama-cuda"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/ollama/ollama",
 			"macos": null,
 			"group": "ai",
@@ -6175,8 +4757,7 @@
 			"tier": "optional",
 			"profiles": {
 				"ai": "optional"
-			},
-			"verified_on": "2026-11-11"
+			}
 		},
 		{
 			"id": "ollama-rocm",
@@ -6184,11 +4765,6 @@
 			"description": "Create, run and share large language models (LLMs) with ROCm (add-on for ollama)",
 			"description_source": "arch",
 			"kind": "tui",
-			"source": "pacman",
-			"targets": [
-				"ollama-rocm"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/ollama/ollama",
 			"macos": null,
 			"group": "ai",
@@ -6196,8 +4772,7 @@
 			"tier": "optional",
 			"profiles": {
 				"ai": "optional"
-			},
-			"verified_on": "2026-11-11"
+			}
 		},
 		{
 			"id": "jan",
@@ -6205,10 +4780,6 @@
 			"description": "Open source ChatGPT alternative that runs models fully offline",
 			"description_source": "aur",
 			"kind": "desktop",
-			"source": "aur",
-			"targets": [
-				"jan-bin"
-			],
 			"homepage": "https://jan.ai/",
 			"macos": "Jan (same)",
 			"group": "ai",
@@ -6216,8 +4787,7 @@
 			"tier": "optional",
 			"profiles": {
 				"ai": "optional"
-			},
-			"verified_on": "2026-11-11"
+			}
 		},
 		{
 			"id": "koboldcpp",
@@ -6225,10 +4795,6 @@
 			"description": "Easy-to-use text-generation software for GGML and GGUF models",
 			"description_source": "aur",
 			"kind": "desktop",
-			"source": "aur",
-			"targets": [
-				"koboldcpp"
-			],
 			"homepage": "https://github.com/LostRuins/koboldcpp",
 			"macos": "KoboldCpp (same)",
 			"group": "ai",
@@ -6236,8 +4802,7 @@
 			"tier": "optional",
 			"profiles": {
 				"ai": "optional"
-			},
-			"verified_on": "2026-11-11"
+			}
 		},
 		{
 			"id": "gpt4all",
@@ -6245,10 +4810,6 @@
 			"description": "Run open-source LLMs locally with a chat app",
 			"description_source": "aur",
 			"kind": "desktop",
-			"source": "aur",
-			"targets": [
-				"gpt4all-chat"
-			],
 			"homepage": "https://gpt4all.io",
 			"macos": "GPT4All (same)",
 			"group": "ai",
@@ -6256,14 +4817,10 @@
 			"tier": "optional",
 			"profiles": {
 				"ai": "optional"
-			},
-			"verified_on": "2026-11-11"
+			}
 		},
 		{
 			"tier": "optional",
-			"source": "pacman",
-			"repo": "extra",
-			"verified_on": "2026-11-12",
 			"macos": "Clipboard history (Raycast, Alfred)",
 			"origin": [
 				"owner-request"
@@ -6275,9 +4832,6 @@
 			"kind": "tui",
 			"group": "desktop",
 			"category": "Desktop polish",
-			"targets": [
-				"cliphist"
-			],
 			"shells": [
 				"hyprland"
 			],
@@ -6285,9 +4839,6 @@
 		},
 		{
 			"tier": "optional",
-			"source": "pacman",
-			"repo": "extra",
-			"verified_on": "2026-11-12",
 			"macos": "Screen recording (Shift+Cmd+5)",
 			"origin": [
 				"owner-request"
@@ -6299,9 +4850,6 @@
 			"kind": "tui",
 			"group": "media",
 			"category": "Screenshots and recording",
-			"targets": [
-				"wf-recorder"
-			],
 			"shells": [
 				"hyprland"
 			],
@@ -6312,9 +4860,6 @@
 		},
 		{
 			"tier": "optional",
-			"source": "pacman",
-			"repo": "extra",
-			"verified_on": "2026-11-12",
 			"macos": "Sound settings",
 			"origin": [
 				"owner-request"
@@ -6326,16 +4871,10 @@
 			"kind": "desktop",
 			"group": "media",
 			"category": "Audio",
-			"targets": [
-				"pavucontrol"
-			],
 			"homepage": "https://freedesktop.org/software/pulseaudio/pavucontrol/"
 		},
 		{
 			"tier": "optional",
-			"source": "pacman",
-			"repo": "extra",
-			"verified_on": "2026-11-12",
 			"macos": "Displays settings",
 			"origin": [
 				"owner-request"
@@ -6347,9 +4886,6 @@
 			"kind": "desktop",
 			"group": "desktop",
 			"category": "Desktop polish",
-			"targets": [
-				"nwg-displays"
-			],
 			"shells": [
 				"hyprland"
 			],
@@ -6364,17 +4900,11 @@
 			"group": "desktop",
 			"category": "Desktop polish",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"solaar"
-			],
-			"repo": "extra",
 			"homepage": "https://pwr-solaar.github.io/Solaar/",
 			"macos": "Logi Options+",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-17"
+			]
 		},
 		{
 			"id": "piper",
@@ -6385,17 +4915,11 @@
 			"group": "desktop",
 			"category": "Desktop polish",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"piper"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/libratbag/piper",
 			"macos": "Logitech G HUB",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-17"
+			]
 		},
 		{
 			"id": "libratbag",
@@ -6406,17 +4930,11 @@
 			"group": "desktop",
 			"category": "Desktop polish",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"libratbag"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/libratbag/libratbag",
 			"macos": "Logitech G HUB",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-17"
+			]
 		},
 		{
 			"id": "upower",
@@ -6427,23 +4945,14 @@
 			"group": "desktop",
 			"category": "Desktop polish",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"upower"
-			],
-			"repo": "extra",
 			"homepage": "https://upower.freedesktop.org",
 			"macos": "Battery in the menu bar",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-17"
+			]
 		},
 		{
 			"tier": "default",
-			"source": "pacman",
-			"repo": "extra",
-			"verified_on": "2026-11-12",
 			"origin": [
 				"owner-request"
 			],
@@ -6454,9 +4963,6 @@
 			"id": "btrfs-assistant",
 			"name": "Btrfs Assistant",
 			"description": "GUI for managing Btrfs subvolumes and Snapper snapshots (offered only when the root filesystem is Btrfs)",
-			"targets": [
-				"btrfs-assistant"
-			],
 			"homepage": "https://gitlab.com/btrfs-assistant/btrfs-assistant",
 			"macos": "Time Machine (snapshots)",
 			"filesystems": [
@@ -6465,9 +4971,6 @@
 		},
 		{
 			"tier": "default",
-			"source": "pacman",
-			"repo": "extra",
-			"verified_on": "2026-11-12",
 			"origin": [
 				"owner-request"
 			],
@@ -6478,9 +4981,6 @@
 			"id": "timeshift",
 			"name": "Timeshift",
 			"description": "System restore tool: snapshots with rsync or Btrfs, restore from a GUI",
-			"targets": [
-				"timeshift"
-			],
 			"homepage": "https://github.com/linuxmint/timeshift",
 			"macos": "Time Machine"
 		},
@@ -6490,17 +4990,12 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
 			"id": "kiview",
 			"name": "Kiview",
 			"description": "Quick Look style file preview for Dolphin",
 			"description_source": "aur",
 			"group": "desktop",
 			"category": "File Management",
-			"source": "aur",
-			"targets": [
-				"kiview"
-			],
 			"macos": "Quick Look",
 			"profiles": {
 				"files": "optional"
@@ -6512,21 +5007,12 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
 			"id": "kdeconnect",
 			"name": "KDE Connect",
 			"description": "Share files, clipboard and notifications with your phone",
 			"description_source": "arch",
 			"group": "network",
 			"category": "File Transfer",
-			"source": "pacman",
-			"repo": "extra",
-			"targets": [
-				"kdeconnect",
-				"sshfs",
-				"qt6-tools",
-				"python-gobject"
-			],
 			"macos": "Continuity",
 			"homepage": "https://kdeconnect.kde.org",
 			"note": "sshfs and qt6-tools are its optional dependencies; python-gobject is needed by the Strata provider"
@@ -6537,18 +5023,12 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
 			"id": "wtype",
 			"name": "wtype",
 			"description": "Types text on Wayland (used by dictation)",
 			"description_source": "arch",
 			"group": "system",
-			"category": "Accessibility",
-			"source": "pacman",
-			"repo": "extra",
-			"targets": [
-				"wtype"
-			]
+			"category": "Accessibility"
 		},
 		{
 			"kind": "desktop",
@@ -6556,19 +5036,12 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-19",
-			"source": "pacman",
-			"repo": "extra",
 			"description_source": "arch",
 			"id": "vlc",
 			"name": "VLC",
 			"description": "Multi-platform multimedia player and framework",
 			"group": "media",
 			"category": "Media",
-			"targets": [
-				"vlc",
-				"vlc-plugins-all"
-			],
 			"homepage": "https://www.videolan.org/vlc/",
 			"macos": "QuickTime Player"
 		},
@@ -6578,16 +5051,10 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
-			"source": "pacman",
-			"repo": "extra",
 			"description_source": "arch",
 			"id": "spectacle",
 			"name": "Spectacle",
 			"description": "KDE screenshot capture utility",
-			"targets": [
-				"spectacle"
-			],
 			"shells": [
 				"plasma"
 			],
@@ -6601,16 +5068,10 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
-			"source": "pacman",
-			"repo": "extra",
 			"description_source": "arch",
 			"id": "grim",
 			"name": "grim",
 			"description": "Screenshot utility for Wayland (BxRig: fallback when Noctalia is not running)",
-			"targets": [
-				"grim"
-			],
 			"shells": [
 				"hyprland"
 			],
@@ -6623,16 +5084,10 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
-			"source": "pacman",
-			"repo": "extra",
 			"description_source": "arch",
 			"id": "slurp",
 			"name": "slurp",
 			"description": "Select a region in a Wayland compositor (used with grim)",
-			"targets": [
-				"slurp"
-			],
 			"shells": [
 				"hyprland"
 			],
@@ -6645,17 +5100,10 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
-			"source": "pacman",
-			"repo": "extra",
 			"description_source": "arch",
 			"id": "tesseract",
 			"name": "Tesseract OCR",
 			"description": "Text recognition for screenshot OCR (BxRig: screenshot ocr)",
-			"targets": [
-				"tesseract",
-				"tesseract-data-eng"
-			],
 			"group": "media",
 			"category": "Screenshots and recording"
 		},
@@ -6665,16 +5113,10 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
-			"source": "pacman",
-			"repo": "extra",
 			"description_source": "arch",
 			"id": "zbar",
 			"name": "ZBar",
 			"description": "Reads QR codes and bar codes (BxRig: screenshot qr)",
-			"targets": [
-				"zbar"
-			],
 			"group": "media",
 			"category": "Screenshots and recording"
 		},
@@ -6684,16 +5126,10 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
-			"source": "pacman",
-			"repo": "extra",
 			"description_source": "arch",
 			"id": "qrencode",
 			"name": "qrencode",
 			"description": "Makes QR codes (BxRig: qr)",
-			"targets": [
-				"qrencode"
-			],
 			"group": "media",
 			"category": "Screenshots and recording"
 		},
@@ -6703,7 +5139,6 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
 			"group": "desktop",
 			"category": "Desktop polish",
 			"shells": [
@@ -6713,10 +5148,6 @@
 			"name": "Panel Colorizer",
 			"description": "Style Plasma panels: colors, rounded islands, blur (Latte-Dock and status-bar looks)",
 			"description_source": "aur",
-			"source": "aur",
-			"targets": [
-				"plasma6-applets-panel-colorizer"
-			],
 			"homepage": "https://github.com/luisbocanegra/plasma-panel-colorizer"
 		},
 		{
@@ -6725,7 +5156,6 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
 			"group": "desktop",
 			"category": "Desktop polish",
 			"shells": [
@@ -6735,10 +5165,6 @@
 			"name": "Panel Colorizer islands separator",
 			"description": "Separator widget that splits a Plasma panel into Panel Colorizer islands",
 			"description_source": "aur",
-			"source": "aur",
-			"targets": [
-				"plasma6-applets-panel-colorizer-islands-separator-git"
-			],
 			"homepage": "https://github.com/luisbocanegra/plasma-panel-colorizer-islands-separator"
 		},
 		{
@@ -6747,7 +5173,6 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
 			"group": "desktop",
 			"category": "Desktop polish",
 			"shells": [
@@ -6757,10 +5182,6 @@
 			"name": "Active Window Title",
 			"description": "Plasma 6 applet that shows the active window title and icon",
 			"description_source": "aur",
-			"source": "aur",
-			"targets": [
-				"plasma6-applets-window-title"
-			],
 			"homepage": "https://github.com/dhruv8sh/plasma6-window-title-applet"
 		},
 		{
@@ -6769,7 +5190,6 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
 			"group": "desktop",
 			"category": "Desktop polish",
 			"shells": [
@@ -6779,10 +5199,6 @@
 			"name": "KVitals",
 			"description": "Live CPU, RAM and other system vitals in a Plasma 6 panel",
 			"description_source": "aur",
-			"source": "aur",
-			"targets": [
-				"plasma6-applets-kvitals-git"
-			],
 			"homepage": "https://github.com/yassine20011/kvitals",
 			"note": "Only a git build is packaged (no tagged release)"
 		},
@@ -6792,7 +5208,6 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
 			"group": "desktop",
 			"category": "Desktop polish",
 			"shells": [
@@ -6802,10 +5217,6 @@
 			"name": "Event Calendar",
 			"description": "Calendar with an agenda for the Plasma 6 panel (instead of the plain clock)",
 			"description_source": "aur",
-			"source": "aur",
-			"targets": [
-				"plasma6-applets-eventcalendar"
-			],
 			"homepage": "https://github.com/lenonk/plasma6-applet-eventcalendar"
 		},
 		{
@@ -6814,7 +5225,6 @@
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
 			"group": "desktop",
 			"category": "Desktop polish",
 			"shells": [
@@ -6823,12 +5233,7 @@
 			"id": "kdeplasma-addons",
 			"name": "Plasma add-ons",
 			"description": "Extra Plasma widgets, including Weather Report",
-			"description_source": "arch",
-			"source": "pacman",
-			"repo": "extra",
-			"targets": [
-				"kdeplasma-addons"
-			]
+			"description_source": "arch"
 		},
 		{
 			"id": "try-boxlang",
@@ -7037,15 +5442,9 @@
 			"group": "infra",
 			"category": "Databases",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"dbeaver"
-			],
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
-			"repo": "extra",
 			"homepage": "https://dbeaver.io"
 		},
 		{
@@ -7057,14 +5456,9 @@
 			"group": "infra",
 			"category": "Databases",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"heidisql-qt6-bin"
-			],
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
 			"homepage": "https://www.heidisql.com"
 		},
 		{
@@ -7076,14 +5470,9 @@
 			"group": "infra",
 			"category": "Cloud Storage",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"rclone-browser"
-			],
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-12",
 			"homepage": "https://github.com/kapitainsky/RcloneBrowser",
 			"macos": "Transmit / Cyberduck"
 		},
@@ -7096,15 +5485,9 @@
 			"group": "desktop",
 			"category": "Desktop polish",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"rofimoji"
-			],
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-13",
-			"repo": "extra",
 			"shells": [
 				"hyprland"
 			],
@@ -7122,15 +5505,9 @@
 			"group": "desktop",
 			"category": "Desktop polish",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"wlsunset"
-			],
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-13",
-			"repo": "extra",
 			"shells": [
 				"hyprland"
 			],
@@ -7145,14 +5522,9 @@
 			"group": "desktop",
 			"category": "Desktop polish",
 			"tier": "default",
-			"source": "aur",
-			"targets": [
-				"libinput-gestures"
-			],
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-13",
 			"shells": [
 				"hyprland"
 			],
@@ -7167,17 +5539,11 @@
 			"group": "system",
 			"category": "System",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"bluetui"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/pythops/bluetui",
 			"macos": "Bluetooth settings",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-15"
+			]
 		},
 		{
 			"id": "bluez",
@@ -7188,16 +5554,9 @@
 			"group": "system",
 			"category": "System",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"bluez",
-				"bluez-utils"
-			],
 			"origin": [
 				"owner-pick"
-			],
-			"verified_on": "2026-11-15",
-			"repo": "extra"
+			]
 		},
 		{
 			"id": "brightnessctl",
@@ -7208,17 +5567,11 @@
 			"group": "system",
 			"category": "System",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"brightnessctl"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/Hummer12007/brightnessctl",
 			"macos": "Displays settings",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-15"
+			]
 		},
 		{
 			"id": "impala",
@@ -7229,17 +5582,11 @@
 			"group": "system",
 			"category": "System",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"impala"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/pythops/impala",
 			"macos": "Wi-Fi settings",
 			"origin": [
 				"owner-request"
-			],
-			"verified_on": "2026-11-15"
+			]
 		},
 		{
 			"id": "uxplay",
@@ -7250,14 +5597,9 @@
 			"group": "network",
 			"category": "Networking",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"uxplay"
-			],
 			"origin": [
 				"owner-pick"
 			],
-			"verified_on": "2026-11-13",
 			"macos": "AirPlay receiver"
 		},
 		{
@@ -7269,18 +5611,12 @@
 			"group": "development",
 			"category": "Version control",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"github-cli"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/cli/cli",
 			"macos": "gh via Homebrew",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "cmake",
@@ -7291,18 +5627,12 @@
 			"group": "development",
 			"category": "Language tooling",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"cmake"
-			],
-			"repo": "extra",
 			"homepage": "https://www.cmake.org/",
 			"macos": "cmake via Homebrew",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "direnv",
@@ -7313,18 +5643,12 @@
 			"group": "development",
 			"category": "Shell",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"direnv"
-			],
-			"repo": "extra",
 			"homepage": "https://direnv.net",
 			"macos": "direnv via Homebrew",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "tree-sitter-cli",
@@ -7335,18 +5659,12 @@
 			"group": "development",
 			"category": "Language tooling",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"tree-sitter-cli"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/tree-sitter/tree-sitter",
 			"macos": "tree-sitter via Homebrew",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "vim",
@@ -7357,18 +5675,12 @@
 			"group": "development",
 			"category": "Editors and IDEs",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"vim"
-			],
-			"repo": "extra",
 			"homepage": "https://www.vim.org",
 			"macos": "vim (built in)",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "mysql-workbench",
@@ -7379,18 +5691,12 @@
 			"group": "infra",
 			"category": "Databases",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"mysql-workbench"
-			],
-			"repo": "extra",
 			"homepage": "https://www.mysql.com/products/workbench/",
 			"macos": "MySQL Workbench (same)",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "duf",
@@ -7401,18 +5707,12 @@
 			"group": "system",
 			"category": "Disk",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"duf"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/muesli/duf",
 			"macos": "duf via Homebrew",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "smartmontools",
@@ -7423,18 +5723,12 @@
 			"group": "system",
 			"category": "Disk",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"smartmontools"
-			],
-			"repo": "extra",
 			"homepage": "https://www.smartmontools.org/",
 			"macos": "smartmontools via Homebrew",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "partitionmanager",
@@ -7445,18 +5739,12 @@
 			"group": "system",
 			"category": "Disk",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"partitionmanager"
-			],
-			"repo": "extra",
 			"homepage": "https://apps.kde.org/partitionmanager/",
 			"macos": "Disk Utility",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "7zip",
@@ -7467,18 +5755,12 @@
 			"group": "system",
 			"category": "Utilities",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"7zip"
-			],
-			"repo": "extra",
 			"homepage": "https://www.7-zip.org",
 			"macos": "sevenzip via Homebrew",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "unrar",
@@ -7489,18 +5771,12 @@
 			"group": "system",
 			"category": "Utilities",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"unrar"
-			],
-			"repo": "extra",
 			"homepage": "https://www.rarlab.com/rar_add.htm",
 			"macos": "The Unarchiver",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "pika-backup",
@@ -7511,18 +5787,12 @@
 			"group": "system",
 			"category": "Utilities",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"pika-backup"
-			],
-			"repo": "extra",
 			"homepage": "https://apps.gnome.org/PikaBackup/",
 			"macos": "Time Machine",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "flatseal",
@@ -7533,17 +5803,11 @@
 			"group": "system",
 			"category": "System",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"flatseal"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/tchx84/Flatseal/",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "kinfocenter",
@@ -7554,18 +5818,12 @@
 			"group": "system",
 			"category": "System",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"kinfocenter"
-			],
-			"repo": "extra",
 			"homepage": "https://kde.org/plasma-desktop/",
 			"macos": "System Information",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "snapd",
@@ -7576,16 +5834,11 @@
 			"group": "system",
 			"category": "System",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"snapd"
-			],
 			"homepage": "https://github.com/snapcore/snapd",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "cups",
@@ -7596,18 +5849,12 @@
 			"group": "system",
 			"category": "System",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"cups"
-			],
-			"repo": "extra",
 			"homepage": "https://openprinting.github.io/cups/",
 			"macos": "Printing (built in)",
 			"origin": [
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-19",
 			"note": "Enable the printing service once: sudo systemctl enable --now cups.service"
 		},
 		{
@@ -7619,18 +5866,12 @@
 			"group": "system",
 			"category": "System",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"cups-pdf"
-			],
-			"repo": "extra",
 			"homepage": "https://www.cups-pdf.de/welcome.shtml",
 			"macos": "Print to PDF (built in)",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "hplip",
@@ -7641,18 +5882,12 @@
 			"group": "system",
 			"category": "System",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"hplip"
-			],
-			"repo": "extra",
 			"homepage": "https://hplipopensource.com",
 			"macos": "HP Smart",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "wget",
@@ -7663,18 +5898,12 @@
 			"group": "network",
 			"category": "File Transfer",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"wget"
-			],
-			"repo": "extra",
 			"homepage": "https://www.gnu.org/software/wget/wget.html",
 			"macos": "wget via Homebrew",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "ufw",
@@ -7685,18 +5914,12 @@
 			"group": "network",
 			"category": "Networking",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"ufw"
-			],
-			"repo": "extra",
 			"homepage": "https://launchpad.net/ufw",
 			"macos": "macOS firewall (built in)",
 			"origin": [
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-19",
 			"note": "Installed off; turn it on with: sudo ufw enable"
 		},
 		{
@@ -7708,17 +5931,11 @@
 			"group": "network",
 			"category": "Networking",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"ufw-extras"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/xyproto/ufw-extras",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "networkmanager-openvpn",
@@ -7729,18 +5946,12 @@
 			"group": "network",
 			"category": "Networking",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"networkmanager-openvpn"
-			],
-			"repo": "extra",
 			"homepage": "https://networkmanager.dev/docs/vpn/",
 			"macos": "Tunnelblick",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "imagemagick",
@@ -7751,18 +5962,12 @@
 			"group": "media",
 			"category": "Graphics",
 			"tier": "default",
-			"source": "pacman",
-			"targets": [
-				"imagemagick"
-			],
-			"repo": "extra",
 			"homepage": "https://www.imagemagick.org/",
 			"macos": "imagemagick via Homebrew",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "haruna",
@@ -7773,18 +5978,12 @@
 			"group": "media",
 			"category": "Media",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"haruna"
-			],
-			"repo": "extra",
 			"homepage": "https://apps.kde.org/haruna/",
 			"macos": "IINA",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "elisa",
@@ -7795,18 +5994,12 @@
 			"group": "media",
 			"category": "Audio",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"elisa"
-			],
-			"repo": "extra",
 			"homepage": "https://apps.kde.org/elisa/",
 			"macos": "Apple Music",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "kooha",
@@ -7817,18 +6010,12 @@
 			"group": "media",
 			"category": "Screenshots and recording",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"kooha"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/SeaDve/Kooha",
 			"macos": "QuickTime Player screen recording",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "kcalc",
@@ -7839,18 +6026,12 @@
 			"group": "everyday",
 			"category": "Productivity",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"kcalc"
-			],
-			"repo": "extra",
 			"homepage": "https://apps.kde.org/kcalc/",
 			"macos": "Calculator",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "evolution",
@@ -7861,18 +6042,12 @@
 			"group": "everyday",
 			"category": "Email",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"evolution"
-			],
-			"repo": "extra",
 			"homepage": "https://gitlab.gnome.org/GNOME/evolution/-/wikis/home",
 			"macos": "Mail and Calendar",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "seahorse",
@@ -7883,18 +6058,12 @@
 			"group": "everyday",
 			"category": "Security",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"seahorse"
-			],
-			"repo": "extra",
 			"homepage": "https://wiki.gnome.org/Apps/Seahorse",
 			"macos": "Keychain Access",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "thunar",
@@ -7905,18 +6074,12 @@
 			"group": "desktop",
 			"category": "File Management",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"thunar"
-			],
-			"repo": "extra",
 			"homepage": "https://docs.xfce.org/xfce/thunar/start",
 			"macos": "Finder",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "kio-admin",
@@ -7927,17 +6090,11 @@
 			"group": "desktop",
 			"category": "File Management",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"kio-admin"
-			],
-			"repo": "extra",
 			"homepage": "https://invent.kde.org/system/kio-admin",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "kio-gdrive",
@@ -7948,18 +6105,12 @@
 			"group": "infra",
 			"category": "Cloud Storage",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"kio-gdrive"
-			],
-			"repo": "extra",
 			"homepage": "https://apps.kde.org/kio_gdrive/",
 			"macos": "Google Drive for desktop",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "dropbox-kde-icons",
@@ -7970,16 +6121,11 @@
 			"group": "infra",
 			"category": "Cloud Storage",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"dropbox-kde-systray-icons"
-			],
 			"homepage": "https://www.opendesktop.org/c/1466612163",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "kvantum",
@@ -7990,17 +6136,11 @@
 			"group": "desktop",
 			"category": "Themes",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"kvantum"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/tsujan/Kvantum",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "darkly",
@@ -8011,16 +6151,11 @@
 			"group": "desktop",
 			"category": "Themes",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"darkly-bin"
-			],
 			"homepage": "https://github.com/Bali10050/darkly",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "papirus-folders",
@@ -8031,16 +6166,11 @@
 			"group": "desktop",
 			"category": "Themes",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"papirus-folders"
-			],
 			"homepage": "https://github.com/PapirusDevelopmentTeam/papirus-folders",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "qtengine",
@@ -8051,16 +6181,11 @@
 			"group": "desktop",
 			"category": "Themes",
 			"tier": "optional",
-			"source": "aur",
-			"targets": [
-				"qtengine"
-			],
 			"homepage": "https://github.com/kossLAN/qtengine",
 			"origin": [
 				"owner-pick"
 			],
-			"decided_by_owner": true,
-			"verified_on": "2026-11-19"
+			"decided_by_owner": true
 		},
 		{
 			"id": "waybar",
@@ -8071,17 +6196,11 @@
 			"group": "desktop",
 			"category": "Desktop polish",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"waybar"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/Alexays/Waybar/",
 			"origin": [
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-19",
 			"note": "An alternative bar; BxRig's Hyprland desktop uses Noctalia's bar"
 		},
 		{
@@ -8093,17 +6212,11 @@
 			"group": "desktop",
 			"category": "Desktop polish",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"hyprpaper"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/hyprwm/hyprpaper",
 			"origin": [
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-19",
 			"note": "An alternative wallpaper tool; Noctalia sets the wallpaper in BxRig"
 		},
 		{
@@ -8115,17 +6228,11 @@
 			"group": "desktop",
 			"category": "Launchers",
 			"tier": "optional",
-			"source": "pacman",
-			"targets": [
-				"hyprlauncher"
-			],
-			"repo": "extra",
 			"homepage": "https://github.com/hyprwm/hyprlauncher",
 			"origin": [
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"verified_on": "2026-11-19",
 			"note": "An alternative launcher; Noctalia's launcher is BxRig's default"
 		}
 	]

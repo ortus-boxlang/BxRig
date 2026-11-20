@@ -92,11 +92,66 @@ if (( mb_repo_set )) && [[ "$MB_CHANNEL" != branch ]]; then bad_option "--matchb
 if [[ "$MB_CHANNEL" == branch ]] && { (( mb_repo_set )) || [[ -n "$MB_REPO_REQ" ]]; }; then
 	valid_repo "$MB_REPO_REQ" || bad_option "Invalid MatchBox repository: '$MB_REPO_REQ' (OWNER/NAME: letters, digits and . _ - only)"
 fi
-command -v pacman >/dev/null 2>&1 || {
-	echo "BxRig requires Arch Linux/CachyOS (pacman)" >&2
+# ---- the distribution: arch (CachyOS, Arch), suse (Tumbleweed, Slowroll), debian (13) or ubuntu (26.04), each with its package manager ----
+os_id() { ( . "${BXRIG_OS_RELEASE:-/etc/os-release}" 2>/dev/null; echo "${ID:-unknown}|${ID_LIKE:-}|${VERSION_ID:-}" ) || echo "unknown||"; }
+os_family() {  # ID ID_LIKE -> arch|suse|debian|ubuntu|""
+	local id="$1" like=" $2 "
+	if [[ "$id" == cachyos || "$id" == arch || "$like" == *" arch "* ]]; then echo arch
+	elif [[ "$id" == opensuse* || "$like" == *" suse "* || "$like" == *" opensuse "* ]]; then echo suse
+	elif [[ "$id" == ubuntu ]]; then echo ubuntu
+	elif [[ "$id" == debian ]]; then echo debian
+	elif [[ "$like" == *" ubuntu "* ]]; then echo ubuntu
+	elif [[ "$like" == *" debian "* ]]; then echo debian
+	else echo ""; fi
+}
+IFS='|' read -r os_name os_like os_version <<<"$(os_id)"
+os_fam="$(os_family "$os_name" "$os_like")"
+case "$os_fam" in
+	arch) pm=pacman ;; suse) pm=zypper ;; debian|ubuntu) pm=apt-get ;;
+	*) pm=pacman ;;   # an unknown system: `check` reports it unsupported, the stages refuse it (preflight_common)
+esac
+command -v "$pm" >/dev/null 2>&1 || {
+	if [[ "$pm" == pacman ]]; then echo "BxRig requires Arch Linux/CachyOS (pacman), openSUSE Tumbleweed or Slowroll (zypper), Ubuntu 26.04 or Debian 13 (apt)" >&2
+	else echo "BxRig needs $pm on $os_name, and it was not found" >&2; fi
 	exit 1
 }
-packages=(git curl unzip rustup base-devel jq)   # the Java package is added from box.json
+# The prerequisites in this distribution's names (the Java package from box.json, named for Arch, is translated in load_manifest).
+base_packages() {
+	case "$os_fam" in
+		suse) echo "git curl unzip rustup gcc make jq" ;;
+		debian|ubuntu) echo "git curl unzip rustup build-essential jq" ;;
+		*) echo "git curl unzip rustup base-devel jq" ;;
+	esac
+}
+java_package() {  # MAJOR ARCH_PACKAGE
+	case "$os_fam" in
+		suse) echo "java-$1-openjdk-devel" ;;
+		debian|ubuntu) echo "openjdk-$1-jdk" ;;
+		*) echo "$2" ;;
+	esac
+}
+pm_has() {  # PACKAGE: installed?
+	case "$os_fam" in
+		suse) rpm -q --whatprovides "$1" >/dev/null 2>&1 ;;
+		debian|ubuntu) [[ "$(dpkg-query -W -f='${db:Status-Abbrev}' "$1" 2>/dev/null)" == ii* ]] ;;
+		*) pacman -Qq "$1" >/dev/null 2>&1 ;;
+	esac
+}
+pm_install_line() {  # the command a plan shows
+	case "$os_fam" in
+		suse) echo "sudo zypper install $*" ;;
+		debian|ubuntu) echo "sudo apt-get update && sudo apt-get install $*" ;;
+		*) echo "sudo pacman -Syu --needed $*" ;;
+	esac
+}
+pm_install() {  # PACKAGE...: installs them (pacman also upgrades the system, as it always did)
+	case "$os_fam" in
+		suse) sudo zypper "${zy_flags[@]}" install "$@" ;;
+		debian|ubuntu) sudo apt-get update && sudo apt-get install "${apt_flags[@]}" "$@" ;;
+		*) sudo pacman -Syu "${pm_flags[@]}" --needed "$@" ;;
+	esac
+}
+read -r -a packages <<<"$(base_packages)"   # the Java package is added from box.json
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd || true)"
 
 # ---- box.json: the single place that names tool versions (needs jq, so --install installs jq first) ----
@@ -125,7 +180,8 @@ load_manifest() {
 	MVM_URL="$(jq -r .toolchain.mvm.installer "$MANIFEST")"
 	RUST_CHANNEL="$(jq -r .toolchain.rust.channel "$MANIFEST")"
 	BOXLANG_VERSION="${BXRIG_BOXLANG_VERSION:-$(jq -r .toolchain.boxlang.version "$MANIFEST")}"
-	packages=("$JAVA_PKG" git curl unzip rustup base-devel jq)
+	JAVA_PKG="$(java_package "$JAVA_MAJOR" "$JAVA_PKG")"
+	read -r -a packages <<<"$JAVA_PKG $(base_packages)"
 }
 if load_manifest; then manifest_ok=1; else manifest_ok=0; fi
 need_manifest() {  # for modes that cannot work without it
@@ -152,7 +208,7 @@ is_interactive() { [[ "${BXRIG_INTERACTIVE:-0}" == 1 || ( -t 0 && -t 1 ) ]]; }
 # Refuse early, with a reason, when the machine cannot be provisioned. Needs inspect() to have run.
 preflight_common() {  # [NEED_GB]: free space needed, default one stage
 	local need_gb="${1:-$MIN_FREE_GB}"
-	[[ "$os_ok" == 1 ]] || { echo "Unsupported OS: $os_name (BxRig supports CachyOS and Arch Linux)" >&2; exit 1; }
+	[[ "$os_ok" == 1 ]] || { echo "Unsupported OS: $os_name ${os_version} (BxRig supports CachyOS, Arch Linux, openSUSE Tumbleweed and Slowroll, Ubuntu 26.04 LTS and Debian 13)" >&2; exit 1; }
 	[[ "$cpu" == x86_64 ]] || { echo "Unsupported CPU: $cpu (x86_64 only)" >&2; exit 1; }
 	(( free_gb >= need_gb )) || { echo "Not enough free disk space: ${free_gb} GB free in $HOME, need at least $need_gb GB" >&2; exit 1; }
 }
@@ -278,13 +334,17 @@ boxlang_want() {
 	command -v curl >/dev/null 2>&1 || return 0
 	curl -fsS -m 8 "$BOXLANG_LATEST_URL" 2>/dev/null | sed -n 's/^version=\([0-9][0-9.]*\).*/\1/p' | head -n 1 || true
 }
-os_id() { ( . "${BXRIG_OS_RELEASE:-/etc/os-release}" 2>/dev/null; echo "${ID:-unknown}|${ID_LIKE:-}" ) || echo "unknown|"; }
 
 inspect() {
 	missing_pkgs=()
-	for pkg in "${packages[@]}"; do pacman -Qq "$pkg" >/dev/null 2>&1 || missing_pkgs+=("$pkg"); done
-	IFS='|' read -r os_name os_like <<<"$(os_id)"
-	if [[ "$os_name" == cachyos || "$os_name" == arch || " $os_like " == *" arch "* ]]; then os_ok=1; else os_ok=0; fi
+	for pkg in "${packages[@]}"; do pm_has "$pkg" || missing_pkgs+=("$pkg"); done
+	case "$os_fam" in
+		arch) os_ok=1 ;;
+		suse) [[ "$os_name" == *tumbleweed* || "$os_name" == *slowroll* ]] && os_ok=1 || os_ok=0 ;;
+		debian) [[ "$os_version" == 13 ]] && os_ok=1 || os_ok=0 ;;
+		ubuntu) [[ "$os_version" == 26.04 ]] && os_ok=1 || os_ok=0 ;;
+		*) os_ok=0 ;;
+	esac
 	cpu="$(uname -m)"
 	if [[ "$(id -u)" == 0 ]]; then is_root=1; else is_root=0; fi
 	have_sudo=0; command -v sudo >/dev/null 2>&1 && have_sudo=1
@@ -293,7 +353,8 @@ inspect() {
 	elif curl -fsSI -m 6 -o /dev/null https://downloads.ortussolutions.com/ >/dev/null 2>&1; then net="ok"; else net="unreachable"; fi
 	java_ver=""; if jb="$(tool_path java)"; then java_ver="$(PATH="$probe_path" "$jb" -version 2>&1 | grep -m1 -oE 'version "[0-9][0-9.]*' | grep -oE '[0-9][0-9.]*' || true)"; fi
   java_major="${java_ver%%.*}"
-  have_yay=0; tool_path yay >/dev/null && have_yay=1
+  # yay (the AUR helper) is for Arch and CachyOS only: elsewhere it is never needed
+  have_yay=0; tool_path yay >/dev/null && have_yay=1; [[ "$os_fam" == arch ]] || have_yay=1
   mvm_ver="$(tool_version mvm)"; have_mvm=0; tool_path mvm >/dev/null && have_mvm=1
   mb_ver="$(tool_version matchbox)"; mb_cc=no
   if mb_path="$(tool_path matchbox)" && mb_builds_bxrig "$mb_path"; then mb_cc=yes; fi
@@ -308,7 +369,8 @@ inspect() {
 build_steps() {
   steps=()
   if (( ${#missing_pkgs[@]} )); then
-    steps+=("packages|sudo pacman -Syu --needed ${missing_pkgs[*]}|installs missing packages and also upgrades the system")
+    if [[ "$os_fam" == arch ]]; then steps+=("packages|sudo pacman -Syu --needed ${missing_pkgs[*]}|installs missing packages and also upgrades the system")
+    else steps+=("packages|$(pm_install_line "${missing_pkgs[@]}")|installs missing packages"); fi
   fi
   if (( ! have_yay )); then
     steps+=("yay|sudo pacman -S --needed yay|AUR helper, found in the cachyos repository; only runs if yay is absent (part of the packages stage)")
@@ -595,28 +657,33 @@ fi
 # At a terminal pacman shows its own transaction prompt (a full upgrade deserves a second look);
 # unattended there is nobody to answer it, and --yes already approved the plan.
 pm_flags=(); is_interactive || pm_flags=(--noconfirm)
+zy_flags=(); is_interactive || zy_flags=(--non-interactive)
+apt_flags=(); is_interactive || apt_flags=(-y)
 # box.json needs jq to be read, so jq comes first.
 if (( ! manifest_ok )) && ! command -v jq >/dev/null 2>&1; then
   command -v sudo >/dev/null 2>&1 || { echo "sudo is required to install packages but was not found" >&2; exit 1; }
   echo "Installing jq first (needed to read box.json)"
-  sudo pacman -S "${pm_flags[@]}" --needed jq || { echo "Could not install jq; nothing else was changed" >&2; exit 1; }
+  if [[ "$os_fam" == arch ]]; then sudo pacman -S "${pm_flags[@]}" --needed jq || { echo "Could not install jq; nothing else was changed" >&2; exit 1; }
+  else pm_install jq || { echo "Could not install jq; nothing else was changed" >&2; exit 1; }; fi
   if load_manifest; then manifest_ok=1; else manifest_ok=0; fi
 fi
 need_manifest
 inspect
 preflight_common
-if (( ${#missing_pkgs[@]} )) || ! tool_path yay >/dev/null; then
+if (( ${#missing_pkgs[@]} )) || { [[ "$os_fam" == arch ]] && ! tool_path yay >/dev/null; }; then
   (( have_sudo )) || { echo "sudo is required to install packages but was not found" >&2; exit 1; }
 fi
 changed=0
 if (( ${#missing_pkgs[@]} )); then
-  echo "Installing missing packages (this also upgrades the system): ${missing_pkgs[*]}"
-  sudo pacman -Syu "${pm_flags[@]}" --needed "${missing_pkgs[@]}" || { echo "pacman failed; nothing else was changed" >&2; exit 1; }
+  if [[ "$os_fam" == arch ]]; then echo "Installing missing packages (this also upgrades the system): ${missing_pkgs[*]}"; else echo "Installing missing packages: ${missing_pkgs[*]}"; fi
+  pm_install "${missing_pkgs[@]}" || { echo "$pm failed; nothing else was changed" >&2; exit 1; }
   changed=1
 else
   echo "packages: all installed"
 fi
-if ! tool_path yay >/dev/null; then
+if [[ "$os_fam" != arch ]]; then
+  :  # no AUR off Arch
+elif ! tool_path yay >/dev/null; then
   echo "Installing yay (AUR helper) from your configured repositories"
   if ! sudo pacman -S "${pm_flags[@]}" --needed yay; then
     echo "yay is not available in your configured repositories. On CachyOS it is in the cachyos repo; otherwise install it from the AUR by hand." >&2

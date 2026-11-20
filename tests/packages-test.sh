@@ -9,7 +9,7 @@ cat > "$tmp/bin/pacman" <<'SH'
 exit 1
 SH
 chmod +x "$tmp/bin/pacman"
-run() { env -i HOME="$tmp/home" PATH="$tmp/bin:$PATH" "$@"; }
+run() { env -i HOME="$tmp/home" PATH="$tmp/bin:$PATH" BXRIG_DISTRO=arch "$@"; }
 rc() { set +e; "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 j() { run "$binary" "$@" --json; }
 
@@ -41,7 +41,7 @@ out="$(j plan --profile=terminal)"
 jq -e '[.data.would_install[].id]|index("eza")|not' <<<"$out" >/dev/null || fail 'eza is optional in terminal'
 
 # shells
-out="$(env -i HOME="$tmp/home" PATH="$tmp/bin:$PATH" XDG_CURRENT_DESKTOP=KDE "$binary" plan --json)"
+out="$(env -i HOME="$tmp/home" PATH="$tmp/bin:$PATH" BXRIG_DISTRO=arch XDG_CURRENT_DESKTOP=KDE "$binary" plan --json)"
 [[ "$(jq -r '.data.selection.shell' <<<"$out")" == plasma ]] || fail 'KDE detected as plasma'
 out="$(j plan --shell=plasma)"
 jq -e '[.data.skipped[]|select(.reason=="wrong_shell").id]|index("walker")' <<<"$out" >/dev/null || fail 'walker is wrong_shell on plasma'

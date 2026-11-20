@@ -17,7 +17,7 @@ class SystemUpdates {
 		variables.cli = arguments.cli;
 		variables.out = new bxrig.util.Out( variables.cli, "system" );
 		variables.proc = new bxrig.util.Proc( arguments.runner );
-		variables.pacman = new bxrig.util.Pacman( variables.proc );
+		variables.pacman = new bxrig.util.Packages().native( variables.proc );
 		variables.aur = new bxrig.util.Aur( variables.proc );
 		variables.fmt = new bxrig.util.Fmt();
 		variables.clock = new bxrig.util.Clock();
@@ -100,7 +100,7 @@ class SystemUpdates {
 
 	// The whole answer, without printing it. A struct with `ok` false and `error` when the tools are missing or checkupdates failed.
 	function report() {
-		if ( !variables.pacman.available() ) return { ok: false, error: "pacman is not installed (this is not an Arch based system)" };
+		if ( !variables.pacman.available() ) return { ok: false, error: variables.pacman.tool() & " was not found (BxRig supports " & new bxrig.util.Distro().supportedText() & ")" };
 		if ( !variables.pacman.canCheckUpdates() ) return { ok: false, error: "checkupdates is not installed (sudo pacman -S pacman-contrib)" };
 		var repo = variables.pacman.pendingUpdates();
 		if ( !repo.ok ) return { ok: false, error: repo.error };

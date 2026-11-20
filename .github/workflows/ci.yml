@@ -1,3 +1,12 @@
+          install -m 755 dist/bxrig /usr/local/bin/bxrig
+          bxrig catalog check
+          bxrig catalog coverage
+          # the catalog reads this distribution (git installs from its own package manager)
+          bxrig catalog show git --json | grep -Eq '"source":"(zypper|apt)"'
+          # setup refuses root and needs sudo: plan it as a normal user
+          if command -v zypper >/dev/null; then zypper --non-interactive install sudo; else apt-get update -qq && apt-get install -y -qq sudo; fi
+          useradd -m tester
+          su tester -c "bxrig setup hyprland --dry-run"
 name: BxRig CI
 on:
   push:
@@ -11,6 +20,9 @@ permissions:
 concurrency:
   group: bxrig-ci-global
   cancel-in-progress: true
+# The tests describe Arch: the catalog and the package manager follow BXRIG_DISTRO, not the Ubuntu runner (a distribution job sets its own).
+env:
+  BXRIG_DISTRO: arch
 jobs:
   validate:
     name: 1 - Validate source and scripts
@@ -184,6 +196,7 @@ jobs:
           (cd src && matchbox ../tests/ascii_test.bxs)
           (cd src && matchbox ../tests/about_test.bxs)
           (cd src && matchbox ../tests/screensaver_test.bxs)
+          (cd src && matchbox ../tests/distros_test.bxs)
           (cd src && matchbox ../tests/text_test.bxs)
           (cd src && matchbox ../tests/fmt_test.bxs)
           (cd src && matchbox ../tests/command_spec_test.bxs)
@@ -300,6 +313,37 @@ jobs:
             arch-test-out/
             arch-run.txt
           if-no-files-found: warn
+  distros:
+    name: 5 - Other distributions (catalog, setup plan)
+    needs: native
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ "opensuse/tumbleweed", "debian:trixie", "ubuntu:26.04" ]
+    container:
+      image: ${{ matrix.image }}
+    env:
+      BXRIG_DISTRO: ""
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: bxrig-linux-native
+          path: dist
+      - name: Catalog and setup plan on this distribution
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -m 755 dist/bxrig /usr/local/bin/bxrig
+          bxrig catalog check
+          bxrig catalog coverage
+          # the catalog reads this distribution: git comes from its own package manager
+          bxrig catalog show git --json | grep -Eq '"source":"(zypper|apt)"'
+          # setup refuses root and needs sudo: plan it as a normal user
+          if command -v zypper >/dev/null; then zypper --non-interactive install sudo; else apt-get update -qq && apt-get install -y -qq sudo; fi
+          useradd -m tester
+          su tester -c "bxrig setup hyprland --dry-run"
   publish:
     name: 6 - Publish BxRig to S3 (beta from development, stable from a v* tag)
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/development' || startsWith(github.ref, 'refs/tags/v'))

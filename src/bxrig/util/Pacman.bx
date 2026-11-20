@@ -6,6 +6,10 @@ class Pacman {
 		return this;
 	}
 
+	function tool() { return "pacman"; }
+	// Package names as this distribution spells them: on Arch they are already right.
+	function pkgs( list ) { return new bxrig.util.PackageNames().translate( arguments.list, {} ); }
+
 	// True when pacman is on the PATH.
 	function available() { return variables.proc.has( "pacman" ); }
 
@@ -91,6 +95,24 @@ class Pacman {
 	function search( text ) {
 		var r = run( [ "-Ss", "--color", "never", arguments.text ], 30 );
 		return { ok: r.exitCode == 0, output: r.output };
+	}
+
+	// pacman -Ss output ("repo/name version [group] [installed]" then an indented description line) as rows: [ { name, version, repo, description } ].
+	function searchRows( text ) {
+		var out = [];
+		var r = search( arguments.text );
+		if ( !r.ok && !len( trim( r.output ) ) ) return out;
+		var cur = {};
+		for ( var raw in listToArray( r.output, chr( 10 ), true ) ) {
+			if ( !len( trim( raw ) ) ) continue;
+			if ( left( raw, 1 ) == " " || left( raw, 1 ) == chr( 9 ) ) { if ( structKeyExists( cur, "name" ) ) cur.description = trim( raw ); continue; }
+			var m = reFind( "^([a-z0-9._+-]+)/([^ ]+) ([^ ]+)(.*)$", raw, 1, true );
+			if ( !m.pos[ 1 ] ) continue;
+			if ( structKeyExists( cur, "name" ) ) out.append( cur );
+			cur = { name: mid( raw, m.pos[ 3 ], m.len[ 3 ] ), version: mid( raw, m.pos[ 4 ], m.len[ 4 ] ), repo: mid( raw, m.pos[ 2 ], m.len[ 2 ] ), description: "" };
+		}
+		if ( structKeyExists( cur, "name" ) ) out.append( cur );
+		return out;
 	}
 
 	// Package names that match a pattern in the sync repositories (pacman -Ssq).

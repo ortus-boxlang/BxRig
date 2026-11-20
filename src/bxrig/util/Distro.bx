@@ -1,0 +1,77 @@
+// Which Linux distribution this is: the one place that reads /etc/os-release for it (BXRIG_OS_RELEASE overrides the file, BXRIG_DISTRO the
+// answer, both for tests). Every distribution BxRig knows has a catalog install file (catalog/install/ID.json) and a package manager.
+//   id()          "cachyos", "arch", "opensuse-tumbleweed", "debian", "ubuntu", ... as the file says (lower case)
+//   family()      "arch" (Arch, CachyOS and anything ID_LIKE arch), "suse", "debian", "ubuntu", or "" for one BxRig does not know
+//   version()     VERSION_ID ("26.04", "13", "" on a rolling release)
+//   supported()   true for the families and versions BxRig supports (supportedText() says which)
+//   packager()    "pacman", "zypper" or "apt"
+class Distro {
+	function init( env = "" ) {
+		variables.env = isSimpleValue( arguments.env ) ? new bxrig.util.Env() : arguments.env;
+		return this;
+	}
+
+	// The supported versions per family ([] = every version: a rolling release).
+	function versions() { return { arch: [], suse: [], debian: [ "13" ], ubuntu: [ "26.04" ] }; }
+	function families() { return [ "arch", "suse", "debian", "ubuntu" ]; }
+	function packagers() { return { arch: "pacman", suse: "zypper", debian: "apt", ubuntu: "apt" }; }
+	function supportedText() { return "CachyOS, Arch Linux, openSUSE Tumbleweed and Slowroll, Ubuntu 26.04 LTS and Debian 13"; }
+
+	// The os-release fields as a struct (KEY: value, quotes removed); {} when the file is missing.
+	function release() {
+		if ( structKeyExists( variables, "rel" ) ) return variables.rel;
+		variables.rel = {};
+		var f = variables.env.named( "osRelease", "/etc/os-release" );
+		if ( !fileExists( f ) ) return variables.rel;
+		for ( var line in listToArray( fileRead( f ), chr( 10 ) ) ) {
+			var l = trim( line );
+			if ( !len( l ) || left( l, 1 ) == "##" || !find( "=", l ) ) continue;
+			variables.rel[ uCase( listFirst( l, "=" ) ) ] = replace( replace( listRest( l, "=" ), '"', "", "all" ), "'", "", "all" );
+		}
+		return variables.rel;
+	}
+
+	function id() { return lCase( release().ID ?: "" ); }
+	function version() { return release().VERSION_ID ?: ""; }
+	function prettyName() { return release().PRETTY_NAME ?: id(); }
+
+	// The family from an id and an ID_LIKE list (pure, so tests can feed it values).
+	function familyOf( id, like = "" ) {
+		var words = listToArray( lCase( arguments.id & " " & arguments.like ), " " );
+		if ( arrayFind( words, "arch" ) || arguments.id == "cachyos" ) return "arch";
+		if ( left( arguments.id, 8 ) == "opensuse" || arrayFind( words, "suse" ) || arrayFind( words, "opensuse" ) ) return "suse";
+		if ( arguments.id == "ubuntu" ) return "ubuntu";
+		if ( arguments.id == "debian" ) return "debian";
+		if ( arrayFind( words, "ubuntu" ) ) return "ubuntu";
+		if ( arrayFind( words, "debian" ) ) return "debian";
+		return "";
+	}
+
+	// The family of this machine; BXRIG_DISTRO (a family name) wins, so tests and CI read the same catalog on any runner.
+	function family() {
+		var forced = lCase( variables.env.named( "distro", "" ) );
+		if ( len( forced ) ) return forced;
+		return familyOf( id(), release().ID_LIKE ?: "" );
+	}
+
+	function onCachyos() { return id() == "cachyos"; }
+
+	// True when this family and version are supported. An openSUSE Leap (not rolling) is not.
+	function supported() {
+		var fam = family();
+		if ( !arrayFind( families(), fam ) ) return false;
+		if ( len( variables.env.named( "distro", "" ) ) ) return true;
+		if ( fam == "suse" ) return find( "tumbleweed", id() ) > 0 || find( "slowroll", id() ) > 0;
+		var want = versions()[ fam ];
+		return !want.len() || arrayFind( want, version() ) > 0;
+	}
+
+	// The package manager of this family ("" for an unknown one).
+	function packager() {
+		var p = packagers();
+		return structKeyExists( p, family() ) ? p[ family() ] : "";
+	}
+
+	// The catalog install file to read: the family, or arch for an unknown system (the catalog as it always was).
+	function catalogName() { return arrayFind( families(), family() ) ? family() : "arch"; }
+}
