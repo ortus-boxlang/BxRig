@@ -10,6 +10,7 @@
 		"adw-gtk-theme": "",
 		"bluez-utils": "",
 		"borg": "borgbackup",
+		"docker": "docker.io",
 		"fd": "fd-find",
 		"ghostty": "",
 		"github-cli": "gh",
@@ -17,7 +18,10 @@
 		"jdk21-openjdk": "openjdk-21-jdk",
 		"kdeplasma-addons": "plasma-widgets-addons",
 		"kimageformats": "kimageformat6-plugins",
+		"kpackage": "kpackagetool6",
 		"kvantum": "qt6-style-kvantum",
+		"kwallet-pam": "libpam-kwallet5",
+		"kwin": "kwin-common",
 		"libpulse": "libpulse0",
 		"libratbag": "ratbagd",
 		"networkmanager-openvpn": "network-manager-openvpn",
@@ -77,7 +81,9 @@
 				"quickshell"
 			],
 			"id": "backports",
-			"title": "Debian backports (trixie-backports: Hyprland and its tools)"
+			"title": "Debian backports (trixie-backports: Hyprland and its tools)",
+			"release": "trixie-backports",
+			"check_text": "trixie-backports"
 		},
 		{
 			"check": "apt/sources.list.d/noctalia-trixie.sources",

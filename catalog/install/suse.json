@@ -16,6 +16,8 @@
 		"kimageformats": "kf6-kimageformats",
 		"kinfocenter": "kinfocenter6",
 		"kvantum": "kvantum-manager",
+		"kwallet-pam": "pam_kwallet6",
+		"kwin": "kwin6",
 		"libpulse": "libpulse0",
 		"libratbag": "libratbag-tools",
 		"micro": "micro-editor",

@@ -140,7 +140,7 @@ class Installer {
 			var cmds = [];
 			// apt installs from the lists of the last `apt update`: refresh them first
 			if ( native == "apt" ) cmds.append( variables.pacman.refreshArgv( asRoot ) );
-			cmds.append( variables.pacman.installArgv( pacmanTargets, asRoot ) );
+			cmds.append( native == "apt" ? variables.pacman.installArgv( pacmanTargets, asRoot, new bxrig.util.Repos().release( variables.pacman.pkgs( pacmanTargets ) ) ) : variables.pacman.installArgv( pacmanTargets, asRoot ) );
 			out.append( { kind: native, ids: pacmanIds, pkgs: pkgs, asRoot: asRoot, commands: cmds } );
 		}
 		if ( flatIds.len() ) out.append( { kind: "flatpak", ids: flatIds, commands: [ flat.remoteArgv(), flat.installArgv( flatTargets ) ] } );

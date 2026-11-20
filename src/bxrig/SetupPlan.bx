@@ -31,7 +31,8 @@ class SetupPlan {
 	// Packages HyprKwin's helper scripts need (python-dbus, qdbus6 from qt6-tools, PyGObject for hyprkwinctl), git for the checkout, and
 	// swayidle, which notices idle for the screensaver on Plasma.
 	function plasmaDeps() {
-		return [ "git", "python-dbus", "python-gobject", "qt6-tools", "swayidle" ];
+		// kpackage: kpackagetool6, which installs the KWin script (part of Plasma on Arch, a package of its own on Debian and Ubuntu)
+		return [ "git", "kpackage", "python-dbus", "python-gobject", "qt6-tools", "swayidle" ];
 	}
 
 	// Plasma versions HyprKwin is tested on: 6.6 and 6.8; 6.7 should work but is untested.
@@ -157,7 +158,8 @@ class SetupPlan {
 	function installCommands( pkgs ) {
 		var out = [];
 		if ( variables.pacman.tool() == "apt" ) out.append( variables.pacman.refreshArgv() );
-		out.append( variables.pacman.installArgv( arguments.pkgs ) );
+		// apt takes packages from a target release (Debian backports) with -t, so the newer libraries they need come from it too
+		out.append( variables.pacman.tool() == "apt" ? variables.pacman.installArgv( arguments.pkgs, false, new bxrig.util.Repos().release( variables.pacman.pkgs( arguments.pkgs ) ) ) : variables.pacman.installArgv( arguments.pkgs ) );
 		return out;
 	}
 

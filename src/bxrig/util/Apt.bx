@@ -18,10 +18,12 @@ class Apt {
 	// ---- argv builders (pure) ----
 	function base( asRoot = false ) { return arguments.asRoot ? [ "env", "DEBIAN_FRONTEND=noninteractive", "apt-get" ] : [ "sudo", "env", "DEBIAN_FRONTEND=noninteractive", "apt-get" ]; }
 
-	function installArgv( list, asRoot = false ) {
+	// release: a target release (-t trixie-backports), so a package and the newer libraries it needs come from it
+	function installArgv( list, asRoot = false, release = "" ) {
 		var argv = base( arguments.asRoot );
 		argv.append( "install" );
 		argv.append( "-y" );
+		if ( len( arguments.release ) ) { argv.append( "-t" ); argv.append( arguments.release ); }
 		for ( var p in pkgs( arguments.list ) ) argv.append( p );
 		return argv;
 	}

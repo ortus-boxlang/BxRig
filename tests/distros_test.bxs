@@ -90,6 +90,15 @@ testkit.check( "repos: Debian adds backports and Noctalia's repository for the H
 testkit.check( "repos: the backports file is written first, then installed with sudo", rs[ 1 ].files.len() == 1 && find( "trixie-backports", rs[ 1 ].files[ 1 ].content ) > 0 && rs[ 1 ].commands[ 2 ].toList( " " ) == "sudo install -m 0644 " & work & "/debian-backports.sources /etc/apt/sources.list.d/debian-backports.sources" );
 testkit.check( "repos: Noctalia's key package, then its sources file", rs[ 2 ].commands[ 3 ].toList( " " ) == "sudo dpkg -i " & work & "/nickh-archive-keyring.deb" && find( "noctalia-trixie.sources", rs[ 2 ].commands[ 4 ].toList( " " ) ) > 0 );
 testkit.check( "repos: nothing to add when no package needs one", !new bxrig.util.Repos().steps( [ "git" ], work, "debian" ).len() && !new bxrig.util.Repos().steps( [ "hyprland" ], work, "arch" ).len() );
+testkit.check( "repos: Debian's Hyprland packages come from backports with -t (their newer libraries too), the rest does not", new bxrig.util.Repos().release( [ "git", "hyprland" ], "debian" ) == "trixie-backports" && new bxrig.util.Repos().release( [ "git", "noctalia" ], "debian" ) == "" && new bxrig.util.Repos().release( [ "hyprland" ], "ubuntu" ) == "" );
+testkit.check( "apt: install with a target release", a.installArgv( [ "git" ], false, "trixie-backports" ).toList( " " ) == "sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -t trixie-backports git" );
+etcDir = home & "/etc";
+directoryCreate( etcDir & "/apt/sources.list.d", true, true );
+testkit.check( "repos: no apt source names backports yet", !new bxrig.util.Repos().configured( "trixie-backports", etcDir ) );
+fileWrite( etcDir & "/apt/sources.list", "deb https://deb.debian.org/debian trixie main" & chr( 10 ) & "## deb https://deb.debian.org/debian trixie-backports main" & chr( 10 ) );
+testkit.check( "repos: a commented-out line does not count", !new bxrig.util.Repos().configured( "trixie-backports", etcDir ) );
+fileWrite( etcDir & "/apt/sources.list.d/system.sources", "Types: deb" & chr( 10 ) & "Suites: trixie-backports" & chr( 10 ) );
+testkit.check( "repos: backports the system set up itself is found (sources.list.d)", new bxrig.util.Repos().configured( "trixie-backports", etcDir ) );
 
 directoryDelete( home, true );
 testkit.done( "distros tests passed" );

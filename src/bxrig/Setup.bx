@@ -15,6 +15,8 @@ class Setup {
 	function kwinVersion() {
 		try {
 			var v = variables.pacman.version( "kwin" );
+			// an epoch ("4:6.3.6-1" on Debian) and the release are not part of the version
+			if ( find( ":", v ) ) v = listRest( v, ":" );
 			return len( v ) ? listFirst( v, "-" ) : "";
 		} catch ( any e ) {
 			return "";
@@ -202,8 +204,9 @@ class Setup {
 
 	// `setup status`
 	function status( asJson ) {
+		// in this distribution's spelling (fd-find on Debian; a package it does not need is left out)
+		var wanted = variables.pacman.pkgs( new bxrig.SetupPlan().hyprlandPackages() );
 		var have = new bxrig.Packages( variables.cli, {} ).installedNames();
-		var wanted = new bxrig.SetupPlan().hyprlandPackages();
 		var present = wanted.filter( function( p ) { return structKeyExists( have, p ); } );
 		var data = { plasma: { kwin: kwinVersion(), hyprkwin: hyprkwinInstalled() }, hyprland: { installed: present.len(), wanted: wanted.len(), complete: present.len() == wanted.len() } };
 		if ( asJson ) println( variables.cli.envelope( "setup status", 0, data ) );

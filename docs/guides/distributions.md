@@ -38,8 +38,12 @@ When the distribution has no package for an app, BxRig installs it from Flathub,
 
 Some packages come from outside the main archive. BxRig adds these repositories only when the install needs them, and only once:
 
-- **Debian 13:** `trixie-backports`, for Hyprland and its tools (hyprland, hypridle, hyprlock, uwsm, the portal, quickshell).
+- **Debian 13:** `trixie-backports`, for Hyprland and its tools (hyprland, hypridle, hyprlock, uwsm, the portal, quickshell). They install with `apt-get install -t trixie-backports`, so the newer libraries they need come from backports too. A system that already lists backports is left as it is.
 - **Debian 13 and Ubuntu 26.04:** Noctalia's apt repository at pkg.noctalia.dev, for the `noctalia` shell.
+
+## Plasma tiling (HyprKwin)
+
+`bxrig setup plasma` installs HyprKwin, which needs Plasma 6.6 or newer on Wayland. Debian 13 ships Plasma 6.3, so `setup plasma` stops there with that reason; use `bxrig setup hyprland` instead. Check your version with `bxrig setup status`.
 
 ## What is Arch-only
 
