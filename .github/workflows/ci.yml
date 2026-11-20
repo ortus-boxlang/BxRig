@@ -114,8 +114,9 @@ jobs:
           matchbox --version
           matchbox --version | grep -F "$(jq -r .toolchain.matchbox.version box.json)"
           mkdir -p dist
-          # the BoxLang modules bxrig embeds (box.json toolchain.modules); --module must come before the program
-          modlist="$(scripts/get-modules.sh .cache/modules)"
+          # the BoxLang modules bxrig embeds (box.json toolchain.modules); --module must come before the program.
+          # Native plugins are rebuilt in Debian 12 (glibc 2.36): the runner's glibc is newer than Debian 13's, so a plugin linked here would not load there
+          modlist="$(BXRIG_PLUGIN_IMAGE=rust:1-bookworm scripts/get-modules.sh .cache/modules)"
           mods=(); while IFS= read -r m; do [[ -n "$m" ]] && mods+=( --module "$m" ); done <<<"$modlist"
           matchbox "${mods[@]}" --target native --output dist/bxrig src/Main.bx
       - name: Run smoke tests on compiled executable

@@ -5,10 +5,13 @@
 # that cannot load on this machine (a prebuilt library linked against a newer glibc), the plugin is rebuilt from the module's tag with cargo and its
 # path and sha256 in the module's box.json are updated, so the binary built here runs here.
 #   MATCHBOX=/path/to/matchbox   the compiler used to check that a module loads (default: matchbox on PATH)
+#   BXRIG_PLUGIN_IMAGE=rust:1-bookworm   always rebuild the plugin, with cargo inside this docker image, so it links against that older glibc
+#                                (CI uses it: a plugin built on the runner needs the runner's glibc, newer than Debian 13's)
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 out="${1:?usage: get-modules.sh OUTDIR}"
 mb="${MATCHBOX:-matchbox}"
+image="${BXRIG_PLUGIN_IMAGE:-}"
 for tool in jq curl unzip sha256sum; do command -v "$tool" >/dev/null || { echo "get-modules: $tool is required" >&2; exit 4; }; done
 mkdir -p "$out/.zips"
 count="$(jq '.toolchain.modules // [] | length' "$root/box.json")"
@@ -38,19 +41,26 @@ for ((i = 0; i < count; i++)); do
 		unzip -q "$zip" -d "$dir"
 		echo "$version $sum" > "$stamp"
 	fi
-	if ! loads "$dir"; then
+	built="$(cat "$dir/.bxrig-plugin-image" 2>/dev/null || true)"
+	if { [[ -n "$image" && "$built" != "$image" ]]; } || ! loads "$dir"; then
 		target="x86_64-unknown-linux-gnu"
 		artifact="$(jq -r --arg t "$target" '.matchbox.artifacts[$t].path // empty' "$dir/box.json")"
 		[[ -n "$artifact" ]] || { echo "get-modules: $slug does not load and has no $target plugin to rebuild" >&2; exit 4; }
-		command -v cargo >/dev/null || { echo "get-modules: $slug's plugin does not load here and cargo is needed to rebuild it" >&2; exit 4; }
-		echo "get-modules: rebuilding the $slug plugin from $(jq -r .tag <<<"$mod") for this machine" >&2
+		if [[ -n "$image" ]]; then command -v docker >/dev/null || { echo "get-modules: BXRIG_PLUGIN_IMAGE is set and docker is needed to rebuild in it" >&2; exit 4; }
+		else command -v cargo >/dev/null || { echo "get-modules: $slug's plugin does not load here and cargo is needed to rebuild it" >&2; exit 4; }; fi
+		echo "get-modules: rebuilding the $slug plugin from $(jq -r .tag <<<"$mod") ${image:+in $image }for this machine" >&2
 		src="$(mktemp -d)"
 		git -c advice.detachedHead=false clone -q --depth 1 --branch "$(jq -r .tag <<<"$mod")" "$(jq -r .repo <<<"$mod")" "$src/repo"
-		cargo build -q --release --manifest-path "$src/repo/native/Cargo.toml" --target-dir "$src/target" >&2
+		if [[ -n "$image" ]]; then
+			docker run --rm --user "$(id -u):$(id -g)" -e CARGO_HOME=/src/.cargo -v "$src:/src" -w /src "$image" cargo build -q --release --manifest-path /src/repo/native/Cargo.toml --target-dir /src/target >&2
+		else
+			cargo build -q --release --manifest-path "$src/repo/native/Cargo.toml" --target-dir "$src/target" >&2
+		fi
 		cp "$src/target/release/$(basename "$artifact")" "$dir/$artifact"
 		jq --arg t "$target" --arg s "$(sha256sum "$dir/$artifact" | awk '{print $1}')" '.matchbox.artifacts[$t].sha256 = $s' "$dir/box.json" > "$dir/box.json.new"
 		mv "$dir/box.json.new" "$dir/box.json"
 		rm -rf "$src"
+		[[ -n "$image" ]] && echo "$image" > "$dir/.bxrig-plugin-image"
 		loads "$dir" || { echo "get-modules: $slug still does not load after the rebuild" >&2; exit 4; }
 	fi
 	echo "$dir"
