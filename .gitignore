@@ -6,3 +6,8 @@ site/
 recording/
 __pycache__/
 *.pyc
+
+# AI
+.agents/skills/**
+.claude/**
+.pi/**
