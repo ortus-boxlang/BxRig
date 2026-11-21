@@ -66,3 +66,39 @@ bxrig toggle stay-awake                # keep the screen from idling (Noctalia)
 ```
 
 `dns` changes the active NetworkManager connections. `kernel` installs or removes kernel packages with their headers; it never edits the bootloader, never removes the running or the last kernel, and you pick the kernel in the boot menu. Stay awake needs Noctalia (Hyprland); on Plasma use System Settings.
+
+## When something is stuck
+
+```bash
+bxrig system restart shell        # Noctalia (or Plasma's shell)
+bxrig system restart audio        # PipeWire and WirePlumber
+bxrig system restart wifi         # unblock the radio, Wi-Fi on, rescan
+bxrig system restart bluetooth    # unblock the radio, adapter on
+```
+
+Each shows a plan first; add `--yes` (the menu's Update > Restart does).
+
+## Password, firmware and speed
+
+```bash
+bxrig system password             # passwd, on this terminal
+bxrig system firmware             # firmware updates your vendors offer (fwupd, from LVFS)
+bxrig system firmware update --yes
+bxrig system speedtest network    # speedtest-cli: ping, download, upload
+bxrig system speedtest disk       # write and read 1 GiB in ~/.cache
+```
+
+Firmware updates cover BIOS/UEFI, SSDs, docks and some keyboards and mice, from vendors that publish to LVFS (Dell, Lenovo, HP, Framework, Logitech and others). Many consumer laptops are not covered.
+
+## Hardware switches
+
+```bash
+bxrig input touchpad off          # and on, toggle, status (Hyprland); also touchscreen
+bxrig gpu mode                    # a laptop with two GPUs: the current mode
+bxrig gpu mode integrated --yes   # the dedicated GPU off (battery); hybrid turns it back on
+bxrig wifi qr                     # a QR code a phone scans to join your network
+bxrig share file report.pdf       # LocalSend: a file, a folder or the clipboard to a device nearby
+bxrig default editor neovim --yes # the app for text files, and EDITOR / VISUAL
+```
+
+`gpu mode` uses supergfxctl (supergfxd); log out or reboot after a switch. `share` needs LocalSend's command line, `localsend-cli` (LocalSend 1.18 and later); `bxrig share receive` opens the LocalSend app.
