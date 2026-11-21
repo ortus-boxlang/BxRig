@@ -1,0 +1,12 @@
+// Arch package names in another distribution's spelling, through its `names` map (catalog/install/DISTRO.json). Pure.
+class PackageNames {
+	// The distribution's names, without the ones it does not need (an empty name), each once.
+	function translate( pkgs, map ) {
+		var out = [];
+		for ( var p in ( isArray( arguments.pkgs ) ? arguments.pkgs : [ arguments.pkgs ] ) ) {
+			var n = structKeyExists( arguments.map, p ) ? arguments.map[ p ] : p;
+			if ( len( n ) && !arrayFind( out, n ) ) out.append( n );
+		}
+		return out;
+	}
+}

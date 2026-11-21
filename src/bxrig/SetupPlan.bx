@@ -16,7 +16,7 @@
 // Errors are preconditions (exit 4): nothing runs when there is one. HyprKwin is taken from a pinned full commit.
 class SetupPlan {
 	function init() {
-		variables.pacman = new bxrig.util.Pacman();
+		variables.pacman = new bxrig.util.Packages().native();
 		variables.aur = new bxrig.util.Aur();
 		variables.systemd = new bxrig.util.Systemd();
 		variables.http = new bxrig.util.Http();
@@ -31,7 +31,8 @@ class SetupPlan {
 	// Packages HyprKwin's helper scripts need (python-dbus, qdbus6 from qt6-tools, PyGObject for hyprkwinctl), git for the checkout, and
 	// swayidle, which notices idle for the screensaver on Plasma.
 	function plasmaDeps() {
-		return [ "git", "python-dbus", "python-gobject", "qt6-tools", "swayidle" ];
+		// kpackage: kpackagetool6, which installs the KWin script (part of Plasma on Arch, a package of its own on Debian and Ubuntu)
+		return [ "git", "kpackage", "python-dbus", "python-gobject", "qt6-tools", "swayidle" ];
 	}
 
 	// Plasma versions HyprKwin is tested on: 6.6 and 6.8; 6.7 should work but is untested.
@@ -84,12 +85,12 @@ class SetupPlan {
 		var needBluetooth = !( opts.undoKeys ?: false ) && !( structKeyExists( facts, "bluetoothEnabled" ) && facts.bluetoothEnabled );
 		var wanted = plasmaDeps();
 		if ( needBluetooth ) for ( var bp in bluetoothPackages() ) wanted.append( bp );
-		var missing = wanted.filter( function( p ) { return !structKeyExists( facts.installed, p ); } );
+		var missing = missingOf( wanted, facts.installed );
 		if ( ( missing.len() || needBluetooth ) && !facts.hasSudo ) out.errors.append( "sudo is required to install " & missing.toList( " " ) & " but was not found" );
 		if ( out.errors.len() ) return out;
 
 		if ( missing.len() ) {
-			out.steps.append( { id: "packages", title: "install " & missing.toList( " " ), kind: "pacman", commands: [ variables.pacman.installArgv( missing ) ] } );
+			out.steps.append( { id: "packages", title: "install " & variables.pacman.pkgs( missing ).toList( " " ), kind: "pacman", commands: installCommands( missing ) } );
 		}
 		if ( needBluetooth ) out.steps.append( bluetoothStep() );
 		out.steps.append( { id: "fetch", title: "check out HyprKwin " & pins().hyprkwin.tag & " (commit " & left( pins().hyprkwin.commit, 7 ) & ")", kind: "git", commands: fetchCommands( facts.workDir ) } );
@@ -111,15 +112,56 @@ class SetupPlan {
 	// by CachyOS). Noctalia is the native `noctalia` package, the one CachyOS's own meta-package depends on. Not used: the Quickshell
 	// variant `noctalia-shell` + `noctalia-qs` (the fork conflicts with `quickshell`) and `cachyos-hypr-noctalia`, which provides
 	// and conflicts with `cachyos-desktop-settings` and could remove it from a KDE install.
-	function hyprlandPackages( terminal = "ghostty" ) {
+	function hyprlandPackages( terminal = "" ) {
+		if ( !len( arguments.terminal ) ) arguments.terminal = new bxrig.TerminalConfig().defaultTerminal();
 		var t = new bxrig.TerminalConfig().find( arguments.terminal );
 		return [ "hyprland", "noctalia", "uwsm", "hyprlock", "xdg-desktop-portal-hyprland", "hyprpolkitagent",
 			"qt6ct", "nwg-look", "hyprpicker", "grim", "slurp", "wl-clipboard", "brightnessctl", structKeyExists( t, "pkg" ) ? t.pkg : "ghostty",
 			"adw-gtk-theme", "papirus-icon-theme", "noto-fonts", "noto-fonts-emoji", "bluez", "bluez-utils" ];
 	}
 
+	// The Arch-named packages that are not installed: each is looked up under this distribution's name (util.Packages), and one the
+	// distribution does not need (an empty name) never counts as missing.
+	function missingOf( list, installed ) {
+		var out = [];
+		for ( var p in arguments.list ) {
+			var n = variables.pacman.pkgs( [ p ] );
+			if ( n.len() && !structKeyExists( arguments.installed, listFirst( n[ 1 ], "/" ) ) && !arrayFind( out, p ) ) out.append( p );
+		}
+		return out;
+	}
+
+	// The repositories the missing packages need (util.Repos), as steps before the install. Setup writes a step's file before its commands.
+	function repoSteps( missing, workDir ) {
+		var out = [];
+		for ( var st in new bxrig.util.Repos().steps( variables.pacman.pkgs( arguments.missing ), arguments.workDir ) ) {
+			if ( st.files.len() ) st.writeFirst = st.files[ 1 ];
+			out.append( st );
+		}
+		return out;
+	}
+
+	// Why this OS is not supported, or "" when it is (facts.os and facts.osLike from os-release; facts.hasPacman means "has the
+	// distribution's package manager").
+	function osProblem( facts ) {
+		var d = new bxrig.util.Distro();
+		var fam = d.familyOf( arguments.facts.os, arguments.facts.osLike ?: "" );
+		if ( !arrayFind( d.families(), fam ) ) return "Unsupported OS: " & ( len( arguments.facts.os ) ? arguments.facts.os : "unknown" ) & " (BxRig supports " & d.supportedText() & ")";
+		if ( !arguments.facts.hasPacman ) return "The package manager of " & arguments.facts.os & " (" & d.packagers()[ fam ] & ") was not found";
+		return "";
+	}
+
 	// The Bluetooth service the bar's Bluetooth panel and `bxrig bluetooth status` need: bluez ships it, it is not enabled by itself.
 	function bluetoothUnit() { return "bluetooth.service"; }
+
+	// The commands that install Arch-named packages with this distribution's package manager (apt refreshes its lists first).
+	function installCommands( pkgs ) {
+		var out = [];
+		if ( variables.pacman.tool() == "apt" ) out.append( variables.pacman.refreshArgv() );
+		// apt takes packages from a target release (Debian backports) with -t, so the newer libraries they need come from it too
+		out.append( variables.pacman.tool() == "apt" ? variables.pacman.installArgv( arguments.pkgs, false, new bxrig.util.Repos().release( variables.pacman.pkgs( arguments.pkgs ) ) ) : variables.pacman.installArgv( arguments.pkgs ) );
+		return out;
+	}
 
 	// The packages that ship the Bluetooth service.
 	function bluetoothPackages() { return [ "bluez", "bluez-utils" ]; }
@@ -135,9 +177,9 @@ class SetupPlan {
 	// Preconditions for `setup hyprland`. Returns { errors, warnings }.
 	function hyprlandPreflight( facts ) {
 		var out = { errors: [], warnings: [] };
-		if ( facts.isRoot ) out.errors.append( "Run as a regular user; sudo is used only for the pacman step shown in the plan" );
-		if ( !facts.hasPacman ) out.errors.append( "BxRig requires Arch Linux or CachyOS (pacman was not found)" );
-		else if ( !arrayFind( [ "cachyos", "arch" ], facts.os ) ) out.errors.append( "Unsupported OS: " & ( len( facts.os ) ? facts.os : "unknown" ) & " (CachyOS and Arch Linux only)" );
+		if ( facts.isRoot ) out.errors.append( "Run as a regular user; sudo is used only for the package steps shown in the plan" );
+		var osErr = osProblem( facts );
+		if ( len( osErr ) ) out.errors.append( osErr );
 		if ( facts.arch != "x86_64" ) out.errors.append( "Unsupported CPU: " & facts.arch & " (x86_64 only)" );
 		if ( structKeyExists( facts.installed, "noctalia-shell" ) || structKeyExists( facts.installed, "noctalia-qs" ) ) {
 			out.warnings.append( "noctalia-shell or noctalia-qs (the Quickshell variant of Noctalia) is installed; setup installs the native `noctalia` package and does not touch it" );
@@ -154,12 +196,13 @@ class SetupPlan {
 		for ( var pe in parsed.errors ) out.errors.append( pe );
 		var term = parsed.value.terminal;
 		var lay = parsed.value.layout;
-		var missing = hyprlandPackages( term ).filter( function( p ) { return !structKeyExists( facts.installed, p ); } );
+		var missing = missingOf( hyprlandPackages( term ), facts.installed );
 		var needBluetooth = !( structKeyExists( facts, "bluetoothEnabled" ) && facts.bluetoothEnabled );
 		if ( ( missing.len() || needBluetooth ) && !facts.hasSudo ) out.errors.append( "sudo is required to install packages but was not found" );
 		if ( out.errors.len() ) return out;
 		if ( missing.len() ) {
-			out.steps.append( { id: "packages", title: "install " & missing.len() & " packages (" & missing.toList( " " ) & ")", kind: "pacman", commands: [ variables.pacman.installArgv( missing ) ] } );
+			for ( var rs in repoSteps( missing, facts.workDir ) ) out.steps.append( rs );
+			out.steps.append( { id: "packages", title: "install " & missing.len() & " packages (" & variables.pacman.pkgs( missing ).toList( " " ) & ")", kind: "pacman", commands: installCommands( missing ) } );
 			out.added = missing;
 		} else out.notes.append( "Hyprland and Noctalia are already installed." );
 		if ( needBluetooth ) out.steps.append( bluetoothStep() );
@@ -178,16 +221,16 @@ class SetupPlan {
 		var out = { target: "shell", errors: [], warnings: [], notes: [], steps: [], added: [] };
 		if ( !arrayFind( sc.shells(), sh ) ) out.errors.append( "Unknown shell: " & sh & " (use " & sc.shells().toList( ", " ) & ")" );
 		if ( arguments.facts.isRoot ) out.errors.append( "Run as a regular user; sudo is used only for the steps shown in the plan" );
-		if ( !arguments.facts.hasPacman ) out.errors.append( "BxRig requires Arch Linux or CachyOS (pacman was not found)" );
-		else if ( !arrayFind( [ "cachyos", "arch" ], arguments.facts.os ) ) out.errors.append( "Unsupported OS: " & ( len( arguments.facts.os ) ? arguments.facts.os : "unknown" ) & " (CachyOS and Arch Linux only)" );
+		var osErr = osProblem( arguments.facts );
+		if ( len( osErr ) ) out.errors.append( osErr );
 		if ( out.errors.len() ) return out;
-		var missing = sc.packages( sh ).filter( function( p ) { return !structKeyExists( facts.installed, p ); } );
+		var missing = missingOf( sc.packages( sh ), facts.installed );
 		var loginPath = sc.shellPath( sh );
 		var needLogin = arguments.facts.loginShell != loginPath;
 		if ( ( missing.len() || needLogin ) && !arguments.facts.hasSudo ) out.errors.append( "sudo is required but was not found" );
 		if ( out.errors.len() ) return out;
 		if ( missing.len() ) {
-			out.steps.append( { id: "packages", title: "install " & missing.len() & " packages (" & missing.toList( " " ) & ")", kind: "pacman", commands: [ variables.pacman.installArgv( missing ) ] } );
+			out.steps.append( { id: "packages", title: "install " & missing.len() & " packages (" & variables.pacman.pkgs( missing ).toList( " " ) & ")", kind: "pacman", commands: installCommands( missing ) } );
 			out.added = missing;
 		} else out.notes.append( "The " & sh & " packages and Starship are already installed." );
 		out.steps.append( { id: "config", title: "write the Starship config (once) and the " & sh & " setup with Starship, fzf and zoxide" & ( sh == "zsh" ? ", autosuggestions and syntax highlighting" : "" ) & " (your rc file keeps its content, one block is added)", kind: "shell", shell: sh, commands: [] } );
@@ -206,14 +249,15 @@ class SetupPlan {
 		var chosen = [ def ];
 		for ( var a in also ) if ( !arrayFind( chosen, a ) ) chosen.append( a );
 		for ( var c in chosen ) if ( !arrayFind( tc.ids(), c ) ) out.errors.append( "Unknown terminal: " & c & " (use " & tc.ids().toList( ", " ) & ")" );
-		if ( arguments.facts.isRoot ) out.errors.append( "Run as a regular user; sudo is used only for the pacman step shown in the plan" );
-		if ( !arguments.facts.hasPacman ) out.errors.append( "BxRig requires Arch Linux or CachyOS (pacman was not found)" );
+		if ( arguments.facts.isRoot ) out.errors.append( "Run as a regular user; sudo is used only for the package step shown in the plan" );
+		var osErr = osProblem( arguments.facts );
+		if ( len( osErr ) ) out.errors.append( osErr );
 		if ( out.errors.len() ) return out;
-		var missing = chosen.map( function( c ) { return tc.find( c ).pkg; } ).filter( function( p ) { return !structKeyExists( facts.installed, p ); } );
+		var missing = missingOf( chosen.map( function( c ) { return tc.find( c ).pkg; } ), facts.installed );
 		if ( missing.len() && !arguments.facts.hasSudo ) out.errors.append( "sudo is required to install packages but was not found" );
 		if ( out.errors.len() ) return out;
 		if ( missing.len() ) {
-			out.steps.append( { id: "packages", title: "install " & missing.len() & " packages (" & missing.toList( " " ) & ")", kind: "pacman", commands: [ variables.pacman.installArgv( missing ) ] } );
+			out.steps.append( { id: "packages", title: "install " & missing.len() & " packages (" & variables.pacman.pkgs( missing ).toList( " " ) & ")", kind: "pacman", commands: installCommands( missing ) } );
 			out.added = missing;
 		} else out.notes.append( "The chosen terminals are already installed." );
 		out.steps.append( { id: "config", title: "write a starter config with the Nerd Font for " & chosen.toList( ", " ) & " (existing files are kept)", kind: "terminal", terminals: chosen, commands: [] } );
@@ -248,7 +292,7 @@ class SetupPlan {
 	function undoHyprland( facts ) {
 		var out = { target: "hyprland", errors: [], warnings: [], notes: [], steps: [] };
 		if ( facts.isRoot ) out.errors.append( "Run as a regular user" );
-		var still = facts.hyprlandAdded.filter( function( p ) { return structKeyExists( facts.installed, p ); } );
+		var still = facts.hyprlandAdded.filter( function( p ) { var n = variables.pacman.pkgs( [ p ] ); return n.len() && structKeyExists( facts.installed, listFirst( n[ 1 ], "/" ) ); } );
 		if ( !facts.hyprlandAdded.len() ) out.errors.append( "setup hyprland has not installed anything on this machine, nothing to undo" );
 		else if ( !still.len() ) out.errors.append( "The packages setup installed are already gone" );
 		if ( still.len() && !facts.hasSudo ) out.errors.append( "sudo is required to remove packages but was not found" );
@@ -306,7 +350,8 @@ class SetupPlan {
 		if ( !facts.hasSudo ) out.errors.append( "sudo is required (udev rule and input group) but was not found" );
 		var pkg = len( build ) ? xremapPackage( build ) : "";
 		var havePkg = len( pkg ) && structKeyExists( facts.installed, pkg );
-		if ( len( pkg ) && !havePkg && !facts.hasYay ) out.errors.append( "yay is required to install " & pkg & " from the AUR but was not found" );
+		if ( len( pkg ) && !havePkg && new bxrig.util.Distro().family() != "arch" ) out.errors.append( "xremap comes from the AUR on Arch and CachyOS; on " & new bxrig.util.Distro().prettyName() & " install xremap yourself (github.com/xremap/xremap, the " & build & " build), then run this again" );
+		else if ( len( pkg ) && !havePkg && !facts.hasYay ) out.errors.append( "yay is required to install " & pkg & " from the AUR but was not found" );
 		if ( out.errors.len() ) return out;
 		if ( !havePkg ) {
 			out.steps.append( { id: "package", title: "install " & pkg & " (AUR)", kind: "aur", commands: [ variables.aur.installArgv( [ pkg ] ) ] } );

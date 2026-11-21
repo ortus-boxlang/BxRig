@@ -10,6 +10,7 @@ jobs="${JOBS:-3}"
 mb="${MATCHBOX:-}"
 [[ -z "$mb" && -f "$root/.cache/dev.env" ]] && mb="$(source "$root/.cache/dev.env"; echo "${MATCHBOX:-}")"
 [[ -z "$mb" ]] && mb="$(command -v matchbox || true)"
+export BXRIG_DISTRO="${BXRIG_DISTRO:-arch}"   # the tests describe Arch unless one says otherwise (see lib/harness.sh)
 logdir="$(mktemp -d)"; trap 'rm -rf "${logdir:?}"' EXIT
 run_one() { # name, command...   (runs in a subshell, writes $logdir/NAME.result)
 	local name="$1"; shift

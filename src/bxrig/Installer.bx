@@ -1,5 +1,6 @@
 // Turns the apps a request selected into install steps and runs them. Rules (COMMAND-CONTRACT sections 2 and 11):
-// one pacman call for all pacman apps (sudo unless already root), AUR and PKGBUILD builds as the normal user, one
+// one call of the distribution's package manager for all its apps (pacman, zypper or apt; sudo unless already root), one Flatpak step for
+// the Flathub apps (the user's own Flatpak, after adding Flathub; flatpak itself is installed first when missing), AUR and PKGBUILD builds as the normal user, one
 // app at a time, commands are argument arrays (never a shell string). Apps that cannot be installed yet
 // (unpinned PKGBUILD ref, no source) come back in `blocked`, not as steps.
 //
@@ -12,7 +13,7 @@ class Installer {
 	function init( runner ) {
 		variables.custom = arguments.runner ?: "";
 		variables.procs = new bxrig.util.Proc( variables.custom );
-		variables.pacman = new bxrig.util.Pacman( variables.procs );
+		variables.pacman = new bxrig.util.Packages().native( variables.procs );
 		variables.aur = new bxrig.util.Aur( variables.procs );
 		variables.http = new bxrig.util.Http( variables.procs );
 		return this;
@@ -93,7 +94,9 @@ class Installer {
 	function steps( selected, asRoot, home = "" ) {
 		var homeDir = len( home ) ? home : new bxrig.util.Env().named( "home", "" );
 		var pacmanIds = []; var pacmanTargets = []; var pkgs = {};
-		var aur = []; var builds = []; var webs = []; var scripts = []; var blocked = [];
+		var aur = []; var builds = []; var webs = []; var scripts = []; var blocked = []; var flatIds = []; var flatTargets = [];
+		var native = variables.pacman.tool();
+		var flat = new bxrig.util.Flatpak( variables.procs );
 		for ( var app in selected ) {
 			var targets = structKeyExists( app, "targets" ) ? app.targets : [];
 			var src = app.source;
@@ -102,10 +105,13 @@ class Installer {
 				src = "aur";
 				if ( structKeyExists( app, "aur_targets" ) ) targets = app.aur_targets;
 			}
-			if ( src == "pacman" ) {
+			if ( src == "pacman" || src == "zypper" || src == "apt" ) {
 				pacmanIds.append( app.id );
 				pkgs[ app.id ] = targets;
 				for ( var t in targets ) if ( !arrayFind( pacmanTargets, t ) ) pacmanTargets.append( t );
+			} else if ( src == "flatpak" ) {
+				flatIds.append( app.id );
+				for ( var ft in targets ) if ( !arrayFind( flatTargets, ft ) ) flatTargets.append( ft );
 			} else if ( src == "aur" ) {
 				aur.append( { kind: "aur", ids: [ app.id ], commands: [ variables.aur.installArgv( targets ) ] } );
 			} else if ( app.source == "pkgbuild" ) {
@@ -124,9 +130,20 @@ class Installer {
 			}
 		}
 		var out = [];
-		if ( pacmanIds.len() ) {
-			out.append( { kind: "pacman", ids: pacmanIds, pkgs: pkgs, asRoot: asRoot, commands: [ variables.pacman.installArgv( pacmanTargets, asRoot ) ] } );
+		// Flatpak itself comes from the distribution, in the same transaction
+		if ( flatIds.len() && !flat.available() && !arrayFind( pacmanTargets, "flatpak" ) ) pacmanTargets.append( "flatpak" );
+		// the repositories some packages come from (Noctalia's apt repository, Debian backports), added first
+		if ( pacmanTargets.len() ) for ( var rs in new bxrig.util.Repos().steps( variables.pacman.pkgs( pacmanTargets ), reReplace( getTempDirectory(), "/+$", "" ) & "/bxrig-repo-" & left( createUUID(), 8 ) ) ) {
+			out.append( { kind: "repo", ids: [], commands: rs.commands, files: rs.files } );
 		}
+		if ( pacmanIds.len() || ( flatIds.len() && arrayFind( pacmanTargets, "flatpak" ) ) ) {
+			var cmds = [];
+			// apt installs from the lists of the last `apt update`: refresh them first
+			if ( native == "apt" ) cmds.append( variables.pacman.refreshArgv( asRoot ) );
+			cmds.append( native == "apt" ? variables.pacman.installArgv( pacmanTargets, asRoot, new bxrig.util.Repos().release( variables.pacman.pkgs( pacmanTargets ) ) ) : variables.pacman.installArgv( pacmanTargets, asRoot ) );
+			out.append( { kind: native, ids: pacmanIds, pkgs: pkgs, asRoot: asRoot, commands: cmds } );
+		}
+		if ( flatIds.len() ) out.append( { kind: "flatpak", ids: flatIds, commands: [ flat.remoteArgv(), flat.installArgv( flatTargets ) ] } );
 		for ( var s in aur ) out.append( s );
 		for ( var s in builds ) out.append( s );
 		for ( var s in scripts ) out.append( s );
@@ -155,11 +172,11 @@ class Installer {
 			}
 			// one pacman transaction failed (one unknown or conflicting package fails them all): each app again on its own,
 			// so only the apps that really cannot be installed are reported failed
-			if ( len( problem ) && step.kind == "pacman" && step.ids.len() > 1 && structKeyExists( step, "pkgs" ) ) {
+			if ( len( problem ) && arrayFind( [ "pacman", "zypper", "apt" ], step.kind ) && step.ids.len() > 1 && structKeyExists( step, "pkgs" ) ) {
 				for ( var id in step.ids ) {
 					var one = variables.procs.exec( variables.pacman.installArgv( step.pkgs[ id ], step.asRoot ), 1800 );
-					if ( one.timeout || one.exitCode != 0 ) failed.append( { id: id, source: "pacman", error: "pacman failed (exit " & ( one.timeout ? 124 : one.exitCode ) & ")" } );
-					else done.append( { id: id, source: "pacman" } );
+					if ( one.timeout || one.exitCode != 0 ) failed.append( { id: id, source: step.kind, error: step.kind & " failed (exit " & ( one.timeout ? 124 : one.exitCode ) & ")" } );
+					else done.append( { id: id, source: step.kind } );
 				}
 				continue;
 			}
@@ -171,11 +188,11 @@ class Installer {
 		return { done: done, failed: failed };
 	}
 
-	// 0 nothing failed, 7 some done and some failed, else 5 when pacman failed, 6 for AUR or PKGBUILD only.
+	// 0 nothing failed, 7 some done and some failed, else 5 when the package manager failed, 6 for AUR, PKGBUILD or Flatpak only.
 	function exitCode( result ) {
 		if ( !result.failed.len() ) return new bxrig.util.Exit().ok();
 		if ( result.done.len() ) return new bxrig.util.Exit().partial();
-		for ( var f in result.failed ) if ( f.source == "pacman" ) return new bxrig.util.Exit().official();
+		for ( var f in result.failed ) if ( arrayFind( [ "pacman", "zypper", "apt" ], f.source ) ) return new bxrig.util.Exit().official();
 		return new bxrig.util.Exit().failed();
 	}
 }

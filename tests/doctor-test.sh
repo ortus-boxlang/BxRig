@@ -17,7 +17,7 @@ stub matchbox 'if [[ "${1:-}" == --version ]]; then echo "matchbox version 0.14.
 [[ "${MB_TUI:-yes}" == yes ]] && echo bxrig-tui-ok || { echo "Native class tui.TUI not found" >&2; exit 1; }'
 stub rustc 'echo "rustc 1.100.0 (0ef1bc386 2026-11-09)"'
 stub cargo 'echo "cargo 1.100.0 (abc 2026-11-09)"'
-run() { env -i HOME="$tmp/home" PATH="$tmp/bin" "$@"; }
+run() { env -i HOME="$tmp/home" PATH="$tmp/bin" BXRIG_DISTRO=arch "$@"; }
 
 # everything present: one ok line per tool, exit 0
 out="$(run "$binary" doctor)" || fail "doctor with every tool must exit 0: $out"

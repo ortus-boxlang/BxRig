@@ -1,16 +1,103 @@
-// The embedded app catalog (catalog/apps.json, schema 3): lookup and offline validation.
+// The embedded app catalog: what each app is (catalog/apps.json, schema 4) and how to install it on this distribution
+// (catalog/install/DISTRO.json, schema 1: arch, suse, debian, ubuntu). load() merges the two into the shape every caller reads:
+// each app gets the install entry's source, targets, repo, pkgbuild, aur_targets, script and verified_on (and its tier or note when the
+// entry overrides them). Web apps need no install entry. An app the distribution file does not list is left out of `apps` and named in
+// `unavailable`, so nothing offers what cannot be installed here.
+//   load( distro = "" )     the merged catalog for a distribution (util.Distro().catalogName() by default)
+//   install( distro )       the raw install file
+//   distros()               the distributions that have an install file
+//   checkAll()              check() on every distribution plus the install files themselves: { errors, warnings, coverage }
 class Catalog {
-	function load() {
-		return jsonDeserialize( new bxrig.CatalogData().json() );
+	function distros() { return [ "arch", "suse", "debian", "ubuntu" ]; }
+
+	// The sources an install entry may use on each distribution.
+	function sourcesFor( distro ) {
+		var m = { arch: [ "pacman", "aur", "pkgbuild", "script", "unresolved" ], suse: [ "zypper", "flatpak", "script" ], debian: [ "apt", "flatpak", "script" ], ubuntu: [ "apt", "flatpak", "script" ] };
+		return structKeyExists( m, arguments.distro ) ? m[ arguments.distro ] : [];
 	}
+
+	// The install file of a distribution, with an `extends` parent merged under it (ubuntu extends debian). {} when there is none.
+	function install( distro ) {
+		var data = new bxrig.CatalogData();
+		if ( !data.hasInstall( arguments.distro ) ) return {};
+		var f = jsonDeserialize( data.installJson( arguments.distro ) );
+		if ( len( f.extends ?: "" ) ) {
+			var base = install( f.extends );
+			if ( !structIsEmpty( base ) ) {
+				var names = duplicate( base.names ?: {} ); structAppend( names, f.names ?: {}, true ); f.names = names;
+				var apps = duplicate( base.apps ?: {} ); structAppend( apps, f.apps ?: {}, true ); f.apps = apps;
+				// `"source": "none"` drops an app the parent has and this release lacks
+				for ( var k in structKeyArray( f.apps ) ) if ( ( f.apps[ k ].source ?: "" ) == "none" ) structDelete( f.apps, k );
+				// repos are per release (a Debian suite is not an Ubuntu one): the child's list replaces the parent's
+				if ( !structKeyExists( f, "repos" ) ) f.repos = duplicate( base.repos ?: [] );
+				var defaults = duplicate( base.defaults ?: {} ); structAppend( defaults, f.defaults ?: {}, true ); f.defaults = defaults;
+			}
+		}
+		return f;
+	}
+
+	function load( distro = "" ) {
+		var name = len( arguments.distro ) ? arguments.distro : new bxrig.util.Distro().catalogName();
+		var cat = jsonDeserialize( new bxrig.CatalogData().json() );
+		return withInstall( cat, install( name ), name );
+	}
+
+	// The shared catalog with one install file merged in (pure).
+	function withInstall( cat, inst, name ) {
+		var entries = arguments.inst.apps ?: {};
+		var keep = [];
+		var gone = [];
+		for ( var a in arguments.cat.apps ) {
+			if ( ( a.source ?: "" ) == "web" ) { keep.append( a ); continue; }
+			if ( !structKeyExists( entries, a.id ) ) { gone.append( a.id ); continue; }
+			var e = entries[ a.id ];
+			for ( var k in [ "source", "targets", "repo", "pkgbuild", "aur_targets", "script", "verified_on", "tier", "note" ] ) if ( structKeyExists( e, k ) ) a[ k ] = e[ k ];
+			keep.append( a );
+		}
+		arguments.cat.apps = keep;
+		arguments.cat.unavailable = gone;
+		arguments.cat.distro = arguments.name;
+		return arguments.cat;
+	}
+
 	function find( cat, id ) {
 		for ( a in cat.apps ) if ( a.id == id ) return a;
 		return {};
 	}
+
+	// check() on every distribution, the install files against the shared list, and how many apps each distribution offers.
+	function checkAll() {
+		var errors = []; var warnings = []; var coverage = {};
+		var shared = jsonDeserialize( new bxrig.CatalogData().json() );
+		var ids = {};
+		for ( var a in shared.apps ) ids[ a.id ] = ( a.source ?: "" ) == "web";
+		for ( var d in distros() ) {
+			var inst = install( d );
+			if ( structIsEmpty( inst ) ) { warnings.append( d & ": no install file" ); continue; }
+			if ( ( inst.schema ?: 0 ) != 1 ) errors.append( d & ": install schema must be 1" );
+			for ( var id in structKeyArray( inst.apps ?: {} ) ) {
+				if ( !structKeyExists( ids, id ) ) errors.append( d & ": " & id & " is not in apps.json" );
+				else if ( ids[ id ] ) errors.append( d & ": " & id & " is a web app and needs no install entry" );
+			}
+			for ( var n in structKeyArray( inst.names ?: {} ) ) {
+				var v = inst.names[ n ];
+				if ( !isSimpleValue( v ) || ( len( v ) && !reFind( "^[a-zA-Z0-9@._+/:-]+$", v ) ) ) errors.append( d & ": unsafe package name for " & n );
+			}
+			var cat = load( d );
+			var r = check( cat );
+			for ( var e in r.errors ) errors.append( d & ": " & e );
+			for ( var w in r.warnings ) warnings.append( d & ": " & w );
+			coverage[ d ] = { offered: cat.apps.len(), total: shared.apps.len(), unavailable: cat.unavailable };
+		}
+		return { errors: errors, warnings: warnings, coverage: coverage };
+	}
+
 	// Offline validation: returns { errors: [], warnings: [] }.
 	function check( cat ) {
 		errors = []; warnings = [];
-		if ( cat.schema != 3 ) errors.append( "schema must be 3, found " & cat.schema );
+		if ( cat.schema != 4 ) errors.append( "schema must be 4, found " & cat.schema );
+		sources = sourcesFor( cat.distro ?: "arch" );
+		sources.append( "web" );
 		groupIds = cat.groups.map( function( g ) { return g.id; } );
 		pairs = cat.categories.map( function( c ) { return c.group & "/" & c.title; } );
 		profileIds = [];
@@ -30,11 +117,11 @@ class Catalog {
 			if ( !reFind( "^[a-z0-9][a-z0-9-]*$", a.id ) ) errors.append( who & ": id must be lowercase letters, digits and dashes" );
 			if ( !arrayFind( [ "desktop", "tui", "web" ], a.kind ) ) errors.append( who & ": unknown kind " & a.kind );
 			if ( !arrayFind( [ "default", "optional" ], a.tier ) ) errors.append( who & ": unknown tier " & a.tier );
-			if ( !arrayFind( [ "pacman", "aur", "pkgbuild", "web", "script", "unresolved" ], a.source ) ) errors.append( who & ": unknown source " & a.source );
+			if ( !arrayFind( sources, a.source ?: "" ) ) errors.append( who & ": unknown source " & ( a.source ?: "(none)" ) );
 			if ( !arrayFind( groupIds, a.group ) ) errors.append( who & ": unknown group " & a.group );
 			else if ( !arrayFind( pairs, a.group & "/" & a.category ) ) errors.append( who & ": category " & a.category & " is not in group " & a.group );
 			if ( !structKeyExists( a, "description" ) || !len( a.description ) ) errors.append( who & ": missing description" );
-			if ( arrayFind( [ "pacman", "aur", "pkgbuild", "unresolved" ], a.source ) ) {
+			if ( arrayFind( [ "pacman", "aur", "pkgbuild", "unresolved", "zypper", "apt", "flatpak" ], a.source ) ) {
 				if ( !structKeyExists( a, "targets" ) || !a.targets.len() ) errors.append( who & ": " & a.source & " needs targets" );
 				else for ( t in a.targets ) if ( !reFind( "^[a-zA-Z0-9@._+-]+$", t ) ) errors.append( who & ": unsafe package name " & t );
 			}
@@ -64,7 +151,11 @@ class Catalog {
 			}
 			if ( a.source == "unresolved" && a.tier == "default" ) warnings.append( who & ": default entry has no installable package yet" );
 		}
-		for ( pid in profileIds ) if ( !structKeyExists( defaults, pid ) ) errors.append( "profile " & pid & ": needs at least one default app" );
+		// on Arch every profile needs a default app; elsewhere a profile can lose its only one (not packaged there), which is worth knowing only
+		for ( pid in profileIds ) if ( !structKeyExists( defaults, pid ) ) {
+			if ( ( cat.distro ?: "arch" ) == "arch" ) errors.append( "profile " & pid & ": needs at least one default app" );
+			else warnings.append( "profile " & pid & ": no default app on " & cat.distro );
+		}
 		return { errors: errors, warnings: warnings };
 	}
 	function row( a ) {

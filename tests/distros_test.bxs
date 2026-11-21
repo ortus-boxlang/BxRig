@@ -1,0 +1,104 @@
+// Distributions: which family a system is, the package manager backends (argv builders and output parsers, no system touched), Arch package
+// names in another distribution's spelling, and the catalog: apps.json with a distribution's install file merged in.
+// Run from src/: (cd src && matchbox ../tests/distros_test.bxs)
+testkit = new lib.Check( "distros" );
+
+// ---- util.Distro ----
+d = new bxrig.util.Distro();
+testkit.check( "families: CachyOS and Arch-like are arch", d.familyOf( "cachyos", "arch" ) == "arch" && d.familyOf( "arch" ) == "arch" && d.familyOf( "endeavouros", "arch" ) == "arch" );
+testkit.check( "families: openSUSE Tumbleweed and Slowroll are suse", d.familyOf( "opensuse-tumbleweed", "opensuse suse" ) == "suse" && d.familyOf( "opensuse-slowroll", "suse opensuse" ) == "suse" );
+testkit.check( "families: Ubuntu, Debian and their derivatives", d.familyOf( "ubuntu", "debian" ) == "ubuntu" && d.familyOf( "debian" ) == "debian" && d.familyOf( "pop", "ubuntu debian" ) == "ubuntu" && d.familyOf( "kali", "debian" ) == "debian" );
+testkit.check( "families: anything else is unknown", d.familyOf( "fedora", "rhel centos" ) == "" && d.familyOf( "" ) == "" );
+testkit.check( "packagers per family", d.packagers().arch == "pacman" && d.packagers().suse == "zypper" && d.packagers().debian == "apt" && d.packagers().ubuntu == "apt" );
+home = getTempDirectory() & "/bxrig-distro-" & createUUID();
+directoryCreate( home, true, true );
+fileWrite( home & "/tw", 'NAME="openSUSE Tumbleweed"' & chr( 10 ) & 'ID="opensuse-tumbleweed"' & chr( 10 ) & 'ID_LIKE="opensuse suse"' & chr( 10 ) & 'VERSION_ID="20261118"' & chr( 10 ) );
+fileWrite( home & "/u24", "ID=ubuntu" & chr( 10 ) & "ID_LIKE=debian" & chr( 10 ) & 'VERSION_ID="24.04"' & chr( 10 ) );
+fileWrite( home & "/leap", 'ID="opensuse-leap"' & chr( 10 ) & 'ID_LIKE="suse opensuse"' & chr( 10 ) & 'VERSION_ID="16.0"' & chr( 10 ) );
+tw = new bxrig.util.Distro( new bxrig.util.Env( { BXRIG_OS_RELEASE: home & "/tw", BXRIG_DISTRO: "" } ) );
+testkit.check( "os-release: Tumbleweed reads as suse, supported, zypper", tw.family() == "suse" && tw.supported() && tw.packager() == "zypper" && tw.catalogName() == "suse" );
+u24 = new bxrig.util.Distro( new bxrig.util.Env( { BXRIG_OS_RELEASE: home & "/u24", BXRIG_DISTRO: "" } ) );
+testkit.check( "os-release: Ubuntu 24.04 is ubuntu but not a supported version", u24.family() == "ubuntu" && !u24.supported() );
+leap = new bxrig.util.Distro( new bxrig.util.Env( { BXRIG_OS_RELEASE: home & "/leap", BXRIG_DISTRO: "" } ) );
+testkit.check( "os-release: openSUSE Leap is suse but not supported (not rolling)", leap.family() == "suse" && !leap.supported() );
+forced = new bxrig.util.Distro( new bxrig.util.Env( { BXRIG_OS_RELEASE: home & "/u24", BXRIG_DISTRO: "debian" } ) );
+testkit.check( "BXRIG_DISTRO wins over os-release", forced.family() == "debian" && forced.catalogName() == "debian" );
+none = new bxrig.util.Distro( new bxrig.util.Env( { BXRIG_OS_RELEASE: home & "/missing", BXRIG_DISTRO: "" } ) );
+testkit.check( "an unknown system reads the Arch catalog", none.family() == "" && none.catalogName() == "arch" );
+
+// ---- names ----
+names = new bxrig.util.PackageNames();
+map = { "noto-fonts": "google-noto-sans-fonts", "bluez-utils": "" };
+testkit.check( "names: renamed, dropped when empty, the rest as they are, each once", names.translate( [ "noto-fonts", "bluez-utils", "git", "git" ], map ).toList( " " ) == "google-noto-sans-fonts git" );
+
+// ---- zypper ----
+z = new bxrig.util.Zypper( "", { "fd": "fd", "noto-fonts": "google-noto-sans-fonts", "bluez-utils": "" } );
+testkit.check( "zypper: install as root and with sudo", z.installArgv( [ "git", "noto-fonts", "bluez-utils" ] ).toList( " " ) == "sudo zypper --non-interactive install git google-noto-sans-fonts" && z.installArgv( [ "git" ], true ).toList( " " ) == "zypper --non-interactive install git" );
+testkit.check( "zypper: remove cleans dependencies, upgrade is a dup", z.removeArgv( [ "git" ] ).toList( " " ) == "sudo zypper --non-interactive remove --clean-deps git" && z.upgradeArgv().toList( " " ) == "sudo zypper --non-interactive dup" );
+tbl = "S  | Name     | Summary                           | Type" & chr( 10 ) & "---+----------+-----------------------------------+--------" & chr( 10 ) & "   | hyprland | Dynamic tiling Wayland compositor | package" & chr( 10 ) & "i  | git      | Fast, scalable, distributed       | package";
+zr = new bxrig.util.Zypper( new bxrig.util.Proc( function( argv, timeout ) { return { exitCode: 0, output: tbl, timeout: false }; } ) ).searchRows( "x" );
+testkit.check( "zypper: search rows from its table", zr.len() == 2 && zr[ 1 ].name == "hyprland" && zr[ 1 ].description == "Dynamic tiling Wayland compositor" && zr[ 2 ].name == "git" );
+up = "S | Repository | Name | Current Version | Available Version | Arch" & chr( 10 ) & "v | repo-oss   | git  | 2.51.0-1.1      | 2.51.1-1.1        | x86_64";
+testkit.check( "zypper: list-updates rows", z.parseUpgrades( up ).len() == 1 && z.parseUpgrades( up )[ 1 ].name == "git" && z.parseUpgrades( up )[ 1 ].new == "2.51.1-1.1" );
+
+// ---- apt ----
+a = new bxrig.util.Apt( "", { "fd": "fd-find", "bluez-utils": "" } );
+testkit.check( "apt: install non-interactive with sudo, names translated", a.installArgv( [ "fd", "bluez-utils", "git" ] ).toList( " " ) == "sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y fd-find git" );
+testkit.check( "apt: purge for -Rns, remove for -Rs, both autoremove", a.removeArgv( [ "git" ] ).toList( " " ) == "sudo env DEBIAN_FRONTEND=noninteractive apt-get purge -y --autoremove git" && a.removeArgv( [ "git" ], "-Rs" ).toList( " " ) == "sudo env DEBIAN_FRONTEND=noninteractive apt-get remove -y --autoremove git" );
+testkit.check( "apt: update and full-upgrade", a.refreshArgv().toList( " " ) == "sudo env DEBIAN_FRONTEND=noninteractive apt-get update" && a.upgradeArgv().toList( " " ) == "sudo env DEBIAN_FRONTEND=noninteractive apt-get full-upgrade -y" );
+ar = new bxrig.util.Apt( new bxrig.util.Proc( function( argv, timeout ) { return { exitCode: 0, output: "fd-find - Simple, fast and user-friendly alternative to find" & chr( 10 ) & "ripgrep - Recursively searches directories", timeout: false }; } ) ).searchRows( "find" );
+testkit.check( "apt: search rows from apt-cache search", ar.len() == 2 && ar[ 1 ].name == "fd-find" && ar[ 2 ].description == "Recursively searches directories" );
+lst = "Listing..." & chr( 10 ) & "git/resolute-updates 1:2.51.1-1 amd64 [upgradable from: 1:2.51.0-1]";
+testkit.check( "apt: upgradable rows", a.parseUpgrades( lst ).len() == 1 && a.parseUpgrades( lst )[ 1 ].name == "git" && a.parseUpgrades( lst )[ 1 ].old == "1:2.51.0-1" && a.parseUpgrades( lst )[ 1 ].new == "1:2.51.1-1" );
+dpkgOut = "git 1:2.51.0-1 ii " & chr( 10 ) & "vim 2:9.1 rc ";
+testkit.check( "apt: only fully installed packages count", new bxrig.util.Apt( new bxrig.util.Proc( function( argv, timeout ) { return { exitCode: 0, output: dpkgOut, timeout: false }; } ) ).installedNames().toList() == "git" );
+
+// ---- flatpak ----
+f = new bxrig.util.Flatpak();
+testkit.check( "flatpak: the user's Flathub, non-interactive", f.remoteArgv().toList( " " ) == "flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo" && f.installArgv( [ "com.spotify.Client" ] ).toList( " " ) == "flatpak install --user --noninteractive flathub com.spotify.Client" );
+
+// ---- the factory ----
+p = new bxrig.util.Packages();
+testkit.check( "factory: one backend per distribution", p.native( "", "arch" ).tool() == "pacman" && p.native( "", "suse" ).tool() == "zypper" && p.native( "", "debian" ).tool() == "apt" && p.native( "", "ubuntu" ).tool() == "apt" );
+testkit.check( "factory: the backend carries the distribution's names", p.native( "", "debian" ).pkgs( [ "fd", "github-cli" ] ).toList( " " ) == "fd-find gh" && p.native( "", "suse" ).pkgs( [ "noto-fonts" ] ).toList() == "google-noto-sans-fonts" );
+
+// ---- the catalog per distribution ----
+cat = new bxrig.Catalog();
+arch = cat.load( "arch" );
+testkit.check( "arch: every app, none unavailable", arch.apps.len() == 349 && !arch.unavailable.len() && arch.distro == "arch" );
+vs = cat.find( arch, "vscode" );
+testkit.check( "arch: the install entry is merged in", vs.source == "aur" && vs.targets.toList() == "visual-studio-code-bin" );
+web = arch.apps.filter( function( x ) { return x.source == "web"; } ).len();
+for ( dist in [ "suse", "debian", "ubuntu" ] ) {
+	c = cat.load( dist );
+	testkit.check( dist & ": web apps everywhere, the rest only when the install file has them", c.apps.len() + c.unavailable.len() == 349 && c.apps.filter( function( x ) { return x.source == "web"; } ).len() == web );
+	testkit.check( dist & ": only this distribution's sources", c.apps.every( function( x ) { return arrayFind( [ "web", "flatpak", "script", dist == "suse" ? "zypper" : "apt" ], x.source ) > 0; } ) );
+}
+ub = cat.install( "ubuntu" );
+deb = cat.install( "debian" );
+testkit.check( "ubuntu extends debian: its names win, Debian's apply otherwise", ub.names.ghostty == "ghostty" && deb.names.ghostty == "" && ub.names.fd == "fd-find" );
+testkit.check( "ubuntu has its own repos (Ubuntu's Noctalia suite, no Debian backports)", ub.repos.len() == 1 && ub.repos[ 1 ].id == "noctalia" && find( "resolute", ub.repos[ 1 ].check ) > 0 && deb.repos.len() == 2 );
+testkit.check( "defaults: kitty on Debian (no ghostty package), ghostty on Ubuntu", deb.defaults.terminal == "kitty" && ub.defaults.terminal == "ghostty" );
+all = cat.checkAll();
+testkit.check( "check: no errors on any distribution", all.errors.len() == 0 );
+testkit.check( "check: coverage for all four", all.coverage.arch.offered == 349 && all.coverage.suse.offered > 200 && all.coverage.debian.offered > 150 && all.coverage.ubuntu.offered > 150 );
+
+// ---- repos ----
+work = home & "/work";
+rs = new bxrig.util.Repos().steps( [ "hyprland", "noctalia" ], work, "debian" );
+testkit.check( "repos: Debian adds backports and Noctalia's repository for the Hyprland setup", rs.len() == 2 && rs[ 1 ].id == "repo-backports" && rs[ 2 ].id == "repo-noctalia" );
+testkit.check( "repos: the backports file is written first, then installed with sudo", rs[ 1 ].files.len() == 1 && find( "trixie-backports", rs[ 1 ].files[ 1 ].content ) > 0 && rs[ 1 ].commands[ 2 ].toList( " " ) == "sudo install -m 0644 " & work & "/debian-backports.sources /etc/apt/sources.list.d/debian-backports.sources" );
+testkit.check( "repos: Noctalia's key package, then its sources file", rs[ 2 ].commands[ 3 ].toList( " " ) == "sudo dpkg -i " & work & "/nickh-archive-keyring.deb" && find( "noctalia-trixie.sources", rs[ 2 ].commands[ 4 ].toList( " " ) ) > 0 );
+testkit.check( "repos: nothing to add when no package needs one", !new bxrig.util.Repos().steps( [ "git" ], work, "debian" ).len() && !new bxrig.util.Repos().steps( [ "hyprland" ], work, "arch" ).len() );
+testkit.check( "repos: Debian's Hyprland packages come from backports with -t (their newer libraries too), the rest does not", new bxrig.util.Repos().release( [ "git", "hyprland" ], "debian" ) == "trixie-backports" && new bxrig.util.Repos().release( [ "git", "noctalia" ], "debian" ) == "" && new bxrig.util.Repos().release( [ "hyprland" ], "ubuntu" ) == "" );
+testkit.check( "apt: install with a target release", a.installArgv( [ "git" ], false, "trixie-backports" ).toList( " " ) == "sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -t trixie-backports git" );
+etcDir = home & "/etc";
+directoryCreate( etcDir & "/apt/sources.list.d", true, true );
+testkit.check( "repos: no apt source names backports yet", !new bxrig.util.Repos().configured( "trixie-backports", etcDir ) );
+fileWrite( etcDir & "/apt/sources.list", "deb https://deb.debian.org/debian trixie main" & chr( 10 ) & "## deb https://deb.debian.org/debian trixie-backports main" & chr( 10 ) );
+testkit.check( "repos: a commented-out line does not count", !new bxrig.util.Repos().configured( "trixie-backports", etcDir ) );
+fileWrite( etcDir & "/apt/sources.list.d/system.sources", "Types: deb" & chr( 10 ) & "Suites: trixie-backports" & chr( 10 ) );
+testkit.check( "repos: backports the system set up itself is found (sources.list.d)", new bxrig.util.Repos().configured( "trixie-backports", etcDir ) );
+
+directoryDelete( home, true );
+testkit.done( "distros tests passed" );

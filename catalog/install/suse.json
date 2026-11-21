@@ -1,0 +1,1305 @@
+{
+	"schema": 1,
+	"distro": "suse",
+	"title": "openSUSE Tumbleweed and Slowroll",
+	"packager": "zypper",
+	"defaults": null,
+	"names": {
+		"adw-gtk-theme": "",
+		"bluez-utils": "",
+		"borg": "borgbackup",
+		"composer": "php-composer2",
+		"github-cli": "gh",
+		"jdk21-openjdk": "java-21-openjdk",
+		"kdeconnect": "kdeconnect-kde",
+		"kdeplasma-addons": "kdeplasma6-addons",
+		"kimageformats": "kf6-kimageformats",
+		"kinfocenter": "kinfocenter6",
+		"kvantum": "kvantum-manager",
+		"kwallet-pam": "pam_kwallet6",
+		"kwin": "kwin6",
+		"libpulse": "libpulse0",
+		"libratbag": "libratbag-tools",
+		"micro": "micro-editor",
+		"nfs-utils": "nfs-client",
+		"noto-fonts": "google-noto-sans-fonts",
+		"noto-fonts-emoji": "google-noto-coloremoji-fonts",
+		"ollama-cuda": "ollama",
+		"pass": "password-store",
+		"php": "php8",
+		"php-sqlite": "php8-sqlite",
+		"pipewire-pulse": "pipewire-pulseaudio",
+		"podman-compose": "python3-podman-compose",
+		"python-dbus": "python3-dbus-python",
+		"python-gobject": "python3-gobject",
+		"python-pip": "python3-pip",
+		"tesseract": "tesseract-ocr",
+		"tesseract-data-eng": "",
+		"tldr": "tealdeer",
+		"tree-sitter-cli": "tree-sitter",
+		"ttf-bitstream-vera-mono-nerd": "",
+		"ttf-cascadia-mono-nerd": "",
+		"ttf-firacode-nerd": "",
+		"ttf-hack-nerd": "",
+		"ttf-iosevka-nerd": "",
+		"ttf-jetbrains-mono-nerd": "",
+		"ttf-meslo-nerd": "",
+		"ttf-sharetech-mono-nerd": "",
+		"ttf-sourcecodepro-nerd": "",
+		"ttf-victor-mono-nerd": "",
+		"uv": "python3-uv",
+		"zsh-autosuggestions": "",
+		"zsh-completions": "",
+		"zsh-syntax-highlighting": ""
+	},
+	"repos": [],
+	"apps": {
+		"1password": {
+			"source": "flatpak",
+			"targets": [
+				"com.onepassword.OnePassword"
+			]
+		},
+		"7zip": {
+			"source": "zypper",
+			"targets": [
+				"7zip"
+			]
+		},
+		"alacritty": {
+			"source": "zypper",
+			"targets": [
+				"alacritty"
+			]
+		},
+		"ark": {
+			"source": "zypper",
+			"targets": [
+				"ark"
+			]
+		},
+		"bambustudio": {
+			"source": "flatpak",
+			"targets": [
+				"com.bambulab.BambuStudio"
+			]
+		},
+		"bat": {
+			"source": "zypper",
+			"targets": [
+				"bat"
+			]
+		},
+		"beekeeper-studio": {
+			"source": "flatpak",
+			"targets": [
+				"io.beekeeperstudio.Studio"
+			]
+		},
+		"bitwarden": {
+			"source": "zypper",
+			"targets": [
+				"bitwarden"
+			]
+		},
+		"bluetui": {
+			"source": "zypper",
+			"targets": [
+				"bluetui"
+			]
+		},
+		"bluez": {
+			"source": "zypper",
+			"targets": [
+				"bluez"
+			]
+		},
+		"borg": {
+			"source": "zypper",
+			"targets": [
+				"borgbackup"
+			]
+		},
+		"brightnessctl": {
+			"source": "zypper",
+			"targets": [
+				"brightnessctl"
+			]
+		},
+		"btop": {
+			"source": "zypper",
+			"targets": [
+				"btop"
+			]
+		},
+		"bun": {
+			"source": "zypper",
+			"targets": [
+				"bun"
+			]
+		},
+		"buzz": {
+			"source": "flatpak",
+			"targets": [
+				"io.github.chidiwilliams.Buzz"
+			]
+		},
+		"chezmoi": {
+			"source": "zypper",
+			"targets": [
+				"chezmoi"
+			]
+		},
+		"chromium": {
+			"source": "zypper",
+			"targets": [
+				"chromium"
+			]
+		},
+		"cifs-utils": {
+			"source": "zypper",
+			"targets": [
+				"cifs-utils"
+			]
+		},
+		"cliphist": {
+			"source": "zypper",
+			"targets": [
+				"cliphist"
+			]
+		},
+		"cmake": {
+			"source": "zypper",
+			"targets": [
+				"cmake"
+			]
+		},
+		"codex-cli": {
+			"source": "zypper",
+			"targets": [
+				"openai-codex"
+			]
+		},
+		"composer": {
+			"source": "zypper",
+			"targets": [
+				"php-composer2"
+			]
+		},
+		"cups": {
+			"source": "zypper",
+			"targets": [
+				"cups"
+			]
+		},
+		"cups-pdf": {
+			"source": "zypper",
+			"targets": [
+				"cups-pdf"
+			]
+		},
+		"curl": {
+			"source": "zypper",
+			"targets": [
+				"curl"
+			]
+		},
+		"datagrip": {
+			"source": "flatpak",
+			"targets": [
+				"com.jetbrains.DataGrip"
+			]
+		},
+		"deno": {
+			"source": "zypper",
+			"targets": [
+				"deno"
+			]
+		},
+		"direnv": {
+			"source": "zypper",
+			"targets": [
+				"direnv"
+			]
+		},
+		"discord": {
+			"source": "zypper",
+			"targets": [
+				"discord"
+			]
+		},
+		"docker": {
+			"source": "zypper",
+			"targets": [
+				"docker",
+				"docker-compose",
+				"docker-buildx"
+			]
+		},
+		"dolphin": {
+			"source": "zypper",
+			"targets": [
+				"dolphin"
+			]
+		},
+		"dolphin-plugins": {
+			"source": "zypper",
+			"targets": [
+				"dolphin-plugins"
+			]
+		},
+		"dropbox": {
+			"source": "zypper",
+			"targets": [
+				"dropbox"
+			]
+		},
+		"duf": {
+			"source": "zypper",
+			"targets": [
+				"duf"
+			]
+		},
+		"edge": {
+			"source": "flatpak",
+			"targets": [
+				"com.microsoft.Edge"
+			]
+		},
+		"elisa": {
+			"source": "zypper",
+			"targets": [
+				"elisa"
+			]
+		},
+		"enpass": {
+			"source": "flatpak",
+			"targets": [
+				"io.enpass.Enpass"
+			]
+		},
+		"evolution": {
+			"source": "zypper",
+			"targets": [
+				"evolution"
+			]
+		},
+		"eza": {
+			"source": "zypper",
+			"targets": [
+				"eza"
+			]
+		},
+		"fastfetch": {
+			"source": "zypper",
+			"targets": [
+				"fastfetch"
+			]
+		},
+		"fd": {
+			"source": "zypper",
+			"targets": [
+				"fd"
+			]
+		},
+		"ffmpeg": {
+			"source": "zypper",
+			"targets": [
+				"ffmpeg"
+			]
+		},
+		"ffmpegthumbs": {
+			"source": "zypper",
+			"targets": [
+				"ffmpegthumbs"
+			]
+		},
+		"filelight": {
+			"source": "zypper",
+			"targets": [
+				"filelight"
+			]
+		},
+		"filezilla": {
+			"source": "zypper",
+			"targets": [
+				"filezilla"
+			]
+		},
+		"firefox": {
+			"source": "zypper",
+			"targets": [
+				"firefox"
+			]
+		},
+		"fish": {
+			"source": "zypper",
+			"targets": [
+				"fish"
+			]
+		},
+		"flameshot": {
+			"source": "zypper",
+			"targets": [
+				"flameshot"
+			]
+		},
+		"flatseal": {
+			"source": "zypper",
+			"targets": [
+				"flatseal"
+			]
+		},
+		"foot": {
+			"source": "zypper",
+			"targets": [
+				"foot"
+			]
+		},
+		"freerdp": {
+			"source": "zypper",
+			"targets": [
+				"freerdp"
+			]
+		},
+		"fuse3": {
+			"source": "zypper",
+			"targets": [
+				"fuse3"
+			]
+		},
+		"fuzzel": {
+			"source": "zypper",
+			"targets": [
+				"fuzzel"
+			]
+		},
+		"fzf": {
+			"source": "zypper",
+			"targets": [
+				"fzf"
+			]
+		},
+		"gemini-cli": {
+			"source": "zypper",
+			"targets": [
+				"gemini-cli"
+			]
+		},
+		"gh": {
+			"source": "zypper",
+			"targets": [
+				"gh"
+			]
+		},
+		"ghostty": {
+			"source": "zypper",
+			"targets": [
+				"ghostty"
+			]
+		},
+		"git": {
+			"source": "zypper",
+			"targets": [
+				"git"
+			]
+		},
+		"gnome-disk-utility": {
+			"source": "zypper",
+			"targets": [
+				"gnome-disk-utility"
+			]
+		},
+		"go": {
+			"source": "zypper",
+			"targets": [
+				"go"
+			]
+		},
+		"google-chrome": {
+			"source": "flatpak",
+			"targets": [
+				"com.google.Chrome"
+			]
+		},
+		"gopass": {
+			"source": "zypper",
+			"targets": [
+				"gopass"
+			]
+		},
+		"gpt4all": {
+			"source": "flatpak",
+			"targets": [
+				"io.gpt4all.gpt4all"
+			]
+		},
+		"gpu-screen-recorder": {
+			"source": "zypper",
+			"targets": [
+				"gpu-screen-recorder"
+			]
+		},
+		"grim": {
+			"source": "zypper",
+			"targets": [
+				"grim"
+			]
+		},
+		"gwenview": {
+			"source": "zypper",
+			"targets": [
+				"gwenview"
+			]
+		},
+		"haruna": {
+			"source": "zypper",
+			"targets": [
+				"haruna"
+			]
+		},
+		"helix": {
+			"source": "zypper",
+			"targets": [
+				"helix"
+			]
+		},
+		"herdr": {
+			"source": "zypper",
+			"targets": [
+				"herdr"
+			]
+		},
+		"heroic": {
+			"source": "zypper",
+			"targets": [
+				"heroic-games-launcher"
+			]
+		},
+		"hex": {
+			"source": "zypper",
+			"targets": [
+				"hex"
+			]
+		},
+		"hplip": {
+			"source": "zypper",
+			"targets": [
+				"hplip"
+			]
+		},
+		"hyprpaper": {
+			"source": "zypper",
+			"targets": [
+				"hyprpaper"
+			]
+		},
+		"hyprpicker": {
+			"source": "zypper",
+			"targets": [
+				"hyprpicker"
+			]
+		},
+		"hyprsunset": {
+			"source": "zypper",
+			"targets": [
+				"hyprsunset"
+			]
+		},
+		"imagemagick": {
+			"source": "zypper",
+			"targets": [
+				"imagemagick"
+			]
+		},
+		"impala": {
+			"source": "zypper",
+			"targets": [
+				"impala"
+			]
+		},
+		"imv": {
+			"source": "zypper",
+			"targets": [
+				"imv"
+			]
+		},
+		"jan": {
+			"source": "flatpak",
+			"targets": [
+				"ai.jan.Jan"
+			]
+		},
+		"jdk21": {
+			"source": "zypper",
+			"targets": [
+				"java-21-openjdk"
+			]
+		},
+		"jq": {
+			"source": "zypper",
+			"targets": [
+				"jq"
+			]
+		},
+		"kcalc": {
+			"source": "zypper",
+			"targets": [
+				"kcalc"
+			]
+		},
+		"kdeconnect": {
+			"source": "zypper",
+			"targets": [
+				"kdeconnect-kde",
+				"sshfs",
+				"qt6-tools",
+				"python3-gobject"
+			]
+		},
+		"kdegraphics-thumbnailers": {
+			"source": "zypper",
+			"targets": [
+				"kdegraphics-thumbnailers"
+			]
+		},
+		"kdenlive": {
+			"source": "zypper",
+			"targets": [
+				"kdenlive"
+			]
+		},
+		"kdeplasma-addons": {
+			"source": "zypper",
+			"targets": [
+				"kdeplasma6-addons"
+			]
+		},
+		"keepassxc": {
+			"source": "zypper",
+			"targets": [
+				"keepassxc"
+			]
+		},
+		"kimageformats": {
+			"source": "zypper",
+			"targets": [
+				"kf6-kimageformats"
+			]
+		},
+		"kinfocenter": {
+			"source": "zypper",
+			"targets": [
+				"kinfocenter6"
+			]
+		},
+		"kio-admin": {
+			"source": "zypper",
+			"targets": [
+				"kio-admin"
+			]
+		},
+		"kio-extras": {
+			"source": "zypper",
+			"targets": [
+				"kio-extras"
+			]
+		},
+		"kio-gdrive": {
+			"source": "zypper",
+			"targets": [
+				"kio-gdrive"
+			]
+		},
+		"kitty": {
+			"source": "zypper",
+			"targets": [
+				"kitty"
+			]
+		},
+		"kiview": {
+			"source": "flatpak",
+			"targets": [
+				"io.github.nyre221.kiview"
+			]
+		},
+		"kompare": {
+			"source": "zypper",
+			"targets": [
+				"kompare"
+			]
+		},
+		"konsole": {
+			"source": "zypper",
+			"targets": [
+				"konsole"
+			]
+		},
+		"kooha": {
+			"source": "flatpak",
+			"targets": [
+				"io.github.seadve.Kooha"
+			]
+		},
+		"kvantum": {
+			"source": "zypper",
+			"targets": [
+				"kvantum-manager"
+			]
+		},
+		"lazygit": {
+			"source": "zypper",
+			"targets": [
+				"lazygit"
+			]
+		},
+		"libratbag": {
+			"source": "zypper",
+			"targets": [
+				"libratbag-tools"
+			]
+		},
+		"libreoffice": {
+			"source": "flatpak",
+			"targets": [
+				"org.libreoffice.LibreOffice"
+			]
+		},
+		"lm-studio": {
+			"source": "flatpak",
+			"targets": [
+				"ai.lmstudio.lm-studio"
+			]
+		},
+		"localsend": {
+			"source": "flatpak",
+			"targets": [
+				"org.localsend.localsend_app"
+			]
+		},
+		"lutris": {
+			"source": "zypper",
+			"targets": [
+				"lutris"
+			]
+		},
+		"mailspring": {
+			"source": "flatpak",
+			"targets": [
+				"com.getmailspring.Mailspring"
+			]
+		},
+		"maven": {
+			"source": "zypper",
+			"targets": [
+				"maven"
+			]
+		},
+		"meld": {
+			"source": "zypper",
+			"targets": [
+				"meld"
+			]
+		},
+		"micro": {
+			"source": "zypper",
+			"targets": [
+				"micro-editor"
+			]
+		},
+		"moonlight": {
+			"source": "flatpak",
+			"targets": [
+				"com.moonlight_stream.Moonlight"
+			]
+		},
+		"mpv": {
+			"source": "zypper",
+			"targets": [
+				"mpv"
+			]
+		},
+		"nautilus": {
+			"source": "zypper",
+			"targets": [
+				"nautilus"
+			]
+		},
+		"neovim": {
+			"source": "zypper",
+			"targets": [
+				"neovim"
+			]
+		},
+		"networkmanager-openvpn": {
+			"source": "zypper",
+			"targets": [
+				"networkmanager-openvpn"
+			]
+		},
+		"nfs-utils": {
+			"source": "zypper",
+			"targets": [
+				"nfs-client"
+			]
+		},
+		"nwg-displays": {
+			"source": "zypper",
+			"targets": [
+				"nwg-displays"
+			]
+		},
+		"obs": {
+			"source": "zypper",
+			"targets": [
+				"obs-studio"
+			]
+		},
+		"obsidian": {
+			"source": "flatpak",
+			"targets": [
+				"md.obsidian.Obsidian"
+			]
+		},
+		"okular": {
+			"source": "zypper",
+			"targets": [
+				"okular"
+			]
+		},
+		"ollama": {
+			"source": "zypper",
+			"targets": [
+				"ollama"
+			]
+		},
+		"ollama-cuda": {
+			"source": "zypper",
+			"targets": [
+				"ollama"
+			]
+		},
+		"ollama-rocm": {
+			"source": "zypper",
+			"targets": [
+				"ollama-rocm"
+			]
+		},
+		"opencode-cli": {
+			"source": "zypper",
+			"targets": [
+				"opencode"
+			]
+		},
+		"opencode-desktop": {
+			"source": "zypper",
+			"targets": [
+				"opencode"
+			]
+		},
+		"openvpn": {
+			"source": "zypper",
+			"targets": [
+				"openvpn"
+			]
+		},
+		"papers": {
+			"source": "zypper",
+			"targets": [
+				"papers"
+			]
+		},
+		"papirus-folders": {
+			"source": "zypper",
+			"targets": [
+				"papirus-folders"
+			]
+		},
+		"papirus-icon-theme": {
+			"source": "zypper",
+			"targets": [
+				"papirus-icon-theme"
+			]
+		},
+		"partitionmanager": {
+			"source": "zypper",
+			"targets": [
+				"partitionmanager"
+			]
+		},
+		"pass": {
+			"source": "zypper",
+			"targets": [
+				"password-store"
+			]
+		},
+		"pavucontrol": {
+			"source": "zypper",
+			"targets": [
+				"pavucontrol"
+			]
+		},
+		"php": {
+			"source": "zypper",
+			"targets": [
+				"php8"
+			]
+		},
+		"php-sqlite": {
+			"source": "zypper",
+			"targets": [
+				"php8-sqlite"
+			]
+		},
+		"pi-agent": {
+			"source": "zypper",
+			"targets": [
+				"pi"
+			]
+		},
+		"pika-backup": {
+			"source": "zypper",
+			"targets": [
+				"pika-backup"
+			]
+		},
+		"pinta": {
+			"source": "zypper",
+			"targets": [
+				"pinta"
+			]
+		},
+		"piper": {
+			"source": "zypper",
+			"targets": [
+				"piper"
+			]
+		},
+		"pipewire": {
+			"source": "zypper",
+			"targets": [
+				"pipewire",
+				"pipewire-pulseaudio",
+				"wireplumber",
+				"libpulse0"
+			]
+		},
+		"playerctl": {
+			"source": "zypper",
+			"targets": [
+				"playerctl"
+			]
+		},
+		"podman": {
+			"source": "zypper",
+			"targets": [
+				"podman",
+				"python3-podman-compose",
+				"buildah",
+				"skopeo"
+			]
+		},
+		"podman-desktop": {
+			"source": "flatpak",
+			"targets": [
+				"io.podman_desktop.PodmanDesktop"
+			]
+		},
+		"prismlauncher": {
+			"source": "zypper",
+			"targets": [
+				"prismlauncher"
+			]
+		},
+		"proton-pass": {
+			"source": "flatpak",
+			"targets": [
+				"me.proton.Pass"
+			]
+		},
+		"proton-vpn": {
+			"source": "flatpak",
+			"targets": [
+				"com.protonvpn.www"
+			]
+		},
+		"protonup-qt": {
+			"source": "flatpak",
+			"targets": [
+				"net.davidotek.pupgui2"
+			]
+		},
+		"python-pip": {
+			"source": "zypper",
+			"targets": [
+				"python3-pip"
+			]
+		},
+		"qrencode": {
+			"source": "zypper",
+			"targets": [
+				"qrencode"
+			]
+		},
+		"rclone": {
+			"source": "zypper",
+			"targets": [
+				"rclone"
+			]
+		},
+		"remmina": {
+			"source": "zypper",
+			"targets": [
+				"remmina"
+			]
+		},
+		"restic": {
+			"source": "zypper",
+			"targets": [
+				"restic"
+			]
+		},
+		"retroarch": {
+			"source": "zypper",
+			"targets": [
+				"retroarch"
+			]
+		},
+		"ripgrep": {
+			"source": "zypper",
+			"targets": [
+				"ripgrep"
+			]
+		},
+		"rofi": {
+			"source": "zypper",
+			"targets": [
+				"rofi"
+			]
+		},
+		"rustdesk": {
+			"source": "flatpak",
+			"targets": [
+				"com.rustdesk.RustDesk"
+			]
+		},
+		"seahorse": {
+			"source": "zypper",
+			"targets": [
+				"seahorse"
+			]
+		},
+		"slack": {
+			"source": "flatpak",
+			"targets": [
+				"com.slack.Slack"
+			]
+		},
+		"slurp": {
+			"source": "zypper",
+			"targets": [
+				"slurp"
+			]
+		},
+		"smartmontools": {
+			"source": "zypper",
+			"targets": [
+				"smartmontools"
+			]
+		},
+		"snapper": {
+			"source": "zypper",
+			"targets": [
+				"snapper"
+			]
+		},
+		"solaar": {
+			"source": "zypper",
+			"targets": [
+				"solaar"
+			]
+		},
+		"spectacle": {
+			"source": "zypper",
+			"targets": [
+				"spectacle"
+			]
+		},
+		"speedtest": {
+			"source": "flatpak",
+			"targets": [
+				"xyz.ketok.Speedtest"
+			]
+		},
+		"spotify": {
+			"source": "flatpak",
+			"targets": [
+				"com.spotify.Client"
+			]
+		},
+		"sshfs": {
+			"source": "zypper",
+			"targets": [
+				"sshfs"
+			]
+		},
+		"starship": {
+			"source": "zypper",
+			"targets": [
+				"starship"
+			]
+		},
+		"steam": {
+			"source": "zypper",
+			"targets": [
+				"steam"
+			]
+		},
+		"stow": {
+			"source": "zypper",
+			"targets": [
+				"stow"
+			]
+		},
+		"sublime-merge": {
+			"source": "flatpak",
+			"targets": [
+				"com.sublimemerge.App"
+			]
+		},
+		"sublime-text": {
+			"source": "flatpak",
+			"targets": [
+				"com.sublimehq.SublimeText"
+			]
+		},
+		"sunshine": {
+			"source": "flatpak",
+			"targets": [
+				"dev.lizardbyte.app.Sunshine"
+			]
+		},
+		"system-config-printer": {
+			"source": "zypper",
+			"targets": [
+				"system-config-printer"
+			]
+		},
+		"tailscale": {
+			"source": "zypper",
+			"targets": [
+				"tailscale"
+			]
+		},
+		"telegram": {
+			"source": "zypper",
+			"targets": [
+				"telegram-desktop"
+			]
+		},
+		"tesseract": {
+			"source": "zypper",
+			"targets": [
+				"tesseract-ocr"
+			]
+		},
+		"thunar": {
+			"source": "zypper",
+			"targets": [
+				"thunar"
+			]
+		},
+		"ticktick": {
+			"source": "flatpak",
+			"targets": [
+				"com.ticktick.TickTick"
+			]
+		},
+		"timeshift": {
+			"source": "zypper",
+			"targets": [
+				"timeshift"
+			]
+		},
+		"tldr": {
+			"source": "zypper",
+			"targets": [
+				"tealdeer"
+			]
+		},
+		"tmux": {
+			"source": "zypper",
+			"targets": [
+				"tmux"
+			]
+		},
+		"tor-browser": {
+			"source": "zypper",
+			"targets": [
+				"torbrowser-launcher"
+			]
+		},
+		"tree-sitter-cli": {
+			"source": "zypper",
+			"targets": [
+				"tree-sitter"
+			]
+		},
+		"typora": {
+			"source": "flatpak",
+			"targets": [
+				"io.typora.Typora"
+			]
+		},
+		"ufw": {
+			"source": "zypper",
+			"targets": [
+				"ufw"
+			]
+		},
+		"unrar": {
+			"source": "zypper",
+			"targets": [
+				"unrar"
+			]
+		},
+		"unzip": {
+			"source": "zypper",
+			"targets": [
+				"unzip"
+			]
+		},
+		"upower": {
+			"source": "zypper",
+			"targets": [
+				"upower"
+			]
+		},
+		"uv": {
+			"source": "zypper",
+			"targets": [
+				"python3-uv"
+			]
+		},
+		"vim": {
+			"source": "zypper",
+			"targets": [
+				"vim"
+			]
+		},
+		"virt-manager": {
+			"source": "zypper",
+			"targets": [
+				"virt-manager"
+			]
+		},
+		"vlc": {
+			"source": "flatpak",
+			"targets": [
+				"org.videolan.VLC"
+			]
+		},
+		"vscode": {
+			"source": "flatpak",
+			"targets": [
+				"com.visualstudio.code"
+			]
+		},
+		"waybar": {
+			"source": "zypper",
+			"targets": [
+				"waybar"
+			]
+		},
+		"wf-recorder": {
+			"source": "zypper",
+			"targets": [
+				"wf-recorder"
+			]
+		},
+		"wget": {
+			"source": "zypper",
+			"targets": [
+				"wget"
+			]
+		},
+		"wireguard": {
+			"source": "zypper",
+			"targets": [
+				"wireguard-tools"
+			]
+		},
+		"wiremix": {
+			"source": "zypper",
+			"targets": [
+				"wiremix"
+			]
+		},
+		"wlsunset": {
+			"source": "zypper",
+			"targets": [
+				"wlsunset"
+			]
+		},
+		"wofi": {
+			"source": "zypper",
+			"targets": [
+				"wofi"
+			]
+		},
+		"wtype": {
+			"source": "zypper",
+			"targets": [
+				"wtype"
+			]
+		},
+		"yadm": {
+			"source": "zypper",
+			"targets": [
+				"yadm"
+			]
+		},
+		"yazi": {
+			"source": "zypper",
+			"targets": [
+				"yazi"
+			]
+		},
+		"yt-dlp": {
+			"source": "zypper",
+			"targets": [
+				"yt-dlp"
+			]
+		},
+		"zbar": {
+			"source": "zypper",
+			"targets": [
+				"zbar"
+			]
+		},
+		"zed": {
+			"source": "zypper",
+			"targets": [
+				"zed"
+			]
+		},
+		"zoom": {
+			"source": "flatpak",
+			"targets": [
+				"us.zoom.Zoom"
+			]
+		},
+		"zoxide": {
+			"source": "zypper",
+			"targets": [
+				"zoxide"
+			]
+		},
+		"zsh": {
+			"source": "zypper",
+			"targets": [
+				"zsh"
+			]
+		}
+	}
+}

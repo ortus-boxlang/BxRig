@@ -16,7 +16,7 @@ class Dotfiles {
 		variables.environ = new bxrig.util.Env();
 		variables.cli = arguments.cli;
 		variables.inst = new bxrig.Installer( arguments.runner );
-		variables.pacman = new bxrig.util.Pacman( variables.inst.proc() );
+		variables.pacman = new bxrig.util.Packages().native( variables.inst.proc() );
 		variables.config = new bxrig.ConfigService();
 		return this;
 	}

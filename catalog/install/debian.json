@@ -1,0 +1,1296 @@
+{
+	"schema": 1,
+	"distro": "debian",
+	"title": "Debian 13 (Trixie)",
+	"packager": "apt",
+	"defaults": {
+		"terminal": "kitty"
+	},
+	"names": {
+		"adw-gtk-theme": "",
+		"bluez-utils": "",
+		"borg": "borgbackup",
+		"docker": "docker.io",
+		"fd": "fd-find",
+		"ghostty": "",
+		"github-cli": "gh",
+		"go": "golang-go",
+		"jdk21-openjdk": "openjdk-21-jdk",
+		"kdeplasma-addons": "plasma-widgets-addons",
+		"kimageformats": "kimageformat6-plugins",
+		"kpackage": "kpackagetool6",
+		"kvantum": "qt6-style-kvantum",
+		"kwallet-pam": "libpam-kwallet5",
+		"kwin": "kwin-common",
+		"libpulse": "libpulse0",
+		"libratbag": "ratbagd",
+		"networkmanager-openvpn": "network-manager-openvpn",
+		"nfs-utils": "nfs-common",
+		"noto-fonts": "fonts-noto-core",
+		"noto-fonts-emoji": "fonts-noto-color-emoji",
+		"php-sqlite": "php-sqlite3",
+		"python-dbus": "python3-dbus",
+		"python-gobject": "python3-gi",
+		"python-pip": "python3-pip",
+		"qt6-tools": "qdbus-qt6",
+		"spectacle": "kde-spectacle",
+		"tesseract": "tesseract-ocr",
+		"tesseract-data-eng": "tesseract-ocr-eng",
+		"tldr": "tealdeer",
+		"ttf-bitstream-vera-mono-nerd": "",
+		"ttf-cascadia-mono-nerd": "",
+		"ttf-firacode-nerd": "",
+		"ttf-hack-nerd": "",
+		"ttf-iosevka-nerd": "",
+		"ttf-jetbrains-mono-nerd": "",
+		"ttf-meslo-nerd": "",
+		"ttf-sharetech-mono-nerd": "",
+		"ttf-sourcecodepro-nerd": "",
+		"ttf-victor-mono-nerd": "",
+		"zbar": "zbar-tools",
+		"zsh-completions": ""
+	},
+	"repos": [
+		{
+			"check": "apt/sources.list.d/debian-backports.sources",
+			"commands": [
+				[
+					"sudo",
+					"install",
+					"-m",
+					"0644",
+					"{work}/debian-backports.sources",
+					"/etc/apt/sources.list.d/debian-backports.sources"
+				]
+			],
+			"file": {
+				"content": "Types: deb\nURIs: https://deb.debian.org/debian\nSuites: trixie-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n",
+				"path": "{work}/debian-backports.sources"
+			},
+			"for": [
+				"hyprland",
+				"hypridle",
+				"hyprlock",
+				"uwsm",
+				"xdg-desktop-portal-hyprland",
+				"hyprpolkitagent",
+				"hyprpicker",
+				"hyprsunset",
+				"hyprpaper",
+				"hyprlauncher",
+				"quickshell"
+			],
+			"id": "backports",
+			"title": "Debian backports (trixie-backports: Hyprland and its tools)",
+			"release": "trixie-backports",
+			"check_text": "trixie-backports"
+		},
+		{
+			"check": "apt/sources.list.d/noctalia-trixie.sources",
+			"commands": [
+				[
+					"curl",
+					"-fsSLo",
+					"{work}/nickh-archive-keyring.deb",
+					"https://pkg.noctalia.dev/deb/nickh-archive-keyring.deb"
+				],
+				[
+					"sudo",
+					"dpkg",
+					"-i",
+					"{work}/nickh-archive-keyring.deb"
+				],
+				[
+					"sudo",
+					"curl",
+					"-fsSLo",
+					"/etc/apt/sources.list.d/noctalia-trixie.sources",
+					"https://pkg.noctalia.dev/deb/noctalia-trixie.sources"
+				]
+			],
+			"for": [
+				"noctalia"
+			],
+			"id": "noctalia",
+			"title": "Noctalia's apt repository (pkg.noctalia.dev, Debian Trixie)"
+		}
+	],
+	"apps": {
+		"1password": {
+			"source": "flatpak",
+			"targets": [
+				"com.onepassword.OnePassword"
+			]
+		},
+		"7zip": {
+			"source": "apt",
+			"targets": [
+				"7zip"
+			]
+		},
+		"alacritty": {
+			"source": "apt",
+			"targets": [
+				"alacritty"
+			]
+		},
+		"ark": {
+			"source": "apt",
+			"targets": [
+				"ark"
+			]
+		},
+		"bambustudio": {
+			"source": "flatpak",
+			"targets": [
+				"com.bambulab.BambuStudio"
+			]
+		},
+		"bat": {
+			"source": "apt",
+			"targets": [
+				"bat"
+			]
+		},
+		"beekeeper-studio": {
+			"source": "flatpak",
+			"targets": [
+				"io.beekeeperstudio.Studio"
+			]
+		},
+		"bitwarden": {
+			"source": "flatpak",
+			"targets": [
+				"com.bitwarden.desktop"
+			]
+		},
+		"bluez": {
+			"source": "apt",
+			"targets": [
+				"bluez"
+			]
+		},
+		"borg": {
+			"source": "apt",
+			"targets": [
+				"borgbackup"
+			]
+		},
+		"brightnessctl": {
+			"source": "apt",
+			"targets": [
+				"brightnessctl"
+			]
+		},
+		"btop": {
+			"source": "apt",
+			"targets": [
+				"btop"
+			]
+		},
+		"btrfs-assistant": {
+			"source": "apt",
+			"targets": [
+				"btrfs-assistant"
+			]
+		},
+		"buzz": {
+			"source": "flatpak",
+			"targets": [
+				"io.github.chidiwilliams.Buzz"
+			]
+		},
+		"chromium": {
+			"source": "apt",
+			"targets": [
+				"chromium"
+			]
+		},
+		"cifs-utils": {
+			"source": "apt",
+			"targets": [
+				"cifs-utils"
+			]
+		},
+		"cliphist": {
+			"source": "apt",
+			"targets": [
+				"cliphist"
+			]
+		},
+		"cmake": {
+			"source": "apt",
+			"targets": [
+				"cmake"
+			]
+		},
+		"composer": {
+			"source": "apt",
+			"targets": [
+				"composer"
+			]
+		},
+		"cups": {
+			"source": "apt",
+			"targets": [
+				"cups"
+			]
+		},
+		"cups-pdf": {
+			"source": "apt",
+			"targets": [
+				"cups-pdf"
+			]
+		},
+		"curl": {
+			"source": "apt",
+			"targets": [
+				"curl"
+			]
+		},
+		"datagrip": {
+			"source": "flatpak",
+			"targets": [
+				"com.jetbrains.DataGrip"
+			]
+		},
+		"deno": {
+			"source": "apt",
+			"targets": [
+				"deno"
+			]
+		},
+		"direnv": {
+			"source": "apt",
+			"targets": [
+				"direnv"
+			]
+		},
+		"discord": {
+			"source": "flatpak",
+			"targets": [
+				"com.discordapp.Discord"
+			]
+		},
+		"docker": {
+			"source": "apt",
+			"targets": [
+				"docker",
+				"docker-compose",
+				"docker-buildx"
+			]
+		},
+		"dolphin": {
+			"source": "apt",
+			"targets": [
+				"dolphin"
+			]
+		},
+		"dolphin-plugins": {
+			"source": "apt",
+			"targets": [
+				"dolphin-plugins"
+			]
+		},
+		"duf": {
+			"source": "apt",
+			"targets": [
+				"duf"
+			]
+		},
+		"edge": {
+			"source": "flatpak",
+			"targets": [
+				"com.microsoft.Edge"
+			]
+		},
+		"elisa": {
+			"source": "apt",
+			"targets": [
+				"elisa"
+			]
+		},
+		"enpass": {
+			"source": "flatpak",
+			"targets": [
+				"io.enpass.Enpass"
+			]
+		},
+		"evolution": {
+			"source": "apt",
+			"targets": [
+				"evolution"
+			]
+		},
+		"eza": {
+			"source": "apt",
+			"targets": [
+				"eza"
+			]
+		},
+		"fastfetch": {
+			"source": "apt",
+			"targets": [
+				"fastfetch"
+			]
+		},
+		"fd": {
+			"source": "apt",
+			"targets": [
+				"fd-find"
+			]
+		},
+		"ffmpeg": {
+			"source": "apt",
+			"targets": [
+				"ffmpeg"
+			]
+		},
+		"ffmpegthumbs": {
+			"source": "apt",
+			"targets": [
+				"ffmpegthumbs"
+			]
+		},
+		"filelight": {
+			"source": "apt",
+			"targets": [
+				"filelight"
+			]
+		},
+		"filezilla": {
+			"source": "apt",
+			"targets": [
+				"filezilla"
+			]
+		},
+		"firefox": {
+			"source": "apt",
+			"targets": [
+				"firefox"
+			]
+		},
+		"fish": {
+			"source": "apt",
+			"targets": [
+				"fish"
+			]
+		},
+		"flameshot": {
+			"source": "apt",
+			"targets": [
+				"flameshot"
+			]
+		},
+		"flatseal": {
+			"source": "apt",
+			"targets": [
+				"flatseal"
+			]
+		},
+		"foot": {
+			"source": "apt",
+			"targets": [
+				"foot"
+			]
+		},
+		"freerdp": {
+			"source": "apt",
+			"targets": [
+				"freerdp"
+			]
+		},
+		"fuse3": {
+			"source": "apt",
+			"targets": [
+				"fuse3"
+			]
+		},
+		"fuzzel": {
+			"source": "apt",
+			"targets": [
+				"fuzzel"
+			]
+		},
+		"fzf": {
+			"source": "apt",
+			"targets": [
+				"fzf"
+			]
+		},
+		"gh": {
+			"source": "apt",
+			"targets": [
+				"gh"
+			]
+		},
+		"git": {
+			"source": "apt",
+			"targets": [
+				"git"
+			]
+		},
+		"gnome-disk-utility": {
+			"source": "apt",
+			"targets": [
+				"gnome-disk-utility"
+			]
+		},
+		"go": {
+			"source": "apt",
+			"targets": [
+				"golang-go"
+			]
+		},
+		"google-chrome": {
+			"source": "flatpak",
+			"targets": [
+				"com.google.Chrome"
+			]
+		},
+		"gpt4all": {
+			"source": "flatpak",
+			"targets": [
+				"io.gpt4all.gpt4all"
+			]
+		},
+		"gpu-screen-recorder": {
+			"source": "flatpak",
+			"targets": [
+				"com.dec05eba.gpu_screen_recorder"
+			]
+		},
+		"gradle": {
+			"source": "apt",
+			"targets": [
+				"gradle"
+			]
+		},
+		"grim": {
+			"source": "apt",
+			"targets": [
+				"grim"
+			]
+		},
+		"gwenview": {
+			"source": "apt",
+			"targets": [
+				"gwenview"
+			]
+		},
+		"haruna": {
+			"source": "apt",
+			"targets": [
+				"haruna"
+			]
+		},
+		"helix": {
+			"source": "flatpak",
+			"targets": [
+				"com.helix_editor.Helix"
+			]
+		},
+		"hplip": {
+			"source": "apt",
+			"targets": [
+				"hplip"
+			]
+		},
+		"hyprlauncher": {
+			"source": "apt",
+			"targets": [
+				"hyprlauncher"
+			]
+		},
+		"hyprpaper": {
+			"source": "apt",
+			"targets": [
+				"hyprpaper"
+			]
+		},
+		"hyprpicker": {
+			"source": "apt",
+			"targets": [
+				"hyprpicker"
+			]
+		},
+		"hyprsunset": {
+			"source": "apt",
+			"targets": [
+				"hyprsunset"
+			]
+		},
+		"imagemagick": {
+			"source": "apt",
+			"targets": [
+				"imagemagick"
+			]
+		},
+		"imv": {
+			"source": "apt",
+			"targets": [
+				"imv"
+			]
+		},
+		"jan": {
+			"source": "flatpak",
+			"targets": [
+				"ai.jan.Jan"
+			]
+		},
+		"jdk21": {
+			"source": "apt",
+			"targets": [
+				"openjdk-21-jdk"
+			]
+		},
+		"jq": {
+			"source": "apt",
+			"targets": [
+				"jq"
+			]
+		},
+		"kcalc": {
+			"source": "apt",
+			"targets": [
+				"kcalc"
+			]
+		},
+		"kdeconnect": {
+			"source": "apt",
+			"targets": [
+				"kdeconnect",
+				"sshfs",
+				"qdbus-qt6",
+				"python3-gi"
+			]
+		},
+		"kdegraphics-thumbnailers": {
+			"source": "apt",
+			"targets": [
+				"kdegraphics-thumbnailers"
+			]
+		},
+		"kdenlive": {
+			"source": "apt",
+			"targets": [
+				"kdenlive"
+			]
+		},
+		"kdeplasma-addons": {
+			"source": "apt",
+			"targets": [
+				"plasma-widgets-addons"
+			]
+		},
+		"keepassxc": {
+			"source": "apt",
+			"targets": [
+				"keepassxc"
+			]
+		},
+		"kimageformats": {
+			"source": "apt",
+			"targets": [
+				"kimageformat6-plugins"
+			]
+		},
+		"kinfocenter": {
+			"source": "apt",
+			"targets": [
+				"kinfocenter"
+			]
+		},
+		"kio-admin": {
+			"source": "apt",
+			"targets": [
+				"kio-admin"
+			]
+		},
+		"kio-extras": {
+			"source": "apt",
+			"targets": [
+				"kio-extras"
+			]
+		},
+		"kio-gdrive": {
+			"source": "apt",
+			"targets": [
+				"kio-gdrive"
+			]
+		},
+		"kitty": {
+			"source": "apt",
+			"targets": [
+				"kitty"
+			]
+		},
+		"kiview": {
+			"source": "flatpak",
+			"targets": [
+				"io.github.nyre221.kiview"
+			]
+		},
+		"kompare": {
+			"source": "apt",
+			"targets": [
+				"kompare"
+			]
+		},
+		"konsole": {
+			"source": "apt",
+			"targets": [
+				"konsole"
+			]
+		},
+		"kooha": {
+			"source": "apt",
+			"targets": [
+				"kooha"
+			]
+		},
+		"kvantum": {
+			"source": "apt",
+			"targets": [
+				"qt6-style-kvantum"
+			]
+		},
+		"lazygit": {
+			"source": "apt",
+			"targets": [
+				"lazygit"
+			]
+		},
+		"libratbag": {
+			"source": "apt",
+			"targets": [
+				"ratbagd"
+			]
+		},
+		"libreoffice": {
+			"source": "flatpak",
+			"targets": [
+				"org.libreoffice.LibreOffice"
+			]
+		},
+		"lm-studio": {
+			"source": "flatpak",
+			"targets": [
+				"ai.lmstudio.lm-studio"
+			]
+		},
+		"localsend": {
+			"source": "flatpak",
+			"targets": [
+				"org.localsend.localsend_app"
+			]
+		},
+		"lutris": {
+			"source": "flatpak",
+			"targets": [
+				"net.lutris.Lutris"
+			]
+		},
+		"mailspring": {
+			"source": "flatpak",
+			"targets": [
+				"com.getmailspring.Mailspring"
+			]
+		},
+		"maven": {
+			"source": "apt",
+			"targets": [
+				"maven"
+			]
+		},
+		"meld": {
+			"source": "apt",
+			"targets": [
+				"meld"
+			]
+		},
+		"micro": {
+			"source": "apt",
+			"targets": [
+				"micro"
+			]
+		},
+		"moonlight": {
+			"source": "flatpak",
+			"targets": [
+				"com.moonlight_stream.Moonlight"
+			]
+		},
+		"mpv": {
+			"source": "apt",
+			"targets": [
+				"mpv"
+			]
+		},
+		"nautilus": {
+			"source": "apt",
+			"targets": [
+				"nautilus"
+			]
+		},
+		"neovim": {
+			"source": "apt",
+			"targets": [
+				"neovim"
+			]
+		},
+		"networkmanager-openvpn": {
+			"source": "apt",
+			"targets": [
+				"network-manager-openvpn"
+			]
+		},
+		"nfs-utils": {
+			"source": "apt",
+			"targets": [
+				"nfs-common"
+			]
+		},
+		"nwg-displays": {
+			"source": "apt",
+			"targets": [
+				"nwg-displays"
+			]
+		},
+		"obs": {
+			"source": "apt",
+			"targets": [
+				"obs-studio"
+			]
+		},
+		"obsidian": {
+			"source": "flatpak",
+			"targets": [
+				"md.obsidian.Obsidian"
+			]
+		},
+		"okular": {
+			"source": "apt",
+			"targets": [
+				"okular"
+			]
+		},
+		"opencode-cli": {
+			"source": "flatpak",
+			"targets": [
+				"ai.opencode.opencode"
+			]
+		},
+		"openvpn": {
+			"source": "apt",
+			"targets": [
+				"openvpn"
+			]
+		},
+		"papers": {
+			"source": "apt",
+			"targets": [
+				"papers"
+			]
+		},
+		"papirus-icon-theme": {
+			"source": "apt",
+			"targets": [
+				"papirus-icon-theme"
+			]
+		},
+		"partitionmanager": {
+			"source": "apt",
+			"targets": [
+				"partitionmanager"
+			]
+		},
+		"pass": {
+			"source": "apt",
+			"targets": [
+				"pass"
+			]
+		},
+		"pavucontrol": {
+			"source": "apt",
+			"targets": [
+				"pavucontrol"
+			]
+		},
+		"php": {
+			"source": "apt",
+			"targets": [
+				"php"
+			]
+		},
+		"php-sqlite": {
+			"source": "apt",
+			"targets": [
+				"php-sqlite3"
+			]
+		},
+		"pi-agent": {
+			"source": "apt",
+			"targets": [
+				"pi"
+			]
+		},
+		"pika-backup": {
+			"source": "flatpak",
+			"targets": [
+				"org.gnome.World.PikaBackup"
+			]
+		},
+		"pinta": {
+			"source": "apt",
+			"targets": [
+				"pinta"
+			]
+		},
+		"piper": {
+			"source": "apt",
+			"targets": [
+				"piper"
+			]
+		},
+		"pipewire": {
+			"source": "apt",
+			"targets": [
+				"pipewire",
+				"pipewire-pulse",
+				"wireplumber",
+				"libpulse0"
+			]
+		},
+		"playerctl": {
+			"source": "apt",
+			"targets": [
+				"playerctl"
+			]
+		},
+		"podman": {
+			"source": "apt",
+			"targets": [
+				"podman",
+				"podman-compose",
+				"buildah",
+				"skopeo"
+			]
+		},
+		"podman-desktop": {
+			"source": "flatpak",
+			"targets": [
+				"io.podman_desktop.PodmanDesktop"
+			]
+		},
+		"prismlauncher": {
+			"source": "apt",
+			"targets": [
+				"prismlauncher"
+			]
+		},
+		"proton-pass": {
+			"source": "flatpak",
+			"targets": [
+				"me.proton.Pass"
+			]
+		},
+		"proton-vpn": {
+			"source": "flatpak",
+			"targets": [
+				"com.protonvpn.www"
+			]
+		},
+		"protonup-qt": {
+			"source": "flatpak",
+			"targets": [
+				"net.davidotek.pupgui2"
+			]
+		},
+		"python-pip": {
+			"source": "apt",
+			"targets": [
+				"python3-pip"
+			]
+		},
+		"qrencode": {
+			"source": "apt",
+			"targets": [
+				"qrencode"
+			]
+		},
+		"rclone": {
+			"source": "apt",
+			"targets": [
+				"rclone"
+			]
+		},
+		"rclone-browser": {
+			"source": "apt",
+			"targets": [
+				"rclone-browser"
+			]
+		},
+		"remmina": {
+			"source": "apt",
+			"targets": [
+				"remmina"
+			]
+		},
+		"restic": {
+			"source": "apt",
+			"targets": [
+				"restic"
+			]
+		},
+		"retroarch": {
+			"source": "apt",
+			"targets": [
+				"retroarch"
+			]
+		},
+		"ripgrep": {
+			"source": "apt",
+			"targets": [
+				"ripgrep"
+			]
+		},
+		"rofi": {
+			"source": "apt",
+			"targets": [
+				"rofi"
+			]
+		},
+		"rustdesk": {
+			"source": "flatpak",
+			"targets": [
+				"com.rustdesk.RustDesk"
+			]
+		},
+		"seahorse": {
+			"source": "apt",
+			"targets": [
+				"seahorse"
+			]
+		},
+		"slack": {
+			"source": "flatpak",
+			"targets": [
+				"com.slack.Slack"
+			]
+		},
+		"slurp": {
+			"source": "apt",
+			"targets": [
+				"slurp"
+			]
+		},
+		"smartmontools": {
+			"source": "apt",
+			"targets": [
+				"smartmontools"
+			]
+		},
+		"snapd": {
+			"source": "apt",
+			"targets": [
+				"snapd"
+			]
+		},
+		"snapper": {
+			"source": "apt",
+			"targets": [
+				"snapper"
+			]
+		},
+		"solaar": {
+			"source": "apt",
+			"targets": [
+				"solaar"
+			]
+		},
+		"spectacle": {
+			"source": "apt",
+			"targets": [
+				"kde-spectacle"
+			]
+		},
+		"speedtest": {
+			"source": "flatpak",
+			"targets": [
+				"xyz.ketok.Speedtest"
+			]
+		},
+		"spotify": {
+			"source": "flatpak",
+			"targets": [
+				"com.spotify.Client"
+			]
+		},
+		"sshfs": {
+			"source": "apt",
+			"targets": [
+				"sshfs"
+			]
+		},
+		"starship": {
+			"source": "apt",
+			"targets": [
+				"starship"
+			]
+		},
+		"steam": {
+			"source": "apt",
+			"targets": [
+				"steam"
+			]
+		},
+		"stow": {
+			"source": "apt",
+			"targets": [
+				"stow"
+			]
+		},
+		"sublime-merge": {
+			"source": "flatpak",
+			"targets": [
+				"com.sublimemerge.App"
+			]
+		},
+		"sublime-text": {
+			"source": "flatpak",
+			"targets": [
+				"com.sublimehq.SublimeText"
+			]
+		},
+		"sunshine": {
+			"source": "flatpak",
+			"targets": [
+				"dev.lizardbyte.app.Sunshine"
+			]
+		},
+		"system-config-printer": {
+			"source": "apt",
+			"targets": [
+				"system-config-printer"
+			]
+		},
+		"telegram": {
+			"source": "apt",
+			"targets": [
+				"telegram-desktop"
+			]
+		},
+		"tesseract": {
+			"source": "apt",
+			"targets": [
+				"tesseract-ocr",
+				"tesseract-ocr-eng"
+			]
+		},
+		"thunar": {
+			"source": "apt",
+			"targets": [
+				"thunar"
+			]
+		},
+		"ticktick": {
+			"source": "flatpak",
+			"targets": [
+				"com.ticktick.TickTick"
+			]
+		},
+		"timeshift": {
+			"source": "apt",
+			"targets": [
+				"timeshift"
+			]
+		},
+		"tldr": {
+			"source": "apt",
+			"targets": [
+				"tealdeer"
+			]
+		},
+		"tmux": {
+			"source": "apt",
+			"targets": [
+				"tmux"
+			]
+		},
+		"tor-browser": {
+			"source": "apt",
+			"targets": [
+				"torbrowser-launcher"
+			]
+		},
+		"tree-sitter-cli": {
+			"source": "apt",
+			"targets": [
+				"tree-sitter-cli"
+			]
+		},
+		"typora": {
+			"source": "flatpak",
+			"targets": [
+				"io.typora.Typora"
+			]
+		},
+		"ufw": {
+			"source": "apt",
+			"targets": [
+				"ufw"
+			]
+		},
+		"unrar": {
+			"source": "apt",
+			"targets": [
+				"unrar"
+			]
+		},
+		"unzip": {
+			"source": "apt",
+			"targets": [
+				"unzip"
+			]
+		},
+		"upower": {
+			"source": "apt",
+			"targets": [
+				"upower"
+			]
+		},
+		"uxplay": {
+			"source": "apt",
+			"targets": [
+				"uxplay"
+			]
+		},
+		"vim": {
+			"source": "apt",
+			"targets": [
+				"vim"
+			]
+		},
+		"virt-manager": {
+			"source": "apt",
+			"targets": [
+				"virt-manager"
+			]
+		},
+		"vlc": {
+			"source": "flatpak",
+			"targets": [
+				"org.videolan.VLC"
+			]
+		},
+		"vscode": {
+			"source": "flatpak",
+			"targets": [
+				"com.visualstudio.code"
+			]
+		},
+		"waybar": {
+			"source": "apt",
+			"targets": [
+				"waybar"
+			]
+		},
+		"wf-recorder": {
+			"source": "apt",
+			"targets": [
+				"wf-recorder"
+			]
+		},
+		"wget": {
+			"source": "apt",
+			"targets": [
+				"wget"
+			]
+		},
+		"wireguard": {
+			"source": "apt",
+			"targets": [
+				"wireguard-tools"
+			]
+		},
+		"wlsunset": {
+			"source": "apt",
+			"targets": [
+				"wlsunset"
+			]
+		},
+		"wofi": {
+			"source": "apt",
+			"targets": [
+				"wofi"
+			]
+		},
+		"wtype": {
+			"source": "apt",
+			"targets": [
+				"wtype"
+			]
+		},
+		"yadm": {
+			"source": "apt",
+			"targets": [
+				"yadm"
+			]
+		},
+		"yazi": {
+			"source": "flatpak",
+			"targets": [
+				"io.github.sxyazi.yazi"
+			]
+		},
+		"yt-dlp": {
+			"source": "apt",
+			"targets": [
+				"yt-dlp"
+			]
+		},
+		"zbar": {
+			"source": "apt",
+			"targets": [
+				"zbar-tools"
+			]
+		},
+		"zed": {
+			"source": "flatpak",
+			"targets": [
+				"dev.zed.Zed"
+			]
+		},
+		"zoom": {
+			"source": "flatpak",
+			"targets": [
+				"us.zoom.Zoom"
+			]
+		},
+		"zoxide": {
+			"source": "apt",
+			"targets": [
+				"zoxide"
+			]
+		},
+		"zsh": {
+			"source": "apt",
+			"targets": [
+				"zsh"
+			]
+		},
+		"zsh-autosuggestions": {
+			"source": "apt",
+			"targets": [
+				"zsh-autosuggestions"
+			]
+		},
+		"zsh-syntax-highlighting": {
+			"source": "apt",
+			"targets": [
+				"zsh-syntax-highlighting"
+			]
+		}
+	}
+}

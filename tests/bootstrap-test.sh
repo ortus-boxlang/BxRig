@@ -17,6 +17,8 @@ exit 9
 MOCK
 chmod +x "$tmp/pacman" "$tmp/sudo"
 export PATH="$tmp:$PATH"
+# The installer picks its package manager from os-release: these checks describe Arch (the runner itself may be Ubuntu).
+printf 'ID=arch\n' > "$tmp/os-arch-release"; export BXRIG_OS_RELEASE="$tmp/os-arch-release"
 bash "$root/bootstrap/install.sh" check | grep -F 'installed: git'
 bash "$root/bootstrap/install.sh" check | grep -F 'missing: jdk21-openjdk'
 if bash "$root/bootstrap/install.sh" packages >/dev/null 2>&1; then
@@ -59,7 +61,7 @@ reset_mocks() { rm -f "$bin"/*;
 }
 run() { env -i HOME="$home" PATH="$bin:$sys" BXRIG_SKIP_NETWORK=1 BXRIG_OS_RELEASE="${OSREL:-$tmp/os-arch}" MOCK_INSTALLED="${MOCK_INSTALLED:-}" MOCK_UID="${MOCK_UID:-1000}" "$@"; }
 printf 'ID=cachyos\nID_LIKE=arch\n' > "$tmp/os-arch"
-printf 'ID=ubuntu\nID_LIKE=debian\n' > "$tmp/os-ubuntu"
+printf 'ID=fedora\nID_LIKE="rhel centos"\n' > "$tmp/os-other"
 need() { grep -Fq -- "$2" <<<"$1" || { echo "FAIL: expected '$2' in output:" >&2; echo "$1" >&2; exit 1; }; }
 refuse() { if grep -Fq -- "$2" <<<"$1"; then echo "FAIL: unexpected '$2' in output:" >&2; echo "$1" >&2; exit 1; fi; }
 
@@ -106,7 +108,7 @@ need "$plan" 'mvm install snapshot && mvm use snapshot'; need "$plan" 'MatchBox:
 
 # 4. Root, unsupported OS, wrong arguments.
 out="$(MOCK_UID=0 run bash "$repo/bootstrap/install.sh" check)"; need "$out" 'user: root (run as a normal user)'
-out="$(OSREL="$tmp/os-ubuntu" run bash "$repo/bootstrap/install.sh" check)"; need "$out" 'os: ubuntu (unsupported)'
+out="$(OSREL="$tmp/os-other" run bash "$repo/bootstrap/install.sh" check)"; need "$out" 'os: fedora (unsupported)'
 if run bash "$repo/bootstrap/install.sh" --dry-run extra >/dev/null 2>&1; then echo 'FAIL: --plan accepted an argument' >&2; exit 1; fi
 if run bash "$repo/bootstrap/install.sh" check --yes >/dev/null 2>&1; then echo 'FAIL: --check accepted --yes' >&2; exit 1; fi
 echo 'bootstrap check/plan tests passed'
@@ -253,7 +255,7 @@ out=bxrig; while [[ $# -gt 0 ]]; do [[ "$1" == --output ]] && { out="$2"; break;
 cp "$FAKE" "$out"; chmod 755 "$out"'
   : > "$tmp/build.log"; fake_bin "$SRCVER" > "$tmp/fake_built"
 }
-brun() { env -i HOME="$home" PATH="$bin:$sys" BXRIG_SKIP_NETWORK=1 BLOG="$tmp/build.log" FAKE="$tmp/fake_built" MOCK_UID="${MOCK_UID:-1000}" MOCK_MB="${MOCK_MB:-0.12.0}" MOCK_TUI="${MOCK_TUI:-1}" MOCK_BUILD_FAIL="${MOCK_BUILD_FAIL:-0}" "$@"; }
+brun() { env -i HOME="$home" PATH="$bin:$sys" BXRIG_SKIP_NETWORK=1 BXRIG_OS_RELEASE="$tmp/os-arch" BLOG="$tmp/build.log" FAKE="$tmp/fake_built" MOCK_UID="${MOCK_UID:-1000}" MOCK_MB="${MOCK_MB:-0.12.0}" MOCK_TUI="${MOCK_TUI:-1}" MOCK_BUILD_FAIL="${MOCK_BUILD_FAIL:-0}" "$@"; }
 dest="$home/.local/bin/bxrig"
 
 # 1. Build from source and install.
@@ -305,8 +307,8 @@ out="$(env -i HOME="$home" PATH="$bin:$sys" BXRIG_OS_RELEASE="$tmp/os-arch" MOCK
 # Unsupported OS and too little disk stop every installing mode before anything runs.
 install_mocks; fresh_home; mock curl 'exit 22'
 for m in "packages --yes" "toolchains --yes"; do
-  if out="$(OSREL="$tmp/os-ubuntu" env -i HOME="$home" PATH="$bin:$sys" BXRIG_SKIP_NETWORK=1 BXRIG_OS_RELEASE="$tmp/os-ubuntu" STATE="$tmp/state" PLOG="$tmp/pacman.log" BINDIR="$bin" bash "$repo/bootstrap/install.sh" $m 2>&1 </dev/null)"; then echo "FAIL: '$m' ran on an unsupported OS" >&2; exit 1; fi
-  need "$out" 'Unsupported OS: ubuntu'
+  if out="$(OSREL="$tmp/os-other" env -i HOME="$home" PATH="$bin:$sys" BXRIG_SKIP_NETWORK=1 BXRIG_OS_RELEASE="$tmp/os-other" STATE="$tmp/state" PLOG="$tmp/pacman.log" BINDIR="$bin" bash "$repo/bootstrap/install.sh" $m 2>&1 </dev/null)"; then echo "FAIL: '$m' ran on an unsupported OS" >&2; exit 1; fi
+  need "$out" 'Unsupported OS: fedora'
 done
 [[ ! -s "$tmp/pacman.log" ]] || { echo 'FAIL: unsupported OS touched the system' >&2; exit 1; }
 mock df 'printf "Filesystem 1024-blocks Used Available Capacity Mounted\nx 100 50 1024 5%% /\n"'

@@ -12,7 +12,7 @@ class Tweaks {
 	function init( cli, runner = "" ) {
 		variables.cli = arguments.cli;
 		variables.proc = new bxrig.util.Proc( arguments.runner );
-		variables.pacman = new bxrig.util.Pacman( variables.proc );
+		variables.pacman = new bxrig.util.Packages().native( variables.proc );
 		return this;
 	}
 
@@ -109,6 +109,7 @@ class Tweaks {
 	}
 
 	function kernel( words, yes, dry, asJson ) {
+		if ( new bxrig.util.Distro().family() != "arch" ) return variables.cli.fail( "kernel", "precondition", "bxrig kernel manages the CachyOS and Arch kernels; on " & new bxrig.util.Distro().prettyName() & " use its own tools (YaST or zypper, apt)", arguments.asJson );
 		var verb = arguments.words.len() ? arguments.words[ 1 ] : "list";
 		if ( verb == "list" ) {
 			var running = trim( variables.proc.exec( [ "uname", "-r" ], 5 ).output );

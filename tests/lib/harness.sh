@@ -8,6 +8,9 @@ export BXRIG_TEST_LIB="$root/tests/lib"
 tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
 # Tests point HOME (or BXRIG_*_HOME) at $tmp; the XDG overrides a CI runner or desktop sets would win over HOME (Env), so drop them.
 unset XDG_CONFIG_HOME XDG_STATE_HOME XDG_DATA_HOME XDG_CACHE_HOME
+# The catalog and the package manager follow BXRIG_DISTRO, not the runner's own system (an Ubuntu CI runner is not the Arch the tests
+# describe); a test that is about another distribution sets it itself.
+export BXRIG_DISTRO="${BXRIG_DISTRO:-arch}"
 fail() { echo "FAIL: $*" >&2; exit 1; }
 # stub NAME 'bash body': an executable $tmp/bin/NAME (put $tmp/bin first on PATH in run()).
 stub() { mkdir -p "$tmp/bin"; printf '#!/usr/bin/env bash\n%s\n' "$2" > "$tmp/bin/$1"; chmod +x "$tmp/bin/$1"; }

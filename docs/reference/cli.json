@@ -486,15 +486,26 @@
 					"name": "catalog",
 					"summary": "Browse the app catalog.",
 					"usage": [
-						"catalog list [--group=G] [--category=C] [--tier=default|optional] [--kind=K] [--source=S] [--json] | show ID | groups | check | version"
+						"catalog list [--group=G] [--category=C] [--tier=default|optional] [--kind=K] [--source=S] [--distro=D] [--json] | show ID [--distro=D] | groups | check | coverage [--distro=D] | version",
+						"catalog map suse|debian|ubuntu [--write] [--json]"
 					],
 					"examples": [
+						"bxrig catalog coverage",
+						"bxrig catalog list --distro=suse --tier=default",
 						"bxrig catalog groups",
 						"bxrig catalog list --group=ai --tier=default",
 						"bxrig catalog show lazygit"
 					],
 					"mutates": false,
 					"flags": [
+						{
+							"name": "distro",
+							"type": "value"
+						},
+						{
+							"name": "write",
+							"type": "bool"
+						},
 						{
 							"name": "category",
 							"type": "value"

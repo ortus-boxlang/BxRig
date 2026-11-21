@@ -1,0 +1,48 @@
+// The package repositories a distribution adds before some packages (catalog/install/DISTRO.json `repos`): Noctalia's own apt repository on
+// Debian and Ubuntu, Debian's backports for Hyprland. A repo is { id, title, for: [ package names ], check: path under /etc, check_text?, release?, file?: { path,
+// content }, commands: [ argv ] }: it is added when a package in `for` is about to be installed and its `check` file does not exist yet.
+// "{work}" in a command or the file path is a temporary folder of the caller. Steps: [ { id, title, kind: "repo", commands, files } ].
+// check_text: text in an apt source that means the repository is already there (a system that set up backports itself). release: apt installs
+// the repo's packages with -t RELEASE, so the newer libraries they need come from it too.
+class Repos {
+	function steps( pkgs, workDir, distro = "" ) {
+		var name = len( arguments.distro ) ? arguments.distro : new bxrig.util.Distro().catalogName();
+		var inst = new bxrig.Catalog().install( name );
+		var out = [];
+		var etc = new bxrig.util.Env().named( "etc", "/etc" );
+		var work = arguments.workDir;
+		for ( var r in ( inst.repos ?: [] ) ) {
+			var needed = [];
+			for ( var p in ( r.for ?: [] ) ) if ( arrayFind( arguments.pkgs, p ) ) needed.append( p );
+			if ( !needed.len() || ( len( r.check ?: "" ) && fileExists( etc & "/" & r.check ) ) || configured( r.check_text ?: "", etc ) ) continue;
+			var cmds = [ [ "mkdir", "-p", work ] ];
+			for ( var c in ( r.commands ?: [] ) ) cmds.append( c.map( function( w ) { return replace( w, "{work}", work, "all" ); } ) );
+			var files = structKeyExists( r, "file" ) ? [ { path: replace( r.file.path, "{work}", work, "all" ), content: r.file.content } ] : [];
+			out.append( { id: "repo-" & r.id, title: "add " & r.title & " (for " & needed.toList( ", " ) & ")", kind: "repo", commands: cmds, files: files } );
+		}
+		return out;
+	}
+
+	// The target release for these packages (a repo's `release`, "trixie-backports"), "" for none: apt installs them with -t RELEASE.
+	function release( pkgs, distro = "" ) {
+		var name = len( arguments.distro ) ? arguments.distro : new bxrig.util.Distro().catalogName();
+		for ( var r in ( new bxrig.Catalog().install( name ).repos ?: [] ) ) {
+			if ( !len( r.release ?: "" ) ) continue;
+			for ( var p in ( r.for ?: [] ) ) if ( arrayFind( arguments.pkgs, p ) ) return r.release;
+		}
+		return "";
+	}
+
+	// True when an apt source already names `text` (a backports suite the system set up itself, in sources.list or sources.list.d).
+	function configured( text, etc ) {
+		if ( !len( arguments.text ) ) return false;
+		var files = [ arguments.etc & "/apt/sources.list" ];
+		var dir = arguments.etc & "/apt/sources.list.d";
+		if ( directoryExists( dir ) ) for ( var f in directoryList( dir, false, "path" ) ) files.append( f );
+		for ( var f in files ) {
+			if ( !fileExists( f ) ) continue;
+			for ( var l in listToArray( fileRead( f ), chr( 10 ) ) ) if ( left( trim( l ), 1 ) != "#" && find( arguments.text, l ) ) return true;
+		}
+		return false;
+	}
+}

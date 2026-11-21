@@ -6,7 +6,7 @@ class Setup {
 	function init( cli, runner = "" ) {
 		variables.cli = arguments.cli;
 		variables.inst = new bxrig.Installer( arguments.runner );
-		variables.pacman = new bxrig.util.Pacman( variables.inst.proc() );
+		variables.pacman = new bxrig.util.Packages().native( variables.inst.proc() );
 		variables.aur = new bxrig.util.Aur( variables.inst.proc() );
 		return this;
 	}
@@ -15,6 +15,8 @@ class Setup {
 	function kwinVersion() {
 		try {
 			var v = variables.pacman.version( "kwin" );
+			// an epoch ("4:6.3.6-1" on Debian) and the release are not part of the version
+			if ( find( ":", v ) ) v = listRest( v, ":" );
 			return len( v ) ? listFirst( v, "-" ) : "";
 		} catch ( any e ) {
 			return "";
@@ -89,6 +91,7 @@ class Setup {
 			nodeVersion: nodeVersion( nvmDir ),
 			hasCurl: variables.inst.hasCommand( "curl" ),
 			os: osId(),
+			osLike: new bxrig.util.Distro().release().ID_LIKE ?: "",
 			arch: trim( variables.inst.proc().exec( [ "uname", "-m" ], 10 ).output ),
 			hasPacman: variables.pacman.available(),
 			hyprlandAdded: hyprlandAdded(),
@@ -201,8 +204,9 @@ class Setup {
 
 	// `setup status`
 	function status( asJson ) {
+		// in this distribution's spelling (fd-find on Debian; a package it does not need is left out)
+		var wanted = variables.pacman.pkgs( new bxrig.SetupPlan().hyprlandPackages() );
 		var have = new bxrig.Packages( variables.cli, {} ).installedNames();
-		var wanted = new bxrig.SetupPlan().hyprlandPackages();
 		var present = wanted.filter( function( p ) { return structKeyExists( have, p ); } );
 		var data = { plasma: { kwin: kwinVersion(), hyprkwin: hyprkwinInstalled() }, hyprland: { installed: present.len(), wanted: wanted.len(), complete: present.len() == wanted.len() } };
 		if ( asJson ) println( variables.cli.envelope( "setup status", 0, data ) );
@@ -245,6 +249,10 @@ class Setup {
 			var problem = "";
 			var detail = "";
 			var failedCmd = [];
+			// a repository step may need a file of its own first (a sources file that sudo then installs)
+			if ( structKeyExists( step, "writeFirst" ) ) {
+				try { directoryCreate( getDirectoryFromPath( step.writeFirst.path ), true, true ); fileWrite( step.writeFirst.path, step.writeFirst.content ); } catch ( any e ) { problem = "failed: " & e.message; }
+			}
 			if ( step.kind == "keys" && new bxrig.KeysService( variables.cli, variables.inst.runner(), asJson ).apply( true, false, false, false ) != 0 ) problem = "failed";
 			if ( step.kind == "assets" ) {
 				try { new bxrig.Assets( variables.cli, variables.inst.runner() ).writeMissing(); } catch ( any e ) { problem = "failed: " & e.message; }

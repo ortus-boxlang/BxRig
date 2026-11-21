@@ -1,13 +1,15 @@
 # BxRig catalog
 
-`apps.json` is the app catalog (schema 3, draft 0.2.0). It replaces the legacy v0.10.0 `catalog/apps.json` (kept unmodified under `artifacts/legacy/original/`).
+`apps.json` is the app catalog (schema 4): what each app is (name, category, tier, profiles, description). How to install an app lives in one file per distribution under `install/`: `arch.json` (CachyOS and Arch), `suse.json` (openSUSE Tumbleweed and Slowroll), `debian.json` (Debian 13) and `ubuntu.json` (Ubuntu 26.04, extends `debian.json`). An app a distribution's file does not list is not offered there. Web apps (`source: web`, `url`) stay in `apps.json` and need no install entry. See docs/guides/distributions.md.
+
+Install file (schema 1): `distro`, `title`, `packager`, optional `extends`, `defaults` (`terminal`), `names` (Arch package name to this distribution's, `""` when it needs none), `repos` (extra repositories added before a package in their `for` list), and `apps` (id to its install entry). `bxrig catalog map DISTRO --write`, run on that distribution, proposes the entries.
 
 - `tier`: `default` (installed by a plain install) or `optional` (offered in the picker). Apps that are not listed are not part of the catalog.
-- `source`: `pacman` (official or CachyOS repo), `aur`, `pkgbuild` (build from a public PKGBUILD with `makepkg` as the normal user), `web` (frameless web app, `url`), `unresolved` (no installable package found yet).
-- `targets`: package names for `pacman`, `aur`, `pkgbuild` and `unresolved`.
+- `source` (install file): on Arch `pacman` (official or CachyOS repo), `aur`, `pkgbuild` (build from a public PKGBUILD with `makepkg` as the normal user), `script`, `unresolved` (no installable package found yet); on openSUSE `zypper`, on Debian and Ubuntu `apt`; everywhere `flatpak` (Flathub, `--user`) and `script`.
+- `targets` (install file): package names, or Flathub application ids for `flatpak`.
 - `origin`: why the entry exists (`owner-pick`, `omarchy-desktop`, `omarchy-web`, `omarchy-shell-tool`, `gaming`, `owner-request`).
 - `macos`: suggested macOS equivalent. A suggestion, not a verified mapping.
-- `verified_on`: date the package target was resolved against the CachyOS repos (cachyos, v3, v4), Arch (core, extra, multilib) and the AUR.
+- `verified_on` (install file): date the package target was resolved against the CachyOS repos (cachyos, v3, v4), Arch (core, extra, multilib) and the AUR.
 
 Status: draft for testing. `pkgbuild.ref` is `master` and must be pinned to a commit before an installer uses it. The Omarchy app inventory comes from the unofficial store omarchyapps.com and the Omarchy 4.5 notes. Curation continues after testing.
 

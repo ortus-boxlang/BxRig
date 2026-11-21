@@ -23,7 +23,7 @@ class Input {
 		variables.runnerArg = arguments.runner;
 		variables.out = new bxrig.util.Out( variables.cli, "input" );
 		variables.proc = new bxrig.util.Proc( arguments.runner );
-		variables.pacman = new bxrig.util.Pacman( variables.proc );
+		variables.pacman = new bxrig.util.Packages().native( variables.proc );
 		variables.systemd = new bxrig.util.Systemd( variables.proc );
 		variables.dev = new bxrig.InputDevices( arguments.runner );
 		return this;

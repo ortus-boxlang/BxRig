@@ -1,0 +1,46 @@
+// Flatpak from Flathub, for apps a distribution does not package (catalog source "flatpak", targets = application ids). Installs go to the
+// user's own Flatpak (--user): no sudo, and the apps appear in the menus like any other. Argv arrays only.
+class Flatpak {
+	function init( proc = "" ) {
+		variables.proc = isSimpleValue( arguments.proc ) ? new bxrig.util.Proc( arguments.proc ) : arguments.proc;
+		return this;
+	}
+
+	function remoteName() { return "flathub"; }
+	function remoteUrl() { return "https://dl.flathub.org/repo/flathub.flatpakrepo"; }
+	function available() { return variables.proc.has( "flatpak" ); }
+
+	// flatpak remote-add --user --if-not-exists flathub URL
+	function remoteArgv() { return [ "flatpak", "remote-add", "--user", "--if-not-exists", remoteName(), remoteUrl() ]; }
+
+	// flatpak install --user --noninteractive flathub ID...
+	function installArgv( ids ) {
+		var argv = [ "flatpak", "install", "--user", "--noninteractive", remoteName() ];
+		for ( var i in ( isArray( arguments.ids ) ? arguments.ids : [ arguments.ids ] ) ) argv.append( i );
+		return argv;
+	}
+
+	function removeArgv( ids ) {
+		var argv = [ "flatpak", "uninstall", "--user", "--noninteractive" ];
+		for ( var i in ( isArray( arguments.ids ) ? arguments.ids : [ arguments.ids ] ) ) argv.append( i );
+		return argv;
+	}
+
+	function upgradeArgv() { return [ "flatpak", "update", "--user", "--noninteractive" ]; }
+
+	// The application ids installed for this user and system-wide, as a set.
+	function installed() {
+		var s = {};
+		var r = variables.proc.exec( [ "flatpak", "list", "--app", "--columns=application" ], 30 );
+		if ( r.exitCode == 0 ) for ( var l in listToArray( r.output, chr( 10 ) ) ) if ( len( trim( l ) ) ) s[ trim( l ) ] = true;
+		return s;
+	}
+
+	// True when Flathub has an application with exactly this id (flatpak search matches ids in its Application ID column).
+	function known( id ) {
+		var r = variables.proc.exec( [ "flatpak", "search", "--columns=application", arguments.id ], 60 );
+		if ( r.exitCode != 0 ) return false;
+		for ( var l in listToArray( r.output, chr( 10 ) ) ) if ( trim( l ) == arguments.id ) return true;
+		return false;
+	}
+}

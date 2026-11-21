@@ -15,7 +15,7 @@ class Pkg {
 		variables.text = new bxrig.util.Text();
 		variables.inst = new bxrig.Installer( arguments.runner );
 		variables.proc = variables.inst.proc();
-		variables.pacman = new bxrig.util.Pacman( variables.proc );
+		variables.pacman = new bxrig.util.Packages().native( variables.proc );
 		variables.aur = new bxrig.util.Aur( variables.proc );
 		return this;
 	}
@@ -36,22 +36,10 @@ class Pkg {
 	}
 
 	// ---- search ----
-	// pacman -Ss output: "repo/name version [group] [installed]" then an indented description line.
+	// The distribution's repositories (its backend's searchRows), marked installed or not.
 	function searchRepo( text, installed ) {
 		var out = [];
-		var r = variables.pacman.search( arguments.text );
-		if ( !r.ok && !len( trim( r.output ) ) ) return out;
-		var cur = {};
-		for ( var raw in listToArray( r.output, chr( 10 ), true ) ) {
-			if ( !len( trim( raw ) ) ) continue;
-			if ( left( raw, 1 ) == " " || left( raw, 1 ) == chr( 9 ) ) { if ( structKeyExists( cur, "name" ) ) cur.description = trim( raw ); continue; }
-			var m = reFind( "^([a-z0-9._+-]+)/([^ ]+) ([^ ]+)(.*)$", raw, 1, true );
-			if ( !m.pos[ 1 ] ) continue;
-			if ( structKeyExists( cur, "name" ) ) out.append( cur );
-			var nm = mid( raw, m.pos[ 3 ], m.len[ 3 ] );
-			cur = { name: nm, version: mid( raw, m.pos[ 4 ], m.len[ 4 ] ), source: "repo", repo: mid( raw, m.pos[ 2 ], m.len[ 2 ] ), description: "", installed: structKeyExists( arguments.installed, nm ), votes: 0, popularity: 0, outdated: false };
-		}
-		if ( structKeyExists( cur, "name" ) ) out.append( cur );
+		for ( var x in variables.pacman.searchRows( arguments.text ) ) out.append( { name: x.name, version: x.version, source: "repo", repo: x.repo, description: x.description, installed: structKeyExists( arguments.installed, x.name ), votes: 0, popularity: 0, outdated: false } );
 		return out;
 	}
 
@@ -72,6 +60,9 @@ class Pkg {
 	function aurRow( x, installed ) {
 		return { name: x.name, version: x.version, source: "aur", repo: "aur", description: x.description ?: "", installed: structKeyExists( arguments.installed, x.name ), votes: x.numvotes ?: 0, popularity: x.popularity ?: 0, outdated: structKeyExists( x, "outofdate" ) && !isNull( x.outofdate ) && x.outofdate != "" && x.outofdate != 0 };
 	}
+
+	// The AUR exists for Arch and CachyOS only; elsewhere a search or an install never looks there.
+	function aurOn() { return new bxrig.util.Distro().family() == "arch"; }
 
 	function searchAur( text, installed ) {
 		var g = aurGet( "/search/" & replace( arguments.text, " ", "%20", "all" ) & "?by=name-desc" );
@@ -99,7 +90,7 @@ class Pkg {
 		var rows = [];
 		var notes = [];
 		if ( arguments.source != "aur" ) for ( var r in searchRepo( arguments.text, inst ) ) rows.append( r );
-		if ( arguments.source != "repo" ) {
+		if ( arguments.source != "repo" && aurOn() ) {
 			var a = searchAur( arguments.text, inst );
 			if ( !a.ok ) notes.append( a.error ); else for ( var ar in a.rows ) rows.append( ar );
 		}
@@ -117,6 +108,7 @@ class Pkg {
 	// Where a name can be had: "repo" when pacman knows it, "aur" when the AUR does, "" otherwise.
 	function origin( name ) {
 		if ( variables.pacman.known( arguments.name ) ) return "repo";
+		if ( !aurOn() ) return "";
 		var g = aurGet( "/info?arg[]=" & arguments.name );
 		return g.ok && g.results.len() ? "aur" : "";
 	}
@@ -151,6 +143,7 @@ class Pkg {
 		var unknown = [];
 		for ( var nm in arguments.names ) {
 			if ( structKeyExists( inst, nm ) ) { skipped.append( { name: nm, reason: "already installed" } ); continue; }
+			if ( arguments.forceAur && !aurOn() ) return variables.cli.fail( cmd, "precondition", "the AUR is for Arch and CachyOS; this is " & new bxrig.util.Distro().prettyName(), arguments.asJson );
 			var o = arguments.forceAur ? "aur" : origin( nm );
 			if ( arguments.forceAur && origin( nm ) == "" ) o = "";
 			if ( !len( o ) ) { unknown.append( nm ); continue; }

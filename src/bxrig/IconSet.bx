@@ -118,9 +118,9 @@ class IconSet {
 	function plan( id ) {
 		var theme = themeOf( arguments.id );
 		var out = { set: arguments.id, theme: theme, steps: [], files: [], commands: [], package: "" };
-		if ( !papirusInstalled() && !new bxrig.util.Pacman( variables.proc ).isInstalled( papirusPackage() ) ) {
+		if ( !papirusInstalled() && !new bxrig.util.Packages().native( variables.proc ).isInstalled( papirusPackage() ) ) {
 			out.package = papirusPackage();
-			out.commands.append( new bxrig.util.Pacman( variables.proc ).installArgv( [ papirusPackage() ] ) );
+			out.commands.append( new bxrig.util.Packages().native( variables.proc ).installArgv( [ papirusPackage() ] ) );
 			out.steps.append( "install " & papirusPackage() & " (Papirus-Dark, the base of both sets)" );
 		}
 		if ( arguments.id == "bxrig" && !themeCurrent() ) {

@@ -2,7 +2,9 @@
 # Catalog commands against the embedded catalog. Usage: catalog-test.sh [binary]
 . "$(dirname "$0")/lib/harness.sh"
 code() { set +e; "$@" >/dev/null 2>&1; local rc=$?; set -e; echo "$rc"; }
-cat="$root/catalog/apps.json"
+# The Arch view of the catalog: what each app is (apps.json) with how Arch installs it (install/arch.json) merged in, as bxrig loads it.
+cat="$tmp/catalog-arch.json"
+jq -s '.[1].apps as $i | .[0] | .apps |= map(. + ($i[.id] // {}))' "$root/catalog/apps.json" "$root/catalog/install/arch.json" > "$cat"
 # The source of truth and the embedded copy agree.
 [[ "$("$binary" catalog version --json | jq -r .data.apps)" == "$(jq '.apps|length' "$cat")" ]] || fail 'app count differs'
 [[ "$("$binary" catalog list --json | jq '.data|length')" == "$(jq '.apps|length' "$cat")" ]] || fail 'list count'

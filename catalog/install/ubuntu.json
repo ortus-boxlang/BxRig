@@ -1,0 +1,88 @@
+{
+	"schema": 1,
+	"distro": "ubuntu",
+	"title": "Ubuntu 26.04 LTS",
+	"packager": "apt",
+	"extends": "debian",
+	"defaults": {
+		"terminal": "ghostty"
+	},
+	"names": {
+		"ghostty": "ghostty"
+	},
+	"repos": [
+		{
+			"check": "apt/sources.list.d/noctalia-resolute.sources",
+			"commands": [
+				[
+					"curl",
+					"-fsSLo",
+					"{work}/nickh-archive-keyring.deb",
+					"https://pkg.noctalia.dev/deb/nickh-archive-keyring.deb"
+				],
+				[
+					"sudo",
+					"dpkg",
+					"-i",
+					"{work}/nickh-archive-keyring.deb"
+				],
+				[
+					"sudo",
+					"curl",
+					"-fsSLo",
+					"/etc/apt/sources.list.d/noctalia-resolute.sources",
+					"https://pkg.noctalia.dev/deb/noctalia-resolute.sources"
+				]
+			],
+			"for": [
+				"noctalia"
+			],
+			"id": "noctalia",
+			"title": "Noctalia's apt repository (pkg.noctalia.dev, Ubuntu 26.04)"
+		}
+	],
+	"apps": {
+		"dropbox": {
+			"source": "apt",
+			"targets": [
+				"dropbox"
+			]
+		},
+		"ghostty": {
+			"source": "apt",
+			"targets": [
+				"ghostty"
+			]
+		},
+		"hyprlauncher": {
+			"source": "none"
+		},
+		"hyprsunset": {
+			"source": "none"
+		},
+		"lutris": {
+			"source": "apt",
+			"targets": [
+				"lutris"
+			]
+		},
+		"proton-vpn": {
+			"source": "apt",
+			"targets": [
+				"proton-vpn-gtk-app"
+			]
+		},
+		"rofimoji": {
+			"source": "apt",
+			"targets": [
+				"rofimoji"
+			]
+		},
+		"telegram": {
+			"source": "flatpak",
+			"targets": [
+				"org.telegram.desktop"
+			]
+		}
+	}
+}

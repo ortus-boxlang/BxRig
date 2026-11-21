@@ -7,7 +7,11 @@ class TerminalConfig {
 		return this;
 	}
 
-	function defaultTerminal() { return "ghostty"; }
+	// Ghostty, unless the distribution does not package it (catalog/install/DISTRO.json `defaults.terminal`: kitty on Debian).
+	function defaultTerminal() {
+		var d = new bxrig.Catalog().install( new bxrig.util.Distro().catalogName() ).defaults ?: {};
+		return len( d.terminal ?: "" ) ? d.terminal : "ghostty";
+	}
 	function defaultFont() { return "JetBrainsMono Nerd Font"; }
 
 	// The font written into the terminal starters: the one `bxrig appearance font` chose, else JetBrains Mono Nerd.

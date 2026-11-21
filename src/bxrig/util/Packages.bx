@@ -1,0 +1,23 @@
+// The distribution's package manager, picked once: Pacman (CachyOS, Arch), Zypper (openSUSE) or Apt (Debian, Ubuntu). Every backend has
+// the same methods as Pacman (installArgv, removeArgv, upgradeArgv, installLine, installed, isInstalled, version, known, info, searchRows,
+// pendingUpdates, ...), so a caller writes `new bxrig.util.Packages().native( proc )` and never names the tool.
+// Code names packages by their Arch names; the install file's `names` map (catalog/install/DISTRO.json) turns one into the distribution's
+// name, "" meaning "nothing to install here" (bluez-utils is part of bluez on openSUSE). Catalog apps carry the right names already.
+//   native( proc, distro )   the backend; distro defaults to util.Distro().catalogName()
+//   names( distro )          the name map of a distribution
+class Packages {
+	function names( distro ) {
+		var inst = new bxrig.Catalog().install( arguments.distro );
+		return inst.names ?: {};
+	}
+
+	function native( proc = "", distro = "" ) {
+		var d = len( arguments.distro ) ? arguments.distro : new bxrig.util.Distro().catalogName();
+		if ( d == "suse" ) return new bxrig.util.Zypper( arguments.proc, names( d ) );
+		if ( d == "debian" || d == "ubuntu" ) return new bxrig.util.Apt( arguments.proc, names( d ), d );
+		return new bxrig.util.Pacman( arguments.proc );
+	}
+
+	// Arch names through a name map (util.PackageNames).
+	function translate( pkgs, map ) { return new bxrig.util.PackageNames().translate( arguments.pkgs, arguments.map ); }
+}
