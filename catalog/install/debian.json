@@ -478,6 +478,12 @@
 				"gwenview"
 			]
 		},
+		"handbrake": {
+			"source": "apt",
+			"targets": [
+				"handbrake"
+			]
+		},
 		"haruna": {
 			"source": "apt",
 			"targets": [
@@ -1019,6 +1025,12 @@
 			"source": "flatpak",
 			"targets": [
 				"xyz.ketok.Speedtest"
+			]
+		},
+		"speedtest-cli": {
+			"source": "apt",
+			"targets": [
+				"speedtest-cli"
 			]
 		},
 		"spotify": {

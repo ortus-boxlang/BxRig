@@ -452,6 +452,12 @@
 				"gwenview"
 			]
 		},
+		"handbrake": {
+			"source": "flatpak",
+			"targets": [
+				"fr.handbrake.ghb"
+			]
+		},
 		"haruna": {
 			"source": "zypper",
 			"targets": [
@@ -1029,6 +1035,12 @@
 			"source": "flatpak",
 			"targets": [
 				"xyz.ketok.Speedtest"
+			]
+		},
+		"speedtest-cli": {
+			"source": "zypper",
+			"targets": [
+				"speedtest-cli"
 			]
 		},
 		"spotify": {
