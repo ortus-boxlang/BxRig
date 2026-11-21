@@ -31,6 +31,7 @@
 - [Security](https://bxcachy.boxlang.io/guides/security.md) ([HTML](https://bxcachy.boxlang.io/guides/security/index.html))
 - [Troubleshooting](https://bxcachy.boxlang.io/guides/troubleshooting.md) ([HTML](https://bxcachy.boxlang.io/guides/troubleshooting/index.html))
 - [Contributing and docs versions](https://bxcachy.boxlang.io/guides/contributing.md) ([HTML](https://bxcachy.boxlang.io/guides/contributing/index.html))
+- [Distributions](https://bxcachy.boxlang.io/guides/distributions.md) ([HTML](https://bxcachy.boxlang.io/guides/distributions/index.html))
 - [Architecture](https://bxcachy.boxlang.io/architecture/index.md) ([HTML](https://bxcachy.boxlang.io/architecture/index.html))
 - [Control Center](https://bxcachy.boxlang.io/guides/control-center.md) ([HTML](https://bxcachy.boxlang.io/guides/control-center/index.html))
 - [Mail catcher](https://bxcachy.boxlang.io/guides/mail.md) ([HTML](https://bxcachy.boxlang.io/guides/mail/index.html))
